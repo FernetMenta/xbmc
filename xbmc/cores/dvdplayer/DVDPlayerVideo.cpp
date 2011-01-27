@@ -1037,6 +1037,10 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
         flags |= CONF_FLAGS_FORMAT_VDPAU;
         formatstr = "VDPAU";
         break;
+      case DVDVideoPicture::FMT_VDPAU_420:
+        flags |= CONF_FLAGS_FORMAT_VDPAU_420;
+        formatstr = "VDPAU_420";
+        break;
       case DVDVideoPicture::FMT_DXVA:
         flags |= CONF_FLAGS_FORMAT_DXVA;
         formatstr = "DXVA";
@@ -1269,7 +1273,8 @@ void CDVDPlayerVideo::AutoCrop(DVDVideoPicture *pPicture)
   if ((pPicture->format == DVDVideoPicture::FMT_YUV420P) ||
      (pPicture->format == DVDVideoPicture::FMT_NV12) ||
      (pPicture->format == DVDVideoPicture::FMT_YUY2) ||
-     (pPicture->format == DVDVideoPicture::FMT_UYVY))
+     (pPicture->format == DVDVideoPicture::FMT_UYVY) ||
+     (pPicture->format == DVDVideoPicture::FMT_VDPAU_420))
   {
     RECT crop;
 

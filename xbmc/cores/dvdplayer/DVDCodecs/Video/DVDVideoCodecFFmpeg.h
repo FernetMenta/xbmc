@@ -47,6 +47,11 @@ public:
     virtual void Reset     () {}
     virtual const std::string Name() = 0;
     virtual CCriticalSection* Section() { return NULL; }
+
+    // signal to vdpau (mixer) whether we run normal speed or not
+    // so it can switch off deinterlacing
+    virtual bool AllowFrameDropping() {return true;};
+    virtual void SetDropState(bool bDrop) {return;};
   };
 
   CDVDVideoCodecFFmpeg();

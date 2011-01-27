@@ -102,6 +102,7 @@ struct DVDVideoPicture
   enum EFormat {
     FMT_YUV420P = 0,
     FMT_VDPAU,
+    FMT_VDPAU_420,
     FMT_NV12,
     FMT_UYVY,
     FMT_YUY2,
@@ -125,6 +126,8 @@ struct DVDVideoUserData
 
 #define DVP_FLAG_NOSKIP             0x00000010 // indicate this picture should never be dropped
 #define DVP_FLAG_DROPPED            0x00000020 // indicate that this picture has been dropped in decoder stage, will have no data
+#define DVP_FLAG_DROPREQUESTED      0x00000040 // indicate that this picture was requested to have been dropped in decoder stage
+#define DVP_FLAG_NOPOSTPROC         0x00000080 // indicate that this picture was requested not to have any non-essential post processing performed on it
 
 // DVP_FLAG 0x00000100 - 0x00000f00 is in use by libmpeg2!
 
@@ -143,6 +146,7 @@ typedef std::vector<CDVDCodecOption> CDVDCodecOptions;
 #define VC_PICTURE  0x00000004  // the decoder got a picture, call Decode(NULL, 0) again to parse the rest of the data
 #define VC_USERDATA 0x00000008  // the decoder found some userdata,  call Decode(NULL, 0) again to parse the rest of the data
 #define VC_FLUSHED  0x00000010  // the decoder lost it's state, we need to restart decoding again
+#define VC_DROPPED  0x00000020  // needed to identify if a picture was dropped
 class CDVDVideoCodec
 {
 public:
@@ -236,5 +240,10 @@ public:
   virtual unsigned GetConvergeCount()
   {
     return 0;
+  }
+
+  virtual void NormalSpeed(bool normal)
+  {
+	return;
   }
 };

@@ -37,17 +37,19 @@
 #include "settings/VideoSettings.h"
 #include "guilib/DispResource.h"
 #include "threads/Event.h"
+#include "threads/Thread.h"
 namespace Surface { class CSurface; }
 
-#define NUM_OUTPUT_SURFACES                4
+#define NUM_OUTPUT_SURFACES                9
 #define NUM_VIDEO_SURFACES_MPEG2           10  // (1 frame being decoded, 2 reference)
 #define NUM_VIDEO_SURFACES_H264            32 // (1 frame being decoded, up to 16 references)
 #define NUM_VIDEO_SURFACES_VC1             10  // (same as MPEG-2)
-#define NUM_OUTPUT_SURFACES_FOR_FULLHD     2
+#define NUM_OUTPUT_SURFACES_FOR_FULLHD     9
 #define FULLHD_WIDTH                       1920
 
 class CVDPAU
- : public CDVDVideoCodecFFmpeg::IHardwareDecoder
+ : public CThread
+ , public CDVDVideoCodecFFmpeg::IHardwareDecoder
  , public IDispResource
 {
 public:
@@ -65,6 +67,8 @@ public:
     uint32_t aux; /* optional extra parameter... */
   };
 
+  void ShiftRenderSurfaces();
+
   CVDPAU();
   virtual ~CVDPAU();
   
@@ -73,21 +77,42 @@ public:
   virtual bool GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture);
   virtual void Reset();
   virtual void Close();
+  virtual bool AllowFrameDropping();
+  virtual void SetDropState(bool bDrop);
 
   virtual int  Check(AVCodecContext* avctx);
 
   virtual const std::string Name() { return "vdpau"; }
 
-  bool MakePixmap(int width, int height);
-  bool MakePixmapGL();
+  void SetWidthHeight(int width, int height);
+  bool MakePixmap(int index, int width, int height);
+  bool MakePixmapGL(int index);
 
   void ReleasePixmap();
   void BindPixmap();
 
   PFNGLXBINDTEXIMAGEEXTPROC    glXBindTexImageEXT;
   PFNGLXRELEASETEXIMAGEEXTPROC glXReleaseTexImageEXT;
-  GLXPixmap  m_glPixmap;
-  Pixmap  m_Pixmap;
+
+#ifdef GL_NV_vdpau_interop
+  PFNGLVDPAUINITNVPROC glVDPAUInitNV;
+  PFNGLVDPAUFININVPROC glVDPAUFiniNV;
+  PFNGLVDPAUREGISTEROUTPUTSURFACENVPROC glVDPAURegisterOutputSurfaceNV;
+  PFNGLVDPAUREGISTERVIDEOSURFACENVPROC glVDPAURegisterVideoSurfaceNV;
+  PFNGLVDPAUISSURFACENVPROC glVDPAUIsSurfaceNV;
+  PFNGLVDPAUUNREGISTERSURFACENVPROC glVDPAUUnregisterSurfaceNV;
+  PFNGLVDPAUSURFACEACCESSNVPROC glVDPAUSurfaceAccessNV;
+  PFNGLVDPAUMAPSURFACESNVPROC glVDPAUMapSurfacesNV;
+  PFNGLVDPAUUNMAPSURFACESNVPROC glVDPAUUnmapSurfacesNV;
+  PFNGLVDPAUGETSURFACEIVNVPROC glVDPAUGetSurfaceivNV;
+#endif
+
+  GLuint GLGetSurfaceTexture(int plane, int field);
+  bool SetTexture(int plane, int field);
+  GLuint GetTexture();
+  GLuint m_glTexture;
+  virtual long Release();
+  ThreadIdentifier m_renderThread;
 
   static void             FFReleaseBuffer(AVCodecContext *avctx, AVFrame *pic);
   static void             FFDrawSlice(struct AVCodecContext *s,
@@ -107,24 +132,18 @@ public:
   void SetNoiseReduction();
   void SetSharpness();
   void SetDeinterlacing();
+  void PostProcOff();
+  EINTERLACEMETHOD GetDeinterlacingMethod(bool log = false);
   void SetHWUpscaling();
 
   pictureAge picAge;
-  vdpau_render_state *past[2], *current, *future;
-  int        tmpDeintMode, tmpDeintGUI, tmpDeint;
+  vdpau_render_state *past[2], *current, *future[2];
+  int        tmpDeintMode, tmpDeint;
+  bool       tmpPostProc;
   float      tmpNoiseReduction, tmpSharpness;
   float      tmpBrightness, tmpContrast;
   int        OutWidth, OutHeight;
   bool       upScale;
-  std::queue<DVDVideoPicture> m_DVDVideoPics;
-
-  static inline void ClearUsedForRender(vdpau_render_state **st)
-  {
-    if (*st) {
-      (*st)->state &= ~FF_VDPAU_STATE_USED_FOR_RENDER;
-      *st = NULL;
-    }
-  }
 
   VdpProcamp    m_Procamp;
   VdpCSCMatrix  m_CSCMatrix;
@@ -133,16 +152,14 @@ public:
 
 
   //  protected:
-  void      InitVDPAUProcs();
-  void      FiniVDPAUProcs();
-  void      FiniVDPAUOutput();
-  bool      ConfigOutputMethod(AVCodecContext *avctx, AVFrame *pFrame);
-  bool      FiniOutputMethod();
+  void  InitVDPAUProcs();
+  void  FiniVDPAUProcs();
+  void  FiniVDPAUOutput();
+  bool  ConfigOutputMethod(AVCodecContext *avctx, AVFrame *pFrame);
+  bool  FiniOutputMethod();
 
   VdpDevice                            vdp_device;
   VdpGetProcAddress *                  vdp_get_proc_address;
-  VdpPresentationQueueTarget           vdp_flip_target;
-  VdpPresentationQueue                 vdp_flip_queue;
   VdpDeviceDestroy *                   vdp_device_destroy;
 
   VdpVideoSurfaceCreate *              vdp_video_surface_create;
@@ -187,7 +204,6 @@ public:
   VdpPreemptionCallbackRegister * vdp_preemption_callback_register;
 
   VdpOutputSurface  outputSurfaces[NUM_OUTPUT_SURFACES];
-  VdpOutputSurface  outputSurface;
   VdpOutputSurface  presentSurface;
 
   VdpDecoder    decoder;
@@ -195,13 +211,12 @@ public:
   VdpRect       outRect;
   VdpRect       outRectVid;
 
-  static void* dl_handle;
+  static void*    dl_handle;
   VdpStatus (*dl_vdp_device_create_x11)(Display* display, int screen, VdpDevice* device, VdpGetProcAddress **get_proc_address);
   VdpStatus (*dl_vdp_get_proc_address)(VdpDevice device, VdpFuncId function_id, void** function_pointer);
   VdpStatus (*dl_vdp_preemption_callback_register)(VdpDevice device, VdpPreemptionCallback callback, void* context);
 
-  int      surfaceNum;
-  int      presentSurfaceNum;
+
   int      totalAvailableOutputSurfaces;
   uint32_t vid_width, vid_height;
   int      surface_width, surface_height;
@@ -209,7 +224,7 @@ public:
   Display* m_Display;
   bool     vdpauConfigured;
   uint32_t *m_BlackBar;
-
+  bool     m_bPixmapBound;
 
   VdpVideoMixerPictureStructure m_mixerfield;
   int                           m_mixerstep;
@@ -228,6 +243,66 @@ public:
 
   std::vector<vdpau_render_state*> m_videoSurfaces;
   DllAvUtil   m_dllAvUtil;
+
+protected:
+  virtual void OnStartup();
+  virtual void OnExit();
+  virtual void Process();
+  void FlushMixer();
+  int NextBuffer();
+
+  struct MixerMessage
+  {
+    DVDVideoPicture DVDPic;
+    vdpau_render_state * render;
+    VdpRect outRectVid;
+  };
+
+  struct OutputPicture
+  {
+    DVDVideoPicture DVDPic;
+    VdpOutputSurface outputSurface;
+    vdpau_render_state * render;
+    GLuint texture[4];
+    GLXPixmap  glPixmap;
+    Pixmap  pixmap;
+    VdpPresentationQueueTarget vdp_flip_target;
+    VdpPresentationQueue vdp_flip_queue;
+#ifdef GL_NV_vdpau_interop
+    GLvdpauSurfaceNV glVdpauSurface;
+#endif
+  };
+
+  struct GLVideoSurface
+  {
+    GLuint texture[4];
+#ifdef GL_NV_vdpau_interop
+    GLvdpauSurfaceNV glVdpauSurface;
+#endif
+  };
+
+  std::queue<MixerMessage> m_mixerMessages;
+  std::deque<MixerMessage> m_mixerInput;
+  std::map<VdpVideoSurface, GLVideoSurface> m_videoSurfaceMap;
+
+  OutputPicture m_allOutPic[NUM_OUTPUT_SURFACES];
+  std::deque<OutputPicture*> m_freeOutPic;
+  std::deque<OutputPicture*> m_usedOutPic;
+  OutputPicture *m_presentPicture;
+  OutputPicture *m_flipBuffer[3];
+  int m_flipBufferIdx;
+  unsigned int m_mixerCmd;
+  CCriticalSection m_mixerSec, m_outPicSec, m_videoSurfaceSec, m_flipSec;
+  CEvent m_picSignal;
+  CEvent m_msgSignal;
+  bool m_bVdpauDeinterlacing;
+  bool m_binterlacedFrame;
+  int m_dropCount;
+  bool hasVdpauGlInterop;
+  volatile bool glInteropFinish;
+  bool m_bsurfaceMapped;
+  bool m_dropState;
+  bool m_bPostProc;
 
   enum VDPAUOutputMethod
   {
@@ -252,4 +327,17 @@ public:
   CEvent         m_DisplayEvent;
   virtual void OnLostDevice();
   virtual void OnResetDevice();
+  VDPAUOutputMethod m_GlInteropStatus;
+
+#ifdef GL_NV_vdpau_interop
+  void GLInitInterop();
+  void GLFiniInterop();
+  bool GLMapSurface(OutputPicture *outPic);
+  bool GLUnmapSurface(OutputPicture *outPic);
+  bool GLRegisterVideoSurfaces(OutputPicture *outPic);
+  bool GLRegisterOutputSurfaces();
+#endif
+
+#define MIXER_CMD_FLUSH	0x01
+#define MIXER_CMD_HURRY	0x02
 };
