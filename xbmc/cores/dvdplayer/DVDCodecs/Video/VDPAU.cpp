@@ -2258,8 +2258,10 @@ void CVDPAU::Process()
         outPic->DVDPic.iRepeatPicture = -0.5;
         if (mixerstep == 1)
         {
-          outPic->DVDPic.dts = DVD_NOPTS_VALUE;
-          outPic->DVDPic.pts = DVD_NOPTS_VALUE;
+          double pts = m_mixerInput[1].DVDPic.pts +
+              (m_mixerInput[0].DVDPic.pts - m_mixerInput[1].DVDPic.pts)/2;
+          outPic->DVDPic.dts = pts; //DVD_NOPTS_VALUE;
+          outPic->DVDPic.pts = pts; //DVD_NOPTS_VALUE;
         }
       }
 
