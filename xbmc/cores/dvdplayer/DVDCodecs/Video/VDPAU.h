@@ -131,6 +131,7 @@ public:
   void SetColor();
   void SetNoiseReduction();
   void SetSharpness();
+  void SetDeintSkipChroma();
   void SetDeinterlacing();
   void PostProcOff();
   EINTERLACEMETHOD GetDeinterlacingMethod(bool log = false);
