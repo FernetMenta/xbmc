@@ -19,9 +19,6 @@
  *
  */
 
-// switch to turn on GL_NV_vdpau_interop
-#define VDPAU_GL_INTEROP
-
 #include "system.h"
 #ifdef HAVE_LIBVDPAU
 #include <dlfcn.h>
@@ -118,42 +115,43 @@ CVDPAU::CVDPAU() : CThread("CVDPAU")
   if (!glXReleaseTexImageEXT)
     glXReleaseTexImageEXT = (PFNGLXRELEASETEXIMAGEEXTPROC)glXGetProcAddress((GLubyte *) "glXReleaseTexImageEXT");
 
-  hasVdpauGlInterop = false;
   m_GlInteropStatus = OUTPUT_NONE;
   m_renderThread = NULL;
   m_presentPicture = m_flipBuffer[0] = m_flipBuffer[1] = m_flipBuffer[2] = NULL;
   m_flipBufferIdx = 0;
 
-#ifdef VDPAU_GL_INTEROP
 #ifdef GL_NV_vdpau_interop
-  if (!glVDPAUInitNV)
-    glVDPAUInitNV    = (PFNGLVDPAUINITNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUInitNV");
-  if (!glVDPAUFiniNV)
-    glVDPAUFiniNV = (PFNGLVDPAUFININVPROC)glXGetProcAddress((GLubyte *) "glVDPAUFiniNV");
-  if (!glVDPAURegisterOutputSurfaceNV)
-    glVDPAURegisterOutputSurfaceNV    = (PFNGLVDPAUREGISTEROUTPUTSURFACENVPROC)glXGetProcAddress((GLubyte *) "glVDPAURegisterOutputSurfaceNV");
-  if (!glVDPAURegisterVideoSurfaceNV)
-    glVDPAURegisterVideoSurfaceNV    = (PFNGLVDPAUREGISTERVIDEOSURFACENVPROC)glXGetProcAddress((GLubyte *) "glVDPAURegisterVideoSurfaceNV");
-  if (!glVDPAUIsSurfaceNV)
-    glVDPAUIsSurfaceNV    = (PFNGLVDPAUISSURFACENVPROC)glXGetProcAddress((GLubyte *) "glVDPAUIsSurfaceNV");
-  if (!glVDPAUUnregisterSurfaceNV)
-    glVDPAUUnregisterSurfaceNV = (PFNGLVDPAUUNREGISTERSURFACENVPROC)glXGetProcAddress((GLubyte *) "glVDPAUUnregisterSurfaceNV");
-  if (!glVDPAUSurfaceAccessNV)
-    glVDPAUSurfaceAccessNV    = (PFNGLVDPAUSURFACEACCESSNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUSurfaceAccessNV");
-  if (!glVDPAUMapSurfacesNV)
-    glVDPAUMapSurfacesNV = (PFNGLVDPAUMAPSURFACESNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUMapSurfacesNV");
-  if (!glVDPAUUnmapSurfacesNV)
-    glVDPAUUnmapSurfacesNV = (PFNGLVDPAUUNMAPSURFACESNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUUnmapSurfacesNV");
-  if (!glVDPAUGetSurfaceivNV)
-    glVDPAUGetSurfaceivNV = (PFNGLVDPAUGETSURFACEIVNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUGetSurfaceivNV");
-
-  hasVdpauGlInterop = glewIsSupported("GL_NV_vdpau_interop");
-  if (hasVdpauGlInterop)
+  if (glewIsSupported("GL_NV_vdpau_interop"))
   {
-    CLog::Log(LOGNOTICE, "CVDPAU::CVDPAU GL interop supported and being used");
+    if (!glVDPAUInitNV)
+      glVDPAUInitNV    = (PFNGLVDPAUINITNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUInitNV");
+    if (!glVDPAUFiniNV)
+      glVDPAUFiniNV = (PFNGLVDPAUFININVPROC)glXGetProcAddress((GLubyte *) "glVDPAUFiniNV");
+    if (!glVDPAURegisterOutputSurfaceNV)
+      glVDPAURegisterOutputSurfaceNV    = (PFNGLVDPAUREGISTEROUTPUTSURFACENVPROC)glXGetProcAddress((GLubyte *) "glVDPAURegisterOutputSurfaceNV");
+    if (!glVDPAURegisterVideoSurfaceNV)
+      glVDPAURegisterVideoSurfaceNV    = (PFNGLVDPAUREGISTERVIDEOSURFACENVPROC)glXGetProcAddress((GLubyte *) "glVDPAURegisterVideoSurfaceNV");
+    if (!glVDPAUIsSurfaceNV)
+      glVDPAUIsSurfaceNV    = (PFNGLVDPAUISSURFACENVPROC)glXGetProcAddress((GLubyte *) "glVDPAUIsSurfaceNV");
+    if (!glVDPAUUnregisterSurfaceNV)
+      glVDPAUUnregisterSurfaceNV = (PFNGLVDPAUUNREGISTERSURFACENVPROC)glXGetProcAddress((GLubyte *) "glVDPAUUnregisterSurfaceNV");
+    if (!glVDPAUSurfaceAccessNV)
+      glVDPAUSurfaceAccessNV    = (PFNGLVDPAUSURFACEACCESSNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUSurfaceAccessNV");
+    if (!glVDPAUMapSurfacesNV)
+      glVDPAUMapSurfacesNV = (PFNGLVDPAUMAPSURFACESNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUMapSurfacesNV");
+    if (!glVDPAUUnmapSurfacesNV)
+      glVDPAUUnmapSurfacesNV = (PFNGLVDPAUUNMAPSURFACESNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUUnmapSurfacesNV");
+    if (!glVDPAUGetSurfaceivNV)
+      glVDPAUGetSurfaceivNV = (PFNGLVDPAUGETSURFACEIVNVPROC)glXGetProcAddress((GLubyte *) "glVDPAUGetSurfaceivNV");
+
+    CLog::Log(LOGNOTICE, "CVDPAU::CVDPAU GL interop supported");
   }
+  else
 #endif
-#endif
+  {
+    g_guiSettings.SetBool("videoplayer.usevdpauinteroprgb",false);
+    g_guiSettings.SetBool("videoplayer.usevdpauinteropyuv",false);
+  }
 
   totalAvailableOutputSurfaces = 0;
   presentSurface = VDP_INVALID_HANDLE;
@@ -649,7 +647,7 @@ bool CVDPAU::Supports(EINTERLACEMETHOD method)
   || method == VS_INTERLACEMETHOD_AUTO)
     return true;
 
-  if (hasVdpauGlInterop)
+  if (g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv"))
   {
     if (method == VS_INTERLACEMETHOD_RENDER_BOB)
       return true;
@@ -1169,7 +1167,8 @@ bool CVDPAU::ConfigOutputMethod(AVCodecContext *avctx, AVFrame *pFrame)
     }
   }
 
-  if (!m_bVdpauDeinterlacing && hasVdpauGlInterop)
+  if (!m_bVdpauDeinterlacing &&
+        g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv"))
   {
     if (m_vdpauOutputMethod == OUTPUT_GL_INTEROP_YUV)
       return true;
@@ -1202,7 +1201,7 @@ bool CVDPAU::ConfigOutputMethod(AVCodecContext *avctx, AVFrame *pFrame)
     totalAvailableOutputSurfaces = 0;
 
     int tmpMaxOutputSurfaces = NUM_OUTPUT_SURFACES;
-    if (!hasVdpauGlInterop)
+    if (!g_guiSettings.GetBool("videoplayer.usevdpauinteroprgb"))
       tmpMaxOutputSurfaces = 4;
 
     // Creation of outputSurfaces
@@ -1230,7 +1229,7 @@ bool CVDPAU::ConfigOutputMethod(AVCodecContext *avctx, AVFrame *pFrame)
 
     for (int i = 0; i < NUM_OUTPUT_SURFACES; i++)
     {
-      if (hasVdpauGlInterop)
+      if (g_guiSettings.GetBool("videoplayer.usevdpauinteroprgb"))
         m_allOutPic[i].outputSurface = outputSurfaces[i];
 
       m_allOutPic[i].render = NULL;
@@ -1239,7 +1238,7 @@ bool CVDPAU::ConfigOutputMethod(AVCodecContext *avctx, AVFrame *pFrame)
 
     m_mixerCmd = 0;
 
-    if (hasVdpauGlInterop)
+    if (g_guiSettings.GetBool("videoplayer.usevdpauinteroprgb"))
       m_vdpauOutputMethod = OUTPUT_GL_INTEROP_RGB;
     else
     {

@@ -1268,6 +1268,8 @@
   <string id="13430">Hardwarebeschleunigung erlauben (OpenMax)</string>
   <string id="13431">Pixel Shaders</string>
   <string id="13432">Hardwarebeschleunigung erlauben (VideoToolbox)</string>
+  <string id="13433">Vdpau OpenGL interop RGB erlauben</string>
+  <string id="13434">Vdpau OpenGL interop YUV erlauben</string>
 
   <string id="13500">A/V Sync Methode</string>
   <string id="13501">Audio Takt</string>

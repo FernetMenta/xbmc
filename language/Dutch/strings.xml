@@ -1236,7 +1236,8 @@
   <string id="13430">Hardwareversnelling inschakelen (OpenMax)</string>
   <string id="13431">Pixelshaders</string>
   <string id="13432">Hardware acceleratie toestaan (VideoToolbox)</string>
-
+  <string id="13433">Vdpau OpenGL interop RGB inschakelen</string>
+  <string id="13434">Vdpau OpenGL interop YUV inschakelen</string>
   <string id="13500">A/V-synchronisatiemethode</string>
   <string id="13501">Audiosignaal</string>
   <string id="13502">Videosignaal (Drop/Dupe audio)</string>
