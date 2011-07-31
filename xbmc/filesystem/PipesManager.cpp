@@ -195,7 +195,7 @@ bool Pipe::Write(const char *buf, int nSize, int nWaitMillis)
         break;
       }
       
-      if ((unsigned int) nWaitMillis != INFINITE)
+      if ((unsigned int) nWaitMillis != 0xFFFFFFFF)
         break;
     }
   }
