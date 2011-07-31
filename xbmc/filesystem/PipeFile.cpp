@@ -24,6 +24,8 @@
 #include "PipesManager.h"
 #include "utils/StringUtils.h"
 
+#define INFINITE 0xFFFFFFFF
+
 using namespace XFILE;
 
 CPipeFile::CPipeFile() : m_pos(0), m_length(-1), m_pipe(NULL)
