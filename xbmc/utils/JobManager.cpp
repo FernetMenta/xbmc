@@ -23,6 +23,9 @@
 #include <algorithm>
 #include "threads/SingleLock.h"
 
+#include "system.h"
+
+
 using namespace std;
 
 bool CJob::ShouldCancel(unsigned int progress, unsigned int total) const
