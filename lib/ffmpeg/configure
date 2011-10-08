@@ -144,6 +144,7 @@ Hardware accelerators:
   --enable-vaapi           enable VAAPI code
   --enable-vda             enable VDA code
   --enable-vdpau           enable VDPAU code
+  --disable-xvba           disable XVBA code
 
 Individual component options:
   --disable-everything     disable all components listed below
@@ -1197,6 +1198,7 @@ HWACCEL_LIST="
     vaapi
     vda
     vdpau
+    xvba
 "
 
 LIBRARY_LIST="
@@ -1827,6 +1829,7 @@ crystalhd_deps="libcrystalhd_libcrystalhd_if_h"
 dxva2_deps="dxva2api_h"
 vaapi_deps="va_va_h"
 vda_deps="VideoDecodeAcceleration_VDADecoder_h pthreads"
+xvba_deps="amd_amdxvba_h"
 vda_extralibs="-framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore"
 vdpau_deps="vdpau_vdpau_h vdpau_vdpau_x11_h"
 
@@ -1847,6 +1850,8 @@ h264_vdpau_decoder_deps="vdpau"
 h264_vdpau_decoder_select="h264_decoder"
 h264_vdpau_hwaccel_deps="vdpau"
 h264_vdpau_hwaccel_select="h264_decoder"
+h264_xvba_hwaccel_select="h264_decoder"
+h264_xvba_hwaccel_deps="xvba"
 mpeg_vdpau_decoder_deps="vdpau"
 mpeg_vdpau_decoder_select="mpegvideo_decoder"
 mpeg1_vdpau_decoder_deps="vdpau"
@@ -1859,6 +1864,8 @@ mpeg2_dxva2_hwaccel_select="mpeg2video_decoder"
 mpeg2_vaapi_hwaccel_deps="vaapi"
 mpeg2_vaapi_hwaccel_select="mpeg2video_decoder"
 mpeg2_vdpau_hwaccel_deps="vdpau"
+mpeg2_xvba_hwaccel_select="mpeg2video_decoder"
+mpeg2_xvba_hwaccel_deps="xvba"
 mpeg2_vdpau_hwaccel_select="mpeg2video_decoder"
 mpeg4_crystalhd_decoder_select="crystalhd"
 mpeg4_vaapi_hwaccel_deps="vaapi"
@@ -1877,11 +1884,14 @@ vc1_vdpau_decoder_deps="vdpau"
 vc1_vdpau_decoder_select="vc1_decoder"
 vc1_vdpau_hwaccel_deps="vdpau"
 vc1_vdpau_hwaccel_select="vc1_decoder"
+vc1_xvba_hwaccel_select="vc1_decoder"
+vc1_xvba_hwaccel_deps="xvba"
 wmv3_crystalhd_decoder_select="crystalhd"
 wmv3_dxva2_hwaccel_select="vc1_dxva2_hwaccel"
 wmv3_vaapi_hwaccel_select="vc1_vaapi_hwaccel"
 wmv3_vdpau_decoder_select="vc1_vdpau_decoder"
 wmv3_vdpau_hwaccel_select="vc1_vdpau_hwaccel"
+wmv3_xvba_hwaccel_select="vc1_xvba_hwaccel"
 
 # parsers
 h264_parser_select="golomb h264chroma h264dsp h264pred h264qpel videodsp"
@@ -3832,6 +3842,7 @@ check_header termios.h
 check_header unistd.h
 check_header vdpau/vdpau.h
 check_header vdpau/vdpau_x11.h
+check_header amd/amdxvba.h
 check_cpp_condition vdpau/vdpau.h "defined(VDP_DECODER_PROFILE_MPEG4_PART2_SP)" && enable vdpau_mpeg4_support
 
 check_header VideoDecodeAcceleration/VDADecoder.h
