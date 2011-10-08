@@ -3,7 +3,7 @@ include $(SUBDIR)../config.mak
 NAME = avcodec
 FFLIBS = avutil
 
-HEADERS = avcodec.h avfft.h dxva2.h opt.h vaapi.h vda.h vdpau.h version.h xvmc.h
+HEADERS = avcodec.h avfft.h dxva2.h opt.h vaapi.h vda.h vdpau.h version.h xvmc.h xvba.h
 
 OBJS = allcodecs.o                                                      \
        audioconvert.o                                                   \
@@ -51,6 +51,7 @@ OBJS-$(CONFIG_SINEWIN)                 += sinewin.o
 OBJS-$(CONFIG_VAAPI)                   += vaapi.o
 OBJS-$(CONFIG_VDA)                     += vda.o
 OBJS-$(CONFIG_VDPAU)                   += vdpau.o
+OBJS-$(CONFIG_XVBA)                    += xvba.o
 
 # decoders/encoders/hardware accelerators
 OBJS-$(CONFIG_A64MULTI_ENCODER)        += a64multienc.o elbg.o
@@ -201,6 +202,7 @@ OBJS-$(CONFIG_H264_DECODER)            += h264.o                               \
 OBJS-$(CONFIG_H264_DXVA2_HWACCEL)      += dxva2_h264.o
 OBJS-$(CONFIG_H264_VAAPI_HWACCEL)      += vaapi_h264.o
 OBJS-$(CONFIG_H264_VDA_HWACCEL)        += vda_h264.o
+OBJS-$(CONFIG_H264_XVBA_HWACCEL)       += xvba_h264.o
 OBJS-$(CONFIG_HUFFYUV_DECODER)         += huffyuv.o
 OBJS-$(CONFIG_HUFFYUV_ENCODER)         += huffyuv.o
 OBJS-$(CONFIG_IDCIN_DECODER)           += idcinvideo.o
@@ -284,6 +286,7 @@ OBJS-$(CONFIG_MPEG1VIDEO_ENCODER)      += mpeg12enc.o mpegvideo_enc.o \
                                           mpegvideo.o error_resilience.o
 OBJS-$(CONFIG_MPEG2_DXVA2_HWACCEL)     += dxva2_mpeg2.o
 OBJS-$(CONFIG_MPEG2_VAAPI_HWACCEL)     += vaapi_mpeg2.o
+OBJS-$(CONFIG_MPEG2_XVBA_HWACCEL)      += xvba_mpeg2.o
 OBJS-$(CONFIG_MPEG2VIDEO_DECODER)      += mpeg12.o mpeg12data.o \
                                           mpegvideo.o error_resilience.o
 OBJS-$(CONFIG_MPEG2VIDEO_ENCODER)      += mpeg12enc.o mpegvideo_enc.o \
@@ -431,6 +434,7 @@ OBJS-$(CONFIG_VC1_DECODER)             += vc1dec.o vc1.o vc1data.o vc1dsp.o \
                                           intrax8.o intrax8dsp.o
 OBJS-$(CONFIG_VC1_DXVA2_HWACCEL)       += dxva2_vc1.o
 OBJS-$(CONFIG_VC1_VAAPI_HWACCEL)       += vaapi_vc1.o
+OBJS-$(CONFIG_VC1_XVBA_HWACCEL)        += xvba_vc1.o
 OBJS-$(CONFIG_VCR1_DECODER)            += vcr1.o
 OBJS-$(CONFIG_VCR1_ENCODER)            += vcr1.o
 OBJS-$(CONFIG_VMDAUDIO_DECODER)        += vmdav.o
@@ -732,6 +736,7 @@ SKIPHEADERS-$(CONFIG_LIBDIRAC)         += libdirac.h
 SKIPHEADERS-$(CONFIG_LIBSCHROEDINGER)  += libschroedinger.h
 SKIPHEADERS-$(CONFIG_VAAPI)            += vaapi_internal.h
 SKIPHEADERS-$(CONFIG_VDA)              += vda_internal.h
+SKIPHEADERS-$(CONFIG_XVBA)             += xvba_internal.h
 SKIPHEADERS-$(CONFIG_VDPAU)            += vdpau.h
 SKIPHEADERS-$(CONFIG_XVMC)             += xvmc.h
 SKIPHEADERS-$(HAVE_W32THREADS)         += w32pthreads.h
