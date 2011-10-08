@@ -20,16 +20,5 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_XVMC_INTERNAL_H
-#define AVCODEC_XVMC_INTERNAL_H
-
-#include "avcodec.h"
-#include "mpegvideo.h"
-
-void ff_xvmc_init_block(MpegEncContext *s);
-void ff_xvmc_pack_pblocks(MpegEncContext *s, int cbp);
-int  ff_xvmc_field_start(MpegEncContext*s, AVCodecContext *avctx);
-void ff_xvmc_field_end(MpegEncContext *s);
-void ff_xvmc_decode_mb(MpegEncContext *s);
-
-#endif /* AVCODEC_XVMC_INTERNAL_H */
+int ff_xvba_translate_profile(int profile);
+void ff_xvba_add_slice_data(struct xvba_render_state *render, const uint8_t *buffer, uint32_t size);
