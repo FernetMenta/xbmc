@@ -20,16 +20,47 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_XVMC_INTERNAL_H
-#define AVCODEC_XVMC_INTERNAL_H
 
+/**
+ * \addtogroup XVBA_Decoding
+ *
+ * @{
+ */
+
+#include <stdint.h>
+#include "xvba.h"
+#include "xvba_internal.h"
 #include "avcodec.h"
-#include "mpegvideo.h"
 
-void ff_xvmc_init_block(MpegEncContext *s);
-void ff_xvmc_pack_pblocks(MpegEncContext *s, int cbp);
-int  ff_xvmc_field_start(MpegEncContext*s, AVCodecContext *avctx);
-void ff_xvmc_field_end(MpegEncContext *s);
-void ff_xvmc_decode_mb(MpegEncContext *s);
+int ff_xvba_translate_profile(int profile) {
 
-#endif /* AVCODEC_XVMC_INTERNAL_H */
+  if (profile == 66)
+    return 1;
+  else if (profile == 77)
+    return 2;
+  else if (profile == 100)
+    return 3;
+  else if (profile == 0)
+    return 4;
+  else if (profile == 1)
+    return 5;
+  else if (profile == 3)
+    return 6;
+  else
+    return -1;
+}
+
+void ff_xvba_add_slice_data(struct xvba_render_state *render, const uint8_t *buffer, uint32_t size) {
+
+  render->buffers = av_fast_realloc(
+         render->buffers,
+         &render->buffers_alllocated,
+         sizeof(struct xvba_bitstream_buffers)*(render->num_slices + 1)
+  );
+
+  render->buffers[render->num_slices].buffer = buffer;
+  render->buffers[render->num_slices].size = size;
+
+  render->num_slices++;
+}
+
