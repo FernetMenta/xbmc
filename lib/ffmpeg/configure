@@ -111,6 +111,7 @@ Configuration options:
   --disable-vaapi          disable VAAPI code
   --disable-vdpau          disable VDPAU code
   --disable-dxva2          disable DXVA2 code
+  --disable-xvba           disable XVBA code
   --enable-runtime-cpudetect detect cpu capabilities at runtime (bigger binary)
   --enable-hardcoded-tables use hardcoded tables instead of runtime generation
   --enable-memalign-hack   emulate memalign, interferes with memory debuggers
@@ -932,6 +933,7 @@ CONFIG_LIST="
     swscale_alpha
     vaapi
     vdpau
+    xvba
     version3
     x11grab
     zlib
@@ -1240,6 +1242,7 @@ h264_decoder_select="golomb h264dsp h264pred"
 h264_dxva2_hwaccel_deps="dxva2api_h"
 h264_dxva2_hwaccel_select="dxva2 h264_decoder"
 h264_vaapi_hwaccel_select="vaapi"
+h264_xvba_hwaccel_select="xvba"
 h264_vdpau_decoder_select="vdpau h264_decoder"
 imc_decoder_select="fft mdct"
 jpegls_decoder_select="golomb"
@@ -1263,6 +1266,7 @@ mpeg2_dxva2_hwaccel_deps="dxva2api_h"
 mpeg2_dxva2_hwaccel_select="dxva2 mpeg2video_decoder"
 mpeg2_vaapi_hwaccel_select="vaapi mpeg2video_decoder"
 mpeg4_vaapi_hwaccel_select="vaapi mpeg4_decoder"
+mpeg2_xvba_hwaccel_select="xvba mpeg2video_decoder"
 mpeg4_vdpau_decoder_deps="vdpau_vdpau_h vdpau_vdpau_x11_h vdpau_mpeg4_support"
 mpeg4_vdpau_decoder_select="vdpau mpeg4_decoder"
 mpeg_xvmc_decoder_deps="X11_extensions_XvMClib_h"
@@ -1306,6 +1310,7 @@ vc1_decoder_select="h263_decoder"
 vc1_dxva2_hwaccel_deps="dxva2api_h DXVA_PictureParameters_wDecodedPictureIndex"
 vc1_dxva2_hwaccel_select="dxva2 vc1_decoder"
 vc1_vaapi_hwaccel_select="vaapi vc1_decoder"
+vc1_xvba_hwaccel_select="xvba vc1_decoder"
 vc1_vdpau_decoder_select="vdpau vc1_decoder"
 vorbis_decoder_select="mdct"
 vorbis_encoder_select="mdct"
@@ -1327,12 +1332,14 @@ wmv3_decoder_select="vc1_decoder"
 wmv3_dxva2_hwaccel_select="vc1_dxva2_hwaccel"
 wmv3_vaapi_hwaccel_select="vc1_vaapi_hwaccel"
 wmv3_vdpau_decoder_select="vc1_vdpau_decoder"
+wmv3_xvba_hwaccel_select="vc1_xvba_hwaccel"
 zlib_decoder_select="zlib"
 zlib_encoder_select="zlib"
 zmbv_decoder_select="zlib"
 zmbv_encoder_select="zlib"
 
 vaapi_deps="va_va_h"
+xvba_deps="amd_amdxvba_h"
 vdpau_deps="vdpau_vdpau_h vdpau_vdpau_x11_h"
 
 # parsers
@@ -2762,6 +2769,7 @@ check_header sys/select.h
 check_header termios.h
 check_header vdpau/vdpau.h
 check_header vdpau/vdpau_x11.h
+check_header amd/amdxvba.h
 check_cpp_condition vdpau/vdpau.h "defined(VDP_DECODER_PROFILE_MPEG4_PART2_SP)" && enable vdpau_mpeg4_support
 
 check_header X11/extensions/XvMClib.h
