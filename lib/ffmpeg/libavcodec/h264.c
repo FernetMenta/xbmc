@@ -81,6 +81,9 @@ static const enum AVPixelFormat h264_hwaccel_pixfmt_list_420[] = {
 #if CONFIG_H264_VDPAU_HWACCEL
     AV_PIX_FMT_VDPAU,
 #endif
+#if CONFIG_H264_XVBA_HWACCEL
+    AV_PIX_FMT_XVBA_VLD,
+#endif
     AV_PIX_FMT_YUV420P,
     AV_PIX_FMT_NONE
 };
