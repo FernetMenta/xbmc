@@ -1,0 +1,849 @@
+/*
+ *      Copyright (C) 2005-2011 Team XBMC
+ *      http://www.xbmc.org
+ *
+ *  This Program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *
+ *  This Program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with XBMC; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  http://www.gnu.org/copyleft/gpl.html
+ *
+ */
+
+#include "system.h"
+#ifdef HAVE_LIBXVBA
+#include <dlfcn.h>
+#include "XVBA.h"
+#include "windowing/WindowingFactory.h"
+#include "guilib/GraphicContext.h"
+
+using namespace XVBA;
+
+// XVBA interface
+
+#define XVBA_LIBRARY    "libXvBAW.so.1"
+
+typedef Bool        (*XVBAQueryExtensionProc)       (Display *dpy, int *vers);
+typedef Status      (*XVBACreateContextProc)        (void *input, void *output);
+typedef Status      (*XVBADestroyContextProc)       (void *context);
+typedef Bool        (*XVBAGetSessionInfoProc)       (void *input, void *output);
+typedef Status      (*XVBACreateSurfaceProc)        (void *input, void *output);
+typedef Status      (*XVBACreateGLSharedSurfaceProc)(void *input, void *output);
+typedef Status      (*XVBADestroySurfaceProc)       (void *surface);
+typedef Status      (*XVBACreateDecodeBuffersProc)  (void *input, void *output);
+typedef Status      (*XVBADestroyDecodeBuffersProc) (void *input);
+typedef Status      (*XVBAGetCapDecodeProc)         (void *input, void *output);
+typedef Status      (*XVBACreateDecodeProc)         (void *input, void *output);
+typedef Status      (*XVBADestroyDecodeProc)        (void *session);
+typedef Status      (*XVBAStartDecodePictureProc)   (void *input);
+typedef Status      (*XVBADecodePictureProc)        (void *input);
+typedef Status      (*XVBAEndDecodePictureProc)     (void *input);
+typedef Status      (*XVBASyncSurfaceProc)          (void *input, void *output);
+typedef Status      (*XVBAGetSurfaceProc)           (void *input);
+typedef Status      (*XVBATransferSurfaceProc)      (void *input);
+
+static struct
+{
+  XVBAQueryExtensionProc              QueryExtension;
+  XVBACreateContextProc               CreateContext;
+  XVBADestroyContextProc              DestroyContext;
+  XVBAGetSessionInfoProc              GetSessionInfo;
+  XVBACreateSurfaceProc               CreateSurface;
+  XVBACreateGLSharedSurfaceProc       CreateGLSharedSurface;
+  XVBADestroySurfaceProc              DestroySurface;
+  XVBACreateDecodeBuffersProc         CreateDecodeBuffers;
+  XVBADestroyDecodeBuffersProc        DestroyDecodeBuffers;
+  XVBAGetCapDecodeProc                GetCapDecode;
+  XVBACreateDecodeProc                CreateDecode;
+  XVBADestroyDecodeProc               DestroyDecode;
+  XVBAStartDecodePictureProc          StartDecodePicture;
+  XVBADecodePictureProc               DecodePicture;
+  XVBAEndDecodePictureProc            EndDecodePicture;
+  XVBASyncSurfaceProc                 SyncSurface;
+  XVBAGetSurfaceProc                  GetSurface;
+  XVBATransferSurfaceProc             TransferSurface;
+}g_XVBA_vtable;
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+CXVBAContext *CXVBAContext::m_context = 0;
+CCriticalSection CXVBAContext::m_section;
+
+CXVBAContext::CXVBAContext()
+{
+  m_context = 0;
+  m_dlHandle = 0;
+  m_xvbaContext = 0;
+  m_refCount = 0;
+  m_ctxId = 0;
+  m_displayState = XVBA_RESET;
+}
+
+void CXVBAContext::Release()
+{
+  CSingleLock lock(m_section);
+
+  m_refCount--;
+  if (m_refCount <= 0)
+  {
+    Close();
+    delete this;
+    m_context = 0;
+  }
+}
+
+void CXVBAContext::Close()
+{
+  DestroyContext();
+  if (m_dlHandle)
+  {
+    dlclose(m_dlHandle);
+    m_dlHandle = 0;
+  }
+  g_Windowing.Unregister(m_context);
+}
+
+bool CXVBAContext::EnsureContext(CXVBAContext **ctx, int *ctxId)
+{
+  CSingleLock lock(m_section);
+
+  if (!m_context)
+  {
+    m_context = new CXVBAContext();
+    g_Windowing.Register(m_context);
+  }
+
+  EDisplayState state;
+  { CSharedLock l(*m_context);
+    state = m_context->m_displayState;
+  }
+  if (state == XVBA_LOST)
+  {
+    CLog::Log(LOGNOTICE,"XVBA::EnsureContextCVDPAU::Check waiting for display reset event");
+    if (!m_context->m_displayEvent.WaitMSec(2000))
+    {
+      CLog::Log(LOGERROR, "XVBA::EnsureContext - device didn't reset in reasonable time");
+      return false;
+    }
+    { CSharedLock l(*m_context);
+      state = m_context->m_displayState;
+    }
+  }
+  if (state == XVBA_RESET)
+  {
+    CSingleLock gLock(g_graphicsContext);
+    CExclusiveLock l(*m_context);
+    if (!m_context->LoadSymbols() || !m_context->CreateContext())
+      return false;
+    m_context->m_displayState = XVBA_OPEN;
+  }
+
+  if (*ctx == 0)
+    m_context->m_refCount++;
+
+  *ctx = m_context;
+  *ctxId = m_context->m_ctxId;
+  return true;
+}
+
+bool CXVBAContext::LoadSymbols()
+{
+  if (!m_dlHandle)
+  {
+    m_dlHandle  = dlopen(XVBA_LIBRARY, RTLD_LAZY);
+    if (!m_dlHandle)
+    {
+      const char* error = dlerror();
+      if (!error)
+        error = "dlerror() returned NULL";
+
+      CLog::Log(LOGERROR,"XVBA::LoadSymbols: Unable to get handle to lib: %s", error);
+      return false;
+    }
+  }
+  else
+    return true;
+
+#define INIT_PROC(PREFIX, PROC) do {                            \
+        g_##PREFIX##_vtable.PROC = (PREFIX##PROC##Proc)         \
+            dlsym(m_dlHandle, #PREFIX #PROC);                   \
+    } while (0)
+
+#define INIT_PROC_CHECK(PREFIX, PROC) do {                      \
+        dlerror();                                              \
+        INIT_PROC(PREFIX, PROC);                                \
+        if (dlerror()) {                                        \
+            dlclose(m_dlHandle);                                \
+            m_dlHandle = NULL;                                  \
+            return false;                                       \
+        }                                                       \
+    } while (0)
+
+#define XVBA_INIT_PROC(PROC) INIT_PROC_CHECK(XVBA, PROC)
+
+  XVBA_INIT_PROC(QueryExtension);
+  XVBA_INIT_PROC(CreateContext);
+  XVBA_INIT_PROC(DestroyContext);
+  XVBA_INIT_PROC(GetSessionInfo);
+  XVBA_INIT_PROC(CreateSurface);
+  XVBA_INIT_PROC(CreateGLSharedSurface);
+  XVBA_INIT_PROC(DestroySurface);
+  XVBA_INIT_PROC(CreateDecodeBuffers);
+  XVBA_INIT_PROC(DestroyDecodeBuffers);
+  XVBA_INIT_PROC(GetCapDecode);
+  XVBA_INIT_PROC(CreateDecode);
+  XVBA_INIT_PROC(DestroyDecode);
+  XVBA_INIT_PROC(StartDecodePicture);
+  XVBA_INIT_PROC(DecodePicture);
+  XVBA_INIT_PROC(EndDecodePicture);
+  XVBA_INIT_PROC(SyncSurface);
+  XVBA_INIT_PROC(GetSurface);
+  XVBA_INIT_PROC(TransferSurface);
+
+#undef XVBA_INIT_PROC
+#undef INIT_PROC
+
+  return true;
+}
+
+bool CXVBAContext::CreateContext()
+{
+  if (m_xvbaContext)
+    return true;
+
+  Display *disp;
+  Drawable window;
+  { CSingleLock lock(g_graphicsContext);
+    disp = g_Windowing.GetDisplay();
+    window = g_Windowing.GetWindow();
+  }
+
+  int version;
+  if (!g_XVBA_vtable.QueryExtension(disp, &version))
+    return false;
+  CLog::Log(LOGNOTICE,"XVBA::CreateContext - opening xvba version: %i", version);
+
+  // create XVBA Context
+  XVBA_Create_Context_Input contextInput;
+  XVBA_Create_Context_Output contextOutput;
+  contextInput.size = sizeof(contextInput);
+  contextInput.display = disp;
+  contextInput.draw = window;
+  contextOutput.size = sizeof(contextOutput);
+  if(Success != g_XVBA_vtable.CreateContext(&contextInput, &contextOutput))
+  {
+    CLog::Log(LOGERROR,"XVBA::CreateContext - failed to create context");
+    return false;
+  }
+  m_xvbaContext = contextOutput.context;
+
+  return true;
+}
+
+void CXVBAContext::DestroyContext()
+{
+  if (!m_xvbaContext)
+    return;
+
+  g_XVBA_vtable.DestroyContext(m_xvbaContext);
+  m_xvbaContext = 0;
+  m_ctxId++;
+}
+
+void CXVBAContext::OnLostDevice()
+{
+  CLog::Log(LOGNOTICE,"CXVBAContext::OnLostDevice event");
+
+  CExclusiveLock lock(*this);
+  DestroyContext();
+  m_displayState = XVBA_LOST;
+  m_displayEvent.Reset();
+}
+
+void CXVBAContext::OnResetDevice()
+{
+  CLog::Log(LOGNOTICE,"CXVBAContext::OnResetDevice event");
+
+  CExclusiveLock lock(*this);
+  if (m_displayState == XVBA_LOST)
+  {
+    m_displayState = XVBA_RESET;
+    m_displayEvent.Set();
+  }
+}
+
+bool CXVBAContext::IsValid(int ctxId)
+{
+  CSharedLock lock(*this);
+  if (m_displayState == XVBA_OPEN && ctxId == m_ctxId)
+    return true;
+  else
+    return false;
+}
+
+void *CXVBAContext::GetContext()
+{
+  return m_xvbaContext;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+CDecoder::CDecoder()
+{
+  m_context = 0;
+}
+
+CDecoder::~CDecoder()
+{
+  Close();
+}
+
+
+bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int surfaces)
+{
+  if(avctx->width  == 0
+  || avctx->height == 0)
+  {
+    CLog::Log(LOGWARNING,"(XVBA) no width/height available, can't init");
+    return false;
+  }
+
+  if (!m_dllAvUtil.Load())
+    return false;
+
+  if (!CXVBAContext::EnsureContext(&m_context, &m_ctxId))
+    return false;
+
+  CSharedLock lock(*m_context);
+
+  // xvba get session info
+  XVBA_GetSessionInfo_Input sessionInput;
+  XVBA_GetSessionInfo_Output sessionOutput;
+  sessionInput.size = sizeof(sessionInput);
+  sessionInput.context = m_context->GetContext();
+  sessionOutput.size = sizeof(sessionOutput);
+  if (Success != g_XVBA_vtable.GetSessionInfo(&sessionInput, &sessionOutput))
+  {
+    CLog::Log(LOGERROR,"(XVBA) can't get session info");
+    return false;
+  }
+  if (sessionOutput.getcapdecode_output_size == 0)
+  {
+    CLog::Log(LOGERROR,"(XVBA) session decode not supported");
+    return false;
+  }
+  // get decoder capabilities
+  XVBA_GetCapDecode_Input capInput;
+  XVBA_GetCapDecode_Output capOutput;
+  capInput.size = sizeof(capInput);
+  capInput.context = m_context->GetContext();
+  capOutput.size = sessionOutput.getcapdecode_output_size;
+  if (Success != g_XVBA_vtable.GetCapDecode(&capInput, &capOutput))
+  {
+    CLog::Log(LOGERROR,"(XVBA) can't get decode capabilities");
+    return false;
+  }
+  int bestMatch = -1;
+  XVBA_DECODE_FLAGS flags = XVBA_NOFLAG;
+  for (int i = 0; i < capOutput.num_of_decodecaps; ++i)
+  {
+    if ((avctx->codec_id == CODEC_ID_H264 && capOutput.decode_caps_list[i].capability_id == XVBA_H264)
+        || (avctx->codec_id == CODEC_ID_VC1 && capOutput.decode_caps_list[i].capability_id == XVBA_VC1)
+        || (avctx->codec_id == CODEC_ID_MPEG2VIDEO && capOutput.decode_caps_list[i].capability_id == XVBA_MPEG2_VLD))
+    {
+      if (capOutput.decode_caps_list[i].flags > flags)
+      {
+        flags = capOutput.decode_caps_list[i].flags;
+        bestMatch = i;
+      }
+    }
+  }
+  if (bestMatch == -1)
+  {
+    CLog::Log(LOGERROR,"(XVBA) no suitable decoder capability found");
+    return false;
+  }
+  else
+    CLog::Log(LOGNOTICE,"(XVBA) using decoder capability id: %i flags: %i",
+                          capOutput.decode_caps_list[bestMatch].capability_id,
+                          capOutput.decode_caps_list[bestMatch].flags);
+
+  CLog::Log(LOGNOTICE,"(XVBA) using surface type: %i",
+                          capOutput.decode_caps_list[bestMatch].surface_type);
+
+  m_decoderCap = capOutput.decode_caps_list[bestMatch];
+
+  // set some varables
+  m_xvbaSession = 0;
+  m_decoderContext.picture_descriptor_buffer = 0;
+  m_decoderContext.iq_matrix_buffer = 0;
+  m_decoderContext.data_buffer = 0;
+  m_decoderContext.data_control = 0;
+  m_decoderContext.data_control_size = 0;
+  picAge.b_age = picAge.ip_age[0] = picAge.ip_age[1] = 256*256*256*64;
+
+  // setup ffmpeg
+  avctx->hwaccel_context = &m_decoderContext;
+  avctx->thread_count    = 1;
+  avctx->get_buffer      = CDecoder::FFGetBuffer;
+  avctx->release_buffer  = CDecoder::FFReleaseBuffer;
+  avctx->draw_horiz_band = CDecoder::FFDrawSlice;
+  avctx->slice_flags=SLICE_FLAG_CODED_ORDER|SLICE_FLAG_ALLOW_FIELD;
+  return true;
+}
+
+void CDecoder::Close()
+{
+  if (!m_context)
+    return;
+
+  CSharedLock lock(*m_context);
+  DestroySession();
+}
+
+int CDecoder::Check(AVCodecContext* avctx)
+{
+  if (m_context && m_context->IsValid(m_ctxId))
+    return 0;
+
+  CXVBAContext::EnsureContext(&m_context, &m_ctxId);
+
+  CExclusiveLock lock(*m_context);
+  m_xvbaSession = 0;
+  DestroySession();
+
+  return VC_FLUSHED;
+}
+
+bool CDecoder::CreateSession(AVCodecContext* avctx)
+{
+  XVBA_Create_Decode_Session_Input sessionInput;
+  XVBA_Create_Decode_Session_Output sessionOutput;
+
+  sessionInput.size = sizeof(sessionInput);
+  sessionInput.width = avctx->width;
+  sessionInput.height = avctx->height;
+  sessionInput.context = m_context->GetContext();
+  sessionInput.decode_cap = &m_decoderCap;
+  sessionOutput.size = sizeof(sessionOutput);
+
+  if (Success != g_XVBA_vtable.CreateDecode(&sessionInput, &sessionOutput))
+  {
+    CLog::Log(LOGERROR,"(XVBA) failed to create decoder session");
+    return false;
+  }
+  m_xvbaSession = sessionOutput.session;
+
+
+  // create decode buffers
+  XVBA_Create_DecodeBuff_Input bufferInput;
+  XVBA_Create_DecodeBuff_Output bufferOutput;
+
+  bufferInput.size = sizeof(bufferInput);
+  bufferInput.session = m_xvbaSession;
+  bufferInput.buffer_type = XVBA_PICTURE_DESCRIPTION_BUFFER;
+  bufferInput.num_of_buffers = 1;
+  bufferOutput.size = sizeof(bufferOutput);
+  if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
+      || bufferOutput.num_of_buffers_in_list != 1)
+  {
+    CLog::Log(LOGERROR,"(XVBA) failed to create picture buffer");
+    return false;
+  }
+  m_decoderContext.picture_descriptor_buffer = bufferOutput.buffer_list;
+//  m_decoderContext.picture_descriptor_buffer->size = sizeof(XVBABufferDescriptor);
+
+  // data buffer
+  bufferInput.buffer_type = XVBA_DATA_BUFFER;
+  if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
+      || bufferOutput.num_of_buffers_in_list != 1)
+  {
+    CLog::Log(LOGERROR,"(XVBA) failed to create data buffer");
+    return false;
+  }
+  m_decoderContext.data_buffer = bufferOutput.buffer_list;
+//  m_decoderContext.data_buffer->size = sizeof(XVBABufferDescriptor);
+
+  // QO Buffer
+  bufferInput.buffer_type = XVBA_QM_BUFFER;
+  if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
+      || bufferOutput.num_of_buffers_in_list != 1)
+  {
+    CLog::Log(LOGERROR,"(XVBA) failed to create qm buffer");
+    return false;
+  }
+  m_decoderContext.iq_matrix_buffer = bufferOutput.buffer_list;
+//  m_decoderContext.iq_matrix_buffer->size = sizeof(XVBABufferDescriptor);
+
+  return true;
+}
+
+void CDecoder::DestroySession()
+{
+  XVBA_Destroy_Decode_Buffers_Input bufInput;
+  XVBABufferDescriptor *bufList[3];
+  bufInput.size = sizeof(bufInput);
+  bufInput.num_of_buffers_in_list = 1;
+  if (m_xvbaSession)
+  {
+    for (int i=0; i<m_dataControlBuffers.size() ; ++i)
+    {
+      bufList[0] = m_dataControlBuffers[i];
+      g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
+    }
+
+    bufInput.num_of_buffers_in_list = 0;
+    if (m_decoderContext.picture_descriptor_buffer)
+      bufList[bufInput.num_of_buffers_in_list++] = m_decoderContext.picture_descriptor_buffer;
+    if (m_decoderContext.iq_matrix_buffer)
+      bufList[bufInput.num_of_buffers_in_list++] = m_decoderContext.iq_matrix_buffer;
+    if (m_decoderContext.data_buffer)
+      bufList[bufInput.num_of_buffers_in_list++] = m_decoderContext.data_buffer;
+    g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
+  }
+
+  if (m_decoderContext.data_control)
+    m_dllAvUtil.av_free(m_decoderContext.data_control);
+
+  m_dataControlBuffers.clear();
+  m_decoderContext.picture_descriptor_buffer = 0;
+  m_decoderContext.iq_matrix_buffer = 0;
+  m_decoderContext.data_buffer = 0;
+  m_decoderContext.data_control = 0;
+  m_decoderContext.data_control_size = 0;
+
+  while (!m_videoSurfaces.empty())
+  {
+    xvba_render_state *render = m_videoSurfaces.back();
+    m_videoSurfaces.pop_back();
+    if (m_xvbaSession)
+      g_XVBA_vtable.DestroySurface(render->surface);
+    free(render);
+  }
+
+  if (m_xvbaSession)
+    g_XVBA_vtable.DestroyDecode(m_xvbaSession);
+  m_xvbaSession = 0;
+}
+
+bool CDecoder::EnsureDataControlBuffers(int num)
+{
+  if (m_dataControlBuffers.size() >= num)
+    return true;
+
+  XVBA_Create_DecodeBuff_Input bufferInput;
+  XVBA_Create_DecodeBuff_Output bufferOutput;
+  bufferInput.size = sizeof(bufferInput);
+  bufferInput.session = m_xvbaSession;
+  bufferInput.buffer_type = XVBA_DATA_CTRL_BUFFER;
+  bufferInput.num_of_buffers = 1;
+  bufferOutput.size = sizeof(bufferOutput);
+
+  if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
+      || bufferOutput.num_of_buffers_in_list != 1)
+  {
+    CLog::Log(LOGERROR,"(XVBA) failed to create data control buffer");
+    return false;
+  }
+  m_dataControlBuffers.push_back(bufferOutput.buffer_list);
+
+  return true;
+}
+
+void CDecoder::FFReleaseBuffer(AVCodecContext *avctx, AVFrame *pic)
+{
+  CDVDVideoCodecFFmpeg* ctx   = (CDVDVideoCodecFFmpeg*)avctx->opaque;
+  CDecoder*             xvba  = (CDecoder*)ctx->GetHardware();
+  unsigned int i;
+
+  CSharedLock lock(*xvba->m_context);
+
+  xvba_render_state * render = NULL;
+  render = (xvba_render_state*)pic->data[3];
+  if(!render)
+  {
+    CLog::Log(LOGERROR, "XVBA::FFReleaseBuffer - invalid context handle provided");
+    return;
+  }
+
+  for(i=0; i<4; i++)
+    pic->data[i]= NULL;
+
+  // find render state in queue
+  bool found(false);
+  for(i = 0; i < xvba->m_videoSurfaces.size(); ++i)
+  {
+    if(xvba->m_videoSurfaces[i] == render)
+    {
+      found = true;
+      break;
+    }
+  }
+  if (!found)
+  {
+    CLog::Log(LOGDEBUG, "XVBA::FFReleaseBuffer - ignoring invalid buffer");
+    return;
+  }
+
+  render->state &= ~FF_XVBA_STATE_USED_FOR_REFERENCE;
+}
+
+void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
+                             const AVFrame *src, int offset[4],
+                             int y, int type, int height)
+{
+  CDVDVideoCodecFFmpeg* ctx   = (CDVDVideoCodecFFmpeg*)avctx->opaque;
+  CDecoder*             xvba  = (CDecoder*)ctx->GetHardware();
+
+  CSharedLock lock(*xvba->m_context);
+
+  if (!xvba->m_context->IsValid(xvba->m_ctxId))
+    return;
+
+  if(src->linesize[0] || src->linesize[1] || src->linesize[2]
+    || offset[0] || offset[1] || offset[2])
+  {
+    CLog::Log(LOGERROR, "XVBA::FFDrawSlice - invalid linesizes or offsets provided");
+    return;
+  }
+
+  xvba_render_state * render;
+
+  render = (xvba_render_state*)src->data[0];
+  if(!render)
+  {
+    CLog::Log(LOGERROR, "XVBA::FFDrawSlice - invalid context handle provided");
+    return;
+  }
+
+  // ffmpeg vc-1 decoder does not flush, make sure the data buffer is still valid
+  bool found(false);
+  for(unsigned int i = 0; i < xvba->m_videoSurfaces.size(); ++i)
+  {
+    if(xvba->m_videoSurfaces[i] == render)
+    {
+      found = true;
+      break;
+    }
+  }
+  if (!found)
+  {
+    CLog::Log(LOGWARNING, "XVBA::FFDrawSlice - ignoring invalid buffer");
+    return;
+  }
+
+  // decoding
+  XVBA_Decode_Picture_Start_Input startInput;
+  startInput.size = sizeof(startInput);
+  startInput.session = xvba->m_xvbaSession;
+  startInput.target_surface = render->surface;
+  if (Success != g_XVBA_vtable.StartDecodePicture(&startInput))
+  {
+    CLog::Log(LOGERROR,"(XVBA) failed to start decoding");
+    return;
+  }
+  XVBABufferDescriptor *list[2];
+  list[0] = xvba->m_decoderContext.picture_descriptor_buffer;
+  list[1] = xvba->m_decoderContext.iq_matrix_buffer;
+  XVBA_Decode_Picture_Input picInput;
+  picInput.size = sizeof(picInput);
+  picInput.session = xvba->m_xvbaSession;
+  picInput.num_of_buffers_in_list = 2;
+  picInput.buffer_list = list;
+
+  XVBAPictureDescriptor *pic_descriptor = (XVBAPictureDescriptor *)list[0]->bufferXVBA;
+
+  if (Success != g_XVBA_vtable.DecodePicture(&picInput))
+  {
+    CLog::Log(LOGERROR,"(XVBA) failed to decode picture 1");
+    return;
+  }
+
+  if (!xvba->EnsureDataControlBuffers(xvba->m_decoderContext.num_slices))
+    return;
+
+  int bufSize = xvba->m_decoderContext.data_buffer->data_size_in_buffer;
+  int padding = bufSize % 128;
+  if (padding)
+  {
+    padding = 128 - padding;
+    xvba->m_decoderContext.data_buffer->data_size_in_buffer += padding;
+    memset((char*)xvba->m_decoderContext.data_buffer->bufferXVBA+bufSize,0,padding);
+  }
+
+  XVBADataCtrl *dataControl;
+  int location = 0;
+  for (int i = 0; i < xvba->m_decoderContext.num_slices; ++i)
+  {
+    list[0] = xvba->m_decoderContext.data_buffer;
+    list[0]->data_offset = 0;
+    dataControl = (XVBADataCtrl*)xvba->m_dataControlBuffers[i]->bufferXVBA;
+    dataControl->SliceDataLocation = location;
+    dataControl->SliceBytesInBuffer = xvba->m_decoderContext.data_control[i];
+    dataControl->SliceBitsInBuffer = dataControl->SliceBytesInBuffer * 8;
+    list[1] = xvba->m_dataControlBuffers[i];
+    list[1]->data_size_in_buffer = sizeof(*dataControl);
+    if (Success != g_XVBA_vtable.DecodePicture(&picInput))
+    {
+      CLog::Log(LOGERROR,"(XVBA) failed to decode picture 2");
+      return;
+    }
+    location += xvba->m_decoderContext.data_control[i];
+  }
+  XVBA_Decode_Picture_End_Input endInput;
+  endInput.size = sizeof(endInput);
+  endInput.session = xvba->m_xvbaSession;
+  if (Success != g_XVBA_vtable.EndDecodePicture(&endInput))
+  {
+    CLog::Log(LOGERROR,"(XVBA) failed to decode picture 3");
+    return;
+  }
+
+  // decode sync and error
+  XVBA_Surface_Sync_Input syncInput;
+  XVBA_Surface_Sync_Output syncOutput;
+  syncInput.size = sizeof(syncInput);
+  syncInput.session = xvba->m_xvbaSession;
+  syncInput.surface = render->surface;
+  syncInput.query_status = XVBA_GET_SURFACE_STATUS;
+  syncOutput.size = sizeof(syncOutput);
+  while (1)
+  {
+    if (Success != g_XVBA_vtable.SyncSurface(&syncInput, &syncOutput))
+    {
+      CLog::Log(LOGERROR,"(XVBA) failed sync 1");
+      return;
+    }
+    if (!(syncOutput.status_flags & XVBA_STILL_PENDING))
+      break;
+    usleep(100);
+  }
+}
+
+int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
+{
+  CDVDVideoCodecFFmpeg* ctx   = (CDVDVideoCodecFFmpeg*)avctx->opaque;
+  CDecoder*             xvba  = (CDecoder*)ctx->GetHardware();
+  struct pictureAge*    pA    = &xvba->picAge;
+
+  CSharedLock lock(*xvba->m_context);
+
+  if (!xvba->m_context->IsValid(xvba->m_ctxId))
+    return -1;
+
+  if (xvba->m_xvbaSession == 0)
+  {
+    if (!xvba->CreateSession(avctx))
+      return -1;
+  }
+
+  xvba_render_state * render = NULL;
+  // find unused surface
+  for(unsigned int i = 0; i < xvba->m_videoSurfaces.size(); ++i)
+  {
+    if(!(xvba->m_videoSurfaces[i]->state & (FF_XVBA_STATE_USED_FOR_REFERENCE | FF_XVBA_STATE_USED_FOR_RENDER)))
+    {
+      render = xvba->m_videoSurfaces[i];
+      render->state = 0;
+      break;
+    }
+  }
+
+  // create a new surface
+  if (render == NULL)
+  {
+    render = (xvba_render_state*)calloc(sizeof(xvba_render_state), 1);
+    if (render == NULL)
+    {
+      CLog::Log(LOGERROR, "XVBA::FFGetBuffer - calloc failed");
+      return -1;
+    }
+    XVBA_Create_Surface_Input surfaceInput;
+    XVBA_Create_Surface_Output surfaceOutput;
+    surfaceInput.size = sizeof(surfaceInput);
+    surfaceInput.surface_type = xvba->m_decoderCap.surface_type;
+    surfaceInput.width = avctx->width;
+    surfaceInput.height = avctx->height;
+    surfaceInput.session = xvba->m_xvbaSession;
+    surfaceOutput.size = sizeof(surfaceOutput);
+    if (Success != g_XVBA_vtable.CreateSurface(&surfaceInput, &surfaceOutput))
+    {
+      CLog::Log(LOGERROR,"(XVBA) failed to create video surface");
+      return -1;
+    }
+    render->surface = surfaceOutput.surface;
+    xvba->m_videoSurfaces.push_back(render);
+  }
+
+  if (render == NULL)
+    return -1;
+
+  pic->data[0] = (uint8_t*)render;
+  pic->data[1] =
+  pic->data[2] =
+  pic->data[3] = 0;
+
+  pic->linesize[0] =
+  pic->linesize[1] =
+  pic->linesize[2] =
+  pic->linesize[3] = 0;
+
+  if(pic->reference)
+  {
+    pic->age = pA->ip_age[0];
+    pA->ip_age[0]= pA->ip_age[1]+1;
+    pA->ip_age[1]= 1;
+    pA->b_age++;
+  }
+  else
+  {
+    pic->age = pA->b_age;
+    pA->ip_age[0]++;
+    pA->ip_age[1]++;
+    pA->b_age = 1;
+  }
+  pic->type= FF_BUFFER_TYPE_USER;
+
+  render->state |= FF_XVBA_STATE_USED_FOR_REFERENCE;
+  pic->reordered_opaque= avctx->reordered_opaque;
+
+  return 0;
+}
+
+int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
+{
+  return VC_BUFFER;
+}
+
+bool CDecoder::GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture)
+{
+  return true;
+}
+
+void CDecoder::Reset()
+{
+
+}
+
+int CDecoder::SetTexture(XVBA_SURFACE_FLAG field, int flipBufferIdx)
+{
+  return 0;
+}
+
+GLuint CDecoder::GetTexture()
+{
+  return m_glTexture;
+}
+
+#endif
