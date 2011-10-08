@@ -639,11 +639,19 @@ void CXBMCRenderManager::Present()
     }
   }
 
-  Render(true, 0, 255);
-
+#ifdef HAVE_LIBVA
   /* wait for this present to be valid */
   if(g_graphicsContext.IsFullScreenVideo())
     WaitPresentTime(m_presenttime);
+#endif
+
+  Render(true, 0, 255);
+
+#ifndef HAVE_LIBVA
+  /* wait for this present to be valid */
+  if(g_graphicsContext.IsFullScreenVideo())
+    WaitPresentTime(m_presenttime);
+#endif
 
   m_presentevent.Set();
 }
