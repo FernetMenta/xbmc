@@ -113,6 +113,7 @@ Configuration options:
   --enable-vdpau           enable VDPAU code [autodetect]
   --disable-dxva2          disable DXVA2 code
   --disable-vda            disable VDA code
+  --disable-xvba           disable XVBA code
   --enable-runtime-cpudetect detect cpu capabilities at runtime (bigger binary)
   --enable-hardcoded-tables use hardcoded tables instead of runtime generation
   --disable-safe-bitstream-reader
@@ -1084,6 +1085,7 @@ CONFIG_LIST="
     vaapi
     vda
     vdpau
+    xvba
     version3
     x11grab
     zlib
@@ -1423,6 +1425,7 @@ h264_dxva2_hwaccel_select="dxva2 h264_decoder"
 h264_vaapi_hwaccel_select="vaapi h264_decoder"
 h264_vda_hwaccel_deps="VideoDecodeAcceleration_VDADecoder_h pthreads"
 h264_vda_hwaccel_select="vda h264_decoder"
+h264_xvba_hwaccel_select="xvba h264_decoder"
 h264_vdpau_decoder_select="vdpau h264_decoder"
 imc_decoder_select="fft mdct sinewin"
 jpegls_decoder_select="golomb"
@@ -1459,6 +1462,7 @@ mpeg4_crystalhd_decoder_select="crystalhd"
 mpeg4_decoder_select="h263_decoder mpeg4video_parser"
 mpeg4_encoder_select="h263_encoder"
 mpeg4_vaapi_hwaccel_select="vaapi mpeg4_decoder"
+mpeg2_xvba_hwaccel_select="xvba mpeg2video_decoder"
 mpeg4_vdpau_decoder_select="vdpau mpeg4_decoder"
 msmpeg4_crystalhd_decoder_select="crystalhd"
 msmpeg4v1_decoder_select="h263_decoder"
@@ -1501,6 +1505,7 @@ vc1_decoder_select="h263_decoder h264chroma"
 vc1_dxva2_hwaccel_deps="dxva2api_h"
 vc1_dxva2_hwaccel_select="dxva2 vc1_decoder"
 vc1_vaapi_hwaccel_select="vaapi vc1_decoder"
+vc1_xvba_hwaccel_select="xvba vc1_decoder"
 vc1_vdpau_decoder_select="vdpau vc1_decoder"
 vc1image_decoder_select="vc1_decoder"
 vorbis_decoder_select="mdct"
@@ -1525,6 +1530,7 @@ wmv3_dxva2_hwaccel_select="vc1_dxva2_hwaccel"
 wmv3_vaapi_hwaccel_select="vc1_vaapi_hwaccel"
 wmv3_vdpau_decoder_select="vc1_vdpau_decoder"
 wmv3image_decoder_select="wmv3_decoder"
+wmv3_xvba_hwaccel_select="vc1_xvba_hwaccel"
 zlib_decoder_select="zlib"
 zlib_encoder_select="zlib"
 zmbv_decoder_select="zlib"
@@ -1533,6 +1539,7 @@ zmbv_encoder_select="zlib"
 crystalhd_deps="libcrystalhd_libcrystalhd_if_h"
 vaapi_deps="va_va_h"
 vda_deps="VideoDecodeAcceleration_VDADecoder_h pthreads"
+xvba_deps="amd_amdxvba_h"
 vdpau_deps="vdpau_vdpau_h vdpau_vdpau_x11_h"
 
 # parsers
@@ -3062,6 +3069,7 @@ check_header sys/select.h
 check_header termios.h
 check_header vdpau/vdpau.h
 check_header vdpau/vdpau_x11.h
+check_header amd/amdxvba.h
 check_cpp_condition vdpau/vdpau.h "defined(VDP_DECODER_PROFILE_MPEG4_PART2_SP)" && enable vdpau_mpeg4_support
 
 check_header X11/extensions/XvMClib.h
