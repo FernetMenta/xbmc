@@ -60,6 +60,9 @@
        VA_MICRO_VERSION == 0 && VA_SDS_VERSION < 5)))
 
 #endif
+#ifdef HAVE_LIBXVBA
+#include "cores/dvdplayer/DVDCodecs/Video/XVBA.h"
+#endif
 
 #ifdef HAS_GLX
 #include <GL/glx.h>
@@ -568,6 +571,11 @@ void CLinuxRendererGL::Flush()
   m_bValidated = false;
 }
 
+unsigned int CLinuxRendererGL::GetProcessorSize()
+{
+  return m_NumYV12Buffers;
+}
+
 void CLinuxRendererGL::Update(bool bPauseDrawing)
 {
   if (!m_bConfigured) return;
@@ -1030,6 +1038,12 @@ void CLinuxRendererGL::LoadShaders(int field)
     m_textureUpload = &CLinuxRendererGL::UploadVAAPITexture;
     m_textureCreate = &CLinuxRendererGL::CreateVAAPITexture;
     m_textureDelete = &CLinuxRendererGL::DeleteVAAPITexture;
+  }
+  else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA)
+  {
+    m_textureUpload = &CLinuxRendererGL::UploadXVBATexture;
+    m_textureCreate = &CLinuxRendererGL::CreateXVBATexture;
+    m_textureDelete = &CLinuxRendererGL::DeleteXVBATexture;
   }
   else
   {
@@ -2354,6 +2368,169 @@ void CLinuxRendererGL::UploadVAAPITexture(int index)
 #endif
 }
 
+void CLinuxRendererGL::DeleteXVBATexture(int index)
+{
+#ifdef HAVE_LIBXVBA
+  YUVPLANE &plane = m_buffers[index].fields[0][0];
+
+  SAFE_RELEASE(m_buffers[index].xvba);
+
+  if(plane.id && glIsTexture(plane.id))
+    glDeleteTextures(1, &plane.id);
+  plane.id = 0;
+
+#endif
+}
+
+
+bool CLinuxRendererGL::CreateXVBATexture(int index)
+{
+#ifdef HAVE_LIBXVBA
+  YV12Image &im     = m_buffers[index].image;
+  YUVFIELDS &fields = m_buffers[index].fields;
+  YUVPLANE  &plane  = fields[0][0];
+  GLuint    *pbo    = m_buffers[index].pbo;
+
+  DeleteXVBATexture(index);
+
+  memset(&im    , 0, sizeof(im));
+  memset(&fields, 0, sizeof(fields));
+
+  im.height = m_sourceHeight;
+  im.width  = m_sourceWidth;
+  im.cshift_x = 1;
+  im.cshift_y = 1;
+
+  im.stride[0] = im.width;
+  im.stride[1] = 0;
+  im.stride[2] = 0;
+
+  im.plane[0] = NULL;
+  im.plane[1] = NULL;
+  im.plane[2] = NULL;
+
+  // NV12 plane
+  im.planesize[0] = im.stride[0] * im.height;
+  // third plane is not used
+  im.planesize[1] = 0;
+  // third plane is not used
+  im.planesize[2] = 0;
+
+
+  for(int p = 0;p<3;p++)
+  {
+    pbo[p] = NULL;
+  }
+
+  // YUV
+  for (int f = FIELD_FULL; f<=FIELD_BOT ; f++)
+  {
+    int fieldshift = (f==FIELD_FULL) ? 0 : 1;
+    YUVPLANES &planes = fields[f];
+
+    planes[0].texwidth  = im.width;
+    planes[0].texheight = im.height >> fieldshift;
+
+    if (m_renderMethod & RENDER_SW)
+    {
+      planes[1].texwidth  = 0;
+      planes[1].texheight = 0;
+      planes[2].texwidth  = 0;
+      planes[2].texheight = 0;
+    }
+    else
+    {
+      planes[1].texwidth  = planes[0].texwidth;
+      planes[1].texheight = planes[0].texheight;
+      planes[2].texwidth  = planes[1].texwidth;
+      planes[2].texheight = planes[1].texheight;
+    }
+
+    for (int p = 0; p < 3; p++)
+    {
+      planes[p].pixpertex_x = 1;
+      planes[p].pixpertex_y = 1;
+      planes[p].rect.x1 = 0.0;
+      planes[p].rect.x2 = 1.0;
+      planes[p].rect.y1 = 0.0;
+      planes[p].rect.y2 = 1.0;
+    }
+
+    if(m_renderMethod & RENDER_POT)
+    {
+      for(int p = 0; p < 3; p++)
+      {
+        planes[p].texwidth  = NP2(planes[p].texwidth);
+        planes[p].texheight = NP2(planes[p].texheight);
+      }
+    }
+  }
+
+  glEnable(m_textureTarget);
+  glGenTextures(1, &plane.id);
+  glDisable(m_textureTarget);
+
+  m_eventTexturesDone[index]->Set();
+#endif
+  return true;
+}
+
+void CLinuxRendererGL::UploadXVBATexture(int index)
+{
+#ifdef HAVE_LIBXVBA
+  XVBA::CDecoder   *xvba = m_buffers[index].xvba;
+
+  unsigned int flipindex = m_buffers[index].flipindex;
+  YUVFIELDS &fields = m_buffers[index].fields;
+  YUVPLANE &plane = fields[0][0];
+
+  if (!xvba)
+  {
+    fields[1][0].id = plane.id;
+    fields[1][1].id = plane.id;
+    fields[2][0].id = plane.id;
+    fields[2][1].id = plane.id;
+    m_eventTexturesDone[index]->Set();
+    return;
+  }
+
+  XVBA_SURFACE_FLAG field;
+  if (m_currentField == FIELD_TOP)
+    field = XVBA_TOP_FIELD;
+  else if (m_currentField == FIELD_BOT)
+    field = XVBA_BOTTOM_FIELD;
+  else
+    field = XVBA_FRAME;
+
+  glEnable(m_textureTarget);
+  if (xvba->SetTexture(field,index) == 1)
+  {
+    fields[m_currentField][0].id = xvba->GetTexture();
+    fields[m_currentField][0].flipindex = flipindex;
+    glBindTexture(m_textureTarget,fields[m_currentField][0].id);
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(m_textureTarget,0);
+    VerifyGLState();
+  }
+  else
+  {
+    fields[m_currentField][0].id = plane.id;
+    CLog::Log(LOGERROR, "CLinuxRendererGL::UploadXVBATexture error");
+  }
+  fields[m_currentField][1].id = fields[m_currentField][0].id;
+  fields[m_currentField][2].id = fields[m_currentField][0].id;
+
+  CalculateTextureSourceRects(index, 3);
+  glDisable(m_textureTarget);
+
+  m_eventTexturesDone[index]->Set();
+#endif
+}
+
 void CLinuxRendererGL::UploadYUV422PackedTexture(int source)
 {
   YUVBUFFER& buf    =  m_buffers[source];
@@ -3128,6 +3305,15 @@ void CLinuxRendererGL::AddProcessor(VAAPI::CHolder& holder)
 {
   YUVBUFFER &buf = m_buffers[NextYV12Texture()];
   buf.vaapi.surface = holder.surface;
+}
+#endif
+
+#ifdef HAVE_LIBXVBA
+void CLinuxRendererGL::AddProcessor(XVBA::CDecoder* xvba)
+{
+  YUVBUFFER &buf = m_buffers[NextYV12Texture()];
+  SAFE_RELEASE(buf.xvba);
+  buf.xvba = (XVBA::CDecoder*)xvba->Acquire();
 }
 #endif
 

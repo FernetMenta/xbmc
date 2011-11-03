@@ -40,6 +40,7 @@ class CBaseTexture;
 namespace Shaders { class BaseYUV2RGBShader; }
 namespace Shaders { class BaseVideoFilterShader; }
 namespace VAAPI   { struct CHolder; }
+namespace XVBA    { class CDecoder; }
 
 #define NUM_BUFFERS 3
 
@@ -141,12 +142,16 @@ public:
   virtual void         UnInit();
   virtual void         Reset(); /* resets renderer after seek for example */
   virtual void         Flush();
+  virtual unsigned int GetProcessorSize();
 
 #ifdef HAVE_LIBVDPAU
   virtual void         AddProcessor(CVDPAU* vdpau);
 #endif
 #ifdef HAVE_LIBVA
   virtual void         AddProcessor(VAAPI::CHolder& holder);
+#endif
+#ifdef HAVE_LIBXVBA
+  virtual void         AddProcessor(XVBA::CDecoder* xvba);
 #endif
 
   virtual void RenderUpdate(bool clear, DWORD flags = 0, DWORD alpha = 255);
@@ -193,6 +198,10 @@ protected:
   void UploadVAAPITexture(int index);
   void DeleteVAAPITexture(int index);
   bool CreateVAAPITexture(int index);
+
+  void UploadXVBATexture(int index);
+  void DeleteXVBATexture(int index);
+  bool CreateXVBATexture(int index);
 
   void UploadYUV422PackedTexture(int index);
   void DeleteYUV422PackedTexture(int index);
@@ -269,6 +278,9 @@ protected:
 #endif
 #ifdef HAVE_LIBVA
     VAAPI::CHolder& vaapi;
+#endif
+#ifdef HAVE_LIBXVBA
+    XVBA::CDecoder* xvba;
 #endif
   };
 
