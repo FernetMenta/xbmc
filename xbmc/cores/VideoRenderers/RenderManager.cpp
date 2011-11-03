@@ -53,6 +53,10 @@
 #include "../dvdplayer/DVDCodecs/Video/DVDVideoCodec.h"
 #include "../dvdplayer/DVDCodecs/DVDCodecUtils.h"
 
+#ifdef HAVE_LIBXVBA
+  #include "../dvdplayer/DVDCodecs/Video/XVBA.h"
+#endif
+
 #define MAXPRESENTDELAY 0.500
 
 /* at any point we want an exclusive lock on rendermanager */
@@ -786,6 +790,16 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
 #ifdef HAVE_LIBVA
   else if(pic.format == DVDVideoPicture::FMT_VAAPI)
     m_pRenderer->AddProcessor(*pic.vaapi);
+#endif
+#ifdef HAVE_LIBXVBA
+  else if(pic.format == DVDVideoPicture::FMT_XVBA)
+  {
+    if (pic.xvba)
+    {
+      m_pRenderer->AddProcessor(pic.xvba);
+      pic.xvba->Present(index);
+    }
+  }
 #endif
   m_pRenderer->ReleaseImage(index, false);
 
