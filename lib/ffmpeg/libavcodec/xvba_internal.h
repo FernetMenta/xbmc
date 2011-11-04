@@ -23,3 +23,4 @@
 
 
 int ff_xvba_translate_profile(int profile);
+void ff_xvba_add_slice_data(struct xvba_context *hwaccel_context, const uint8_t *buffer, uint32_t size);
