@@ -104,6 +104,8 @@ void CXVBAContext::Release()
 
 void CXVBAContext::Close()
 {
+  CLog::Log(LOGNOTICE, "XVBA::Close - closing decoder");
+
   DestroyContext();
   if (m_dlHandle)
   {
@@ -302,6 +304,7 @@ void *CXVBAContext::GetContext()
 CDecoder::CDecoder()
 {
   m_context = 0;
+  m_flipBuffer = 0;
 }
 
 CDecoder::~CDecoder()
@@ -392,6 +395,23 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
   m_decoderContext.data_control = 0;
   m_decoderContext.data_control_size = 0;
   picAge.b_age = picAge.ip_age[0] = picAge.ip_age[1] = 256*256*256*64;
+  m_surfaceWidth = avctx->width;
+  m_surfaceHeight = avctx->height;
+  m_presentPicture = 0;
+  m_numRenderBuffers = surfaces;
+  m_flipBuffer = new RenderPicture[m_numRenderBuffers];
+  for (int i = 0; i < m_numRenderBuffers; ++i)
+  {
+    m_flipBuffer[i].outPic = 0;
+    m_flipBuffer[i].glSurface[0] =
+    m_flipBuffer[i].glSurface[1] =
+    m_flipBuffer[i].glSurface[2] = 0;
+    m_flipBuffer[i].glTexture[0] =
+    m_flipBuffer[i].glTexture[1] =
+    m_flipBuffer[i].glTexture[0] = 0;
+  }
+  for (int j = 0; j < NUM_OUTPUT_PICS; ++j)
+    m_freeOutPic.push_back(&m_allOutPic[j]);
 
   // setup ffmpeg
   avctx->hwaccel_context = &m_decoderContext;
@@ -410,6 +430,18 @@ void CDecoder::Close()
 
   CSharedLock lock(*m_context);
   DestroySession();
+  if (m_flipBuffer)
+    delete [] m_flipBuffer;
+}
+
+void CDecoder::ResetState()
+{
+  picAge.b_age = picAge.ip_age[0] = picAge.ip_age[1] = 256*256*256*64;
+  m_presentPicture = 0;
+  m_freeOutPic.clear();
+  m_usedOutPic.clear();
+  for (int j = 0; j < NUM_OUTPUT_PICS; ++j)
+    m_freeOutPic.push_back(&m_allOutPic[j]);
 }
 
 int CDecoder::Check(AVCodecContext* avctx)
@@ -422,6 +454,7 @@ int CDecoder::Check(AVCodecContext* avctx)
   CExclusiveLock lock(*m_context);
   m_xvbaSession = 0;
   DestroySession();
+  ResetState();
 
   return VC_FLUSHED;
 }
@@ -462,7 +495,6 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
     return false;
   }
   m_decoderContext.picture_descriptor_buffer = bufferOutput.buffer_list;
-//  m_decoderContext.picture_descriptor_buffer->size = sizeof(XVBABufferDescriptor);
 
   // data buffer
   bufferInput.buffer_type = XVBA_DATA_BUFFER;
@@ -473,7 +505,6 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
     return false;
   }
   m_decoderContext.data_buffer = bufferOutput.buffer_list;
-//  m_decoderContext.data_buffer->size = sizeof(XVBABufferDescriptor);
 
   // QO Buffer
   bufferInput.buffer_type = XVBA_QM_BUFFER;
@@ -484,7 +515,6 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
     return false;
   }
   m_decoderContext.iq_matrix_buffer = bufferOutput.buffer_list;
-//  m_decoderContext.iq_matrix_buffer->size = sizeof(XVBABufferDescriptor);
 
   return true;
 }
@@ -492,25 +522,31 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
 void CDecoder::DestroySession()
 {
   XVBA_Destroy_Decode_Buffers_Input bufInput;
-  XVBABufferDescriptor *bufList[3];
   bufInput.size = sizeof(bufInput);
   bufInput.num_of_buffers_in_list = 1;
   if (m_xvbaSession)
   {
     for (int i=0; i<m_dataControlBuffers.size() ; ++i)
     {
-      bufList[0] = m_dataControlBuffers[i];
+      bufInput.buffer_list = m_dataControlBuffers[i];
       g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
     }
 
-    bufInput.num_of_buffers_in_list = 0;
     if (m_decoderContext.picture_descriptor_buffer)
-      bufList[bufInput.num_of_buffers_in_list++] = m_decoderContext.picture_descriptor_buffer;
+    {
+      bufInput.buffer_list = m_decoderContext.picture_descriptor_buffer;
+      g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
+    }
     if (m_decoderContext.iq_matrix_buffer)
-      bufList[bufInput.num_of_buffers_in_list++] = m_decoderContext.iq_matrix_buffer;
+    {
+      bufInput.buffer_list = m_decoderContext.iq_matrix_buffer;
+      g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
+    }
     if (m_decoderContext.data_buffer)
-      bufList[bufInput.num_of_buffers_in_list++] = m_decoderContext.data_buffer;
-    g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
+    {
+      bufInput.buffer_list = m_decoderContext.data_buffer;
+      g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
+    }
   }
 
   if (m_decoderContext.data_control)
@@ -570,7 +606,7 @@ void CDecoder::FFReleaseBuffer(AVCodecContext *avctx, AVFrame *pic)
   CSharedLock lock(*xvba->m_context);
 
   xvba_render_state * render = NULL;
-  render = (xvba_render_state*)pic->data[3];
+  render = (xvba_render_state*)pic->data[0];
   if(!render)
   {
     CLog::Log(LOGERROR, "XVBA::FFReleaseBuffer - invalid context handle provided");
@@ -750,13 +786,15 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
 
   xvba_render_state * render = NULL;
   // find unused surface
-  for(unsigned int i = 0; i < xvba->m_videoSurfaces.size(); ++i)
-  {
-    if(!(xvba->m_videoSurfaces[i]->state & (FF_XVBA_STATE_USED_FOR_REFERENCE | FF_XVBA_STATE_USED_FOR_RENDER)))
+  { CSingleLock lock(xvba->m_videoSurfaceSec);
+    for(unsigned int i = 0; i < xvba->m_videoSurfaces.size(); ++i)
     {
-      render = xvba->m_videoSurfaces[i];
-      render->state = 0;
-      break;
+      if(!(xvba->m_videoSurfaces[i]->state & (FF_XVBA_STATE_USED_FOR_REFERENCE | FF_XVBA_STATE_USED_FOR_RENDER)))
+      {
+        render = xvba->m_videoSurfaces[i];
+        render->state = 0;
+        break;
+      }
     }
   }
 
@@ -782,6 +820,7 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
       CLog::Log(LOGERROR,"(XVBA) failed to create video surface");
       return -1;
     }
+    CSingleLock lock(xvba->m_videoSurfaceSec);
     render->surface = surfaceOutput.surface;
     xvba->m_videoSurfaces.push_back(render);
   }
@@ -823,12 +862,127 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
 
 int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
 {
-  return VC_BUFFER;
+  CSharedLock lock(*m_context);
+
+  int result = Check(avctx);
+  if (result)
+    return result;
+
+  int iReturn(0);
+  if(frame)
+  { // we have a new frame from decoder
+
+    xvba_render_state * render = (xvba_render_state*)frame->data[0];
+    if(!render)
+      return VC_ERROR;
+
+    // ffmpeg vc-1 decoder does not flush, make sure the data buffer is still valid
+    bool found(false);
+    for(unsigned int i = 0; i < m_videoSurfaces.size(); ++i)
+    {
+      if(m_videoSurfaces[i] == render)
+      {
+        found = true;
+        break;
+      }
+    }
+    if (!found)
+    {
+      CLog::Log(LOGWARNING, "XVBA::Decode - ignoring invalid buffer");
+      return VC_BUFFER;
+    }
+
+    render->state |= FF_XVBA_STATE_USED_FOR_RENDER;
+
+    CSingleLock lock(m_outPicSec);
+    if (m_freeOutPic.empty())
+    {
+      return VC_ERROR;
+    }
+    OutputPicture *outPic = m_freeOutPic.front();
+    m_freeOutPic.pop_front();
+    memset(&outPic->dvdPic, 0, sizeof(DVDVideoPicture));
+    ((CDVDVideoCodecFFmpeg*)avctx->opaque)->GetPictureCommon(&outPic->dvdPic);
+    outPic->render = render;
+
+    outPic->dvdPic.format = DVDVideoPicture::FMT_XVBA;
+    outPic->dvdPic.iWidth = m_surfaceWidth;
+    outPic->dvdPic.iHeight = m_surfaceHeight;
+    outPic->dvdPic.xvba = this;
+
+    m_usedOutPic.push_back(outPic);
+    lock.Leave();
+
+    iReturn |= VC_PICTURE;
+  }
+
+  { CSingleLock lock(m_outPicSec);
+    if (!m_freeOutPic.empty())
+      iReturn |= VC_BUFFER;
+  }
+
+  return iReturn;
 }
 
 bool CDecoder::GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture)
 {
+  { CSingleLock lock(m_outPicSec);
+
+    if (DiscardPresentPicture())
+      CLog::Log(LOGWARNING,"XVBA::GetPicture: old presentPicture was still valid - now discarded");
+    if (m_usedOutPic.size() > 0)
+    {
+      m_presentPicture = m_usedOutPic.front();
+      m_usedOutPic.pop_front();
+      *picture = m_presentPicture->dvdPic;
+    }
+    else
+    {
+      CLog::Log(LOGERROR,"XVBA::GetPicture: no picture");
+      return false;
+    }
+  }
   return true;
+}
+
+bool CDecoder::DiscardPresentPicture()
+{
+  CSingleLock lock(m_outPicSec);
+  if (m_presentPicture)
+  {
+    if (m_presentPicture->render)
+      m_presentPicture->render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+    m_presentPicture->render = NULL;
+    m_freeOutPic.push_back(m_presentPicture);
+    m_presentPicture = NULL;
+    return true;
+  }
+  return false;
+}
+
+void CDecoder::Present(int index)
+{
+  if (!m_presentPicture)
+  {
+    CLog::Log(LOGWARNING, "XVBA::Present: present picture is NULL");
+    return;
+  }
+
+  if (m_flipBuffer[index].outPic)
+  {
+    if (m_flipBuffer[index].outPic->render)
+    {
+      CSingleLock lock(m_videoSurfaceSec);
+      m_flipBuffer[index].outPic->render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+      m_flipBuffer[index].outPic->render = NULL;
+    }
+    CSingleLock lock(m_outPicSec);
+    m_freeOutPic.push_back(m_flipBuffer[index].outPic);
+    m_flipBuffer[index].outPic = NULL;
+  }
+
+  m_flipBuffer[index].outPic = m_presentPicture;
+  m_presentPicture = NULL;
 }
 
 void CDecoder::Reset()
@@ -836,14 +990,120 @@ void CDecoder::Reset()
 
 }
 
-int CDecoder::SetTexture(XVBA_SURFACE_FLAG field, int flipBufferIdx)
+int CDecoder::UploadTexture(int index, GLenum textureTarget)
 {
-  return 0;
+  CSharedLock lock(*m_context);
+
+  if (!m_flipBuffer[index].outPic)
+    return -1;
+
+  int first, last;
+  first = last = 0;
+  if (m_flipBuffer[index].outPic->dvdPic.iFlags & DVP_FLAG_INTERLACED)
+  {
+    first = 1;
+    last = 2;
+  }
+  for (int i = first; i <= last; ++i)
+  {
+    XVBA_SURFACE_FLAG field;
+    if (i==0) field = XVBA_FRAME;
+    else if (i==1) field = XVBA_TOP_FIELD;
+    else field = XVBA_BOTTOM_FIELD;
+
+    if (!glIsTexture(m_flipBuffer[index].glTexture[i]))
+    {
+      glEnable(textureTarget);
+      glGenTextures(1, &m_flipBuffer[index].glTexture[i]);
+      glBindTexture(textureTarget, m_flipBuffer[index].glTexture[i]);
+      glTexParameteri(textureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(textureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(textureTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_surfaceWidth, m_surfaceHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+      XVBA_Create_GLShared_Surface_Input surfInput;
+      XVBA_Create_GLShared_Surface_Output surfOutput;
+      surfInput.size = sizeof(surfInput);
+      surfInput.session = m_xvbaSession;
+      surfInput.gltexture = m_flipBuffer[index].glTexture[i];
+      surfInput.glcontext = glXGetCurrentContext();
+      surfOutput.size = sizeof(surfOutput);
+      surfOutput.surface = 0;
+      if (Success != g_XVBA_vtable.CreateGLSharedSurface(&surfInput, &surfOutput))
+      {
+        CLog::Log(LOGERROR,"(XVBA) failed to create shared surface");
+        return -1;
+      }
+      m_flipBuffer[index].glSurface[i] = surfOutput.surface;
+    }
+
+    XVBA_Transfer_Surface_Input transInput;
+    transInput.size = sizeof(transInput);
+    transInput.session = m_xvbaSession;
+    transInput.src_surface = m_flipBuffer[index].outPic->render->surface;
+    transInput.target_surface = m_flipBuffer[index].glSurface[i];
+    transInput.flag = field;
+    if (Success != g_XVBA_vtable.TransferSurface(&transInput))
+    {
+      CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
+      return -1;
+    }
+  }
+
+  { CSingleLock lock(m_videoSurfaceSec);
+    m_flipBuffer[index].outPic->render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+    m_flipBuffer[index].outPic->render = NULL;
+  }
+  {
+    CSingleLock lock(m_outPicSec);
+    m_freeOutPic.push_back(m_flipBuffer[index].outPic);
+    m_flipBuffer[index].outPic = NULL;
+  }
+
+  return 1;
 }
 
-GLuint CDecoder::GetTexture()
+GLuint CDecoder::GetTexture(int index, XVBA_SURFACE_FLAG field)
 {
-  return m_glTexture;
+  return m_flipBuffer[index].glTexture[field];
+}
+
+void CDecoder::FinishGL()
+{
+  CLog::Log(LOGNOTICE, "XVBA::FinishGL - clearing down gl resources");
+
+  CSharedLock lock(*m_context);
+
+  for (int i=0; i<m_numRenderBuffers;++i)
+  {
+    if (m_flipBuffer[i].outPic)
+    {
+      { CSingleLock lock(m_videoSurfaceSec);
+        m_flipBuffer[i].outPic->render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+        m_flipBuffer[i].outPic->render = NULL;
+      }
+      { CSingleLock lock(m_outPicSec);
+        m_freeOutPic.push_back(m_flipBuffer[i].outPic);
+        m_flipBuffer[i].outPic = 0;
+      }
+    }
+
+    for (int j=0; j<3; ++j)
+    {
+      if (glIsTexture(m_flipBuffer[i].glTexture[j]))
+      {
+        glDeleteTextures(1, &m_flipBuffer[i].glTexture[j]);
+        m_flipBuffer[i].glTexture[j] = 0;
+      }
+      if (m_flipBuffer[i].glSurface[j])
+      {
+        g_XVBA_vtable.DestroySurface(m_flipBuffer[i].glSurface[j]);
+        m_flipBuffer[i].glSurface[j] = 0;
+      }
+    }
+  }
 }
 
 #endif

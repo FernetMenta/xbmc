@@ -88,13 +88,17 @@ public:
   virtual int  Check(AVCodecContext* avctx);
   virtual const std::string Name() { return "xvba"; }
 
-  int SetTexture(XVBA_SURFACE_FLAG field, int flipBufferIdx);
-  GLuint GetTexture();
+  void Present(int index);
+  int UploadTexture(int index, GLenum textureTarget);
+  GLuint GetTexture(int index, XVBA_SURFACE_FLAG field);
+  void FinishGL();
 
 protected:
   bool CreateSession(AVCodecContext* avctx);
   void DestroySession();
   bool EnsureDataControlBuffers(int num);
+  bool DiscardPresentPicture();
+  void ResetState();
 
   // callbacks for ffmpeg
   static void  FFReleaseBuffer(AVCodecContext *avctx, AVFrame *pic);
@@ -106,6 +110,8 @@ protected:
   DllAvUtil m_dllAvUtil;
   CXVBAContext *m_context;
   int m_ctxId;
+  int m_surfaceWidth, m_surfaceHeight;
+  int m_numRenderBuffers;
 
   XVBADecodeCap m_decoderCap;
   void *m_xvbaSession;
@@ -121,11 +127,18 @@ protected:
     xvba_render_state *render;
     void *glSurface;
   };
+  struct RenderPicture
+  {
+    OutputPicture *outPic;
+    void *glSurface[3];
+    GLuint glTexture[3];
+  };
+  CCriticalSection m_outPicSec, m_videoSurfaceSec;
   OutputPicture m_allOutPic[NUM_OUTPUT_PICS];
   std::deque<OutputPicture*> m_freeOutPic;
   std::deque<OutputPicture*> m_usedOutPic;
-  OutputPicture *m_flipBuffer[];
-  GLuint m_glTexture;
+  OutputPicture *m_presentPicture;
+  RenderPicture *m_flipBuffer;
 };
 
 }
