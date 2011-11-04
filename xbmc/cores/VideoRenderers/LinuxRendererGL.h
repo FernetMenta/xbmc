@@ -95,6 +95,7 @@ enum RenderMethod
   RENDER_VDPAU=0x08,
   RENDER_POT=0x10,
   RENDER_VAAPI=0x20,
+  RENDER_XVBA=0x40,
 };
 
 enum RenderQuality
@@ -220,6 +221,7 @@ protected:
   void RenderSoftware(int renderBuffer, int field);   // single pass s/w yuv2rgb renderer
   void RenderVDPAU(int renderBuffer, int field);      // render using vdpau hardware
   void RenderVAAPI(int renderBuffer, int field);      // render using vdpau hardware
+  void RenderXVBA(int renderBuffer, int field);       // render using xvba hardware
 
   CFrameBufferObject m_fbo;
 
