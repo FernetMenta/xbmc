@@ -104,7 +104,7 @@ void CXVBAContext::Release()
 
 void CXVBAContext::Close()
 {
-  CLog::Log(LOGNOTICE, "XVBA::Close - closing decoder");
+  CLog::Log(LOGNOTICE, "XVBA::Close - closing decoder context");
 
   DestroyContext();
   if (m_dlHandle)
@@ -428,8 +428,10 @@ void CDecoder::Close()
   if (!m_context)
     return;
 
-  CSharedLock lock(*m_context);
-  DestroySession();
+  { CSharedLock lock(*m_context);
+    DestroySession();
+  }
+  m_context->Release();
   if (m_flipBuffer)
     delete [] m_flipBuffer;
 }
