@@ -359,7 +359,7 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
   }
   int bestMatch = -1;
   XVBA_DECODE_FLAGS flags = XVBA_NOFLAG;
-  for (int i = 0; i < capOutput.num_of_decodecaps; ++i)
+  for (unsigned int i = 0; i < capOutput.num_of_decodecaps; ++i)
   {
     if ((avctx->codec_id == CODEC_ID_H264 && capOutput.decode_caps_list[i].capability_id == XVBA_H264)
         || (avctx->codec_id == CODEC_ID_VC1 && capOutput.decode_caps_list[i].capability_id == XVBA_VC1)
@@ -400,7 +400,7 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
   m_presentPicture = 0;
   m_numRenderBuffers = surfaces;
   m_flipBuffer = new RenderPicture[m_numRenderBuffers];
-  for (int i = 0; i < m_numRenderBuffers; ++i)
+  for (unsigned int i = 0; i < m_numRenderBuffers; ++i)
   {
     m_flipBuffer[i].outPic = 0;
     m_flipBuffer[i].glSurface[0] =
@@ -408,9 +408,9 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
     m_flipBuffer[i].glSurface[2] = 0;
     m_flipBuffer[i].glTexture[0] =
     m_flipBuffer[i].glTexture[1] =
-    m_flipBuffer[i].glTexture[0] = 0;
+    m_flipBuffer[i].glTexture[2] = 0;
   }
-  for (int j = 0; j < NUM_OUTPUT_PICS; ++j)
+  for (unsigned int j = 0; j < NUM_OUTPUT_PICS; ++j)
     m_freeOutPic.push_back(&m_allOutPic[j]);
 
   // setup ffmpeg
@@ -528,7 +528,7 @@ void CDecoder::DestroySession()
   bufInput.num_of_buffers_in_list = 1;
   if (m_xvbaSession)
   {
-    for (int i=0; i<m_dataControlBuffers.size() ; ++i)
+    for (unsigned int i=0; i<m_dataControlBuffers.size() ; ++i)
     {
       bufInput.buffer_list = m_dataControlBuffers[i];
       g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
@@ -575,7 +575,7 @@ void CDecoder::DestroySession()
   m_xvbaSession = 0;
 }
 
-bool CDecoder::EnsureDataControlBuffers(int num)
+bool CDecoder::EnsureDataControlBuffers(unsigned int num)
 {
   if (m_dataControlBuffers.size() >= num)
     return true;
@@ -620,7 +620,7 @@ void CDecoder::FFReleaseBuffer(AVCodecContext *avctx, AVFrame *pic)
 
   // find render state in queue
   bool found(false);
-  for(i = 0; i < xvba->m_videoSurfaces.size(); ++i)
+  for(unsigned int i = 0; i < xvba->m_videoSurfaces.size(); ++i)
   {
     if(xvba->m_videoSurfaces[i] == render)
     {
@@ -720,7 +720,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
 
   XVBADataCtrl *dataControl;
   int location = 0;
-  for (int i = 0; i < xvba->m_decoderContext.num_slices; ++i)
+  for (unsigned int i = 0; i < xvba->m_decoderContext.num_slices; ++i)
   {
     list[0] = xvba->m_decoderContext.data_buffer;
     list[0]->data_offset = 0;
@@ -997,14 +997,14 @@ int CDecoder::UploadTexture(int index, GLenum textureTarget)
   if (!m_flipBuffer[index].outPic)
     return -1;
 
-  int first, last;
+  unsigned int first, last;
   first = last = 0;
   if (m_flipBuffer[index].outPic->dvdPic.iFlags & DVP_FLAG_INTERLACED)
   {
     first = 1;
     last = 2;
   }
-  for (int i = first; i <= last; ++i)
+  for (unsigned int i = first; i <= last; ++i)
   {
     XVBA_SURFACE_FLAG field;
     if (i==0) field = XVBA_FRAME;
@@ -1076,7 +1076,7 @@ void CDecoder::FinishGL()
 
   CSharedLock lock(*m_context);
 
-  for (int i=0; i<m_numRenderBuffers;++i)
+  for (unsigned int i=0; i<m_numRenderBuffers;++i)
   {
     if (m_flipBuffer[i].outPic)
     {
