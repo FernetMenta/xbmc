@@ -96,7 +96,7 @@ public:
 protected:
   bool CreateSession(AVCodecContext* avctx);
   void DestroySession();
-  bool EnsureDataControlBuffers(int num);
+  bool EnsureDataControlBuffers(unsigned int num);
   bool DiscardPresentPicture();
   void ResetState();
 
@@ -110,8 +110,8 @@ protected:
   DllAvUtil m_dllAvUtil;
   CXVBAContext *m_context;
   int m_ctxId;
-  int m_surfaceWidth, m_surfaceHeight;
-  int m_numRenderBuffers;
+  unsigned int m_surfaceWidth, m_surfaceHeight;
+  unsigned int m_numRenderBuffers;
 
   XVBADecodeCap m_decoderCap;
   void *m_xvbaSession;
