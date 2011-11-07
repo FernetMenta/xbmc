@@ -106,6 +106,9 @@ enum PixelFormat CDVDVideoCodecFFmpeg::GetFormat( struct AVCodecContext * avctx
 #ifdef HAVE_LIBXVBA
     if(*cur == PIX_FMT_XVBA_VLD && g_guiSettings.GetBool("videoplayer.usexvba"))
     {
+      if(ctx->GetHardware())
+        return *cur;
+
       XVBA::CDecoder* dec = new XVBA::CDecoder();
       if(dec->Open(avctx, *cur, ctx->m_uSurfacesCount))
       {
