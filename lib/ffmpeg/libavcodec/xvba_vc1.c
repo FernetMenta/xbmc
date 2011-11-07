@@ -1,9 +1,5 @@
 /*
- * VC-1 HW decode acceleration through VA API
- *
- * Copyright (C) 2005-2011 team XBMA
- *
- * This file is part of FFmpeg.
+ * VC-1 HW decode acceleration through XVBA
  *
  * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -55,6 +51,7 @@ static int xvba_vc1_end_frame(AVCodecContext *avctx)
     VC1Context* const v = avctx->priv_data;
     MpegEncContext* const s = &v->s;
     struct xvba_context *hwaccel_context;
+    struct xvba_render_state *last, *next;
     XVBAPictureDescriptor *pic_descriptor;
     
     hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
@@ -65,8 +62,8 @@ static int xvba_vc1_end_frame(AVCodecContext *avctx)
     av_dlog(avctx, "xvba_vc1_end_frame()\n");
     
     /* Fill in Parameters - for reference see AMD sdk documentation */
-    pic_descriptor->profile                                 = ff_xvba_translate_profile(avctx->profile);
-    pic_descriptor->level                                   = avctx->level;
+    pic_descriptor->profile                                 = ff_xvba_translate_profile(v->profile);
+    pic_descriptor->level                                   = v->level;
     pic_descriptor->width_in_mb                             = s->mb_width;
     pic_descriptor->height_in_mb                            = s->mb_height;
     pic_descriptor->picture_structure                       = s->picture_structure;
@@ -116,20 +113,50 @@ static int xvba_vc1_end_frame(AVCodecContext *avctx)
     pic_descriptor->pps_info.vc1.range_mapuv                = v->range_mapuv;
     pic_descriptor->pps_info.vc1.xvba_vc1_pps_reserved      = 0;
     
+    pic_descriptor->past_surface                            = 0;
+    pic_descriptor->future_surface                          = 0;
+    switch (s->pict_type) {
+    case FF_B_TYPE:
+        next = (struct xvba_render_state *)s->next_picture.data[0];
+        assert(next);
+        if (next)
+          pic_descriptor->past_surface = next->surface;
+        // fall-through
+    case FF_P_TYPE:
+        last = (struct xvba_render_state *)s->last_picture.data[0];
+        assert(last);
+        if (last)
+          pic_descriptor->future_surface = last->surface;
+        break;
+    }
+
+//    av_log(NULL, AV_LOG_ERROR, "------- profile: %d\n", pic_descriptor->profile);
+//    av_log(NULL, AV_LOG_ERROR, "------- level: %d\n", v->level);
     ff_draw_horiz_band(s, 0, s->avctx->height);
-  
+
     return 0;
 }
 
 static int xvba_vc1_decode_slice(AVCodecContext *avctx, const uint8_t *buffer, uint32_t size)
 {
-    struct xvba_context *hwaccel_context;
+  VC1Context* const v = avctx->priv_data;
+  MpegEncContext* const s = &v->s;
+  struct xvba_context *hwaccel_context;
+  uint8_t start_code[] = {0x00, 0x00, 0x01};
     
-    hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-    assert(hwaccel_context);
-    
-    ff_xvba_add_slice_data(hwaccel_context, buffer, size);
-    return 0;
+  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
+  assert(hwaccel_context);
+
+  ff_xvba_add_slice_data(hwaccel_context, start_code, 3, 0);
+  uint8_t start_code_ext = 0;
+  if (s->picture_structure == PICT_FRAME)
+    start_code_ext = 0x0d;
+  ff_xvba_add_slice_data(hwaccel_context, &start_code_ext, 1, 1);
+  ff_xvba_add_slice_data(hwaccel_context, buffer, size, 1);
+
+  hwaccel_context->num_slices++;
+
+  return 0;
 }
 
 #if CONFIG_WMV3_XVBA_HWACCEL
