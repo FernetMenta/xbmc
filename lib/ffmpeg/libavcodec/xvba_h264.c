@@ -143,11 +143,15 @@ static int decode_slice(AVCodecContext *avctx,
                         uint32_t        size)
 {
   struct xvba_context *hwaccel_context;
+  static const uint8_t start_code[] = {0x00, 0x00, 0x01};
 
   hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
   assert(hwaccel_context);
 
-  ff_xvba_add_slice_data(hwaccel_context, buffer, size);
+  ff_xvba_add_slice_data(hwaccel_context, start_code, 3, 0);
+  ff_xvba_add_slice_data(hwaccel_context, buffer, size, 1);
+
+  hwaccel_context->num_slices++;
   return 0;
 }
 
