@@ -369,6 +369,7 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
       {
         flags = capOutput.decode_caps_list[i].flags;
         bestMatch = i;
+        break;
       }
     }
   }
@@ -580,6 +581,8 @@ bool CDecoder::EnsureDataControlBuffers(unsigned int num)
   if (m_dataControlBuffers.size() >= num)
     return true;
 
+  unsigned int missing = num - m_dataControlBuffers.size();
+
   XVBA_Create_DecodeBuff_Input bufferInput;
   XVBA_Create_DecodeBuff_Output bufferOutput;
   bufferInput.size = sizeof(bufferInput);
@@ -588,13 +591,16 @@ bool CDecoder::EnsureDataControlBuffers(unsigned int num)
   bufferInput.num_of_buffers = 1;
   bufferOutput.size = sizeof(bufferOutput);
 
-  if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
-      || bufferOutput.num_of_buffers_in_list != 1)
+  for (unsigned int i=0; i<missing; ++i)
   {
-    CLog::Log(LOGERROR,"(XVBA) failed to create data control buffer");
-    return false;
+    if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
+        || bufferOutput.num_of_buffers_in_list != 1)
+    {
+      CLog::Log(LOGERROR,"(XVBA) failed to create data control buffer");
+      return false;
+    }
+    m_dataControlBuffers.push_back(bufferOutput.buffer_list);
   }
-  m_dataControlBuffers.push_back(bufferOutput.buffer_list);
 
   return true;
 }
@@ -691,14 +697,20 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     CLog::Log(LOGERROR,"(XVBA) failed to start decoding");
     return;
   }
-  XVBABufferDescriptor *list[2];
-  list[0] = xvba->m_decoderContext.picture_descriptor_buffer;
-  list[1] = xvba->m_decoderContext.iq_matrix_buffer;
   XVBA_Decode_Picture_Input picInput;
   picInput.size = sizeof(picInput);
   picInput.session = xvba->m_xvbaSession;
-  picInput.num_of_buffers_in_list = 2;
+  XVBABufferDescriptor *list[2];
   picInput.buffer_list = list;
+  list[0] = xvba->m_decoderContext.picture_descriptor_buffer;
+  picInput.num_of_buffers_in_list = 1;
+  if (avctx->codec_id == CODEC_ID_H264)
+  {
+    list[1] = xvba->m_decoderContext.iq_matrix_buffer;
+    picInput.num_of_buffers_in_list = 2;
+  }
+
+  XVBAPictureDescriptor *desc = (XVBAPictureDescriptor*)list[0]->bufferXVBA;
 
   if (Success != g_XVBA_vtable.DecodePicture(&picInput))
   {
