@@ -38,8 +38,6 @@ int ff_xvba_translate_profile(int profile) {
     return 1;
   else if (profile == 77)
     return 2;
-  else if (profile == 77)
-    return 2;
   else if (profile == 100)
     return 3;
   else if (profile == 0)
@@ -52,26 +50,23 @@ int ff_xvba_translate_profile(int profile) {
     return -1;
 }
 
-void ff_xvba_add_slice_data(struct xvba_context *hwaccel_context, const uint8_t *buffer, uint32_t size) {
+void ff_xvba_add_slice_data(struct xvba_context *hwaccel_context, const uint8_t *buffer, uint32_t size, int append) {
 
   void *bitstream_buffer;
-  static const uint8_t start_code[] = {0x00, 0x00, 0x01};
-
   bitstream_buffer = hwaccel_context->data_buffer->bufferXVBA;
-
-  memcpy((uint8_t*)bitstream_buffer+hwaccel_context->data_buffer->data_size_in_buffer, start_code, sizeof(start_code));
-  hwaccel_context->data_buffer->data_size_in_buffer += sizeof(start_code);
 
   memcpy((uint8_t*)bitstream_buffer+hwaccel_context->data_buffer->data_size_in_buffer, buffer, size);
   hwaccel_context->data_buffer->data_size_in_buffer += size;
 
-  hwaccel_context->data_control = av_fast_realloc(
+  if (append)
+    hwaccel_context->data_control[hwaccel_context->num_slices] += hwaccel_context->data_buffer->data_size_in_buffer;
+  else {
+    hwaccel_context->data_control = av_fast_realloc(
        hwaccel_context->data_control,
        &hwaccel_context->data_control_size,
        sizeof(unsigned int)*(hwaccel_context->num_slices + 1)
-  );
-
-  hwaccel_context->data_control[hwaccel_context->num_slices] = hwaccel_context->data_buffer->data_size_in_buffer;
-  hwaccel_context->num_slices++;
+    );
+    hwaccel_context->data_control[hwaccel_context->num_slices] = hwaccel_context->data_buffer->data_size_in_buffer;
+  }
 }
 
