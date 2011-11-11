@@ -80,7 +80,7 @@ class CDecoder : public CDVDVideoCodecFFmpeg::IHardwareDecoder
 public:
   CDecoder();
   virtual ~CDecoder();
-  virtual bool Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int surfaces = 0);
+  virtual bool Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned int surfaces = 0);
   virtual int  Decode    (AVCodecContext* avctx, AVFrame* frame);
   virtual bool GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture);
   virtual void Reset();

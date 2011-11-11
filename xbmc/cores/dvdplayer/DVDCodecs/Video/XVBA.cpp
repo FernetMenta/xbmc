@@ -312,11 +312,16 @@ CDecoder::~CDecoder()
   Close();
 }
 
+typedef struct {
+    unsigned int  size;
+    unsigned int  num_of_decodecaps;
+    XVBADecodeCap decode_caps_list[];
+} XVBA_GetCapDecode_Output_Base;
 
-bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int surfaces)
+bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned int surfaces)
 {
-  if(avctx->width  == 0
-  || avctx->height == 0)
+  if(avctx->coded_width  == 0
+  || avctx->coded_height == 0)
   {
     CLog::Log(LOGWARNING,"(XVBA) no width/height available, can't init");
     return false;
@@ -346,30 +351,31 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
     CLog::Log(LOGERROR,"(XVBA) session decode not supported");
     return false;
   }
+  CLog::Log(LOGNOTICE, "-------size ---------: %d", sessionOutput.getcapdecode_output_size);
   // get decoder capabilities
   XVBA_GetCapDecode_Input capInput;
-  XVBA_GetCapDecode_Output capOutput;
+  XVBA_GetCapDecode_Output *capOutput;
   capInput.size = sizeof(capInput);
   capInput.context = m_context->GetContext();
-  capOutput.size = sessionOutput.getcapdecode_output_size;
-  if (Success != g_XVBA_vtable.GetCapDecode(&capInput, &capOutput))
+  capOutput = (XVBA_GetCapDecode_Output *)alloca(sessionOutput.getcapdecode_output_size);
+  capOutput->size = sessionOutput.getcapdecode_output_size;
+  if (Success != g_XVBA_vtable.GetCapDecode(&capInput, capOutput))
   {
     CLog::Log(LOGERROR,"(XVBA) can't get decode capabilities");
     return false;
   }
   int bestMatch = -1;
   XVBA_DECODE_FLAGS flags = XVBA_NOFLAG;
-  for (unsigned int i = 0; i < capOutput.num_of_decodecaps; ++i)
+  for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
   {
-    if ((avctx->codec_id == CODEC_ID_H264 && capOutput.decode_caps_list[i].capability_id == XVBA_H264)
-        || (avctx->codec_id == CODEC_ID_VC1 && capOutput.decode_caps_list[i].capability_id == XVBA_VC1)
-        || (avctx->codec_id == CODEC_ID_MPEG2VIDEO && capOutput.decode_caps_list[i].capability_id == XVBA_MPEG2_VLD))
+    if ((avctx->codec_id == CODEC_ID_H264 && capOutput->decode_caps_list[i].capability_id == XVBA_H264)
+        || (avctx->codec_id == CODEC_ID_VC1 && capOutput->decode_caps_list[i].capability_id == XVBA_VC1)
+        || (avctx->codec_id == CODEC_ID_MPEG2VIDEO && capOutput->decode_caps_list[i].capability_id == XVBA_MPEG2_VLD))
     {
-      if (capOutput.decode_caps_list[i].flags > flags)
+      if (capOutput->decode_caps_list[i].flags > flags)
       {
-        flags = capOutput.decode_caps_list[i].flags;
+        flags = capOutput->decode_caps_list[i].flags;
         bestMatch = i;
-        break;
       }
     }
   }
@@ -380,13 +386,13 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
   }
   else
     CLog::Log(LOGNOTICE,"(XVBA) using decoder capability id: %i flags: %i",
-                          capOutput.decode_caps_list[bestMatch].capability_id,
-                          capOutput.decode_caps_list[bestMatch].flags);
+                          capOutput->decode_caps_list[bestMatch].capability_id,
+                          capOutput->decode_caps_list[bestMatch].flags);
 
-  CLog::Log(LOGNOTICE,"(XVBA) using surface type: %i",
-                          capOutput.decode_caps_list[bestMatch].surface_type);
+  CLog::Log(LOGNOTICE,"(XVBA) using surface type: %x",
+                          capOutput->decode_caps_list[bestMatch].surface_type);
 
-  m_decoderCap = capOutput.decode_caps_list[bestMatch];
+  m_decoderCap = capOutput->decode_caps_list[bestMatch];
 
   // set some varables
   m_xvbaSession = 0;
@@ -396,8 +402,8 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
   m_decoderContext.data_control = 0;
   m_decoderContext.data_control_size = 0;
   picAge.b_age = picAge.ip_age[0] = picAge.ip_age[1] = 256*256*256*64;
-  m_surfaceWidth = avctx->width;
-  m_surfaceHeight = avctx->height;
+  m_surfaceWidth = (avctx->coded_width+15) & ~15;
+  m_surfaceHeight = (avctx->coded_height+15) & ~15;
   m_presentPicture = 0;
   m_numRenderBuffers = surfaces;
   m_flipBuffer = new RenderPicture[m_numRenderBuffers];
@@ -426,6 +432,8 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
 
 void CDecoder::Close()
 {
+  CLog::Log(LOGNOTICE, "XVBA::Close - closing decoder");
+
   if (!m_context)
     return;
 
@@ -468,8 +476,8 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
   XVBA_Create_Decode_Session_Output sessionOutput;
 
   sessionInput.size = sizeof(sessionInput);
-  sessionInput.width = avctx->width;
-  sessionInput.height = avctx->height;
+  sessionInput.width = m_surfaceWidth;
+  sessionInput.height = m_surfaceHeight;
   sessionInput.context = m_context->GetContext();
   sessionInput.decode_cap = &m_decoderCap;
   sessionOutput.size = sizeof(sessionOutput);
@@ -687,6 +695,8 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     return;
   }
 
+//  CLog::Log(LOGNOTICE, "-------------- id: %x", render->surface);
+
   // decoding
   XVBA_Decode_Picture_Start_Input startInput;
   startInput.size = sizeof(startInput);
@@ -718,8 +728,42 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     return;
   }
 
-  if (!xvba->EnsureDataControlBuffers(xvba->m_decoderContext.num_slices))
+  if (!xvba->EnsureDataControlBuffers(render->num_slices))
     return;
+
+  XVBADataCtrl *dataControl;
+  int location = 0;
+  xvba->m_decoderContext.data_buffer->data_size_in_buffer = 0;
+  for (unsigned int j = 0; j < render->num_slices; ++j)
+  {
+    int startCodeSize = 0;
+    uint8_t startCode[] = {0x00,0x00,0x01};
+    if (avctx->codec_id == CODEC_ID_H264)
+    {
+      startCodeSize = 3;
+      memcpy((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+location,
+          startCode, 3);
+    }
+    else if (avctx->codec_id == CODEC_ID_VC1 &&
+        (memcmp(render->buffers[j].buffer, startCode, 3) != 0))
+    {
+      startCodeSize = 4;
+      uint8_t sdf = 0x0d;
+      memcpy((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+location,
+          startCode, 3);
+      memcpy((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+location+3,
+          &sdf, 1);
+    }
+    memcpy((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+location+startCodeSize,
+        render->buffers[j].buffer,
+        render->buffers[j].size);
+    dataControl = (XVBADataCtrl*)xvba->m_dataControlBuffers[j]->bufferXVBA;
+    dataControl->SliceDataLocation = location;
+    dataControl->SliceBytesInBuffer = render->buffers[j].size+startCodeSize;
+    dataControl->SliceBitsInBuffer = dataControl->SliceBytesInBuffer * 8;
+    xvba->m_decoderContext.data_buffer->data_size_in_buffer += dataControl->SliceBytesInBuffer;
+    location += dataControl->SliceBytesInBuffer;
+  }
 
   int bufSize = xvba->m_decoderContext.data_buffer->data_size_in_buffer;
   int padding = bufSize % 128;
@@ -727,19 +771,14 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   {
     padding = 128 - padding;
     xvba->m_decoderContext.data_buffer->data_size_in_buffer += padding;
-    memset((char*)xvba->m_decoderContext.data_buffer->bufferXVBA+bufSize,0,padding);
+    memset((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+bufSize,0,padding);
   }
 
-  XVBADataCtrl *dataControl;
-  int location = 0;
-  for (unsigned int i = 0; i < xvba->m_decoderContext.num_slices; ++i)
+  picInput.num_of_buffers_in_list = 2;
+  for (unsigned int i = 0; i < render->num_slices; ++i)
   {
     list[0] = xvba->m_decoderContext.data_buffer;
     list[0]->data_offset = 0;
-    dataControl = (XVBADataCtrl*)xvba->m_dataControlBuffers[i]->bufferXVBA;
-    dataControl->SliceDataLocation = location;
-    dataControl->SliceBytesInBuffer = xvba->m_decoderContext.data_control[i];
-    dataControl->SliceBitsInBuffer = dataControl->SliceBytesInBuffer * 8;
     list[1] = xvba->m_dataControlBuffers[i];
     list[1]->data_size_in_buffer = sizeof(*dataControl);
     if (Success != g_XVBA_vtable.DecodePicture(&picInput))
@@ -747,7 +786,6 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
       CLog::Log(LOGERROR,"(XVBA) failed to decode picture 2");
       return;
     }
-    location += xvba->m_decoderContext.data_control[i];
   }
   XVBA_Decode_Picture_End_Input endInput;
   endInput.size = sizeof(endInput);
@@ -823,8 +861,8 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
     XVBA_Create_Surface_Output surfaceOutput;
     surfaceInput.size = sizeof(surfaceInput);
     surfaceInput.surface_type = xvba->m_decoderCap.surface_type;
-    surfaceInput.width = avctx->width;
-    surfaceInput.height = avctx->height;
+    surfaceInput.width = xvba->m_surfaceWidth;
+    surfaceInput.height = xvba->m_surfaceHeight;
     surfaceInput.session = xvba->m_xvbaSession;
     surfaceOutput.size = sizeof(surfaceOutput);
     if (Success != g_XVBA_vtable.CreateSurface(&surfaceInput, &surfaceOutput))
@@ -834,6 +872,9 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
     }
     CSingleLock lock(xvba->m_videoSurfaceSec);
     render->surface = surfaceOutput.surface;
+    render->buffers_alllocated = 0;
+    render->picture_descriptor = (XVBAPictureDescriptor *)xvba->m_decoderContext.picture_descriptor_buffer->bufferXVBA;
+    render->iq_matrix = (XVBAQuantMatrixAvc *)xvba->m_decoderContext.iq_matrix_buffer->bufferXVBA;
     xvba->m_videoSurfaces.push_back(render);
   }
 
