@@ -38,13 +38,17 @@ static int start_frame(AVCodecContext          *avctx,
 {
   H264Context * const h = avctx->priv_data;
   MpegEncContext * const s = &h->s;
-  struct xvba_context *hwaccel_context;
+  struct xvba_render_state *render;
+//  struct xvba_context *hwaccel_context;
   XVBAPictureDescriptor *pic_descriptor;
   int i;
 
-  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-  assert(hwaccel_context);
-  pic_descriptor = hwaccel_context->picture_descriptor_buffer->bufferXVBA;
+  render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
+  assert(render);
+
+//  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
+//  assert(hwaccel_context);
+  pic_descriptor = render->picture_descriptor;
 
   for (i = 0; i < 2; ++i) {
       int foc = s->current_picture_ptr->field_poc[i];
@@ -55,8 +59,9 @@ static int start_frame(AVCodecContext          *avctx,
 
   pic_descriptor->avc_frame_num = h->frame_num;
 
-  hwaccel_context->num_slices = 0;
-  hwaccel_context->data_buffer->data_size_in_buffer = 0;
+//  hwaccel_context->num_slices = 0;
+//  hwaccel_context->data_buffer->data_size_in_buffer = 0;
+  render->num_slices = 0;
 
   return 0;
 }
@@ -66,15 +71,19 @@ static int end_frame(AVCodecContext *avctx)
 {
   H264Context * const h = avctx->priv_data;
   MpegEncContext * const s = &h->s;
-  struct xvba_context *hwaccel_context;
+  struct xvba_render_state *render;
+//  struct xvba_context *hwaccel_context;
   XVBAPictureDescriptor *pic_descriptor;
   XVBAQuantMatrixAvc *iq_matrix;
 
-  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-  assert(hwaccel_context);
+  render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
+  assert(render);
 
-  pic_descriptor = hwaccel_context->picture_descriptor_buffer->bufferXVBA;
-  iq_matrix = hwaccel_context->iq_matrix_buffer->bufferXVBA;
+//  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
+//  assert(hwaccel_context);
+
+  pic_descriptor = render->picture_descriptor;
+  iq_matrix = render->iq_matrix;
 
   av_dlog(avctx, "end_frame()\n");
 
@@ -142,16 +151,19 @@ static int decode_slice(AVCodecContext *avctx,
                         const uint8_t  *buffer,
                         uint32_t        size)
 {
-  struct xvba_context *hwaccel_context;
-  static const uint8_t start_code[] = {0x00, 0x00, 0x01};
+  H264Context * const h = avctx->priv_data;
+  MpegEncContext * const s = &h->s;
+  struct xvba_render_state *render;
+//  struct xvba_context *hwaccel_context;
+//  static const uint8_t start_code[] = {0x00, 0x00, 0x01};
 
-  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-  assert(hwaccel_context);
+//  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
+//  assert(hwaccel_context);
+  render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
+  assert(render);
 
-  ff_xvba_add_slice_data(hwaccel_context, start_code, 3, 0);
-  ff_xvba_add_slice_data(hwaccel_context, buffer, size, 1);
+  ff_xvba_add_slice_data(render, buffer, size);
 
-  hwaccel_context->num_slices++;
   return 0;
 }
 
