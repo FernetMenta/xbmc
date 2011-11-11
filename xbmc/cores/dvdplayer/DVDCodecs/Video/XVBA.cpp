@@ -553,11 +553,6 @@ void CDecoder::DestroySession()
       bufInput.buffer_list = m_decoderContext.iq_matrix_buffer;
       g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
     }
-    if (m_decoderContext.data_buffer)
-    {
-      bufInput.buffer_list = m_decoderContext.data_buffer;
-      g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
-    }
   }
 
   if (m_decoderContext.data_control)
@@ -573,6 +568,9 @@ void CDecoder::DestroySession()
   while (!m_videoSurfaces.empty())
   {
     xvba_render_state *render = m_videoSurfaces.back();
+    if(render->buffers_alllocated > 0)
+    	m_dllAvUtil.av_free(render->buffers);
+
     m_videoSurfaces.pop_back();
     if (m_xvbaSession)
       g_XVBA_vtable.DestroySurface(render->surface);
