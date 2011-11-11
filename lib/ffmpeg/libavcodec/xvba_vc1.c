@@ -64,21 +64,24 @@ static int end_frame(AVCodecContext *avctx)
     /* Fill in Parameters - for reference see AMD sdk documentation */
     pic_descriptor->profile                                 = ff_xvba_translate_profile(v->profile);
     pic_descriptor->level                                   = v->level;
-    pic_descriptor->width_in_mb                             = avctx->coded_width; //s->mb_width;
-    pic_descriptor->height_in_mb                            = avctx->coded_height; //s->mb_height;
+    //done like in va-driver and vaapi
+    pic_descriptor->width_in_mb                             = s->avctx->coded_width;
+    pic_descriptor->height_in_mb                            = s->avctx->coded_height;
     pic_descriptor->picture_structure                       = s->picture_structure;
     // xvba-video set this to 1 only 4:2:0 supported
     // doc says: if not set, choose 1 - we try this
-    pic_descriptor->chroma_format                           = s->chroma_format ? s->chroma_format : 1;
-    pic_descriptor->avc_intra_flag                          = s->pict_type == FF_I_TYPE || v->bi_type == 1; //(s->pict_type == FF_I_TYPE) ? 1 : 0;
+    pic_descriptor->chroma_format                           = 1;
+    pic_descriptor->avc_intra_flag                          = s->pict_type == FF_I_TYPE || v->bi_type == 1;
+    // these one are not needed for VC-1 - but doc says so?
+    pic_descriptor->avc_intra_flag                          = (s->pict_type == FF_I_TYPE) ? 1 : 0;
     pic_descriptor->avc_reference                           = (s->current_picture_ptr->reference & 3) ? 1 : 0;
     
     // VC-1 explicit parameters see page 30 of sdk
     // sps_info
     pic_descriptor->sps_info.vc1.postprocflag               = v->postprocflag;
     
-    // set pull down to true, if one of these three is present
-    pic_descriptor->sps_info.vc1.pulldown                   = v->rptfrm | v->tff | v->rff;
+    // done as in vaapi
+    pic_descriptor->sps_info.vc1.pulldown                   = v->broadcast;
     pic_descriptor->sps_info.vc1.interlace                  = v->interlace;
     pic_descriptor->sps_info.vc1.tfcntrflag                 = v->tfcntrflag;
     pic_descriptor->sps_info.vc1.finterpflag                = v->finterpflag;
@@ -102,7 +105,7 @@ static int end_frame(AVCodecContext *avctx)
     pic_descriptor->pps_info.vc1.overlap                    = v->overlap;
     pic_descriptor->pps_info.vc1.quantizer                  = v->quantizer_mode;
     pic_descriptor->pps_info.vc1.extended_dmv               = v->extended_dmv;   
-    pic_descriptor->pps_info.vc1.maxbframes                 = s->max_b_frames;
+    pic_descriptor->pps_info.vc1.maxbframes                 = s->avctx->max_b_frames;
     pic_descriptor->pps_info.vc1.rangered                   = (pic_descriptor->profile == PROFILE_SIMPLE) ? 0 : v->rangered;   
     pic_descriptor->pps_info.vc1.syncmarker                 = (pic_descriptor->profile == PROFILE_SIMPLE) ? 0 : s->resync_marker;
     pic_descriptor->pps_info.vc1.multires                   = v->multires;
