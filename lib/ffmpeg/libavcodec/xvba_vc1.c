@@ -28,49 +28,49 @@
  */
 
 /* Initialize and start decoding a frame with XvBA */
-static int xvba_vc1_start_frame(AVCodecContext *avctx, 
+static int start_frame(AVCodecContext *avctx,
 				av_unused const uint8_t *buffer, 
 				av_unused uint32_t size)
 {
     VC1Context * const v = avctx->priv_data;
     MpegEncContext * const s = &v->s;
-    struct xvba_context *hwaccel_context;
+    struct xvba_render_state *render;
+
+    render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
+    assert(render);
     
-    hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-    assert(hwaccel_context);
-    
-    hwaccel_context->num_slices = 0;
-    hwaccel_context->data_buffer->data_size_in_buffer = 0;
-    
+    render->num_slices = 0;
     return 0;
 }
 
 /* End a hardware decoding based frame */
-static int xvba_vc1_end_frame(AVCodecContext *avctx)
+static int end_frame(AVCodecContext *avctx)
 {
     VC1Context* const v = avctx->priv_data;
     MpegEncContext* const s = &v->s;
     struct xvba_context *hwaccel_context;
-    struct xvba_render_state *last, *next;
+    struct xvba_render_state *render, *last, *next;
     XVBAPictureDescriptor *pic_descriptor;
-    
-    hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-    assert(hwaccel_context);
 
-    pic_descriptor = hwaccel_context->picture_descriptor_buffer->bufferXVBA;
+    render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
+    assert(render);
+
+    pic_descriptor = render->picture_descriptor;
     
     av_dlog(avctx, "xvba_vc1_end_frame()\n");
     
+    memset(pic_descriptor, 0, sizeof(*pic_descriptor));
+
     /* Fill in Parameters - for reference see AMD sdk documentation */
     pic_descriptor->profile                                 = ff_xvba_translate_profile(v->profile);
     pic_descriptor->level                                   = v->level;
-    pic_descriptor->width_in_mb                             = s->mb_width;
-    pic_descriptor->height_in_mb                            = s->mb_height;
+    pic_descriptor->width_in_mb                             = avctx->coded_width; //s->mb_width;
+    pic_descriptor->height_in_mb                            = avctx->coded_height; //s->mb_height;
     pic_descriptor->picture_structure                       = s->picture_structure;
     // xvba-video set this to 1 only 4:2:0 supported
     // doc says: if not set, choose 1 - we try this
     pic_descriptor->chroma_format                           = s->chroma_format ? s->chroma_format : 1;
-    pic_descriptor->avc_intra_flag                          = (s->pict_type == FF_I_TYPE) ? 1 : 0;
+    pic_descriptor->avc_intra_flag                          = s->pict_type == FF_I_TYPE || v->bi_type == 1; //(s->pict_type == FF_I_TYPE) ? 1 : 0;
     pic_descriptor->avc_reference                           = (s->current_picture_ptr->reference & 3) ? 1 : 0;
     
     // VC-1 explicit parameters see page 30 of sdk
@@ -137,41 +137,41 @@ static int xvba_vc1_end_frame(AVCodecContext *avctx)
     return 0;
 }
 
-static int xvba_vc1_decode_slice(AVCodecContext *avctx, const uint8_t *buffer, uint32_t size)
+static int decode_slice(AVCodecContext *avctx, const uint8_t *buffer, uint32_t size)
 {
   VC1Context* const v = avctx->priv_data;
   MpegEncContext* const s = &v->s;
-  struct xvba_context *hwaccel_context;
-  uint8_t start_code[] = {0x00, 0x00, 0x01};
-    
-  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-  assert(hwaccel_context);
+  struct xvba_render_state *render;
 
-  ff_xvba_add_slice_data(hwaccel_context, start_code, 3, 0);
-  uint8_t start_code_ext = 0;
-  if (s->picture_structure == PICT_FRAME)
-    start_code_ext = 0x0d;
-  ff_xvba_add_slice_data(hwaccel_context, &start_code_ext, 1, 1);
-  ff_xvba_add_slice_data(hwaccel_context, buffer, size, 1);
+  render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
+  assert(render);
 
-  hwaccel_context->num_slices++;
+  if (avctx->codec_id == CODEC_ID_VC1 &&
+      size >= 4 && IS_MARKER(AV_RB32(buffer))) {
+      buffer += 4;
+      size   -= 4;
+  }
+
+//  av_log(NULL, AV_LOG_ERROR, "------------ size: %d\n", size);
+  ff_xvba_add_slice_data(render, buffer, size);
+  render->offset = get_bits_count(&s->gb);
 
   return 0;
 }
 
-#if CONFIG_WMV3_XVBA_HWACCEL
-AVHWAccel ff_wmv3_xvba_hwaccel = {
-    .name           = "wmv3_xvba",
-    .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = CODEC_ID_WMV3,
-    .pix_fmt        = PIX_FMT_XVBA_VLD,
-    .capabilities   = 0,
-    .start_frame    = xvba_vc1_start_frame,
-    .end_frame      = xvba_vc1_end_frame,
-    .decode_slice   = xvba_vc1_decode_slice,
-    .priv_data_size = 0,
-};
-#endif
+//#if CONFIG_WMV3_XVBA_HWACCEL
+//AVHWAccel ff_wmv3_xvba_hwaccel = {
+//    .name           = "wmv3_xvba",
+//    .type           = AVMEDIA_TYPE_VIDEO,
+//    .id             = CODEC_ID_WMV3,
+//    .pix_fmt        = PIX_FMT_XVBA_VLD,
+//    .capabilities   = 0,
+//    .start_frame    = xvba_vc1_start_frame,
+//    .end_frame      = xvba_vc1_end_frame,
+//    .decode_slice   = xvba_vc1_decode_slice,
+//    .priv_data_size = 0,
+//};
+//#endif
 
 AVHWAccel ff_vc1_xvba_hwaccel = {
     .name           = "vc1_xvba",
@@ -179,8 +179,8 @@ AVHWAccel ff_vc1_xvba_hwaccel = {
     .id             = CODEC_ID_VC1,
     .pix_fmt        = PIX_FMT_XVBA_VLD,
     .capabilities   = 0,
-    .start_frame    = xvba_vc1_start_frame,
-    .end_frame      = xvba_vc1_end_frame,
-    .decode_slice   = xvba_vc1_decode_slice,
+    .start_frame    = start_frame,
+    .end_frame      = end_frame,
+    .decode_slice   = decode_slice,
     .priv_data_size = 0,
 };
