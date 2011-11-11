@@ -50,23 +50,17 @@ int ff_xvba_translate_profile(int profile) {
     return -1;
 }
 
-void ff_xvba_add_slice_data(struct xvba_context *hwaccel_context, const uint8_t *buffer, uint32_t size, int append) {
+void ff_xvba_add_slice_data(struct xvba_render_state *render, const void *buffer, uint32_t size) {
 
-  void *bitstream_buffer;
-  bitstream_buffer = hwaccel_context->data_buffer->bufferXVBA;
+  render->buffers = av_fast_realloc(
+         render->buffers,
+         &render->buffers_alllocated,
+         sizeof(struct xvba_bitstream_buffers)*(render->num_slices + 1)
+  );
 
-  memcpy((uint8_t*)bitstream_buffer+hwaccel_context->data_buffer->data_size_in_buffer, buffer, size);
-  hwaccel_context->data_buffer->data_size_in_buffer += size;
+  render->buffers[render->num_slices].buffer = buffer;
+  render->buffers[render->num_slices].size = size;
 
-  if (append)
-    hwaccel_context->data_control[hwaccel_context->num_slices] += hwaccel_context->data_buffer->data_size_in_buffer;
-  else {
-    hwaccel_context->data_control = av_fast_realloc(
-       hwaccel_context->data_control,
-       &hwaccel_context->data_control_size,
-       sizeof(unsigned int)*(hwaccel_context->num_slices + 1)
-    );
-    hwaccel_context->data_control[hwaccel_context->num_slices] = hwaccel_context->data_buffer->data_size_in_buffer;
-  }
+  render->num_slices++;
 }
 
