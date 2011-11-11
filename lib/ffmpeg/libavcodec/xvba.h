@@ -64,10 +64,22 @@ struct xvba_context {
 
 /* @} */
 
+struct xvba_bitstream_buffers
+{
+  const void *buffer;
+  unsigned int size;
+};
+
 struct xvba_render_state {
 
   int state; ///< Holds FF_XVBA_STATE_* values.
   void *surface;
+  XVBAPictureDescriptor *picture_descriptor;
+  XVBAQuantMatrixAvc *iq_matrix;
+  int num_slices;
+  struct xvba_bitstream_buffers *buffers;
+  unsigned int buffers_alllocated;
+  uint32_t offset;
 };
 
 #endif /* AVCODEC_XVBA_H */
