@@ -1,6 +1,10 @@
 /*
  * VC-1 HW decode acceleration through XVBA
  *
+ * Copyright (C) 2005-2011 Team XBMC
+ *
+ * This file is part of FFmpeg.
+ *
  * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -48,7 +52,6 @@ static int end_frame(AVCodecContext *avctx)
 {
     VC1Context* const v = avctx->priv_data;
     MpegEncContext* const s = &v->s;
-    struct xvba_context *hwaccel_context;
     struct xvba_render_state *render, *last, *next;
     XVBAPictureDescriptor *pic_descriptor;
 
@@ -65,8 +68,13 @@ static int end_frame(AVCodecContext *avctx)
     pic_descriptor->profile                                 = ff_xvba_translate_profile(v->profile);
     pic_descriptor->level                                   = v->level;
     //done like in va-driver and vaapi
-    pic_descriptor->width_in_mb                             = s->avctx->coded_width;
-    pic_descriptor->height_in_mb                            = s->avctx->coded_height;
+    if (v->profile == PROFILE_ADVANCED) {
+      pic_descriptor->width_in_mb                           = s->avctx->coded_width;
+      pic_descriptor->height_in_mb                          = s->avctx->coded_height;
+    } else {
+      pic_descriptor->width_in_mb                           = s->mb_width;
+      pic_descriptor->height_in_mb                          = s->mb_height;
+    }
     pic_descriptor->picture_structure                       = s->picture_structure;
     // xvba-video set this to 1 only 4:2:0 supported
     // doc says: if not set, choose 1 - we try this
@@ -133,8 +141,6 @@ static int end_frame(AVCodecContext *avctx)
         break;
     }
 
-//    av_log(NULL, AV_LOG_ERROR, "------- profile: %d\n", pic_descriptor->profile);
-//    av_log(NULL, AV_LOG_ERROR, "------- level: %d\n", v->level);
     ff_draw_horiz_band(s, 0, s->avctx->height);
 
     return 0;
@@ -155,26 +161,24 @@ static int decode_slice(AVCodecContext *avctx, const uint8_t *buffer, uint32_t s
       size   -= 4;
   }
 
-//  av_log(NULL, AV_LOG_ERROR, "------------ size: %d\n", size);
   ff_xvba_add_slice_data(render, buffer, size);
-  render->offset = get_bits_count(&s->gb);
 
   return 0;
 }
 
-//#if CONFIG_WMV3_XVBA_HWACCEL
-//AVHWAccel ff_wmv3_xvba_hwaccel = {
-//    .name           = "wmv3_xvba",
-//    .type           = AVMEDIA_TYPE_VIDEO,
-//    .id             = CODEC_ID_WMV3,
-//    .pix_fmt        = PIX_FMT_XVBA_VLD,
-//    .capabilities   = 0,
-//    .start_frame    = xvba_vc1_start_frame,
-//    .end_frame      = xvba_vc1_end_frame,
-//    .decode_slice   = xvba_vc1_decode_slice,
-//    .priv_data_size = 0,
-//};
-//#endif
+#if CONFIG_WMV3_XVBA_HWACCEL
+AVHWAccel ff_wmv3_xvba_hwaccel = {
+    .name           = "wmv3_xvba",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_WMV3,
+    .pix_fmt        = PIX_FMT_XVBA_VLD,
+    .capabilities   = 0,
+    .start_frame    = start_frame,
+    .end_frame      = end_frame,
+    .decode_slice   = decode_slice,
+    .priv_data_size = 0,
+};
+#endif
 
 AVHWAccel ff_vc1_xvba_hwaccel = {
     .name           = "vc1_xvba",
