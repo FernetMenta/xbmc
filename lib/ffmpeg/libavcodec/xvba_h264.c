@@ -39,15 +39,12 @@ static int start_frame(AVCodecContext          *avctx,
   H264Context * const h = avctx->priv_data;
   MpegEncContext * const s = &h->s;
   struct xvba_render_state *render;
-//  struct xvba_context *hwaccel_context;
   XVBAPictureDescriptor *pic_descriptor;
   int i;
 
   render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
   assert(render);
 
-//  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-//  assert(hwaccel_context);
   pic_descriptor = render->picture_descriptor;
 
   for (i = 0; i < 2; ++i) {
@@ -59,8 +56,6 @@ static int start_frame(AVCodecContext          *avctx,
 
   pic_descriptor->avc_frame_num = h->frame_num;
 
-//  hwaccel_context->num_slices = 0;
-//  hwaccel_context->data_buffer->data_size_in_buffer = 0;
   render->num_slices = 0;
 
   return 0;
@@ -72,15 +67,11 @@ static int end_frame(AVCodecContext *avctx)
   H264Context * const h = avctx->priv_data;
   MpegEncContext * const s = &h->s;
   struct xvba_render_state *render;
-//  struct xvba_context *hwaccel_context;
   XVBAPictureDescriptor *pic_descriptor;
   XVBAQuantMatrixAvc *iq_matrix;
 
   render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
   assert(render);
-
-//  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-//  assert(hwaccel_context);
 
   pic_descriptor = render->picture_descriptor;
   iq_matrix = render->iq_matrix;
@@ -154,11 +145,7 @@ static int decode_slice(AVCodecContext *avctx,
   H264Context * const h = avctx->priv_data;
   MpegEncContext * const s = &h->s;
   struct xvba_render_state *render;
-//  struct xvba_context *hwaccel_context;
-//  static const uint8_t start_code[] = {0x00, 0x00, 0x01};
 
-//  hwaccel_context = (struct xvba_context *)avctx->hwaccel_context;
-//  assert(hwaccel_context);
   render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
   assert(render);
 

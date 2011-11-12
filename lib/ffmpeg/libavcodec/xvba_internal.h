@@ -1,6 +1,5 @@
 /*
- * Video Acceleration API (video decoding)
- * HW decode acceleration for MPEG-2, MPEG-4, H.264 and VC-1
+ * HW decode acceleration for MPEG-2, H.264 and VC-1
  *
  * Copyright (C) 2005-2011 Team XBMC
  *
@@ -20,7 +19,6 @@
  * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-
 
 int ff_xvba_translate_profile(int profile);
 void ff_xvba_add_slice_data(struct xvba_render_state *render, const uint8_t *buffer, uint32_t size);
