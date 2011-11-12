@@ -229,7 +229,7 @@ bool CLinuxRendererGL::ValidateRenderer()
 
 void CLinuxRendererGL::ManageTextures()
 {
-  m_NumYV12Buffers = 2;
+  m_NumYV12Buffers = 3;
   //m_iYV12RenderBuffer = 0;
   return;
 }
@@ -747,7 +747,7 @@ unsigned int CLinuxRendererGL::PreInit()
     m_resolution = RES_DESKTOP;
 
   m_iYV12RenderBuffer = 0;
-  m_NumYV12Buffers = 2;
+  m_NumYV12Buffers = 3;
 
   // setup the background colour
   m_clearColour = (float)(g_advancedSettings.m_videoBlackBarColour & 0xff) / 0xff;
@@ -827,7 +827,7 @@ void CLinuxRendererGL::UpdateVideoFilter()
   case VS_SCALINGMETHOD_LINEAR:
     SetTextureFilter(m_scalingMethod == VS_SCALINGMETHOD_NEAREST ? GL_NEAREST : GL_LINEAR);
     m_renderQuality = RQ_SINGLEPASS;
-    if (((m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI)) && m_nonLinStretch)
+    if (((m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI) || (m_renderMethod & RENDER_XVBA)) && m_nonLinStretch)
     {
       m_pVideoFilterShader = new StretchFilterShader();
       if (!m_pVideoFilterShader->CompileAndLink())
@@ -908,11 +908,11 @@ void CLinuxRendererGL::LoadShaders(int field)
     CLog::Log(LOGNOTICE, "GL: Using VAAPI render method");
     m_renderMethod = RENDER_VAAPI;
   }
-  else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA)
-  {
-    CLog::Log(LOGNOTICE, "GL: Using XVBA render method");
-    m_renderMethod = RENDER_XVBA;
-  }
+//  else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA)
+//  {
+//    CLog::Log(LOGNOTICE, "GL: Using XVBA render method");
+//    m_renderMethod = RENDER_XVBA;
+//  }
   else
   {
     int requestedMethod = g_guiSettings.GetInt("videoplayer.rendermethod");
@@ -1049,9 +1049,12 @@ void CLinuxRendererGL::LoadShaders(int field)
   }
   else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA)
   {
-    m_textureUpload = &CLinuxRendererGL::UploadXVBATexture;
-    m_textureCreate = &CLinuxRendererGL::CreateXVBATexture;
-    m_textureDelete = &CLinuxRendererGL::DeleteXVBATexture;
+//    m_textureUpload = &CLinuxRendererGL::UploadXVBATexture;
+//    m_textureCreate = &CLinuxRendererGL::CreateXVBATexture;
+//    m_textureDelete = &CLinuxRendererGL::DeleteXVBATexture;
+    m_textureUpload = &CLinuxRendererGL::UploadXVBAyv12Texture;
+    m_textureCreate = &CLinuxRendererGL::CreateXVBAyv12Texture;
+    m_textureDelete = &CLinuxRendererGL::DeleteXVBAyv12Texture;
   }
   else
   {
@@ -2516,9 +2519,6 @@ void CLinuxRendererGL::UploadXVBATexture(int index)
     return;
   }
 
-  glEnable(m_textureTarget);
-  xvba->UploadTexture(index, m_textureTarget);
-
   XVBA_SURFACE_FLAG field;
   if (m_currentField == FIELD_TOP)
     field = XVBA_TOP_FIELD;
@@ -2527,12 +2527,290 @@ void CLinuxRendererGL::UploadXVBATexture(int index)
   else
     field = XVBA_FRAME;
 
+  glEnable(m_textureTarget);
+  xvba->UploadTexture(index, field, m_textureTarget);
   fields[m_currentField][0].id = xvba->GetTexture(index, field);
 
   glDisable(m_textureTarget);
 
   m_eventTexturesDone[index]->Set();
 #endif
+}
+
+//********************************************************************************************************
+// XVBA YV12 Texture creation, deletion, copying + clearing
+//********************************************************************************************************
+void CLinuxRendererGL::DeleteXVBAyv12Texture(int index)
+{
+  YV12Image &im     = m_buffers[index].image;
+  YUVFIELDS &fields = m_buffers[index].fields;
+  GLuint    *pbo    = m_buffers[index].pbo;
+
+  if( fields[FIELD_FULL][0].id == 0 ) return;
+
+  /* finish up all textures, and delete them */
+  g_graphicsContext.BeginPaint();  //FIXME
+  for(int f = 0;f<MAX_FIELDS;f++)
+  {
+    for(int p = 0;p<MAX_PLANES;p++)
+    {
+      if( fields[f][p].id )
+      {
+        if (glIsTexture(fields[f][p].id))
+          glDeleteTextures(1, &fields[f][p].id);
+        fields[f][p].id = 0;
+      }
+    }
+  }
+  g_graphicsContext.EndPaint();
+
+  if (pbo[0])
+  {
+    if (im.plane[0])
+    {
+      glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo[0]);
+      glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB);
+      im.plane[0] = NULL;
+      glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+    }
+    glDeleteBuffersARB(1, pbo);
+    pbo[0] = 0;
+  }
+  else
+  {
+    if (im.plane[0])
+    {
+      delete[] im.plane[0];
+      im.plane[0] = NULL;
+    }
+  }
+}
+
+bool CLinuxRendererGL::CreateXVBAyv12Texture(int index)
+{
+  /* since we also want the field textures, pitch must be texture aligned */
+  unsigned p;
+
+  YV12Image &im     = m_buffers[index].image;
+  YUVFIELDS &fields = m_buffers[index].fields;
+  GLuint    *pbo    = m_buffers[index].pbo;
+
+  DeleteXVBAyv12Texture(index);
+
+  im.height = m_sourceHeight;
+  im.width  = m_sourceWidth;
+  im.cshift_x = 1;
+  im.cshift_y = 1;
+
+  im.stride[0] = im.width;
+  im.stride[1] = im.width >> im.cshift_x;
+  im.stride[2] = im.width >> im.cshift_x;
+
+  im.planesize[0] = im.stride[0] * im.height;
+  im.planesize[1] = im.stride[1] * ( im.height >> im.cshift_y );
+  im.planesize[2] = im.stride[2] * ( im.height >> im.cshift_y );
+
+  bool pboSetup = false;
+  if (m_pboUsed)
+  {
+    pboSetup = true;
+    glGenBuffersARB(1, pbo);
+
+    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo[0]);
+    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, im.planesize[0] + im.planesize[0]/2 + PBO_OFFSET, 0, GL_STREAM_DRAW_ARB);
+    void* pboPtr = glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
+    if (pboPtr)
+    {
+      im.plane[0] = (BYTE*) pboPtr + PBO_OFFSET;
+      memset(im.plane[0], 0, im.planesize[0]);
+    }
+    else
+    {
+      CLog::Log(LOGWARNING,"GL: failed to set up pixel buffer object");
+      pboSetup = false;
+    }
+
+    if (!pboSetup)
+    {
+      glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo[0]);
+      glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB);
+      glDeleteBuffersARB(1, pbo);
+      memset(m_buffers[index].pbo, 0, sizeof(m_buffers[index].pbo));
+    }
+
+    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+  }
+
+  if (!pboSetup)
+  {
+    im.plane[0] = new BYTE[im.planesize[0]+im.planesize[0]/2];
+  }
+
+  glEnable(m_textureTarget);
+  for(int f = 0;f<MAX_FIELDS;f++)
+  {
+    for(p = 0;p<MAX_PLANES;p++)
+    {
+      if (!glIsTexture(fields[f][p].id))
+      {
+        glGenTextures(1, &fields[f][p].id);
+        VerifyGLState();
+      }
+      fields[f][p].pbo = pbo[p];
+    }
+  }
+
+  // YUV
+  for (int f = FIELD_FULL; f<=FIELD_BOT ; f++)
+  {
+    int fieldshift = (f==FIELD_FULL) ? 0 : 1;
+    YUVPLANES &planes = fields[f];
+
+    planes[0].texwidth  = im.width;
+    planes[0].texheight = im.height >> fieldshift;
+
+    if (m_renderMethod & RENDER_SW)
+    {
+      planes[1].texwidth  = 0;
+      planes[1].texheight = 0;
+      planes[2].texwidth  = 0;
+      planes[2].texheight = 0;
+    }
+    else
+    {
+      planes[1].texwidth  = planes[0].texwidth  >> im.cshift_x;
+      planes[1].texheight = planes[0].texheight >> im.cshift_y;
+      planes[2].texwidth  = planes[0].texwidth  >> im.cshift_x;
+      planes[2].texheight = planes[0].texheight >> im.cshift_y;
+    }
+
+    for (int p = 0; p < 3; p++)
+    {
+      planes[p].pixpertex_x = 1;
+      planes[p].pixpertex_y = 1;
+    }
+
+    if(m_renderMethod & RENDER_POT)
+    {
+      for(int p = 0; p < 3; p++)
+      {
+        planes[p].texwidth  = NP2(planes[p].texwidth);
+        planes[p].texheight = NP2(planes[p].texheight);
+      }
+    }
+
+    for(int p = 0; p < 3; p++)
+    {
+      YUVPLANE &plane = planes[p];
+      if (plane.texwidth * plane.texheight == 0)
+        continue;
+
+      glBindTexture(m_textureTarget, plane.id);
+      if (m_renderMethod & RENDER_SW)
+      {
+        glTexImage2D(m_textureTarget, 0, GL_RGBA, plane.texwidth, plane.texheight, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
+      }
+      else
+      {
+        GLint format;
+        if (p == 2) //V plane needs an alpha texture
+          format = GL_ALPHA;
+        else
+          format = GL_LUMINANCE;
+
+        glTexImage2D(m_textureTarget, 0, format, plane.texwidth, plane.texheight, 0, format, GL_UNSIGNED_BYTE, NULL);
+      }
+
+      glTexParameteri(m_textureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(m_textureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      VerifyGLState();
+    }
+  }
+  glDisable(m_textureTarget);
+  m_eventTexturesDone[index]->Set();
+  return true;
+}
+
+void CLinuxRendererGL::UploadXVBAyv12Texture(int source)
+{
+  YUVBUFFER& buf    =  m_buffers[source];
+  YV12Image* im     = &buf.image;
+  YUVFIELDS& fields =  buf.fields;
+
+  if (!(im->flags&IMAGE_FLAG_READY))
+  {
+    m_eventTexturesDone[source]->Set();
+    return;
+  }
+
+  bool deinterlacing;
+  if (m_currentField == FIELD_FULL)
+    deinterlacing = false;
+  else
+    deinterlacing = true;
+
+  glEnable(m_textureTarget);
+  VerifyGLState();
+
+  glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+
+  if (deinterlacing)
+  {
+    // Load Even Y Field
+    LoadPlane( fields[FIELD_TOP][0] , GL_LUMINANCE, buf.flipindex
+             , im->width, im->height >> 1
+             , im->stride[0]*2, im->plane[0] );
+
+    //load Odd Y Field
+    LoadPlane( fields[FIELD_BOT][0], GL_LUMINANCE, buf.flipindex
+             , im->width, im->height >> 1
+             , im->stride[0]*2, im->plane[0] + im->stride[0], &buf.pbo[0] ) ;
+
+    // Load Even U & V Fields
+    LoadPlane( fields[FIELD_TOP][1], GL_LUMINANCE, buf.flipindex
+             , im->width >> im->cshift_x, im->height >> (im->cshift_y + 1)
+             , im->stride[1]*2, im->plane[0] + im->planesize[0] + im->planesize[1], &buf.pbo[0] );
+
+    LoadPlane( fields[FIELD_TOP][2], GL_ALPHA, buf.flipindex
+             , im->width >> im->cshift_x, im->height >> (im->cshift_y + 1)
+             , im->stride[2]*2, im->plane[0] + im->planesize[0], &buf.pbo[0] );
+
+    // Load Odd U & V Fields
+    LoadPlane( fields[FIELD_BOT][1], GL_LUMINANCE, buf.flipindex
+             , im->width >> im->cshift_x, im->height >> (im->cshift_y + 1)
+             , im->stride[1]*2, im->plane[0] + im->stride[1] + im->planesize[0] + im->planesize[1], &buf.pbo[0] );
+
+    LoadPlane( fields[FIELD_BOT][2], GL_ALPHA, buf.flipindex
+             , im->width >> im->cshift_x, im->height >> (im->cshift_y + 1)
+             , im->stride[2]*2, im->plane[0] + im->stride[2] + im->planesize[0], &buf.pbo[0] );
+  }
+  else
+  {
+    //Load Y plane
+    LoadPlane( fields[FIELD_FULL][0], GL_LUMINANCE, buf.flipindex
+             , im->width, im->height
+             , im->stride[0], im->plane[0], &buf.pbo[0] );
+
+    //load U plane
+    LoadPlane( fields[FIELD_FULL][1], GL_LUMINANCE, buf.flipindex
+             , im->width >> im->cshift_x, im->height >> im->cshift_y
+             , im->stride[1], im->plane[0] + im->planesize[0] + im->planesize[1] , &buf.pbo[0] );
+
+    //load V plane
+    LoadPlane( fields[FIELD_FULL][2], GL_ALPHA, buf.flipindex
+             , im->width >> im->cshift_x, im->height >> im->cshift_y
+             , im->stride[2], im->plane[0] + im->planesize[0], &buf.pbo[0] );
+  }
+
+  m_eventTexturesDone[source]->Set();
+
+  VerifyGLState();
+
+  CalculateTextureSourceRects(source, 3);
+
+  glDisable(m_textureTarget);
 }
 
 void CLinuxRendererGL::UploadYUV422PackedTexture(int source)
@@ -3118,6 +3396,9 @@ bool CLinuxRendererGL::Supports(ERENDERFEATURE feature)
     if (m_renderMethod & RENDER_VAAPI)
       return false;
 
+    if (m_renderMethod & RENDER_XVBA)
+      return false;
+
     return (m_renderMethod & RENDER_GLSL)
         || (m_renderMethod & RENDER_ARB)
         || ((m_renderMethod & RENDER_SW) && glewIsSupported("GL_ARB_imaging") == GL_TRUE);
@@ -3129,6 +3410,9 @@ bool CLinuxRendererGL::Supports(ERENDERFEATURE feature)
       return true;
 
     if (m_renderMethod & RENDER_VAAPI)
+      return false;
+
+    if (m_renderMethod & RENDER_XVBA)
       return false;
 
     return (m_renderMethod & RENDER_GLSL)
@@ -3154,7 +3438,8 @@ bool CLinuxRendererGL::Supports(ERENDERFEATURE feature)
   if (feature == RENDERFEATURE_NONLINSTRETCH)
   {
     if (((m_renderMethod & RENDER_GLSL) && !(m_renderMethod & RENDER_POT)) ||
-        (m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI))
+        (m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI) ||
+        (m_renderMethod & RENDER_XVBA))
       return true;
   }
 
@@ -3194,10 +3479,22 @@ bool CLinuxRendererGL::Supports(EINTERLACEMETHOD method)
   if(m_renderMethod & RENDER_VAAPI)
     return false;
 
-  if(method == VS_INTERLACEMETHOD_DEINTERLACE
-  || method == VS_INTERLACEMETHOD_DEINTERLACE_HALF
-  || method == VS_INTERLACEMETHOD_SW_BLEND)
-    return true;
+  if(m_renderMethod & RENDER_XVBA)
+  {
+    if (method == VS_INTERLACEMETHOD_RENDER_BOB_INVERTED
+    ||  method == VS_INTERLACEMETHOD_RENDER_BOB)
+      return true;
+    else
+      return false;
+  }
+
+  if (CONF_FLAGS_FORMAT_MASK(m_iFlags) != CONF_FLAGS_FORMAT_XVBA)
+  {
+    if(method == VS_INTERLACEMETHOD_DEINTERLACE
+    || method == VS_INTERLACEMETHOD_DEINTERLACE_HALF
+    || method == VS_INTERLACEMETHOD_SW_BLEND)
+      return true;
+  }
 
   if((method == VS_INTERLACEMETHOD_RENDER_BLEND
   ||  method == VS_INTERLACEMETHOD_RENDER_WEAVE_INVERTED
@@ -3288,7 +3585,7 @@ void CLinuxRendererGL::UnBindPbo(YUVBUFFER& buff)
     pbo = true;
 
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, buff.pbo[plane]);
-    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, buff.image.planesize[plane] + PBO_OFFSET, NULL, GL_STREAM_DRAW_ARB);
+//    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, buff.image.planesize[plane] + PBO_OFFSET, NULL, GL_STREAM_DRAW_ARB);
     buff.image.plane[plane] = (BYTE*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB) + PBO_OFFSET;
   }
   if(pbo)
