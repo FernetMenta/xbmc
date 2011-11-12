@@ -1,5 +1,7 @@
 /*
- * XVideo Motion Compensation internal functions
+ * HW decode acceleration for MPEG-2, H.264 and VC-1
+ *
+ * Copyright (C) 2005-2011 Team XBMC
  *
  * This file is part of FFmpeg.
  *
