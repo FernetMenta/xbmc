@@ -204,6 +204,10 @@ protected:
   void DeleteXVBATexture(int index);
   bool CreateXVBATexture(int index);
 
+  void UploadXVBAyv12Texture(int index);
+  void DeleteXVBAyv12Texture(int index);
+  bool CreateXVBAyv12Texture(int index);
+
   void UploadYUV422PackedTexture(int index);
   void DeleteYUV422PackedTexture(int index);
   bool CreateYUV422PackedTexture(int index);
