@@ -89,7 +89,7 @@ public:
   virtual const std::string Name() { return "xvba"; }
 
   void Present(int index);
-  int UploadTexture(int index, GLenum textureTarget);
+  int UploadTexture(int index, XVBA_SURFACE_FLAG field, GLenum textureTarget);
   GLuint GetTexture(int index, XVBA_SURFACE_FLAG field);
   void FinishGL();
 
