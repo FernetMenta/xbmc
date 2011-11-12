@@ -1,8 +1,7 @@
 /*
- * Video Acceleration API (shared data between FFmpeg and the video player)
- * HW decode acceleration for MPEG-2, MPEG-4, H.264 and VC-1
+ * HW decode acceleration for MPEG-2, H.264 and VC-1
  *
- * Copyright (C) 2008-2009 Splitted-Desktop Systems
+ * Copyright (C) 2005-2011 Team XBMC
  *
  * This file is part of FFmpeg.
  *
@@ -44,24 +43,6 @@
  */
 #define FF_XVBA_STATE_USED_FOR_REFERENCE 2
 
-/**
- * This structure is used to share data between the FFmpeg library and
- * the client video application.
- * This shall be zero-allocated and available as
- * AVCodecContext.hwaccel_context. All user members can be set once
- * during initialization or through each AVCodecContext.get_buffer()
- * function call. In any case, they must be valid prior to calling
- * decoding functions.
- */
-struct xvba_context {
-  XVBABufferDescriptor *picture_descriptor_buffer;
-  XVBABufferDescriptor *iq_matrix_buffer;
-  XVBABufferDescriptor *data_buffer;
-  unsigned int         *data_control;
-  unsigned int          data_control_size;
-  unsigned int          num_slices;
-};
-
 /* @} */
 
 struct xvba_bitstream_buffers
@@ -78,8 +59,7 @@ struct xvba_render_state {
   XVBAQuantMatrixAvc *iq_matrix;
   int num_slices;
   struct xvba_bitstream_buffers *buffers;
-  unsigned int buffers_alllocated;
-  uint32_t offset;
+  uint32_t buffers_alllocated;
 };
 
 #endif /* AVCODEC_XVBA_H */

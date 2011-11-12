@@ -1,7 +1,7 @@
 /*
- * MPEG-2 HW decode acceleration through VA API
+ * MPEG-2 HW decode acceleration through XVBA
  *
- * Copyright (C) 2005-2011 Team XBMA
+ * Copyright (C) 2005-2011 Team XBMC
  *
  * This file is part of FFmpeg.
  *
@@ -22,18 +22,18 @@
 
 #include "dsputil.h"
 
-static int xvba_mpeg2_start_frame(AVCodecContext *avctx, av_unused const uint8_t *buffer, av_unused uint32_t size)
+static int start_frame(AVCodecContext *avctx, av_unused const uint8_t *buffer, av_unused uint32_t size)
 {
     struct MpegEncContext * const s = avctx->priv_data;
     return 0;
 }
 
-static int xvba_mpeg2_end_frame(AVCodecContext *avctx)
+static int end_frame(AVCodecContext *avctx)
 {
     return 0;
 }
 
-static int xvba_mpeg2_decode_slice(AVCodecContext *avctx, const uint8_t *buffer, uint32_t size)
+static int decode_slice(AVCodecContext *avctx, const uint8_t *buffer, uint32_t size)
 {
     struct MpegEncContext * const s = avctx->priv_data;
     return 0;
@@ -45,8 +45,8 @@ AVHWAccel ff_mpeg2_xvba_hwaccel = {
     .id             = CODEC_ID_MPEG2VIDEO,
     .pix_fmt        = PIX_FMT_XVBA_VLD,
     .capabilities   = 0,
-    .start_frame    = xvba_mpeg2_start_frame,
-    .end_frame      = xvba_mpeg2_end_frame,
-    .decode_slice   = xvba_mpeg2_decode_slice,
+    .start_frame    = start_frame,
+    .end_frame      = end_frame,
+    .decode_slice   = decode_slice,
     .priv_data_size = 0,
 };
