@@ -115,10 +115,16 @@ protected:
 
   XVBADecodeCap m_decoderCap;
   void *m_xvbaSession;
-  std::vector<XVBABufferDescriptor*> m_dataControlBuffers;
+  struct XVBABufferPool
+  {
+    XVBABufferDescriptor *picture_descriptor_buffer;
+    XVBABufferDescriptor *iq_matrix_buffer;
+    XVBABufferDescriptor *data_buffer;
+    std::vector<XVBABufferDescriptor*> data_control_buffers;
+  };
+  XVBABufferPool m_xvbaBufferPool;
 
   std::vector<xvba_render_state*> m_videoSurfaces;
-  xvba_context m_decoderContext;
   pictureAge picAge;
 
   struct OutputPicture
