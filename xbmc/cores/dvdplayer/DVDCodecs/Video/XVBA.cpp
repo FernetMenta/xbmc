@@ -351,48 +351,105 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
     CLog::Log(LOGERROR,"(XVBA) session decode not supported");
     return false;
   }
-  CLog::Log(LOGNOTICE, "-------size ---------: %d", sessionOutput.getcapdecode_output_size);
+
   // get decoder capabilities
   XVBA_GetCapDecode_Input capInput;
   XVBA_GetCapDecode_Output *capOutput;
   capInput.size = sizeof(capInput);
   capInput.context = m_context->GetContext();
-  capOutput = (XVBA_GetCapDecode_Output *)alloca(sessionOutput.getcapdecode_output_size);
+  capOutput = (XVBA_GetCapDecode_Output *)calloc(sessionOutput.getcapdecode_output_size, 1);
   capOutput->size = sessionOutput.getcapdecode_output_size;
   if (Success != g_XVBA_vtable.GetCapDecode(&capInput, capOutput))
   {
     CLog::Log(LOGERROR,"(XVBA) can't get decode capabilities");
     return false;
   }
-  int bestMatch = -1;
-  XVBA_DECODE_FLAGS flags = XVBA_NOFLAG;
-  for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
+
+  int match = -1;
+  if (avctx->codec_id == CODEC_ID_H264)
   {
-    if ((avctx->codec_id == CODEC_ID_H264 && capOutput->decode_caps_list[i].capability_id == XVBA_H264)
-        || (avctx->codec_id == CODEC_ID_VC1 && capOutput->decode_caps_list[i].capability_id == XVBA_VC1)
-        || (avctx->codec_id == CODEC_ID_MPEG2VIDEO && capOutput->decode_caps_list[i].capability_id == XVBA_MPEG2_VLD))
+    // search for profile high
+    for (int i = 0; i < capOutput->num_of_decodecaps; ++i)
     {
-      if (capOutput->decode_caps_list[i].flags > flags)
+      if (capOutput->decode_caps_list[i].capability_id == XVBA_H264 &&
+          capOutput->decode_caps_list[i].flags == XVBA_H264_HIGH)
       {
-        flags = capOutput->decode_caps_list[i].flags;
-        bestMatch = i;
+        match = i;
+        break;
       }
     }
+    if (match < 0)
+    {
+      CLog::Log(LOGNOTICE, "(XVBA::Open) - profile XVBA_H264_HIGH not found");
+    }
   }
-  if (bestMatch == -1)
+  else if (avctx->codec_id == CODEC_ID_VC1)
   {
-    CLog::Log(LOGERROR,"(XVBA) no suitable decoder capability found");
+    // search for profile advanced
+    for (int i = 0; i < capOutput->num_of_decodecaps; ++i)
+    {
+      if (capOutput->decode_caps_list[i].capability_id == XVBA_VC1 &&
+          capOutput->decode_caps_list[i].flags == XVBA_VC1_ADVANCED)
+      {
+        match = i;
+        break;
+      }
+    }
+    if (match < 0)
+    {
+      CLog::Log(LOGNOTICE, "(XVBA::Open) - profile XVBA_VC1_ADVANCED not found");
+    }
+  }
+  else if (avctx->codec_id == CODEC_ID_MPEG2VIDEO)
+  {
+    // search for profile high
+    for (int i = 0; i < capOutput->num_of_decodecaps; ++i)
+    {
+      if (capOutput->decode_caps_list[i].capability_id == XVBA_MPEG2_VLD)
+      {
+        // XXX: uncomment when implemented
+//        match = i;
+//        break;
+      }
+    }
+    if (match < 0)
+    {
+      CLog::Log(LOGNOTICE, "(XVBA::Open) - profile XVBA_MPEG2_VLD not found");
+    }
+  }
+  else if (avctx->codec_id == CODEC_ID_WMV3)
+  {
+    // search for profile high
+    for (int i = 0; i < capOutput->num_of_decodecaps; ++i)
+    {
+      if (capOutput->decode_caps_list[i].capability_id == XVBA_VC1 &&
+          capOutput->decode_caps_list[i].flags == XVBA_VC1_MAIN)
+      {
+        match = i;
+        break;
+      }
+    }
+    if (match < 0)
+    {
+      CLog::Log(LOGNOTICE, "(XVBA::Open) - profile XVBA_VC1_MAIN not found");
+    }
+  }
+
+  if (match < 0)
+  {
+    free(capOutput);
     return false;
   }
-  else
-    CLog::Log(LOGNOTICE,"(XVBA) using decoder capability id: %i flags: %i",
-                          capOutput->decode_caps_list[bestMatch].capability_id,
-                          capOutput->decode_caps_list[bestMatch].flags);
 
+  CLog::Log(LOGNOTICE,"(XVBA) using decoder capability id: %i flags: %i",
+                          capOutput->decode_caps_list[match].capability_id,
+                          capOutput->decode_caps_list[match].flags);
   CLog::Log(LOGNOTICE,"(XVBA) using surface type: %x",
-                          capOutput->decode_caps_list[bestMatch].surface_type);
+                          capOutput->decode_caps_list[match].surface_type);
 
-  m_decoderCap = capOutput->decode_caps_list[bestMatch];
+  m_decoderCap = capOutput->decode_caps_list[match];
+
+  free(capOutput);
 
   // set some varables
   m_xvbaSession = 0;
@@ -400,8 +457,8 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
   m_xvbaBufferPool.iq_matrix_buffer = 0;
   m_xvbaBufferPool.picture_descriptor_buffer = 0;
   picAge.b_age = picAge.ip_age[0] = picAge.ip_age[1] = 256*256*256*64;
-  m_surfaceWidth = (avctx->coded_width+15) & ~15;
-  m_surfaceHeight = (avctx->coded_height+15) & ~15;
+  m_surfaceWidth = 0;
+  m_surfaceHeight = 0;
   m_presentPicture = 0;
   m_numRenderBuffers = surfaces;
   m_flipBuffer = new RenderPicture[m_numRenderBuffers];
@@ -469,6 +526,9 @@ int CDecoder::Check(AVCodecContext* avctx)
 
 bool CDecoder::CreateSession(AVCodecContext* avctx)
 {
+  m_surfaceWidth = (avctx->coded_width+15) & ~15;
+  m_surfaceHeight = (avctx->coded_height+15) & ~15;
+
   XVBA_Create_Decode_Session_Input sessionInput;
   XVBA_Create_Decode_Session_Output sessionOutput;
 
@@ -1031,21 +1091,22 @@ void CDecoder::Reset()
 
 }
 
-int CDecoder::UploadTexture(int index, GLenum textureTarget)
+int CDecoder::UploadTexture(int index, XVBA_SURFACE_FLAG field, GLenum textureTarget)
 {
   CSharedLock lock(*m_context);
 
   if (!m_flipBuffer[index].outPic)
     return -1;
 
-  unsigned int first, last;
-  first = last = 0;
-  if (m_flipBuffer[index].outPic->dvdPic.iFlags & DVP_FLAG_INTERLACED)
-  {
-    first = 1;
-    last = 2;
-  }
-  for (unsigned int i = first; i <= last; ++i)
+  int i = field;
+//  unsigned int first, last;
+//  first = last = 0;
+//  if (field != XVBA_FRAME)
+//  {
+//    first = 1;
+//    last = 2;
+//  }
+//  for (unsigned int i = first; i <= last; ++i)
   {
     XVBA_SURFACE_FLAG field;
     if (i==0) field = XVBA_FRAME;
@@ -1093,15 +1154,15 @@ int CDecoder::UploadTexture(int index, GLenum textureTarget)
     }
   }
 
-  { CSingleLock lock(m_videoSurfaceSec);
-    m_flipBuffer[index].outPic->render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
-    m_flipBuffer[index].outPic->render = NULL;
-  }
-  {
-    CSingleLock lock(m_outPicSec);
-    m_freeOutPic.push_back(m_flipBuffer[index].outPic);
-    m_flipBuffer[index].outPic = NULL;
-  }
+//  { CSingleLock lock(m_videoSurfaceSec);
+//    m_flipBuffer[index].outPic->render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+//    m_flipBuffer[index].outPic->render = NULL;
+//  }
+//  {
+//    CSingleLock lock(m_outPicSec);
+//    m_freeOutPic.push_back(m_flipBuffer[index].outPic);
+//    m_flipBuffer[index].outPic = NULL;
+//  }
 
   return 1;
 }
