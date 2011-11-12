@@ -396,11 +396,9 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
 
   // set some varables
   m_xvbaSession = 0;
-  m_decoderContext.picture_descriptor_buffer = 0;
-  m_decoderContext.iq_matrix_buffer = 0;
-  m_decoderContext.data_buffer = 0;
-  m_decoderContext.data_control = 0;
-  m_decoderContext.data_control_size = 0;
+  m_xvbaBufferPool.data_buffer = 0;
+  m_xvbaBufferPool.iq_matrix_buffer = 0;
+  m_xvbaBufferPool.picture_descriptor_buffer = 0;
   picAge.b_age = picAge.ip_age[0] = picAge.ip_age[1] = 256*256*256*64;
   m_surfaceWidth = (avctx->coded_width+15) & ~15;
   m_surfaceHeight = (avctx->coded_height+15) & ~15;
@@ -421,12 +419,11 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
     m_freeOutPic.push_back(&m_allOutPic[j]);
 
   // setup ffmpeg
-  avctx->hwaccel_context = &m_decoderContext;
   avctx->thread_count    = 1;
   avctx->get_buffer      = CDecoder::FFGetBuffer;
   avctx->release_buffer  = CDecoder::FFReleaseBuffer;
   avctx->draw_horiz_band = CDecoder::FFDrawSlice;
-  avctx->slice_flags=SLICE_FLAG_CODED_ORDER|SLICE_FLAG_ALLOW_FIELD;
+  avctx->slice_flags     = SLICE_FLAG_CODED_ORDER|SLICE_FLAG_ALLOW_FIELD;
   return true;
 }
 
@@ -505,7 +502,7 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
     CLog::Log(LOGERROR,"(XVBA) failed to create picture buffer");
     return false;
   }
-  m_decoderContext.picture_descriptor_buffer = bufferOutput.buffer_list;
+  m_xvbaBufferPool.picture_descriptor_buffer = bufferOutput.buffer_list;
 
   // data buffer
   bufferInput.buffer_type = XVBA_DATA_BUFFER;
@@ -515,7 +512,7 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
     CLog::Log(LOGERROR,"(XVBA) failed to create data buffer");
     return false;
   }
-  m_decoderContext.data_buffer = bufferOutput.buffer_list;
+  m_xvbaBufferPool.data_buffer = bufferOutput.buffer_list;
 
   // QO Buffer
   bufferInput.buffer_type = XVBA_QM_BUFFER;
@@ -525,7 +522,7 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
     CLog::Log(LOGERROR,"(XVBA) failed to create qm buffer");
     return false;
   }
-  m_decoderContext.iq_matrix_buffer = bufferOutput.buffer_list;
+  m_xvbaBufferPool.iq_matrix_buffer = bufferOutput.buffer_list;
 
   return true;
 }
@@ -537,33 +534,28 @@ void CDecoder::DestroySession()
   bufInput.num_of_buffers_in_list = 1;
   if (m_xvbaSession)
   {
-    for (unsigned int i=0; i<m_dataControlBuffers.size() ; ++i)
+    for (unsigned int i=0; i<m_xvbaBufferPool.data_control_buffers.size() ; ++i)
     {
-      bufInput.buffer_list = m_dataControlBuffers[i];
+      bufInput.buffer_list = m_xvbaBufferPool.data_control_buffers[i];
       g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
     }
 
-    if (m_decoderContext.picture_descriptor_buffer)
+    if (m_xvbaBufferPool.picture_descriptor_buffer)
     {
-      bufInput.buffer_list = m_decoderContext.picture_descriptor_buffer;
+      bufInput.buffer_list = m_xvbaBufferPool.picture_descriptor_buffer;
       g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
     }
-    if (m_decoderContext.iq_matrix_buffer)
+    if (m_xvbaBufferPool.iq_matrix_buffer)
     {
-      bufInput.buffer_list = m_decoderContext.iq_matrix_buffer;
+      bufInput.buffer_list = m_xvbaBufferPool.iq_matrix_buffer;
       g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
     }
   }
 
-  if (m_decoderContext.data_control)
-    m_dllAvUtil.av_free(m_decoderContext.data_control);
-
-  m_dataControlBuffers.clear();
-  m_decoderContext.picture_descriptor_buffer = 0;
-  m_decoderContext.iq_matrix_buffer = 0;
-  m_decoderContext.data_buffer = 0;
-  m_decoderContext.data_control = 0;
-  m_decoderContext.data_control_size = 0;
+  m_xvbaBufferPool.data_control_buffers.clear();
+  m_xvbaBufferPool.picture_descriptor_buffer = 0;
+  m_xvbaBufferPool.iq_matrix_buffer = 0;
+  m_xvbaBufferPool.data_buffer = 0;
 
   while (!m_videoSurfaces.empty())
   {
@@ -584,10 +576,10 @@ void CDecoder::DestroySession()
 
 bool CDecoder::EnsureDataControlBuffers(unsigned int num)
 {
-  if (m_dataControlBuffers.size() >= num)
+  if (m_xvbaBufferPool.data_control_buffers.size() >= num)
     return true;
 
-  unsigned int missing = num - m_dataControlBuffers.size();
+  unsigned int missing = num - m_xvbaBufferPool.data_control_buffers.size();
 
   XVBA_Create_DecodeBuff_Input bufferInput;
   XVBA_Create_DecodeBuff_Output bufferOutput;
@@ -605,7 +597,7 @@ bool CDecoder::EnsureDataControlBuffers(unsigned int num)
       CLog::Log(LOGERROR,"(XVBA) failed to create data control buffer");
       return false;
     }
-    m_dataControlBuffers.push_back(bufferOutput.buffer_list);
+    m_xvbaBufferPool.data_control_buffers.push_back(bufferOutput.buffer_list);
   }
 
   return true;
@@ -693,8 +685,6 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     return;
   }
 
-//  CLog::Log(LOGNOTICE, "-------------- id: %x", render->surface);
-
   // decoding
   XVBA_Decode_Picture_Start_Input startInput;
   startInput.size = sizeof(startInput);
@@ -710,11 +700,11 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   picInput.session = xvba->m_xvbaSession;
   XVBABufferDescriptor *list[2];
   picInput.buffer_list = list;
-  list[0] = xvba->m_decoderContext.picture_descriptor_buffer;
+  list[0] = xvba->m_xvbaBufferPool.picture_descriptor_buffer;
   picInput.num_of_buffers_in_list = 1;
   if (avctx->codec_id == CODEC_ID_H264)
   {
-    list[1] = xvba->m_decoderContext.iq_matrix_buffer;
+    list[1] = xvba->m_xvbaBufferPool.iq_matrix_buffer;
     picInput.num_of_buffers_in_list = 2;
   }
 
@@ -731,7 +721,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
 
   XVBADataCtrl *dataControl;
   int location = 0;
-  xvba->m_decoderContext.data_buffer->data_size_in_buffer = 0;
+  xvba->m_xvbaBufferPool.data_buffer->data_size_in_buffer = 0;
   for (unsigned int j = 0; j < render->num_slices; ++j)
   {
     int startCodeSize = 0;
@@ -739,7 +729,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     if (avctx->codec_id == CODEC_ID_H264)
     {
       startCodeSize = 3;
-      memcpy((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+location,
+      memcpy((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+location,
           startCode, 3);
     }
     else if (avctx->codec_id == CODEC_ID_VC1 &&
@@ -747,37 +737,37 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     {
       startCodeSize = 4;
       uint8_t sdf = 0x0d;
-      memcpy((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+location,
+      memcpy((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+location,
           startCode, 3);
-      memcpy((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+location+3,
+      memcpy((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+location+3,
           &sdf, 1);
     }
-    memcpy((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+location+startCodeSize,
+    memcpy((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+location+startCodeSize,
         render->buffers[j].buffer,
         render->buffers[j].size);
-    dataControl = (XVBADataCtrl*)xvba->m_dataControlBuffers[j]->bufferXVBA;
+    dataControl = (XVBADataCtrl*)xvba->m_xvbaBufferPool.data_control_buffers[j]->bufferXVBA;
     dataControl->SliceDataLocation = location;
     dataControl->SliceBytesInBuffer = render->buffers[j].size+startCodeSize;
     dataControl->SliceBitsInBuffer = dataControl->SliceBytesInBuffer * 8;
-    xvba->m_decoderContext.data_buffer->data_size_in_buffer += dataControl->SliceBytesInBuffer;
+    xvba->m_xvbaBufferPool.data_buffer->data_size_in_buffer += dataControl->SliceBytesInBuffer;
     location += dataControl->SliceBytesInBuffer;
   }
 
-  int bufSize = xvba->m_decoderContext.data_buffer->data_size_in_buffer;
+  int bufSize = xvba->m_xvbaBufferPool.data_buffer->data_size_in_buffer;
   int padding = bufSize % 128;
   if (padding)
   {
     padding = 128 - padding;
-    xvba->m_decoderContext.data_buffer->data_size_in_buffer += padding;
-    memset((uint8_t*)xvba->m_decoderContext.data_buffer->bufferXVBA+bufSize,0,padding);
+    xvba->m_xvbaBufferPool.data_buffer->data_size_in_buffer += padding;
+    memset((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+bufSize,0,padding);
   }
 
   picInput.num_of_buffers_in_list = 2;
   for (unsigned int i = 0; i < render->num_slices; ++i)
   {
-    list[0] = xvba->m_decoderContext.data_buffer;
+    list[0] = xvba->m_xvbaBufferPool.data_buffer;
     list[0]->data_offset = 0;
-    list[1] = xvba->m_dataControlBuffers[i];
+    list[1] = xvba->m_xvbaBufferPool.data_control_buffers[i];
     list[1]->data_size_in_buffer = sizeof(*dataControl);
     if (Success != g_XVBA_vtable.DecodePicture(&picInput))
     {
@@ -871,8 +861,8 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
     CSingleLock lock(xvba->m_videoSurfaceSec);
     render->surface = surfaceOutput.surface;
     render->buffers_alllocated = 0;
-    render->picture_descriptor = (XVBAPictureDescriptor *)xvba->m_decoderContext.picture_descriptor_buffer->bufferXVBA;
-    render->iq_matrix = (XVBAQuantMatrixAvc *)xvba->m_decoderContext.iq_matrix_buffer->bufferXVBA;
+    render->picture_descriptor = (XVBAPictureDescriptor *)xvba->m_xvbaBufferPool.picture_descriptor_buffer->bufferXVBA;
+    render->iq_matrix = (XVBAQuantMatrixAvc *)xvba->m_xvbaBufferPool.iq_matrix_buffer->bufferXVBA;
     xvba->m_videoSurfaces.push_back(render);
   }
 
