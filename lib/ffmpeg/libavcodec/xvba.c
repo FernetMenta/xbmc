@@ -1,8 +1,7 @@
 /*
- * Video Acceleration API (video decoding)
- * HW decode acceleration for MPEG-2, MPEG-4, H.264 and VC-1
+ * HW decode acceleration for MPEG-2, H.264 and VC-1
  *
- * Copyright (C) 2005-2011 Team XBMA
+ * Copyright (C) 2005-2011 Team XBMC
  *
  * This file is part of FFmpeg.
  *
