@@ -304,6 +304,7 @@ void *CXVBAContext::GetContext()
 CDecoder::CDecoder()
 {
   m_context = 0;
+  m_xvbaSession = 0;
   m_flipBuffer = 0;
 }
 
@@ -1027,6 +1028,11 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
 
 bool CDecoder::GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture)
 {
+  CSharedLock lock(*m_context);
+
+  if (!m_context->IsValid(m_ctxId))
+    return false;
+
   { CSingleLock lock(m_outPicSec);
 
     if (DiscardPresentPicture())
@@ -1063,6 +1069,11 @@ bool CDecoder::DiscardPresentPicture()
 
 void CDecoder::Present(int index)
 {
+  CSharedLock lock(*m_context);
+
+  if (!m_context->IsValid(m_ctxId))
+    return;
+
   if (!m_presentPicture)
   {
     CLog::Log(LOGWARNING, "XVBA::Present: present picture is NULL");
@@ -1084,6 +1095,51 @@ void CDecoder::Present(int index)
 
   m_flipBuffer[index].outPic = m_presentPicture;
   m_presentPicture = NULL;
+}
+
+void CDecoder::CopyYV12(uint8_t *dest)
+{
+  CSharedLock lock(*m_context);
+
+  if (!m_context->IsValid(m_ctxId))
+    return;
+
+  if (!m_presentPicture)
+  {
+    CLog::Log(LOGWARNING, "XVBA::Present: present picture is NULL");
+    return;
+  }
+
+  XVBA_GetSurface_Target target;
+  target.size = sizeof(target);
+  target.surfaceType = XVBA_YV12;
+  target.flag = XVBA_FRAME;
+
+  XVBA_Get_Surface_Input input;
+  input.size = sizeof(input);
+  input.session = m_xvbaSession;
+  input.src_surface = m_presentPicture->render->surface;
+  input.target_buffer = dest;
+  input.target_pitch = m_surfaceWidth;
+  input.target_width = m_surfaceWidth;
+  input.target_height = m_surfaceHeight;
+  input.target_parameter = target;
+  if (Success != g_XVBA_vtable.GetSurface(&input))
+  {
+    CLog::Log(LOGERROR,"(XVBA::CopyYV12) failed to get  surface");
+  }
+
+  if (m_presentPicture->render)
+  {
+    CSingleLock lock(m_videoSurfaceSec);
+    m_presentPicture->render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+    m_presentPicture->render = NULL;
+  }
+  {
+    CSingleLock lock(m_outPicSec);
+    m_freeOutPic.push_back(m_presentPicture);
+    m_presentPicture = NULL;
+  }
 }
 
 void CDecoder::Reset()
