@@ -223,11 +223,13 @@ bool CXVBAContext::CreateContext()
   if (m_xvbaContext)
     return true;
 
+  CLog::Log(LOGNOTICE,"XVBA::CreateContext - creating decoder context");
+
   Display *disp;
   Drawable window;
   { CSingleLock lock(g_graphicsContext);
     disp = g_Windowing.GetDisplay();
-    window = g_Windowing.GetWindow();
+    window = DefaultRootWindow(disp);
   }
 
   int version;
@@ -321,6 +323,8 @@ typedef struct {
 
 bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned int surfaces)
 {
+  CLog::Log(LOGNOTICE,"(XVBA::Open) opening dxva decoder");
+
   if(avctx->coded_width  == 0
   || avctx->coded_height == 0)
   {
