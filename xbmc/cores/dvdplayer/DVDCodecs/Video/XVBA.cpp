@@ -25,6 +25,7 @@
 #include "XVBA.h"
 #include "windowing/WindowingFactory.h"
 #include "guilib/GraphicContext.h"
+#include "settings/GUISettings.h"
 
 using namespace XVBA;
 
@@ -1011,7 +1012,10 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
     ((CDVDVideoCodecFFmpeg*)avctx->opaque)->GetPictureCommon(&outPic->dvdPic);
     outPic->render = render;
 
-    outPic->dvdPic.format = DVDVideoPicture::FMT_XVBA;
+    if (g_guiSettings.GetBool("videoplayer.usexvbasharedsurface"))
+      outPic->dvdPic.format = DVDVideoPicture::FMT_XVBA;
+    else
+      outPic->dvdPic.format = DVDVideoPicture::FMT_XVBA_YV12;
     outPic->dvdPic.iWidth = m_surfaceWidth;
     outPic->dvdPic.iHeight = m_surfaceHeight;
     outPic->dvdPic.xvba = this;
