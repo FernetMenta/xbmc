@@ -931,6 +931,15 @@ void CGUIWindowSettingsCategory::UpdateSettings()
         pControl->SetEnabled(enabled);
       }
     }
+    else if (strSetting.Equals("videoplayer.usexvbasharedsurface"))
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if (pControl)
+      {
+        bool enabled = (g_guiSettings.GetBool("videoplayer.usexvba"));
+        pControl->SetEnabled(enabled);
+      }
+    }
     else if (strSetting.Equals("weather.addonsettings"))
     {
       AddonPtr addon;
