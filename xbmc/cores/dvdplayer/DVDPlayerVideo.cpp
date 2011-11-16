@@ -1052,6 +1052,10 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
         flags |= CONF_FLAGS_FORMAT_XVBA;
         formatstr = "XVBA";
         break;
+      case DVDVideoPicture::FMT_XVBA_YV12:
+        flags |= CONF_FLAGS_FORMAT_XVBA_YV12;
+        formatstr = "XVBA";
+        break;
     }
 
     if(m_bAllowFullscreen)
