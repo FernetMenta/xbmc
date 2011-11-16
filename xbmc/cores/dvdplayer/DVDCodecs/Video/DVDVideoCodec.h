@@ -114,6 +114,7 @@ struct DVDVideoPicture
     FMT_OMXEGL,
     FMT_CVBREF,
     FMT_XVBA,
+    FMT_XVBA_YV12,
   } format;
 };
 
