@@ -909,11 +909,11 @@ void CLinuxRendererGL::LoadShaders(int field)
     CLog::Log(LOGNOTICE, "GL: Using VAAPI render method");
     m_renderMethod = RENDER_VAAPI;
   }
-//  else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA)
-//  {
-//    CLog::Log(LOGNOTICE, "GL: Using XVBA render method");
-//    m_renderMethod = RENDER_XVBA;
-//  }
+  else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA)
+  {
+    CLog::Log(LOGNOTICE, "GL: Using XVBA render method");
+    m_renderMethod = RENDER_XVBA;
+  }
   else
   {
     int requestedMethod = g_guiSettings.GetInt("videoplayer.rendermethod");
@@ -1050,9 +1050,12 @@ void CLinuxRendererGL::LoadShaders(int field)
   }
   else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA)
   {
-//    m_textureUpload = &CLinuxRendererGL::UploadXVBATexture;
-//    m_textureCreate = &CLinuxRendererGL::CreateXVBATexture;
-//    m_textureDelete = &CLinuxRendererGL::DeleteXVBATexture;
+    m_textureUpload = &CLinuxRendererGL::UploadXVBATexture;
+    m_textureCreate = &CLinuxRendererGL::CreateXVBATexture;
+    m_textureDelete = &CLinuxRendererGL::DeleteXVBATexture;
+  }
+  else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA_YV12)
+  {
     m_textureUpload = &CLinuxRendererGL::UploadXVBAyv12Texture;
     m_textureCreate = &CLinuxRendererGL::CreateXVBAyv12Texture;
     m_textureDelete = &CLinuxRendererGL::DeleteXVBAyv12Texture;
