@@ -594,6 +594,7 @@ void CGUISettings::Initialize()
 #endif
 #ifdef HAVE_LIBXVBA
   AddBool(vp, "videoplayer.usexvba", 13433, true);
+  AddBool(vp, "videoplayer.usexvbasharedsurface", 13434, true);
 #endif
 #ifdef HAS_DX
   AddBool(g_sysinfo.IsVistaOrHigher() ? vp: NULL, "videoplayer.usedxva2", 13427, g_sysinfo.IsVistaOrHigher() ? true : false);
