@@ -969,11 +969,11 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
 
 int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
 {
-  CSharedLock lock(*m_context);
-
   int result = Check(avctx);
   if (result)
     return result;
+
+  CSharedLock lock(*m_context);
 
   int iReturn(0);
   if(frame)
