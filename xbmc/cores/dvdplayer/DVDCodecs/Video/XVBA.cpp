@@ -26,6 +26,7 @@
 #include "windowing/WindowingFactory.h"
 #include "guilib/GraphicContext.h"
 #include "settings/GUISettings.h"
+#include "utils/TimeUtils.h"
 
 using namespace XVBA;
 
@@ -858,6 +859,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   syncInput.surface = render->surface;
   syncInput.query_status = XVBA_GET_SURFACE_STATUS;
   syncOutput.size = sizeof(syncOutput);
+  uint64_t start = CurrentHostCounter();
   while (1)
   {
     if (Success != g_XVBA_vtable.SyncSurface(&syncInput, &syncOutput))
@@ -867,6 +869,11 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     }
     if (!(syncOutput.status_flags & XVBA_STILL_PENDING))
       break;
+    if (CurrentHostCounter() - start > CurrentHostFrequency())
+    {
+      CLog::Log(LOGERROR,"(XVBA::FFDrawSlice) timed out waiting for surface ");
+      break;
+    }
     usleep(100);
   }
 }
