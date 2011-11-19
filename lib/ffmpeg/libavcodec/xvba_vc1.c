@@ -80,8 +80,6 @@ static int end_frame(AVCodecContext *avctx)
     // doc says: if not set, choose 1 - we try this
     pic_descriptor->chroma_format                           = 1;
     pic_descriptor->avc_intra_flag                          = s->pict_type == FF_I_TYPE || v->bi_type == 1;
-    // these one are not needed for VC-1 - but doc says so?
-    pic_descriptor->avc_intra_flag                          = (s->pict_type == FF_I_TYPE) ? 1 : 0;
     pic_descriptor->avc_reference                           = (s->current_picture_ptr->reference & 3) ? 1 : 0;
     
     // VC-1 explicit parameters see page 30 of sdk
