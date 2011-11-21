@@ -80,6 +80,7 @@ static struct
 
 CXVBAContext *CXVBAContext::m_context = 0;
 CCriticalSection CXVBAContext::m_section;
+Display *CXVBAContext::m_display = 0;
 
 CXVBAContext::CXVBAContext()
 {
@@ -227,15 +228,15 @@ bool CXVBAContext::CreateContext()
 
   CLog::Log(LOGNOTICE,"XVBA::CreateContext - creating decoder context");
 
-  Display *disp;
   Drawable window;
   { CSingleLock lock(g_graphicsContext);
-    disp = g_Windowing.GetDisplay();
-    window = DefaultRootWindow(disp);
+    if (!m_display)
+      m_display = XOpenDisplay(NULL);
+    window = 0;
   }
 
   int version;
-  if (!g_XVBA_vtable.QueryExtension(disp, &version))
+  if (!g_XVBA_vtable.QueryExtension(m_display, &version))
     return false;
   CLog::Log(LOGNOTICE,"XVBA::CreateContext - opening xvba version: %i", version);
 
@@ -243,7 +244,7 @@ bool CXVBAContext::CreateContext()
   XVBA_Create_Context_Input contextInput;
   XVBA_Create_Context_Output contextOutput;
   contextInput.size = sizeof(contextInput);
-  contextInput.display = disp;
+  contextInput.display = m_display;
   contextInput.draw = window;
   contextOutput.size = sizeof(contextOutput);
   if(Success != g_XVBA_vtable.CreateContext(&contextInput, &contextOutput))
@@ -263,6 +264,7 @@ void CXVBAContext::DestroyContext()
 
   g_XVBA_vtable.DestroyContext(m_xvbaContext);
   m_xvbaContext = 0;
+//  XCloseDisplay(m_display);
   m_ctxId++;
 }
 
