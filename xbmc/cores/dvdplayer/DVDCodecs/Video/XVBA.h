@@ -67,6 +67,7 @@ private:
   void DestroyContext();
   static CXVBAContext *m_context;
   static CCriticalSection m_section;
+  static Display *m_display;
   int m_refCount;
   int m_ctxId;
   void *m_dlHandle;
