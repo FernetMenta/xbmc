@@ -88,8 +88,6 @@ CXVBAContext::CXVBAContext()
   m_dlHandle = 0;
   m_xvbaContext = 0;
   m_refCount = 0;
-  m_ctxId = 0;
-  m_displayState = XVBA_RESET;
 }
 
 void CXVBAContext::Release()
@@ -115,49 +113,34 @@ void CXVBAContext::Close()
     dlclose(m_dlHandle);
     m_dlHandle = 0;
   }
-  g_Windowing.Unregister(m_context);
 }
 
-bool CXVBAContext::EnsureContext(CXVBAContext **ctx, int *ctxId)
+bool CXVBAContext::EnsureContext(CXVBAContext **ctx)
 {
   CSingleLock lock(m_section);
 
-  if (!m_context)
+  if (m_context)
   {
-    m_context = new CXVBAContext();
-    g_Windowing.Register(m_context);
+    m_context->m_refCount++;
+    *ctx = m_context;
+    return true;
   }
 
-  EDisplayState state;
-  { CSharedLock l(*m_context);
-    state = m_context->m_displayState;
-  }
-  if (state == XVBA_LOST)
-  {
-    CLog::Log(LOGNOTICE,"XVBA::EnsureContextCVDPAU::Check waiting for display reset event");
-    if (!m_context->m_displayEvent.WaitMSec(2000))
-    {
-      CLog::Log(LOGERROR, "XVBA::EnsureContext - device didn't reset in reasonable time");
-      return false;
-    }
-    { CSharedLock l(*m_context);
-      state = m_context->m_displayState;
-    }
-  }
-  if (state == XVBA_RESET)
+  m_context = new CXVBAContext();
+  *ctx = m_context;
   {
     CSingleLock gLock(g_graphicsContext);
-    CExclusiveLock l(*m_context);
     if (!m_context->LoadSymbols() || !m_context->CreateContext())
+    {
+      delete m_context;
+      m_context = 0;
       return false;
-    m_context->m_displayState = XVBA_OPEN;
+    }
   }
 
-  if (*ctx == 0)
-    m_context->m_refCount++;
+  m_context->m_refCount++;
 
   *ctx = m_context;
-  *ctxId = m_context->m_ctxId;
   return true;
 }
 
@@ -265,38 +248,6 @@ void CXVBAContext::DestroyContext()
   g_XVBA_vtable.DestroyContext(m_xvbaContext);
   m_xvbaContext = 0;
 //  XCloseDisplay(m_display);
-  m_ctxId++;
-}
-
-void CXVBAContext::OnLostDevice()
-{
-  CLog::Log(LOGNOTICE,"CXVBAContext::OnLostDevice event");
-
-  CExclusiveLock lock(*this);
-  DestroyContext();
-  m_displayState = XVBA_LOST;
-  m_displayEvent.Reset();
-}
-
-void CXVBAContext::OnResetDevice()
-{
-  CLog::Log(LOGNOTICE,"CXVBAContext::OnResetDevice event");
-
-  CExclusiveLock lock(*this);
-  if (m_displayState == XVBA_LOST)
-  {
-    m_displayState = XVBA_RESET;
-    m_displayEvent.Set();
-  }
-}
-
-bool CXVBAContext::IsValid(int ctxId)
-{
-  CSharedLock lock(*this);
-  if (m_displayState == XVBA_OPEN && ctxId == m_ctxId)
-    return true;
-  else
-    return false;
 }
 
 void *CXVBAContext::GetContext()
@@ -325,6 +276,34 @@ typedef struct {
     XVBADecodeCap decode_caps_list[];
 } XVBA_GetCapDecode_Output_Base;
 
+void CDecoder::OnLostDevice()
+{
+  CLog::Log(LOGNOTICE,"XVBA::OnLostDevice event");
+
+  { CExclusiveLock lock(m_decoderSection);
+    DestroySession();
+    if (m_context)
+      m_context->Release();
+    m_context = 0;
+  }
+
+  CExclusiveLock lock(m_displaySection);
+  m_displayState = XVBA_LOST;
+  m_displayEvent.Reset();
+}
+
+void CDecoder::OnResetDevice()
+{
+  CLog::Log(LOGNOTICE,"XVBA::OnResetDevice event");
+
+  CExclusiveLock lock(m_displaySection);
+  if (m_displayState == XVBA_LOST)
+  {
+    m_displayState = XVBA_RESET;
+    m_displayEvent.Set();
+  }
+}
+
 bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned int surfaces)
 {
   CLog::Log(LOGNOTICE,"(XVBA::Open) opening dxva decoder");
@@ -339,10 +318,8 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
   if (!m_dllAvUtil.Load())
     return false;
 
-  if (!CXVBAContext::EnsureContext(&m_context, &m_ctxId))
+  if (!CXVBAContext::EnsureContext(&m_context))
     return false;
-
-  CSharedLock lock(*m_context);
 
   // xvba get session info
   XVBA_GetSessionInfo_Input sessionInput;
@@ -483,6 +460,7 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
   }
   for (unsigned int j = 0; j < NUM_OUTPUT_PICS; ++j)
     m_freeOutPic.push_back(&m_allOutPic[j]);
+  m_displayState = XVBA_OPEN;
 
   // setup ffmpeg
   avctx->thread_count    = 1;
@@ -490,6 +468,8 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
   avctx->release_buffer  = CDecoder::FFReleaseBuffer;
   avctx->draw_horiz_band = CDecoder::FFDrawSlice;
   avctx->slice_flags     = SLICE_FLAG_CODED_ORDER|SLICE_FLAG_ALLOW_FIELD;
+
+  g_Windowing.Register(this);
   return true;
 }
 
@@ -500,12 +480,15 @@ void CDecoder::Close()
   if (!m_context)
     return;
 
-  { CSharedLock lock(*m_context);
-    DestroySession();
-  }
-  m_context->Release();
+  DestroySession();
+  if (m_context)
+    m_context->Release();
+  m_context = 0;
+
   if (m_flipBuffer)
     delete [] m_flipBuffer;
+
+  g_Windowing.Unregister(this);
 }
 
 void CDecoder::ResetState()
@@ -516,21 +499,50 @@ void CDecoder::ResetState()
   m_usedOutPic.clear();
   for (int j = 0; j < NUM_OUTPUT_PICS; ++j)
     m_freeOutPic.push_back(&m_allOutPic[j]);
+  m_displayState = XVBA_OPEN;
 }
 
 int CDecoder::Check(AVCodecContext* avctx)
 {
-  if (m_context && m_context->IsValid(m_ctxId))
-    return 0;
+  EDisplayState state;
 
-  CXVBAContext::EnsureContext(&m_context, &m_ctxId);
+  { CSharedLock lock(m_displaySection);
+    state = m_displayState;
+  }
 
-  CExclusiveLock lock(*m_context);
-  m_xvbaSession = 0;
-  DestroySession();
-  ResetState();
+  if (state == XVBA_LOST)
+  {
+    CLog::Log(LOGNOTICE,"XVBA::Check waiting for display reset event");
+    if (!m_displayEvent.WaitMSec(2000))
+    {
+      CLog::Log(LOGERROR, "XVBA::Check - device didn't reset in reasonable time");
+      return VC_ERROR;
+    }
+    { CSharedLock lock(m_displaySection);
+      state = m_displayState;
+    }
+  }
+  if (state == XVBA_RESET)
+  {
+    CLog::Log(LOGNOTICE,"XVBA::Check - Attempting recovery");
 
-  return VC_FLUSHED;
+    CSingleLock gLock(g_graphicsContext);
+    CExclusiveLock lock(m_decoderSection);
+
+    DestroySession();
+    ResetState();
+    CXVBAContext::EnsureContext(&m_context);
+
+    return VC_FLUSHED;
+  }
+  return 0;
+}
+
+void CDecoder::SetError(const char* function, const char* msg, int line)
+{
+  CLog::Log(LOGERROR, "XVBA::%s - %s, line %d", function, msg, line);
+  CExclusiveLock lock(m_displaySection);
+  m_displayState = XVBA_LOST;
 }
 
 bool CDecoder::CreateSession(AVCodecContext* avctx)
@@ -550,7 +562,7 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
 
   if (Success != g_XVBA_vtable.CreateDecode(&sessionInput, &sessionOutput))
   {
-    CLog::Log(LOGERROR,"(XVBA) failed to create decoder session");
+    SetError(__FUNCTION__, "failed to create decoder session", __LINE__);
     return false;
   }
   m_xvbaSession = sessionOutput.session;
@@ -568,7 +580,7 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
   if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
       || bufferOutput.num_of_buffers_in_list != 1)
   {
-    CLog::Log(LOGERROR,"(XVBA) failed to create picture buffer");
+    SetError(__FUNCTION__, "failed to create picture buffer", __LINE__);
     return false;
   }
   m_xvbaBufferPool.picture_descriptor_buffer = bufferOutput.buffer_list;
@@ -578,7 +590,7 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
   if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
       || bufferOutput.num_of_buffers_in_list != 1)
   {
-    CLog::Log(LOGERROR,"(XVBA) failed to create data buffer");
+    SetError(__FUNCTION__, "failed to create data buffer", __LINE__);
     return false;
   }
   m_xvbaBufferPool.data_buffer = bufferOutput.buffer_list;
@@ -588,7 +600,7 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
   if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
       || bufferOutput.num_of_buffers_in_list != 1)
   {
-    CLog::Log(LOGERROR,"(XVBA) failed to create qm buffer");
+    SetError(__FUNCTION__, "failed to create qm buffer", __LINE__);
     return false;
   }
   m_xvbaBufferPool.iq_matrix_buffer = bufferOutput.buffer_list;
@@ -601,36 +613,40 @@ void CDecoder::DestroySession()
   XVBA_Destroy_Decode_Buffers_Input bufInput;
   bufInput.size = sizeof(bufInput);
   bufInput.num_of_buffers_in_list = 1;
-  if (m_xvbaSession)
+
+  for (unsigned int i=0; i<m_xvbaBufferPool.data_control_buffers.size() ; ++i)
   {
-    for (unsigned int i=0; i<m_xvbaBufferPool.data_control_buffers.size() ; ++i)
-    {
-      bufInput.buffer_list = m_xvbaBufferPool.data_control_buffers[i];
-      g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
-    }
-
-    if (m_xvbaBufferPool.picture_descriptor_buffer)
-    {
-      bufInput.buffer_list = m_xvbaBufferPool.picture_descriptor_buffer;
-      g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
-    }
-    if (m_xvbaBufferPool.iq_matrix_buffer)
-    {
-      bufInput.buffer_list = m_xvbaBufferPool.iq_matrix_buffer;
-      g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
-    }
+    bufInput.buffer_list = m_xvbaBufferPool.data_control_buffers[i];
+    g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
   }
-
   m_xvbaBufferPool.data_control_buffers.clear();
-  m_xvbaBufferPool.picture_descriptor_buffer = 0;
-  m_xvbaBufferPool.iq_matrix_buffer = 0;
+
+  if (m_xvbaBufferPool.data_buffer)
+  {
+    bufInput.buffer_list = m_xvbaBufferPool.data_buffer;
+    g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
+  }
   m_xvbaBufferPool.data_buffer = 0;
+
+  if (m_xvbaBufferPool.picture_descriptor_buffer)
+  {
+    bufInput.buffer_list = m_xvbaBufferPool.picture_descriptor_buffer;
+    g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
+  }
+  m_xvbaBufferPool.picture_descriptor_buffer = 0;
+
+  if (m_xvbaBufferPool.iq_matrix_buffer)
+  {
+    bufInput.buffer_list = m_xvbaBufferPool.iq_matrix_buffer;
+    g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
+  }
+  m_xvbaBufferPool.iq_matrix_buffer = 0;
 
   while (!m_videoSurfaces.empty())
   {
     xvba_render_state *render = m_videoSurfaces.back();
     if(render->buffers_alllocated > 0)
-    	m_dllAvUtil.av_free(render->buffers);
+      m_dllAvUtil.av_free(render->buffers);
 
     m_videoSurfaces.pop_back();
     if (m_xvbaSession)
@@ -663,7 +679,7 @@ bool CDecoder::EnsureDataControlBuffers(unsigned int num)
     if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
         || bufferOutput.num_of_buffers_in_list != 1)
     {
-      CLog::Log(LOGERROR,"(XVBA) failed to create data control buffer");
+      SetError(__FUNCTION__, "failed to create data control buffer", __LINE__);
       return false;
     }
     m_xvbaBufferPool.data_control_buffers.push_back(bufferOutput.buffer_list);
@@ -678,7 +694,7 @@ void CDecoder::FFReleaseBuffer(AVCodecContext *avctx, AVFrame *pic)
   CDecoder*             xvba  = (CDecoder*)ctx->GetHardware();
   unsigned int i;
 
-  CSharedLock lock(*xvba->m_context);
+  CSharedLock lock(xvba->m_decoderSection);
 
   xvba_render_state * render = NULL;
   render = (xvba_render_state*)pic->data[0];
@@ -717,10 +733,12 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   CDVDVideoCodecFFmpeg* ctx   = (CDVDVideoCodecFFmpeg*)avctx->opaque;
   CDecoder*             xvba  = (CDecoder*)ctx->GetHardware();
 
-  CSharedLock lock(*xvba->m_context);
+  CSharedLock lock(xvba->m_decoderSection);
 
-  if (!xvba->m_context->IsValid(xvba->m_ctxId))
-    return;
+  { CSharedLock dLock(xvba->m_displaySection);
+    if(xvba->m_displayState != XVBA_OPEN)
+      return;
+  }
 
   if(src->linesize[0] || src->linesize[1] || src->linesize[2]
     || offset[0] || offset[1] || offset[2])
@@ -761,7 +779,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   startInput.target_surface = render->surface;
   if (Success != g_XVBA_vtable.StartDecodePicture(&startInput))
   {
-    CLog::Log(LOGERROR,"(XVBA) failed to start decoding");
+    xvba->SetError(__FUNCTION__, "failed to start decoding", __LINE__);
     return;
   }
   XVBA_Decode_Picture_Input picInput;
@@ -781,7 +799,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
 
   if (Success != g_XVBA_vtable.DecodePicture(&picInput))
   {
-    CLog::Log(LOGERROR,"(XVBA) failed to decode picture 1");
+    xvba->SetError(__FUNCTION__, "failed to decode picture 1", __LINE__);
     return;
   }
 
@@ -840,7 +858,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     list[1]->data_size_in_buffer = sizeof(*dataControl);
     if (Success != g_XVBA_vtable.DecodePicture(&picInput))
     {
-      CLog::Log(LOGERROR,"(XVBA) failed to decode picture 2");
+      xvba->SetError(__FUNCTION__, "failed to decode picture 2", __LINE__);
       return;
     }
   }
@@ -849,7 +867,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   endInput.session = xvba->m_xvbaSession;
   if (Success != g_XVBA_vtable.EndDecodePicture(&endInput))
   {
-    CLog::Log(LOGERROR,"(XVBA) failed to decode picture 3");
+    xvba->SetError(__FUNCTION__, "failed to decode picture 3", __LINE__);
     return;
   }
 
@@ -866,14 +884,14 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   {
     if (Success != g_XVBA_vtable.SyncSurface(&syncInput, &syncOutput))
     {
-      CLog::Log(LOGERROR,"(XVBA) failed sync 1");
+      xvba->SetError(__FUNCTION__, "failed sync surface 1", __LINE__);
       return;
     }
     if (!(syncOutput.status_flags & XVBA_STILL_PENDING))
       break;
     if (CurrentHostCounter() - start > CurrentHostFrequency())
     {
-      CLog::Log(LOGERROR,"(XVBA::FFDrawSlice) timed out waiting for surface ");
+      xvba->SetError(__FUNCTION__, "timed out waiting for surface", __LINE__);
       break;
     }
     usleep(100);
@@ -886,10 +904,12 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
   CDecoder*             xvba  = (CDecoder*)ctx->GetHardware();
   struct pictureAge*    pA    = &xvba->picAge;
 
-  CSharedLock lock(*xvba->m_context);
+  CSharedLock lock(xvba->m_decoderSection);
 
-  if (!xvba->m_context->IsValid(xvba->m_ctxId))
-    return -1;
+  { CSharedLock dLock(xvba->m_displaySection);
+    if(xvba->m_displayState != XVBA_OPEN)
+      return -1;
+  }
 
   if (xvba->m_xvbaSession == 0)
   {
@@ -930,7 +950,7 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
     surfaceOutput.size = sizeof(surfaceOutput);
     if (Success != g_XVBA_vtable.CreateSurface(&surfaceInput, &surfaceOutput))
     {
-      CLog::Log(LOGERROR,"(XVBA) failed to create video surface");
+      xvba->SetError(__FUNCTION__, "failed to create video surface", __LINE__);
       return -1;
     }
     CSingleLock lock(xvba->m_videoSurfaceSec);
@@ -982,7 +1002,7 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
   if (result)
     return result;
 
-  CSharedLock lock(*m_context);
+  CSharedLock lock(m_decoderSection);
 
   int iReturn(0);
   if(frame)
@@ -1045,10 +1065,12 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
 
 bool CDecoder::GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture)
 {
-  CSharedLock lock(*m_context);
+  CSharedLock lock(m_decoderSection);
 
-  if (!m_context->IsValid(m_ctxId))
-    return false;
+  { CSharedLock dLock(m_displaySection);
+    if(m_displayState != XVBA_OPEN)
+      return false;
+  }
 
   { CSingleLock lock(m_outPicSec);
 
@@ -1086,10 +1108,12 @@ bool CDecoder::DiscardPresentPicture()
 
 void CDecoder::Present(int index)
 {
-  CSharedLock lock(*m_context);
+  CSharedLock lock(m_decoderSection);
 
-  if (!m_context->IsValid(m_ctxId))
-    return;
+  { CSharedLock dLock(m_displaySection);
+    if(m_displayState != XVBA_OPEN)
+      return;
+  }
 
   if (!m_presentPicture)
   {
@@ -1116,10 +1140,12 @@ void CDecoder::Present(int index)
 
 void CDecoder::CopyYV12(uint8_t *dest)
 {
-  CSharedLock lock(*m_context);
+  CSharedLock lock(m_decoderSection);
 
-  if (!m_context->IsValid(m_ctxId))
-    return;
+  { CSharedLock dLock(m_displaySection);
+    if(m_displayState != XVBA_OPEN)
+      return;
+  }
 
   if (!m_presentPicture)
   {
@@ -1166,7 +1192,12 @@ void CDecoder::Reset()
 
 int CDecoder::UploadTexture(int index, XVBA_SURFACE_FLAG field, GLenum textureTarget)
 {
-  CSharedLock lock(*m_context);
+  CSharedLock lock(m_decoderSection);
+
+  { CSharedLock dLock(m_displaySection);
+    if(m_displayState != XVBA_OPEN)
+      return -1;
+  }
 
   if (!m_flipBuffer[index].outPic)
     return -1;
@@ -1249,7 +1280,7 @@ void CDecoder::FinishGL()
 {
   CLog::Log(LOGNOTICE, "XVBA::FinishGL - clearing down gl resources");
 
-  CSharedLock lock(*m_context);
+  CSharedLock lock(m_decoderSection);
 
   for (unsigned int i=0; i<m_numRenderBuffers;++i)
   {

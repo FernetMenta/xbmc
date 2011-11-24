@@ -49,14 +49,10 @@ enum EDisplayState
 , XVBA_LOST
 };
 
-class CXVBAContext : public CSharedSection,
-                     public IDispResource
+class CXVBAContext
 {
 public:
-  virtual void OnLostDevice();
-  virtual void OnResetDevice();
-  static bool EnsureContext(CXVBAContext **ctx, int *ctxId);
-  bool IsValid(int ctxId);
+  static bool EnsureContext(CXVBAContext **ctx);
   void *GetContext();
   void Release();
 private:
@@ -69,18 +65,19 @@ private:
   static CCriticalSection m_section;
   static Display *m_display;
   int m_refCount;
-  int m_ctxId;
   void *m_dlHandle;
   void *m_xvbaContext;
-  EDisplayState m_displayState;
-  CEvent m_displayEvent;
 };
 
-class CDecoder : public CDVDVideoCodecFFmpeg::IHardwareDecoder
+class CDecoder : public CDVDVideoCodecFFmpeg::IHardwareDecoder,
+                 public IDispResource
 {
 public:
   CDecoder();
   virtual ~CDecoder();
+  virtual void OnLostDevice();
+  virtual void OnResetDevice();
+
   virtual bool Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned int surfaces = 0);
   virtual int  Decode    (AVCodecContext* avctx, AVFrame* frame);
   virtual bool GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture);
@@ -101,6 +98,7 @@ protected:
   bool EnsureDataControlBuffers(unsigned int num);
   bool DiscardPresentPicture();
   void ResetState();
+  void SetError(const char* function, const char* msg, int line);
 
   // callbacks for ffmpeg
   static void  FFReleaseBuffer(AVCodecContext *avctx, AVFrame *pic);
@@ -111,7 +109,10 @@ protected:
 
   DllAvUtil m_dllAvUtil;
   CXVBAContext *m_context;
-  int m_ctxId;
+  CSharedSection m_displaySection, m_decoderSection;
+  CEvent m_displayEvent;
+  EDisplayState m_displayState;
+
   unsigned int m_surfaceWidth, m_surfaceHeight;
   unsigned int m_numRenderBuffers;
 
