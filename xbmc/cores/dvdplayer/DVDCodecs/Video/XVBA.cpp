@@ -280,14 +280,12 @@ void CDecoder::OnLostDevice()
 {
   CLog::Log(LOGNOTICE,"XVBA::OnLostDevice event");
 
-  { CExclusiveLock lock(m_decoderSection);
-    DestroySession();
-    if (m_context)
-      m_context->Release();
-    m_context = 0;
-  }
+  CExclusiveLock lock(m_decoderSection);
+  DestroySession();
+  if (m_context)
+    m_context->Release();
+  m_context = 0;
 
-  CExclusiveLock lock(m_displaySection);
   m_displayState = XVBA_LOST;
   m_displayEvent.Reset();
 }
