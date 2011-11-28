@@ -215,7 +215,7 @@ bool CXVBAContext::CreateContext()
   { CSingleLock lock(g_graphicsContext);
     if (!m_display)
       m_display = XOpenDisplay(NULL);
-    window = 0;
+    window = g_Windowing.GetWindow();
   }
 
   int version;
