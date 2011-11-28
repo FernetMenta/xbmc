@@ -132,6 +132,13 @@ static int end_frame(AVCodecContext *avctx)
   memcpy(iq_matrix->bScalingLists4x4, h->pps.scaling_matrix4, sizeof(iq_matrix->bScalingLists4x4));
   memcpy(iq_matrix->bScalingLists8x8, h->pps.scaling_matrix8, sizeof(iq_matrix->bScalingLists8x8));
 
+  // Wait for an I-frame before start decoding. Workaround for ATI UVD and UVD+ GPUs
+  if (!h->got_first_iframe) {
+      if (h->slice_type != FF_I_TYPE && h->slice_type != FF_SI_TYPE)
+          return -1;
+      h->got_first_iframe = 1;
+  }
+
   ff_draw_horiz_band(s, 0, s->avctx->height);
 
   return 0;
