@@ -619,21 +619,21 @@ void CDecoder::DestroySession()
   }
   m_xvbaBufferPool.data_control_buffers.clear();
 
-  if (m_xvbaBufferPool.data_buffer)
+  if (m_xvbaSession && m_xvbaBufferPool.data_buffer)
   {
     bufInput.buffer_list = m_xvbaBufferPool.data_buffer;
     g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
   }
   m_xvbaBufferPool.data_buffer = 0;
 
-  if (m_xvbaBufferPool.picture_descriptor_buffer)
+  if (m_xvbaSession && m_xvbaBufferPool.picture_descriptor_buffer)
   {
     bufInput.buffer_list = m_xvbaBufferPool.picture_descriptor_buffer;
     g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
   }
   m_xvbaBufferPool.picture_descriptor_buffer = 0;
 
-  if (m_xvbaBufferPool.iq_matrix_buffer)
+  if (m_xvbaSession && m_xvbaBufferPool.iq_matrix_buffer)
   {
     bufInput.buffer_list = m_xvbaBufferPool.iq_matrix_buffer;
     g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
