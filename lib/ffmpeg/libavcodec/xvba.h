@@ -57,7 +57,7 @@ struct xvba_render_state {
   void *surface;
   XVBAPictureDescriptor *picture_descriptor;
   XVBAQuantMatrixAvc *iq_matrix;
-  int num_slices;
+  unsigned int num_slices;
   struct xvba_bitstream_buffers *buffers;
   uint32_t buffers_alllocated;
 };
