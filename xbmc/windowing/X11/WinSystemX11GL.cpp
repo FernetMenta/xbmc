@@ -43,6 +43,10 @@ CWinSystemX11GL::~CWinSystemX11GL()
 
 bool CWinSystemX11GL::PresentRenderImpl(const CDirtyRegionList& dirty)
 {
+#if defined(HAS_SDL)
+  m_info.info.x11.lock_func();
+#endif
+
   CheckDisplayEvents();
 
   if(m_iVSyncMode == 3)
@@ -118,6 +122,10 @@ bool CWinSystemX11GL::PresentRenderImpl(const CDirtyRegionList& dirty)
   }
   else
     glXSwapBuffers(m_dpy, m_glWindow);
+
+#if defined(HAS_SDL)
+  m_info.info.x11.unlock_func();
+#endif
 
   return true;
 }

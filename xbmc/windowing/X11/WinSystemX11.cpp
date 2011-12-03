@@ -139,8 +139,14 @@ bool CWinSystemX11::CreateNewWindow(const CStdString& name, bool fullScreen, RES
   // register XRandR Events
 #if defined(HAS_XRANDR)
   int iReturn;
+#if defined(HAS_SDL)
+  m_info.info.x11.lock_func();
+#endif
   XRRQueryExtension(m_dpy, &m_RREventBase, &iReturn);
   XRRSelectInput(m_dpy, m_wmWindow, RRScreenChangeNotifyMask);
+#if defined(HAS_SDL)
+  m_info.info.x11.unlock_func();
+#endif
 #endif
 
   m_bWindowCreated = true;
@@ -190,7 +196,12 @@ bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   mode.h   = res.iHeight;
   mode.hz  = res.fRefreshRate;
   mode.id  = res.strId;
- 
+
+#if defined(HAS_SDL)
+  if (m_SDLSurface)
+    m_info.info.x11.lock_func();
+#endif
+
   if(m_bFullScreen)
   {
     OnLostDevice();
@@ -198,6 +209,11 @@ bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   }
   else
     g_xrandr.RestoreState();
+
+#if defined(HAS_SDL)
+  if (m_SDLSurface)
+    m_info.info.x11.unlock_func();
+#endif
 #endif
 
   int options = SDL_OPENGL;
@@ -316,21 +332,24 @@ bool CWinSystemX11::IsSuitableVisual(XVisualInfo *vInfo)
 bool CWinSystemX11::RefreshGlxContext()
 {
   bool retVal = false;
-  SDL_SysWMinfo info;
-  SDL_VERSION(&info.version);
-  if (SDL_GetWMInfo(&info) <= 0)
+  SDL_VERSION(&m_info.version);
+  if (SDL_GetWMInfo(&m_info) <= 0)
   {
     CLog::Log(LOGERROR, "Failed to get window manager info from SDL");
     return false;
   }
 
-  if(m_glWindow == info.info.x11.window && m_glContext)
+  if(m_glWindow == m_info.info.x11.window && m_glContext)
   {
     CLog::Log(LOGERROR, "GLX: Same window as before, refreshing context");
+    m_info.info.x11.lock_func();
     glXMakeCurrent(m_dpy, None, NULL);
     glXMakeCurrent(m_dpy, m_glWindow, m_glContext);
+    m_info.info.x11.unlock_func();
     return true;
   }
+
+  m_info.info.x11.lock_func();
 
   XVisualInfo vMask;
   XVisualInfo *visuals;
@@ -338,8 +357,8 @@ bool CWinSystemX11::RefreshGlxContext()
   int availableVisuals    = 0;
   vMask.screen = DefaultScreen(m_dpy);
   XWindowAttributes winAttr;
-  m_glWindow = info.info.x11.window;
-  m_wmWindow = info.info.x11.wmwindow;
+  m_glWindow = m_info.info.x11.window;
+  m_wmWindow = m_info.info.x11.wmwindow;
 
   /* Assume a depth of 24 in case the below calls to XGetWindowAttributes()
      or XGetVisualInfo() fail. That shouldn't happen unless something is
@@ -404,6 +423,8 @@ bool CWinSystemX11::RefreshGlxContext()
   }
   else
     CLog::Log(LOGERROR, "GLX Error: vInfo is NULL!");
+
+  m_info.info.x11.unlock_func();
 
   return retVal;
 }
@@ -471,6 +492,7 @@ void CWinSystemX11::CheckDisplayEvents()
   bool bGotEvent(false);
   bool bTimeout(false);
   XEvent Event;
+
   while (XCheckTypedEvent(m_dpy, m_RREventBase + RRScreenChangeNotify, &Event))
   {
     if (Event.type == m_RREventBase + RRScreenChangeNotify)
@@ -501,6 +523,7 @@ void CWinSystemX11::CheckDisplayEvents()
     // reset fail safe timer
     m_dpyLostTime = 0;
   }
+
 #endif
 }
 

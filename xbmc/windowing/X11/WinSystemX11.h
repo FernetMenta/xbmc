@@ -28,6 +28,10 @@
 #include <GL/glx.h>
 #include "threads/CriticalSection.h"
 
+#ifdef HAS_SDL
+#include <SDL/SDL_syswm.h>
+#endif
+
 class IDispResource;
 
 class CWinSystemX11 : public CWinSystemBase
@@ -66,7 +70,10 @@ protected:
   void CheckDisplayEvents();
   void OnLostDevice();
 
+#ifdef HAS_SDL
   SDL_Surface* m_SDLSurface;
+  SDL_SysWMinfo m_info;
+#endif
   GLXContext   m_glContext;
   GLXWindow    m_glWindow;
   Window       m_wmWindow;
