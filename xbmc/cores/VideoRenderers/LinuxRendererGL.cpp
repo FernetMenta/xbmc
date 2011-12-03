@@ -2471,6 +2471,7 @@ void CLinuxRendererGL::DeleteXVBATexture(int index)
   if(plane.id && glIsTexture(plane.id))
     glDeleteTextures(1, &plane.id);
   plane.id = 0;
+  m_buffers[index].fields[0][0].id = 0;
 
 #endif
 }
@@ -2532,8 +2533,8 @@ void CLinuxRendererGL::UploadXVBATexture(int index)
     field = XVBA_FRAME;
 
   glEnable(m_textureTarget);
-  xvba->UploadTexture(index, field, m_textureTarget);
-  fields[m_currentField][0].id = xvba->GetTexture(index, field);
+  if (xvba->UploadTexture(index, field, m_textureTarget) == 1)
+    fields[m_currentField][0].id = xvba->GetTexture(index, field);
 
   glDisable(m_textureTarget);
 
