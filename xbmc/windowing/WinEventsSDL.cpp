@@ -216,8 +216,16 @@ bool CWinEventsSDL::MessagePump()
   SDL_Event event;
   bool ret = false;
 
-  while (SDL_PollEvent(&event))
+  while (1)
   {
+    {
+#if defined(HAS_GLX)
+      CSingleLock lock(g_graphicsContext);
+#endif
+      if (!SDL_PollEvent(&event))
+        break;
+    }
+
     switch(event.type)
     {
       case SDL_QUIT:
