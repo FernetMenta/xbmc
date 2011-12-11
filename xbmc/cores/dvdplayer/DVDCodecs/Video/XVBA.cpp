@@ -353,12 +353,12 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
   if (avctx->codec_id == CODEC_ID_H264)
   {
     // search for profile high
-    for (int i = 0; i < capOutput->num_of_decodecaps; ++i)
+    for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
     {
       if (capOutput->decode_caps_list[i].capability_id == XVBA_H264 &&
           capOutput->decode_caps_list[i].flags == XVBA_H264_HIGH)
       {
-        match = i;
+        match = (int) i;
         break;
       }
     }
@@ -370,12 +370,12 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
   else if (avctx->codec_id == CODEC_ID_VC1)
   {
     // search for profile advanced
-    for (int i = 0; i < capOutput->num_of_decodecaps; ++i)
+    for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
     {
       if (capOutput->decode_caps_list[i].capability_id == XVBA_VC1 &&
           capOutput->decode_caps_list[i].flags == XVBA_VC1_ADVANCED)
       {
-        match = i;
+        match = (int) i;
         break;
       }
     }
@@ -387,13 +387,13 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
   else if (avctx->codec_id == CODEC_ID_MPEG2VIDEO)
   {
     // search for profile high
-    for (int i = 0; i < capOutput->num_of_decodecaps; ++i)
+    for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
     {
       if (capOutput->decode_caps_list[i].capability_id == XVBA_MPEG2_VLD)
       {
         // XXX: uncomment when implemented
-//        match = i;
-//        break;
+        // match = (int) i;
+        // break;
       }
     }
     if (match < 0)
@@ -404,12 +404,12 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
   else if (avctx->codec_id == CODEC_ID_WMV3)
   {
     // search for profile high
-    for (int i = 0; i < capOutput->num_of_decodecaps; ++i)
+    for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
     {
       if (capOutput->decode_caps_list[i].capability_id == XVBA_VC1 &&
           capOutput->decode_caps_list[i].flags == XVBA_VC1_MAIN)
       {
-        match = i;
+        match = (int) i;
         break;
       }
     }
@@ -619,21 +619,21 @@ void CDecoder::DestroySession()
   }
   m_xvbaBufferPool.data_control_buffers.clear();
 
-  if (m_xvbaBufferPool.data_buffer)
+  if (m_xvbaSession && m_xvbaBufferPool.data_buffer)
   {
     bufInput.buffer_list = m_xvbaBufferPool.data_buffer;
     g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
   }
   m_xvbaBufferPool.data_buffer = 0;
 
-  if (m_xvbaBufferPool.picture_descriptor_buffer)
+  if (m_xvbaSession && m_xvbaBufferPool.picture_descriptor_buffer)
   {
     bufInput.buffer_list = m_xvbaBufferPool.picture_descriptor_buffer;
     g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
   }
   m_xvbaBufferPool.picture_descriptor_buffer = 0;
 
-  if (m_xvbaBufferPool.iq_matrix_buffer)
+  if (m_xvbaSession && m_xvbaBufferPool.iq_matrix_buffer)
   {
     bufInput.buffer_list = m_xvbaBufferPool.iq_matrix_buffer;
     g_XVBA_vtable.DestroyDecodeBuffers(&bufInput);
@@ -793,8 +793,6 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     picInput.num_of_buffers_in_list = 2;
   }
 
-  XVBAPictureDescriptor *desc = (XVBAPictureDescriptor*)list[0]->bufferXVBA;
-
   if (Success != g_XVBA_vtable.DecodePicture(&picInput))
   {
     xvba->SetError(__FUNCTION__, "failed to decode picture 1", __LINE__);
@@ -877,7 +875,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   syncInput.surface = render->surface;
   syncInput.query_status = XVBA_GET_SURFACE_STATUS;
   syncOutput.size = sizeof(syncOutput);
-  uint64_t start = CurrentHostCounter();
+  int64_t start = CurrentHostCounter();
   while (1)
   {
     if (Success != g_XVBA_vtable.SyncSurface(&syncInput, &syncOutput))
