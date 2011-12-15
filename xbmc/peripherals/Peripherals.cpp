@@ -19,6 +19,7 @@
  *
  */
 
+#include "system.h"
 #include "Peripherals.h"
 #include "bus/PeripheralBus.h"
 #include "devices/PeripheralBluetooth.h"

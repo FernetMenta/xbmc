@@ -1327,7 +1327,7 @@ void CDecoder::FinishGL()
         glDeleteTextures(1, &m_flipBuffer[i].glTexture[j]);
         m_flipBuffer[i].glTexture[j] = 0;
       }
-      if (m_flipBuffer[i].glSurface[j])
+      if (m_flipBuffer[i].glSurface[j] && m_xvbaSession)
       {
         g_XVBA_vtable.DestroySurface(m_flipBuffer[i].glSurface[j]);
         m_flipBuffer[i].glSurface[j] = 0;
