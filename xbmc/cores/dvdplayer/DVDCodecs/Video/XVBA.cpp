@@ -551,6 +551,9 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
   m_surfaceWidth = (avctx->coded_width+15) & ~15;
   m_surfaceHeight = (avctx->coded_height+15) & ~15;
 
+  m_vidWidth = avctx->width;
+  m_vidHeight = avctx->height;
+
   XVBA_Create_Decode_Session_Input sessionInput;
   XVBA_Create_Decode_Session_Output sessionOutput;
 
@@ -1285,6 +1288,16 @@ int CDecoder::UploadTexture(int index, XVBA_SURFACE_FLAG field, GLenum textureTa
 GLuint CDecoder::GetTexture(int index, XVBA_SURFACE_FLAG field)
 {
   return m_flipBuffer[index].glTexture[field];
+}
+
+CRect CDecoder::GetCropRect()
+{
+  CRect crop;
+  crop.x1 = 0;
+  crop.y1 = 0;
+  crop.x2 = m_vidWidth;
+  crop.y2 = m_vidHeight;
+  return crop;
 }
 
 void CDecoder::FinishGL()
