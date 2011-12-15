@@ -912,6 +912,16 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
   CDecoder*             xvba  = (CDecoder*)ctx->GetHardware();
   struct pictureAge*    pA    = &xvba->picAge;
 
+  pic->data[0] =
+  pic->data[1] =
+  pic->data[2] =
+  pic->data[3] = 0;
+
+  pic->linesize[0] =
+  pic->linesize[1] =
+  pic->linesize[2] =
+  pic->linesize[3] = 0;
+
   CSharedLock lock(xvba->m_decoderSection);
 
   { CSharedLock dLock(xvba->m_displaySection);
@@ -974,14 +984,6 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
     return -1;
 
   pic->data[0] = (uint8_t*)render;
-  pic->data[1] =
-  pic->data[2] =
-  pic->data[3] = 0;
-
-  pic->linesize[0] =
-  pic->linesize[1] =
-  pic->linesize[2] =
-  pic->linesize[3] = 0;
 
   if(pic->reference)
   {
