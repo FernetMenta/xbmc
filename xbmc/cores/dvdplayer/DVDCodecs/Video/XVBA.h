@@ -28,6 +28,7 @@
 #include "threads/SharedSection.h"
 #include "threads/Event.h"
 #include "guilib/DispResource.h"
+#include "guilib/Geometry.h"
 #include "libavcodec/xvba.h"
 #include <vector>
 #include <deque>
@@ -91,6 +92,7 @@ public:
   void CopyYV12(uint8_t *dest);
   int UploadTexture(int index, XVBA_SURFACE_FLAG field, GLenum textureTarget);
   GLuint GetTexture(int index, XVBA_SURFACE_FLAG field);
+  CRect GetCropRect();
   void FinishGL();
 
 protected:
@@ -115,6 +117,7 @@ protected:
   EDisplayState m_displayState;
 
   unsigned int m_surfaceWidth, m_surfaceHeight;
+  unsigned int m_vidWidth, m_vidHeight;
   unsigned int m_numRenderBuffers;
 
   XVBADecodeCap m_decoderCap;
