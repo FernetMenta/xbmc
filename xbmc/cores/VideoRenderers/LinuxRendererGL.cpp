@@ -165,6 +165,7 @@ CLinuxRendererGL::CLinuxRendererGL()
   m_rgbPbo = 0;
 
   m_dllSwScale = new DllSwScale;
+  m_bValidated = false;
 }
 
 CLinuxRendererGL::~CLinuxRendererGL()
@@ -279,6 +280,7 @@ bool CLinuxRendererGL::Configure(unsigned int width, unsigned int height, unsign
 
   // Ensure that textures are recreated and rendering starts only after the 1st
   // frame is loaded after every call to Configure().
+  Flush();
   m_bValidated = false;
 
   for (int i = 0 ; i<m_NumYV12Buffers ; i++)
