@@ -520,7 +520,7 @@ int CDecoder::Check(AVCodecContext* avctx)
       state = m_displayState;
     }
   }
-  if (state == XVBA_RESET)
+  if (state == XVBA_RESET || state == XVBA_ERROR)
   {
     CLog::Log(LOGNOTICE,"XVBA::Check - Attempting recovery");
 
@@ -531,7 +531,10 @@ int CDecoder::Check(AVCodecContext* avctx)
     ResetState();
     CXVBAContext::EnsureContext(&m_context);
 
-    return VC_FLUSHED;
+    if (state == XVBA_RESET)
+      return VC_FLUSHED;
+    else
+      return VC_ERROR;
   }
   return 0;
 }
@@ -540,7 +543,7 @@ void CDecoder::SetError(const char* function, const char* msg, int line)
 {
   CLog::Log(LOGERROR, "XVBA::%s - %s, line %d", function, msg, line);
   CExclusiveLock lock(m_displaySection);
-  m_displayState = XVBA_LOST;
+  m_displayState = XVBA_ERROR;
 }
 
 bool CDecoder::CreateSession(AVCodecContext* avctx)
@@ -825,6 +828,15 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
       memcpy((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+location+3,
           &sdf, 1);
     }
+    // check for potential buffer overwrite
+    unsigned int bytesToCopy = render->buffers[j].size;
+    unsigned int freeBufferSize = xvba->m_xvbaBufferPool.data_buffer->buffer_size -
+        xvba->m_xvbaBufferPool.data_buffer->data_size_in_buffer;
+    if (bytesToCopy >= freeBufferSize)
+    {
+      xvba->SetError(__FUNCTION__, "bitstream buffer too large, maybe corrupted packet", __LINE__);
+      return;
+    }
     memcpy((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+location+startCodeSize,
         render->buffers[j].buffer,
         render->buffers[j].size);
@@ -955,6 +967,7 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
     render->picture_descriptor = (XVBAPictureDescriptor *)xvba->m_xvbaBufferPool.picture_descriptor_buffer->bufferXVBA;
     render->iq_matrix = (XVBAQuantMatrixAvc *)xvba->m_xvbaBufferPool.iq_matrix_buffer->bufferXVBA;
     xvba->m_videoSurfaces.push_back(render);
+    CLog::Log(LOGDEBUG, "XVBA::FFGetBuffer - created video surface");
   }
 
   if (render == NULL)

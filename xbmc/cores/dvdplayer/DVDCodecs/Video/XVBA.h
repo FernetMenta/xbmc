@@ -47,6 +47,7 @@ enum EDisplayState
 { XVBA_OPEN
 , XVBA_RESET
 , XVBA_LOST
+, XVBA_ERROR
 };
 
 class CXVBAContext
