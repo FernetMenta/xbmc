@@ -1680,10 +1680,10 @@ void CLinuxRendererGL::RenderXVBA(int index, int field)
   glBegin(GL_QUADS);
   if (m_textureTarget==GL_TEXTURE_2D)
   {
-    glTexCoord2f(0.0, 0.0);  glVertex2f(m_destRect.x1, m_destRect.y1);
-    glTexCoord2f(1.0, 0.0);  glVertex2f(m_destRect.x2, m_destRect.y1);
-    glTexCoord2f(1.0, 1.0);  glVertex2f(m_destRect.x2, m_destRect.y2);
-    glTexCoord2f(0.0, 1.0);  glVertex2f(m_destRect.x1, m_destRect.y2);
+    glTexCoord2f(plane.rect.x1, plane.rect.y1);  glVertex2f(m_destRect.x1, m_destRect.y1);
+    glTexCoord2f(plane.rect.x2, plane.rect.y1);  glVertex2f(m_destRect.x2, m_destRect.y1);
+    glTexCoord2f(plane.rect.x2, plane.rect.y2);  glVertex2f(m_destRect.x2, m_destRect.y2);
+    glTexCoord2f(plane.rect.x1, plane.rect.y2);  glVertex2f(m_destRect.x1, m_destRect.y2);
   }
   else
   {
@@ -2482,7 +2482,8 @@ bool CLinuxRendererGL::CreateXVBATexture(int index)
 #ifdef HAVE_LIBXVBA
   YV12Image &im     = m_buffers[index].image;
   YUVFIELDS &fields = m_buffers[index].fields;
-  YUVPLANE  &plane  = fields[0][1];
+  YUVPLANE  &plane  = fields[0][0];
+  YUVPLANE  &planeFallback  = fields[0][1];
 
   DeleteXVBATexture(index);
 
@@ -2497,8 +2498,8 @@ bool CLinuxRendererGL::CreateXVBATexture(int index)
   plane.pixpertex_x = 1;
   plane.pixpertex_y = 1;
 
-  glGenTextures(1, &plane.id);
-  fields[0][0].id = plane.id;
+  glGenTextures(1, &planeFallback.id);
+  plane.id = planeFallback.id;
 
   m_eventTexturesDone[index]->Set();
 #endif
@@ -2533,6 +2534,13 @@ void CLinuxRendererGL::UploadXVBATexture(int index)
   glEnable(m_textureTarget);
   if (xvba->UploadTexture(index, field, m_textureTarget) == 1)
     fields[m_currentField][0].id = xvba->GetTexture(index, field);
+
+  CRect crop = xvba->GetCropRect();
+  m_sourceRect.x1 += crop.x1;
+  m_sourceRect.x2 -= m_sourceWidth - crop.x2;
+  m_sourceRect.y1 += crop.y1;
+  m_sourceRect.y2 -= m_sourceHeight - crop.y2;
+  CalculateTextureSourceRects(index, 1);
 
   glDisable(m_textureTarget);
 
