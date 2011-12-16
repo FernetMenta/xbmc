@@ -1257,6 +1257,7 @@ int CDecoder::UploadTexture(int index, XVBA_SURFACE_FLAG field, GLenum textureTa
         return -1;
       }
       m_flipBuffer[index].glSurface[i] = surfOutput.surface;
+      CLog::Log(LOGDEBUG, "XVBA::GetTexture - created shared surface");
     }
 
     XVBA_Transfer_Surface_Input transInput;
@@ -1326,11 +1327,13 @@ void CDecoder::FinishGL()
       {
         glDeleteTextures(1, &m_flipBuffer[i].glTexture[j]);
         m_flipBuffer[i].glTexture[j] = 0;
+        CLog::Log(LOGDEBUG, "XVBA::FinishGL - destroyed texture, index: %d, field %d", i, j);
       }
       if (m_flipBuffer[i].glSurface[j] && m_xvbaSession)
       {
         g_XVBA_vtable.DestroySurface(m_flipBuffer[i].glSurface[j]);
         m_flipBuffer[i].glSurface[j] = 0;
+        CLog::Log(LOGDEBUG, "XVBA::FinishGL - destroyed shared surface");
       }
     }
   }
