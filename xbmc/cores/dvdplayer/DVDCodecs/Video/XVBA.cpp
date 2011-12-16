@@ -258,6 +258,7 @@ void *CXVBAContext::GetContext()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+CCriticalSection CDecoder::m_outTransferGetSec;
 CDecoder::CDecoder()
 {
   m_context = 0;
@@ -779,12 +780,14 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   // decoding
   XVBA_Decode_Picture_Start_Input startInput;
   startInput.size = sizeof(startInput);
-  startInput.session = xvba->m_xvbaSession;
-  startInput.target_surface = render->surface;
-  if (Success != g_XVBA_vtable.StartDecodePicture(&startInput))
-  {
-    xvba->SetError(__FUNCTION__, "failed to start decoding", __LINE__);
-    return;
+  { CSingleLock lock(m_outTransferGetSec);
+    startInput.session = xvba->m_xvbaSession;
+    startInput.target_surface = render->surface;
+    if (Success != g_XVBA_vtable.StartDecodePicture(&startInput))
+    {
+      xvba->SetError(__FUNCTION__, "failed to start decoding", __LINE__);
+      return;
+    }  
   }
   XVBA_Decode_Picture_Input picInput;
   picInput.size = sizeof(picInput);
@@ -1260,16 +1263,18 @@ int CDecoder::UploadTexture(int index, XVBA_SURFACE_FLAG field, GLenum textureTa
       CLog::Log(LOGDEBUG, "XVBA::GetTexture - created shared surface");
     }
 
-    XVBA_Transfer_Surface_Input transInput;
-    transInput.size = sizeof(transInput);
-    transInput.session = m_xvbaSession;
-    transInput.src_surface = m_flipBuffer[index].outPic->render->surface;
-    transInput.target_surface = m_flipBuffer[index].glSurface[i];
-    transInput.flag = field;
-    if (Success != g_XVBA_vtable.TransferSurface(&transInput))
-    {
-      CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
-      return -1;
+     XVBA_Transfer_Surface_Input transInput;
+     transInput.size = sizeof(transInput);
+     { CSingleLock lock(m_outTransferGetSec);
+      transInput.session = m_xvbaSession;
+      transInput.src_surface = m_flipBuffer[index].outPic->render->surface;
+      transInput.target_surface = m_flipBuffer[index].glSurface[i];
+      transInput.flag = field;
+      if (Success != g_XVBA_vtable.TransferSurface(&transInput))
+      {
+        CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
+        return -1;
+      }
     }
   }
 

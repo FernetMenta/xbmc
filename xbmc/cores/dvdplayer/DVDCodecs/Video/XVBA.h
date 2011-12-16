@@ -147,6 +147,8 @@ protected:
     GLuint glTexture[3];
   };
   CCriticalSection m_outPicSec, m_videoSurfaceSec;
+  /* Race Condition between Transfer Surface and GetSlice */
+  static CCriticalSection m_outTransferGetSec;
   OutputPicture m_allOutPic[NUM_OUTPUT_PICS];
   std::deque<OutputPicture*> m_freeOutPic;
   std::deque<OutputPicture*> m_usedOutPic;
