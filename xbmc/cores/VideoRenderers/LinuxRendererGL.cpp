@@ -280,7 +280,6 @@ bool CLinuxRendererGL::Configure(unsigned int width, unsigned int height, unsign
 
   // Ensure that textures are recreated and rendering starts only after the 1st
   // frame is loaded after every call to Configure().
-  Flush();
   m_bValidated = false;
 
   for (int i = 0 ; i<m_NumYV12Buffers ; i++)
@@ -2494,11 +2493,13 @@ bool CLinuxRendererGL::CreateXVBATexture(int index)
   im.height = m_sourceHeight;
   im.width  = m_sourceWidth;
 
-  plane.texwidth  = im.width;
-  plane.texheight = im.height;
-
-  plane.pixpertex_x = 1;
-  plane.pixpertex_y = 1;
+  for(int f = 0;f<MAX_FIELDS;f++)
+  {
+    fields[f][0].texwidth  = im.width;
+    fields[f][0].texheight = im.height;
+    fields[f][0].pixpertex_x = 1;
+    fields[f][0].pixpertex_y = 1;
+  }
 
   glGenTextures(1, &planeFallback.id);
   plane.id = planeFallback.id;
@@ -2514,13 +2515,14 @@ void CLinuxRendererGL::UploadXVBATexture(int index)
   XVBA::CDecoder   *xvba = m_buffers[index].xvba;
 
   YUVFIELDS &fields = m_buffers[index].fields;
-  YUVPLANE &plane = fields[0][1];
+  YUVPLANE &planeFallback = fields[0][1];
+  YUVPLANE &plane = fields[m_currentField][0];
 
   if (!xvba)
   {
-    fields[0][0].id = plane.id;
-    fields[1][0].id = plane.id;
-    fields[2][0].id = plane.id;
+    fields[0][0].id = planeFallback.id;
+    fields[1][0].id = planeFallback.id;
+    fields[2][0].id = planeFallback.id;
     m_eventTexturesDone[index]->Set();
     return;
   }
@@ -2535,14 +2537,26 @@ void CLinuxRendererGL::UploadXVBATexture(int index)
 
   glEnable(m_textureTarget);
   if (xvba->UploadTexture(index, field, m_textureTarget) == 1)
-    fields[m_currentField][0].id = xvba->GetTexture(index, field);
+    plane.id = xvba->GetTexture(index, field);
 
+  // crop texture
   CRect crop = xvba->GetCropRect();
-  m_sourceRect.x1 += crop.x1;
-  m_sourceRect.x2 -= m_sourceWidth - crop.x2;
-  m_sourceRect.y1 += crop.y1;
-  m_sourceRect.y2 -= m_sourceHeight - crop.y2;
-  CalculateTextureSourceRects(index, 1);
+  plane.rect = m_sourceRect;
+  plane.rect.x1 += crop.x1;
+  plane.rect.x2 -= m_sourceWidth - crop.x2;
+  plane.rect.y1 += crop.y1;
+  plane.rect.y2 -= m_sourceHeight - crop.y2;
+  plane.rect.y1 /= plane.pixpertex_y;
+  plane.rect.y2 /= plane.pixpertex_y;
+  plane.rect.x1 /= plane.pixpertex_x;
+  plane.rect.x2 /= plane.pixpertex_x;
+  if (m_textureTarget == GL_TEXTURE_2D)
+  {
+    plane.rect.y1 /= plane.texheight;
+    plane.rect.y2 /= plane.texheight;
+    plane.rect.x1 /= plane.texwidth;
+    plane.rect.x2 /= plane.texwidth;
+  }
 
   glDisable(m_textureTarget);
 
