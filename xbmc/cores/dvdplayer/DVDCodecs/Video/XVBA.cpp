@@ -680,11 +680,13 @@ bool CDecoder::EnsureDataControlBuffers(unsigned int num)
 
   for (unsigned int i=0; i<missing; ++i)
   {
-    if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
-        || bufferOutput.num_of_buffers_in_list != 1)
-    {
-      SetError(__FUNCTION__, "failed to create data control buffer", __LINE__);
-      return false;
+    { CSingleLock lock(m_apiSec);
+      if (Success != g_XVBA_vtable.CreateDecodeBuffers(&bufferInput, &bufferOutput)
+          || bufferOutput.num_of_buffers_in_list != 1)
+      {
+        SetError(__FUNCTION__, "failed to create data control buffer", __LINE__);
+        return false;
+      }
     }
     m_xvbaBufferPool.data_control_buffers.push_back(bufferOutput.buffer_list);
   }
@@ -781,10 +783,12 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   startInput.size = sizeof(startInput);
   startInput.session = xvba->m_xvbaSession;
   startInput.target_surface = render->surface;
-  if (Success != g_XVBA_vtable.StartDecodePicture(&startInput))
-  {
-    xvba->SetError(__FUNCTION__, "failed to start decoding", __LINE__);
-    return;
+  { CSingleLock lock(xvba->m_apiSec);
+    if (Success != g_XVBA_vtable.StartDecodePicture(&startInput))
+    {
+      xvba->SetError(__FUNCTION__, "failed to start decoding", __LINE__);
+      return;
+    }  
   }
   XVBA_Decode_Picture_Input picInput;
   picInput.size = sizeof(picInput);
@@ -799,10 +803,12 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     picInput.num_of_buffers_in_list = 2;
   }
 
-  if (Success != g_XVBA_vtable.DecodePicture(&picInput))
-  {
-    xvba->SetError(__FUNCTION__, "failed to decode picture 1", __LINE__);
-    return;
+  { CSingleLock lock(xvba->m_apiSec);
+    if (Success != g_XVBA_vtable.DecodePicture(&picInput))
+    {
+      xvba->SetError(__FUNCTION__, "failed to decode picture 1", __LINE__);
+      return;
+    }
   }
 
   if (!xvba->EnsureDataControlBuffers(render->num_slices))
@@ -867,19 +873,23 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     list[0]->data_offset = 0;
     list[1] = xvba->m_xvbaBufferPool.data_control_buffers[i];
     list[1]->data_size_in_buffer = sizeof(*dataControl);
-    if (Success != g_XVBA_vtable.DecodePicture(&picInput))
-    {
-      xvba->SetError(__FUNCTION__, "failed to decode picture 2", __LINE__);
-      return;
+    { CSingleLock lock(xvba->m_apiSec);
+      if (Success != g_XVBA_vtable.DecodePicture(&picInput))
+      {
+        xvba->SetError(__FUNCTION__, "failed to decode picture 2", __LINE__);
+        return;
+      }
     }
   }
   XVBA_Decode_Picture_End_Input endInput;
   endInput.size = sizeof(endInput);
   endInput.session = xvba->m_xvbaSession;
-  if (Success != g_XVBA_vtable.EndDecodePicture(&endInput))
-  {
-    xvba->SetError(__FUNCTION__, "failed to decode picture 3", __LINE__);
-    return;
+  { CSingleLock lock(xvba->m_apiSec);
+    if (Success != g_XVBA_vtable.EndDecodePicture(&endInput))
+    {
+      xvba->SetError(__FUNCTION__, "failed to decode picture 3", __LINE__);
+      return;
+    }
   }
 
   // decode sync and error
@@ -893,10 +903,12 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   int64_t start = CurrentHostCounter();
   while (1)
   {
-    if (Success != g_XVBA_vtable.SyncSurface(&syncInput, &syncOutput))
-    {
-      xvba->SetError(__FUNCTION__, "failed sync surface 1", __LINE__);
-      return;
+    { CSingleLock lock(xvba->m_apiSec);
+      if (Success != g_XVBA_vtable.SyncSurface(&syncInput, &syncOutput))
+      {
+        xvba->SetError(__FUNCTION__, "failed sync surface 1", __LINE__);
+        return;
+      }
     }
     if (!(syncOutput.status_flags & XVBA_STILL_PENDING))
       break;
@@ -969,10 +981,12 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
     surfaceInput.height = xvba->m_surfaceHeight;
     surfaceInput.session = xvba->m_xvbaSession;
     surfaceOutput.size = sizeof(surfaceOutput);
-    if (Success != g_XVBA_vtable.CreateSurface(&surfaceInput, &surfaceOutput))
-    {
-      xvba->SetError(__FUNCTION__, "failed to create video surface", __LINE__);
-      return -1;
+    { CSingleLock lock(xvba->m_apiSec);
+      if (Success != g_XVBA_vtable.CreateSurface(&surfaceInput, &surfaceOutput))
+      {
+        xvba->SetError(__FUNCTION__, "failed to create video surface", __LINE__);
+        return -1;
+      }
     }
     CSingleLock lock(xvba->m_videoSurfaceSec);
     render->surface = surfaceOutput.surface;
@@ -1181,9 +1195,11 @@ void CDecoder::CopyYV12(uint8_t *dest)
   input.target_width = m_surfaceWidth;
   input.target_height = m_surfaceHeight;
   input.target_parameter = target;
-  if (Success != g_XVBA_vtable.GetSurface(&input))
-  {
-    CLog::Log(LOGERROR,"(XVBA::CopyYV12) failed to get  surface");
+  { CSingleLock lock(m_apiSec);
+    if (Success != g_XVBA_vtable.GetSurface(&input))
+    {
+      CLog::Log(LOGERROR,"(XVBA::CopyYV12) failed to get  surface");
+    }
   }
 
   if (m_presentPicture->render)
@@ -1266,10 +1282,12 @@ int CDecoder::UploadTexture(int index, XVBA_SURFACE_FLAG field, GLenum textureTa
     transInput.src_surface = m_flipBuffer[index].outPic->render->surface;
     transInput.target_surface = m_flipBuffer[index].glSurface[i];
     transInput.flag = field;
-    if (Success != g_XVBA_vtable.TransferSurface(&transInput))
-    {
-      CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
-      return -1;
+    { CSingleLock lock(m_apiSec);
+      if (Success != g_XVBA_vtable.TransferSurface(&transInput))
+      {
+        CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
+        return -1;
+      }
     }
   }
 

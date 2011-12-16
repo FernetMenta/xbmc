@@ -147,6 +147,7 @@ protected:
     GLuint glTexture[3];
   };
   CCriticalSection m_outPicSec, m_videoSurfaceSec;
+  CCriticalSection m_apiSec;
   OutputPicture m_allOutPic[NUM_OUTPUT_PICS];
   std::deque<OutputPicture*> m_freeOutPic;
   std::deque<OutputPicture*> m_usedOutPic;
