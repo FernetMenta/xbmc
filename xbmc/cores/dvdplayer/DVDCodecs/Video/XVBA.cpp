@@ -1145,11 +1145,18 @@ void CDecoder::Present(int index)
 
   if (!m_presentPicture)
   {
-    CLog::Log(LOGWARNING, "XVBA::Present: present picture is NULL");
-    return;
+    // use last picture, we might processing a still frame here
+    int lastIndex = (index + m_numRenderBuffers -1) % m_numRenderBuffers;
+    m_presentPicture = m_flipBuffer[lastIndex].outPic;
+    m_flipBuffer[lastIndex].isDuplicate = true;
+    if (!m_presentPicture)
+    {
+      CLog::Log(LOGWARNING, "XVBA::Present: present picture is NULL");
+      return;
+    }
   }
 
-  if (m_flipBuffer[index].outPic)
+  if (m_flipBuffer[index].outPic && !m_flipBuffer[index].isDuplicate)
   {
     if (m_flipBuffer[index].outPic->render)
     {
@@ -1163,6 +1170,7 @@ void CDecoder::Present(int index)
   }
 
   m_flipBuffer[index].outPic = m_presentPicture;
+  m_flipBuffer[index].isDuplicate = false;
   m_presentPicture = NULL;
 }
 
@@ -1327,7 +1335,7 @@ void CDecoder::FinishGL()
 
   for (unsigned int i=0; i<m_numRenderBuffers;++i)
   {
-    if (m_flipBuffer[i].outPic)
+    if (m_flipBuffer[i].outPic && !m_flipBuffer[i].isDuplicate)
     {
       { CSingleLock lock(m_videoSurfaceSec);
         m_flipBuffer[i].outPic->render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;

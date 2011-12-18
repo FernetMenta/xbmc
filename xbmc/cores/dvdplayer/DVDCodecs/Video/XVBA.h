@@ -143,6 +143,7 @@ protected:
   struct RenderPicture
   {
     OutputPicture *outPic;
+    bool isDuplicate;
     void *glSurface[3];
     GLuint glTexture[3];
   };
