@@ -2573,6 +2573,11 @@ void CLinuxRendererGL::DeleteXVBAyv12Texture(int index)
   YUVFIELDS &fields = m_buffers[index].fields;
   GLuint    *pbo    = m_buffers[index].pbo;
 
+  if (m_buffers[index].xvba)
+    m_buffers[index].xvba->FinishGL();
+
+  SAFE_RELEASE(m_buffers[index].xvba);
+
   if( fields[FIELD_FULL][0].id == 0 ) return;
 
   /* finish up all textures, and delete them */
@@ -2765,11 +2770,12 @@ bool CLinuxRendererGL::CreateXVBAyv12Texture(int index)
 
 void CLinuxRendererGL::UploadXVBAyv12Texture(int source)
 {
-  YUVBUFFER& buf    =  m_buffers[source];
-  YV12Image* im     = &buf.image;
-  YUVFIELDS& fields =  buf.fields;
+  YUVBUFFER& buf       =  m_buffers[source];
+  YV12Image* im        = &buf.image;
+  YUVFIELDS& fields    =  buf.fields;
+  XVBA::CDecoder *xvba = m_buffers[source].xvba;
 
-  if (!(im->flags&IMAGE_FLAG_READY))
+  if (!(im->flags&IMAGE_FLAG_READY) || !xvba)
   {
     m_eventTexturesDone[source]->Set();
     return;
@@ -2838,6 +2844,12 @@ void CLinuxRendererGL::UploadXVBAyv12Texture(int source)
 
   VerifyGLState();
 
+  // crop texture
+  CRect crop = xvba->GetCropRect();
+  m_sourceRect.x1 += crop.x1;
+  m_sourceRect.x2 -= m_sourceWidth - crop.x2;
+  m_sourceRect.y1 += crop.y1;
+  m_sourceRect.y2 -= m_sourceHeight - crop.y2;
   CalculateTextureSourceRects(source, 3);
 
   glDisable(m_textureTarget);
