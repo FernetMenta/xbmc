@@ -1174,7 +1174,7 @@ void CDecoder::Present(int index)
   m_presentPicture = NULL;
 }
 
-void CDecoder::CopyYV12(uint8_t *dest)
+void CDecoder::CopyYV12(int index, uint8_t *dest)
 {
   CSharedLock lock(m_decoderSection);
 
@@ -1183,7 +1183,7 @@ void CDecoder::CopyYV12(uint8_t *dest)
       return;
   }
 
-  if (!m_presentPicture)
+  if (!m_flipBuffer[index].outPic)
   {
     CLog::Log(LOGWARNING, "XVBA::Present: present picture is NULL");
     return;
@@ -1197,7 +1197,7 @@ void CDecoder::CopyYV12(uint8_t *dest)
   XVBA_Get_Surface_Input input;
   input.size = sizeof(input);
   input.session = m_xvbaSession;
-  input.src_surface = m_presentPicture->render->surface;
+  input.src_surface = m_flipBuffer[index].outPic->render->surface;
   input.target_buffer = dest;
   input.target_pitch = m_surfaceWidth;
   input.target_width = m_surfaceWidth;
@@ -1208,18 +1208,6 @@ void CDecoder::CopyYV12(uint8_t *dest)
     {
       CLog::Log(LOGERROR,"(XVBA::CopyYV12) failed to get  surface");
     }
-  }
-
-  if (m_presentPicture->render)
-  {
-    CSingleLock lock(m_videoSurfaceSec);
-    m_presentPicture->render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
-    m_presentPicture->render = NULL;
-  }
-  {
-    CSingleLock lock(m_outPicSec);
-    m_freeOutPic.push_back(m_presentPicture);
-    m_presentPicture = NULL;
   }
 }
 

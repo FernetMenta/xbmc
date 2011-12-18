@@ -804,7 +804,9 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
   {
     if (pic.xvba)
     {
-      pic.xvba->CopyYV12(image.plane[0]);
+      m_pRenderer->AddProcessor(pic.xvba);
+      pic.xvba->Present(index);
+      pic.xvba->CopyYV12(index, image.plane[0]);
     }
   }
 #endif
