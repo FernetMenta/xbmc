@@ -292,7 +292,7 @@ void CAirTunesServer::StopServer(bool bWait)
   }
 }
 
-CAirTunesServer::CAirTunesServer(int port, bool nonlocal)
+CAirTunesServer::CAirTunesServer(int port, bool nonlocal) : CThread("CAirTunesServer")
 {
   m_port = port;
   m_pLibShairport = new DllLibShairport();
