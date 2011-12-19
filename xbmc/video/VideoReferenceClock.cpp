@@ -30,6 +30,7 @@
 #if defined(HAS_GLX) && defined(HAS_XRANDR)
   #include <sstream>
   #include <X11/extensions/Xrandr.h>
+  #include "windowing/WindowingFactory.h"
   #define NVSETTINGSCMD "nvidia-settings -nt -q RefreshRate3"
 #elif defined(__APPLE__) && !defined(__arm__)
   #include <QuartzCore/CVDisplayLink.h>
@@ -159,6 +160,8 @@ void CVideoReferenceClock::Process()
     m_RefreshChanged = 0;
     m_Started.Set();
 
+    SetPriority(1);
+
     if (SetupSuccess)
     {
       m_UseVblank = true;          //tell other threads we're using vblank as clock
@@ -217,6 +220,7 @@ bool CVideoReferenceClock::SetupGLX()
     GLX_RED_SIZE,      0,
     GLX_GREEN_SIZE,    0,
     GLX_BLUE_SIZE,     0,
+    GLX_DOUBLEBUFFER,
     None
   };
 
@@ -322,6 +326,9 @@ bool CVideoReferenceClock::SetupGLX()
     CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXGetVideoSyncSGI returned %i", ReturnV);
     return false;
   }
+
+  m_glXSwapIntervalMESA = NULL;
+  m_glXSwapIntervalMESA = (int (*)(int))glXGetProcAddress((const GLubyte*)"glXSwapIntervalMESA");
 
   XRRSizes(m_Dpy, m_vInfo->screen, &ReturnV);
   if (ReturnV == 0)
@@ -463,6 +470,19 @@ void CVideoReferenceClock::RunGLX()
   bool          IsReset = false;
   int64_t       Now;
 
+  bool AtiWorkaround = false;
+  const char* VendorPtr = (const char*)glGetString(GL_VENDOR);
+  if (VendorPtr)
+  {
+    CStdString Vendor = VendorPtr;
+    Vendor.ToLower();
+    if ((Vendor.compare(0, 3, "ati") == 0) && m_glXSwapIntervalMESA)
+    {
+      CLog::Log(LOGDEBUG, "CVideoReferenceClock: GL_VENDOR: %s, using ati workaround", VendorPtr);
+      AtiWorkaround = true;
+    }
+  }
+
   CSingleLock SingleLock(m_CritSection);
   SingleLock.Leave();
 
@@ -470,10 +490,51 @@ void CVideoReferenceClock::RunGLX()
   m_glXGetVideoSyncSGI(&VblankCount);
   PrevVblankCount = VblankCount;
 
+  int precision = 1;
+  int proximity;
+  uint64_t lastVblankTime = CurrentHostCounter();
+  int sleepTime, correction;
+
   while(!m_bStop)
   {
     //wait for the next vblank
-    ReturnV = m_glXWaitVideoSyncSGI(2, (VblankCount + 1) % 2, &VblankCount);
+    if (!AtiWorkaround)
+      ReturnV = m_glXWaitVideoSyncSGI(2, (VblankCount + 1) % 2, &VblankCount);
+    else
+    {
+      //-------------------------------
+      proximity = 0;
+      sleepTime = precision * 100000LL / m_RefreshRate;
+      correction = (CurrentHostCounter() - lastVblankTime) / 1000;
+      if (sleepTime > correction)
+        sleepTime -= correction;
+      usleep(sleepTime);
+      m_glXGetVideoSyncSGI(&VblankCount);
+      if (VblankCount == PrevVblankCount)
+      {
+        usleep(sleepTime/2);
+        m_glXGetVideoSyncSGI(&VblankCount);
+        while (VblankCount == PrevVblankCount)
+        {
+          usleep(sleepTime/20);
+          m_glXGetVideoSyncSGI(&VblankCount);
+          proximity++;
+        }
+      }
+      else if (precision > 1)
+        precision--;
+
+      if (proximity > 4 && precision < 6)
+        precision++;
+
+//      CLog::Log(LOGNOTICE, "----- diff: %ld, precision: %d, prox: %d, sleep: %d, correction: %d",
+//          CurrentHostCounter()- lastVblankTime, precision, proximity, sleepTime, correction);
+
+      lastVblankTime = CurrentHostCounter();
+
+      ReturnV = 0;
+    }
+
     m_glXGetVideoSyncSGI(&VblankCount); //the vblank count returned by glXWaitVideoSyncSGI is not always correct
     Now = CurrentHostCounter();         //get the timestamp of this vblank
 
@@ -492,12 +553,13 @@ void CVideoReferenceClock::RunGLX()
       SingleLock.Leave();
       SendVblankSignal();
       UpdateRefreshrate();
-
       IsReset = false;
     }
     else
     {
       CLog::Log(LOGDEBUG, "CVideoReferenceClock: Vblank counter has reset");
+
+      precision = 1;
 
       //only try reattaching once
       if (IsReset)

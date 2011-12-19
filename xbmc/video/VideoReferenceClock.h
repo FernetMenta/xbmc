@@ -114,6 +114,7 @@ class CVideoReferenceClock : public CThread
 
     int  (*m_glXWaitVideoSyncSGI) (int, int, unsigned int*);
     int  (*m_glXGetVideoSyncSGI)  (unsigned int*);
+    int  (*m_glXSwapIntervalMESA) (int);
 
     Display*     m_Dpy;
     XVisualInfo *m_vInfo;
