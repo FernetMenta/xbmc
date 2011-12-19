@@ -61,6 +61,7 @@ public:
   // Local to WinSystemX11 only
   Display*  GetDisplay() { return m_dpy; }
   GLXWindow GetWindow() { return m_glWindow; }
+  Window    GetwmWindow() { return m_wmWindow; };
   void RefreshWindow();
 
 protected:
