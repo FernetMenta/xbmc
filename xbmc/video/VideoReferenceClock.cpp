@@ -30,6 +30,7 @@
 #if defined(HAS_GLX) && defined(HAS_XRANDR)
   #include <sstream>
   #include <X11/extensions/Xrandr.h>
+  #include "windowing/WindowingFactory.h"
   #define NVSETTINGSCMD "nvidia-settings -nt -q RefreshRate3"
 #elif defined(__APPLE__) && !defined(__arm__)
   #include <QuartzCore/CVDisplayLink.h>
@@ -267,6 +268,14 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
+  CStdString Vendor = g_Windowing.GetRenderVendor();
+  Vendor.ToLower();
+  if (Vendor.compare(0, 3, "ati") == 0)
+  {
+    CLog::Log(LOGDEBUG, "CVideoReferenceClock: GL_VENDOR: %s, using ati workaround", Vendor.c_str());
+    m_bIsATI = true;
+  }
+
   m_vInfo = glXChooseVisual(m_Dpy, DefaultScreen(m_Dpy), singleBufferAttributes);
   if (!m_vInfo)
   {
@@ -274,13 +283,16 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
-  Swa.border_pixel = 0;
-  Swa.event_mask = StructureNotifyMask;
-  Swa.colormap = XCreateColormap(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), m_vInfo->visual, AllocNone );
-  SwaMask = CWBorderPixel | CWColormap | CWEventMask;
+  if (!m_bIsATI)
+  {
+    Swa.border_pixel = 0;
+    Swa.event_mask = StructureNotifyMask;
+    Swa.colormap = XCreateColormap(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), m_vInfo->visual, AllocNone );
+    SwaMask = CWBorderPixel | CWColormap | CWEventMask;
 
-  m_Window = XCreateWindow(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), 0, 0, 256, 256, 0,
+    m_Window = XCreateWindow(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), 0, 0, 256, 256, 0,
                            m_vInfo->depth, InputOutput, m_vInfo->visual, SwaMask, &Swa);
+  }
 
   m_Context = glXCreateContext(m_Dpy, m_vInfo, NULL, True);
   if (!m_Context)
@@ -289,25 +301,32 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
-  ReturnV = glXMakeCurrent(m_Dpy, m_Window, m_Context);
+  if (!m_bIsATI)
+    ReturnV = glXMakeCurrent(m_Dpy, m_Window, m_Context);
+  else
+    ReturnV = glXMakeCurrent(m_Dpy, g_Windowing.GetwmWindow(), m_Context);
+
   if (ReturnV != True)
   {
     CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXMakeCurrent returned %i", ReturnV);
     return false;
   }
 
-  m_glXWaitVideoSyncSGI = (int (*)(int, int, unsigned int*))glXGetProcAddress((const GLubyte*)"glXWaitVideoSyncSGI");
-  if (!m_glXWaitVideoSyncSGI)
+  if (!m_bIsATI)
   {
-    CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXWaitVideoSyncSGI not found");
-    return false;
-  }
+    m_glXWaitVideoSyncSGI = (int (*)(int, int, unsigned int*))glXGetProcAddress((const GLubyte*)"glXWaitVideoSyncSGI");
+    if (!m_glXWaitVideoSyncSGI)
+    {
+      CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXWaitVideoSyncSGI not found");
+      return false;
+    }
 
-  ReturnV = m_glXWaitVideoSyncSGI(2, 0, &GlxTest);
-  if (ReturnV)
-  {
-    CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXWaitVideoSyncSGI returned %i", ReturnV);
-    return false;
+    ReturnV = m_glXWaitVideoSyncSGI(2, 0, &GlxTest);
+    if (ReturnV)
+    {
+      CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXWaitVideoSyncSGI returned %i", ReturnV);
+      return false;
+    }
   }
 
   m_glXGetVideoSyncSGI = (int (*)(unsigned int*))glXGetProcAddress((const GLubyte*)"glXGetVideoSyncSGI");
@@ -479,19 +498,6 @@ void CVideoReferenceClock::CleanupGLX()
 {
   CLog::Log(LOGDEBUG, "CVideoReferenceClock: Cleaning up GLX");
 
-  bool AtiWorkaround = false;
-  const char* VendorPtr = (const char*)glGetString(GL_VENDOR);
-  if (VendorPtr)
-  {
-    CStdString Vendor = VendorPtr;
-    Vendor.ToLower();
-    if (Vendor.compare(0, 3, "ati") == 0)
-    {
-      CLog::Log(LOGDEBUG, "CVideoReferenceClock: GL_VENDOR: %s, using ati dpy workaround", VendorPtr);
-      AtiWorkaround = true;
-    }
-  }
-
   if (m_vInfo)
   {
     XFree(m_vInfo);
@@ -509,8 +515,7 @@ void CVideoReferenceClock::CleanupGLX()
     m_Window = 0;
   }
 
-  //ati saves the Display* in their libGL, if we close it here, we crash
-  if (m_Dpy && !AtiWorkaround)
+  if (m_Dpy)
   {
     XCloseDisplay(m_Dpy);
     m_Dpy = NULL;
@@ -532,10 +537,55 @@ void CVideoReferenceClock::RunGLX()
   m_glXGetVideoSyncSGI(&VblankCount);
   PrevVblankCount = VblankCount;
 
+  int precision = 1;
+  int proximity;
+  uint64_t lastVblankTime = CurrentHostCounter();
+  int sleepTime, correction;
+
   while(!m_bStop)
   {
     //wait for the next vblank
-    ReturnV = m_glXWaitVideoSyncSGI(2, (VblankCount + 1) % 2, &VblankCount);
+    if (!m_bIsATI)
+      ReturnV = m_glXWaitVideoSyncSGI(2, (VblankCount + 1) % 2, &VblankCount);
+    else
+    {
+      proximity = 0;
+
+      // calculate sleep time in micro secs
+      // we start with 10% of interval multiplied with precision
+      sleepTime = m_SystemFrequency / m_RefreshRate / 10000LL * precision;
+
+      // correct sleepTime
+      correction = (CurrentHostCounter() - lastVblankTime) / m_SystemFrequency * 1000000LL;
+      if (sleepTime > correction)
+        sleepTime -= correction;
+      usleep(sleepTime);
+      m_glXGetVideoSyncSGI(&VblankCount);
+      if (VblankCount == PrevVblankCount)
+      {
+        usleep(sleepTime/2);
+        m_glXGetVideoSyncSGI(&VblankCount);
+        while (VblankCount == PrevVblankCount)
+        {
+          usleep(sleepTime/20);
+          m_glXGetVideoSyncSGI(&VblankCount);
+          proximity++;
+        }
+      }
+      // we might have waited too long, reduce sleep time
+      else if (precision > 1)
+        precision--;
+
+      // lets try to increase precision in order to reduce number
+      // of required steps
+      if (proximity > 4 && precision < 6)
+        precision++;
+
+      lastVblankTime = CurrentHostCounter();
+
+      ReturnV = 0;
+    }
+
     m_glXGetVideoSyncSGI(&VblankCount); //the vblank count returned by glXWaitVideoSyncSGI is not always correct
     Now = CurrentHostCounter();         //get the timestamp of this vblank
 
@@ -554,12 +604,13 @@ void CVideoReferenceClock::RunGLX()
       SingleLock.Leave();
       SendVblankSignal();
       UpdateRefreshrate();
-
       IsReset = false;
     }
     else
     {
       CLog::Log(LOGDEBUG, "CVideoReferenceClock: Vblank counter has reset");
+
+      precision = 1;
 
       //only try reattaching once
       if (IsReset)

@@ -122,6 +122,7 @@ class CVideoReferenceClock : public CThread
     int          m_RREventBase;
 
     bool         m_UseNvSettings;
+    bool         m_bIsATI;
 
 #elif defined(_WIN32) && defined(HAS_DX)
     bool   SetupD3D();
