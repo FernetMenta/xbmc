@@ -35,6 +35,7 @@
 #include <X11/Xlib.h>
 #include "cores/VideoRenderers/RenderManager.h"
 #include "utils/TimeUtils.h"
+#include "settings/GUISettings.h"
 
 #if defined(HAS_XRANDR)
 #include <X11/extensions/Xrandr.h>
@@ -178,6 +179,45 @@ bool CWinSystemX11::ResizeWindow(int newWidth, int newHeight, int newLeft, int n
   return false;
 }
 
+void CWinSystemX11::RefreshWindow()
+{
+  g_xrandr.Query(true);
+  XOutput out  = g_xrandr.GetCurrentOutput();
+  XMode   mode = g_xrandr.GetCurrentMode(out.name);
+
+  // only overwrite desktop resolution, if we are not in fullscreen mode
+  if (!g_graphicsContext.IsFullScreenVideo())
+  {
+    CLog::Log(LOGDEBUG, "CWinSystemX11::RefreshWindow - store desktop resolution, width: %d, height: %d, hz: %2.2f", mode.w, mode.h, mode.hz);
+    UpdateDesktopResolution(g_settings.m_ResInfo[RES_DESKTOP], 0, mode.w, mode.h, mode.hz);
+    g_settings.m_ResInfo[RES_DESKTOP].strId     = mode.id;
+    g_settings.m_ResInfo[RES_DESKTOP].strOutput = out.name;
+  }
+
+  RESOLUTION_INFO res;
+  unsigned int i;
+  bool found(false);
+  for (i = RES_DESKTOP; i < g_settings.m_ResInfo.size(); ++i)
+  {
+    if (g_settings.m_ResInfo[i].strId == mode.id)
+    {
+      found = true;
+      break;
+    }
+  }
+
+  if (!found)
+  {
+    CLog::Log(LOGERROR, "CWinSystemX11::RefreshWindow - could not find resolution");
+    return;
+  }
+
+  g_graphicsContext.SetVideoResolution((RESOLUTION)i, true);
+  g_guiSettings.SetInt("window.width", mode.w);
+  g_guiSettings.SetInt("window.height", mode.h);
+  g_settings.Save();
+}
+
 bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
   m_nWidth      = res.iWidth;
@@ -193,13 +233,25 @@ bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   mode.hz  = res.fRefreshRate;
   mode.id  = res.strId;
  
-  if(m_bFullScreen)
+  XOutput currout  = g_xrandr.GetCurrentOutput();
+  XMode   currmode = g_xrandr.GetCurrentMode(currout.name);
+
+  if(!m_bFullScreen)
   {
+    // reset mode to desktop resolution
+    out.name = g_settings.m_ResInfo[RES_DESKTOP].strOutput;
+    mode = g_xrandr.GetCurrentMode(out.name);
+  }
+
+  // only call xrandr if mode changes
+  if (currout.name != out.name || currmode.w != mode.w || currmode.h != mode.h ||
+      currmode.hz != mode.hz || currmode.id != mode.id)
+  {
+    CLog::Log(LOGNOTICE, "CWinSystemX11::SetFullScreen - calling xrandr");
     OnLostDevice();
     g_xrandr.SetMode(out, mode);
   }
-  else
-    g_xrandr.RestoreState();
+
 #endif
 
   int options = SDL_OPENGL;
@@ -493,6 +545,7 @@ void CWinSystemX11::CheckDisplayEvents()
   if (bGotEvent || bTimeout)
   {
     CLog::Log(LOGDEBUG, "%s - notify display reset event", __FUNCTION__);
+    RefreshWindow();
 
     CSingleLock lock(m_resourceSection);
 
