@@ -31,6 +31,8 @@
   #include <sstream>
   #include <X11/extensions/Xrandr.h>
   #include "windowing/WindowingFactory.h"
+  #include "settings/Settings.h"
+  #include "guilib/GraphicContext.h"
   #define NVSETTINGSCMD "nvidia-settings -nt -q RefreshRate3"
 #elif defined(__APPLE__) && !defined(__arm__)
   #include <QuartzCore/CVDisplayLink.h>
@@ -50,6 +52,52 @@
   #endif
   #include "windowing/WindowingFactory.h"
   #include "settings/AdvancedSettings.h"
+#endif
+
+#if defined(HAS_GLX)
+void CDisplayCallback::OnLostDevice()
+{
+  CSingleLock lock(m_DisplaySection);
+  m_State = DISP_LOST;
+  m_DisplayEvent.Reset();
+}
+void CDisplayCallback::OnResetDevice()
+{
+  CSingleLock lock(m_DisplaySection);
+  m_State = DISP_RESET;
+  m_DisplayEvent.Set();
+}
+void CDisplayCallback::Register()
+{
+  CSingleLock lock(m_DisplaySection);
+  g_Windowing.Register(this);
+  m_State = DISP_OPEN;
+}
+void CDisplayCallback::Unregister()
+{
+  g_Windowing.Unregister(this);
+}
+bool CDisplayCallback::IsReset()
+{
+  DispState state;
+  { CSingleLock lock(m_DisplaySection);
+    state = m_State;
+  }
+  if (state == DISP_LOST)
+  {
+    CLog::Log(LOGDEBUG,"VideoReferenceClock - wait for display reset signal");
+    m_DisplayEvent.Wait();
+    CSingleLock lock(m_DisplaySection);
+    state = m_State;
+    CLog::Log(LOGDEBUG,"VideoReferenceClock - got display reset signal");
+  }
+  if (state == DISP_RESET)
+  {
+    m_State = DISP_OPEN;
+    return true;
+  }
+  return false;
+}
 #endif
 
 using namespace std;
@@ -343,16 +391,7 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
-  XRRSizes(m_Dpy, m_vInfo->screen, &ReturnV);
-  if (ReturnV == 0)
-  {
-    CLog::Log(LOGDEBUG, "CVideoReferenceClock: RandR not supported");
-    return false;
-  }
-
-  //set up receiving of RandR events, we'll get one when the refreshrate changes
-  XRRQueryExtension(m_Dpy, &m_RREventBase, &ReturnV);
-  XRRSelectInput(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), RRScreenChangeNotifyMask);
+  m_DispCallback.Register();
 
   UpdateRefreshrate(true); //forced refreshrate update
   m_MissedVblanks = 0;
@@ -498,6 +537,8 @@ void CVideoReferenceClock::CleanupGLX()
 {
   CLog::Log(LOGDEBUG, "CVideoReferenceClock: Cleaning up GLX");
 
+  m_DispCallback.Unregister();
+
   if (m_vInfo)
   {
     XFree(m_vInfo);
@@ -595,6 +636,9 @@ void CVideoReferenceClock::RunGLX()
       return;
     }
 
+    if (m_DispCallback.IsReset())
+      UpdateRefreshrate(true);
+
     if (VblankCount > PrevVblankCount)
     {
       //update the vblank timestamp, update the clock and send a signal that we got a vblank
@@ -603,7 +647,6 @@ void CVideoReferenceClock::RunGLX()
       UpdateClock((int)(VblankCount - PrevVblankCount), true);
       SingleLock.Leave();
       SendVblankSignal();
-      UpdateRefreshrate();
       IsReset = false;
     }
     else
@@ -1133,23 +1176,13 @@ bool CVideoReferenceClock::UpdateRefreshrate(bool Forced /*= false*/)
 
 #if defined(HAS_GLX) && defined(HAS_XRANDR)
 
-  //check for RandR events
-  bool   GotEvent = Forced || m_RefreshChanged == 2;
-  XEvent Event;
-  while (XCheckTypedEvent(m_Dpy, m_RREventBase + RRScreenChangeNotify, &Event))
-  {
-    if (Event.type == m_RREventBase + RRScreenChangeNotify)
-    {
-      CLog::Log(LOGDEBUG, "CVideoReferenceClock: Received RandR event %i", Event.type);
-      GotEvent = true;
-    }
-    XRRUpdateConfiguration(&Event);
-  }
+  // the correct refresh rate is always stores in g_settings
+  bool   bUpdate = Forced || m_RefreshChanged == 2;
 
   if (!Forced)
     m_RefreshChanged = 0;
 
-  if (!GotEvent) //refreshrate did not change
+  if (!bUpdate) //refreshrate did not change
     return false;
 
   //the refreshrate can be wrong on nvidia drivers, so read it from nvidia-settings when it's available
@@ -1170,7 +1203,7 @@ bool CVideoReferenceClock::UpdateRefreshrate(bool Forced /*= false*/)
   }
 
   CSingleLock SingleLock(m_CritSection);
-  m_RefreshRate = GetRandRRate();
+  m_RefreshRate = MathUtils::round_int(g_settings.m_ResInfo[g_graphicsContext.GetVideoResolution()].fRefreshRate);
 
   CLog::Log(LOGDEBUG, "CVideoReferenceClock: Detected refreshrate: %i hertz", (int)m_RefreshRate);
 

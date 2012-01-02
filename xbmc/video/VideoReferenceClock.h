@@ -55,6 +55,29 @@ class CD3DCallback : public ID3DResource
 
 #endif
 
+#if defined(HAS_GLX)
+#include "guilib/DispResource.h"
+class CDisplayCallback : public IDispResource
+{
+public:
+  virtual void OnLostDevice();
+  virtual void OnResetDevice();
+  void Register();
+  void Unregister();
+  bool IsReset();
+private:
+  enum DispState
+  {
+    DISP_LOST,
+    DISP_RESET,
+    DISP_OPEN
+  };
+  DispState m_State;
+  CEvent m_DisplayEvent;
+  CCriticalSection m_DisplaySection;
+};
+#endif
+
 class CVideoReferenceClock : public CThread
 {
   public:
@@ -123,6 +146,7 @@ class CVideoReferenceClock : public CThread
 
     bool         m_UseNvSettings;
     bool         m_bIsATI;
+    CDisplayCallback m_DispCallback;
 
 #elif defined(_WIN32) && defined(HAS_DX)
     bool   SetupD3D();
