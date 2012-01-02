@@ -470,10 +470,14 @@ void CVideoReferenceClock::RunGLX()
       ReturnV = m_glXWaitVideoSyncSGI(2, (VblankCount + 1) % 2, &VblankCount);
     else
     {
-      //-------------------------------
       proximity = 0;
-      sleepTime = precision * 100000LL / m_RefreshRate;
-      correction = (CurrentHostCounter() - lastVblankTime) / 1000;
+
+      // calculate sleep time in micro secs
+      // we start with 10% of interval multiplied with precision
+      sleepTime = m_SystemFrequency / m_RefreshRate / 10000LL * precision;
+
+      // correct sleepTime
+      correction = (CurrentHostCounter() - lastVblankTime) / m_SystemFrequency * 1000000LL;
       if (sleepTime > correction)
         sleepTime -= correction;
       usleep(sleepTime);
