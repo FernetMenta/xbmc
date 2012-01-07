@@ -58,6 +58,9 @@ static int end_frame(AVCodecContext *avctx)
     render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
     assert(render);
 
+    if (render->picture_descriptor == 0 || render->iq_matrix == 0)
+      return -1;
+
     pic_descriptor = render->picture_descriptor;
     
     av_dlog(avctx, "xvba_vc1_end_frame()\n");
