@@ -102,6 +102,7 @@ protected:
   bool DiscardPresentPicture();
   void ResetState();
   void SetError(const char* function, const char* msg, int line);
+  bool IsSurfaceValid(xvba_render_state *render);
 
   // callbacks for ffmpeg
   static void  FFReleaseBuffer(AVCodecContext *avctx, AVFrame *pic);

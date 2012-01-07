@@ -483,10 +483,20 @@ void CDecoder::Close()
     m_context->Release();
   m_context = 0;
 
+  while (!m_videoSurfaces.empty())
+  {
+    xvba_render_state *render = m_videoSurfaces.back();
+    if(render->buffers_alllocated > 0)
+      m_dllAvUtil.av_free(render->buffers);
+    m_videoSurfaces.pop_back();
+    free(render);
+  }
+
   if (m_flipBuffer)
     delete [] m_flipBuffer;
 
   g_Windowing.Unregister(this);
+  m_dllAvUtil.Unload();
 }
 
 void CDecoder::ResetState()
@@ -646,21 +656,48 @@ void CDecoder::DestroySession()
   }
   m_xvbaBufferPool.iq_matrix_buffer = 0;
 
-  while (!m_videoSurfaces.empty())
+  for (unsigned int i = 0; i < m_videoSurfaces.size(); ++i)
   {
-    xvba_render_state *render = m_videoSurfaces.back();
-    if(render->buffers_alllocated > 0)
-      m_dllAvUtil.av_free(render->buffers);
-
-    m_videoSurfaces.pop_back();
-    if (m_xvbaSession)
+    xvba_render_state *render = m_videoSurfaces[i];
+    if (m_xvbaSession && render->surface)
+    {
       g_XVBA_vtable.DestroySurface(render->surface);
-    free(render);
+      render->surface = 0;
+      render->picture_descriptor = 0;
+      render->iq_matrix = 0;
+    }
   }
 
   if (m_xvbaSession)
     g_XVBA_vtable.DestroyDecode(m_xvbaSession);
   m_xvbaSession = 0;
+}
+
+bool CDecoder::IsSurfaceValid(xvba_render_state *render)
+{
+  // find render state in queue
+  bool found(false);
+  unsigned int i;
+  for(i = 0; i < m_videoSurfaces.size(); ++i)
+  {
+    if(m_videoSurfaces[i] == render)
+    {
+      found = true;
+      break;
+    }
+  }
+  if (!found)
+  {
+    CLog::Log(LOGERROR,"%s - video surface not found", __FUNCTION__);
+    return false;
+  }
+  if (m_videoSurfaces[i]->surface == 0)
+  {
+    m_videoSurfaces[i]->state = 0;
+    return false;
+  }
+
+  return true;
 }
 
 bool CDecoder::EnsureDataControlBuffers(unsigned int num)
@@ -714,16 +751,7 @@ void CDecoder::FFReleaseBuffer(AVCodecContext *avctx, AVFrame *pic)
     pic->data[i]= NULL;
 
   // find render state in queue
-  bool found(false);
-  for(unsigned int i = 0; i < xvba->m_videoSurfaces.size(); ++i)
-  {
-    if(xvba->m_videoSurfaces[i] == render)
-    {
-      found = true;
-      break;
-    }
-  }
-  if (!found)
+  if (!xvba->IsSurfaceValid(render))
   {
     CLog::Log(LOGDEBUG, "XVBA::FFReleaseBuffer - ignoring invalid buffer");
     return;
@@ -763,16 +791,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   }
 
   // ffmpeg vc-1 decoder does not flush, make sure the data buffer is still valid
-  bool found(false);
-  for(unsigned int i = 0; i < xvba->m_videoSurfaces.size(); ++i)
-  {
-    if(xvba->m_videoSurfaces[i] == render)
-    {
-      found = true;
-      break;
-    }
-  }
-  if (!found)
+  if (!xvba->IsSurfaceValid(render))
   {
     CLog::Log(LOGWARNING, "XVBA::FFDrawSlice - ignoring invalid buffer");
     return;
@@ -964,7 +983,7 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
     }
   }
 
-  // create a new surface
+  // create a new render state
   if (render == NULL)
   {
     render = (xvba_render_state*)calloc(sizeof(xvba_render_state), 1);
@@ -973,6 +992,15 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
       CLog::Log(LOGERROR, "XVBA::FFGetBuffer - calloc failed");
       return -1;
     }
+    render->surface = 0;
+    render->buffers_alllocated = 0;
+    CSingleLock lock(xvba->m_videoSurfaceSec);
+    xvba->m_videoSurfaces.push_back(render);
+  }
+
+  // create a new surface
+  if (render->surface == 0)
+  {
     XVBA_Create_Surface_Input surfaceInput;
     XVBA_Create_Surface_Output surfaceOutput;
     surfaceInput.size = sizeof(surfaceInput);
@@ -988,12 +1016,9 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
         return -1;
       }
     }
-    CSingleLock lock(xvba->m_videoSurfaceSec);
     render->surface = surfaceOutput.surface;
-    render->buffers_alllocated = 0;
     render->picture_descriptor = (XVBAPictureDescriptor *)xvba->m_xvbaBufferPool.picture_descriptor_buffer->bufferXVBA;
     render->iq_matrix = (XVBAQuantMatrixAvc *)xvba->m_xvbaBufferPool.iq_matrix_buffer->bufferXVBA;
-    xvba->m_videoSurfaces.push_back(render);
     CLog::Log(LOGDEBUG, "XVBA::FFGetBuffer - created video surface");
   }
 
@@ -1041,16 +1066,7 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
       return VC_ERROR;
 
     // ffmpeg vc-1 decoder does not flush, make sure the data buffer is still valid
-    bool found(false);
-    for(unsigned int i = 0; i < m_videoSurfaces.size(); ++i)
-    {
-      if(m_videoSurfaces[i] == render)
-      {
-        found = true;
-        break;
-      }
-    }
-    if (!found)
+    if (!IsSurfaceValid(render))
     {
       CLog::Log(LOGWARNING, "XVBA::Decode - ignoring invalid buffer");
       return VC_BUFFER;
