@@ -42,6 +42,9 @@ static int start_frame(AVCodecContext *avctx,
 
     render = (struct xvba_render_state *)s->current_picture_ptr->data[0];
     assert(render);
+
+    if (render->picture_descriptor == 0)
+      return -1;
     
     render->num_slices = 0;
     return 0;
