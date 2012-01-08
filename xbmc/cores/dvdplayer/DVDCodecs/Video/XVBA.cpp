@@ -22,6 +22,7 @@
 #include "system.h"
 #ifdef HAVE_LIBXVBA
 #include <dlfcn.h>
+#include <string>
 #include "XVBA.h"
 #include "windowing/WindowingFactory.h"
 #include "guilib/GraphicContext.h"
@@ -304,6 +305,13 @@ void CDecoder::OnResetDevice()
 
 bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned int surfaces)
 {
+  std::string Vendor = g_Windowing.GetRenderVendor();
+  std::transform(Vendor.begin(), Vendor.end(), Vendor.begin(), ::tolower);
+  if (Vendor.compare(0, 3, "ati") != 0)
+  {
+    return false;
+  }
+
   CLog::Log(LOGNOTICE,"(XVBA::Open) opening dxva decoder");
 
   if(avctx->coded_width  == 0
