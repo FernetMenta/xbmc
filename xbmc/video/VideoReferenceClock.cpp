@@ -268,7 +268,6 @@ bool CVideoReferenceClock::SetupGLX()
     GLX_RED_SIZE,      0,
     GLX_GREEN_SIZE,    0,
     GLX_BLUE_SIZE,     0,
-    GLX_DOUBLEBUFFER,
     None
   };
 
@@ -318,6 +317,14 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
+  CStdString Vendor = g_Windowing.GetRenderVendor();
+  Vendor.ToLower();
+  if (Vendor.compare(0, 3, "ati") == 0)
+  {
+    CLog::Log(LOGDEBUG, "CVideoReferenceClock: GL_VENDOR: %s, using ati workaround", Vendor.c_str());
+    m_bIsATI = true;
+  }
+
   m_vInfo = glXChooseVisual(m_Dpy, DefaultScreen(m_Dpy), singleBufferAttributes);
   if (!m_vInfo)
   {
@@ -325,13 +332,16 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
-  Swa.border_pixel = 0;
-  Swa.event_mask = StructureNotifyMask;
-  Swa.colormap = XCreateColormap(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), m_vInfo->visual, AllocNone );
-  SwaMask = CWBorderPixel | CWColormap | CWEventMask;
+  if (!m_bIsATI)
+  {
+    Swa.border_pixel = 0;
+    Swa.event_mask = StructureNotifyMask;
+    Swa.colormap = XCreateColormap(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), m_vInfo->visual, AllocNone );
+    SwaMask = CWBorderPixel | CWColormap | CWEventMask;
 
-  m_Window = XCreateWindow(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), 0, 0, 256, 256, 0,
+    m_Window = XCreateWindow(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), 0, 0, 256, 256, 0,
                            m_vInfo->depth, InputOutput, m_vInfo->visual, SwaMask, &Swa);
+  }
 
   m_Context = glXCreateContext(m_Dpy, m_vInfo, NULL, True);
   if (!m_Context)
@@ -340,25 +350,32 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
-  ReturnV = glXMakeCurrent(m_Dpy, m_Window, m_Context);
+  if (!m_bIsATI)
+    ReturnV = glXMakeCurrent(m_Dpy, m_Window, m_Context);
+  else
+    ReturnV = glXMakeCurrent(m_Dpy, g_Windowing.GetwmWindow(), m_Context);
+
   if (ReturnV != True)
   {
     CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXMakeCurrent returned %i", ReturnV);
     return false;
   }
 
-  m_glXWaitVideoSyncSGI = (int (*)(int, int, unsigned int*))glXGetProcAddress((const GLubyte*)"glXWaitVideoSyncSGI");
-  if (!m_glXWaitVideoSyncSGI)
+  if (!m_bIsATI)
   {
-    CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXWaitVideoSyncSGI not found");
-    return false;
-  }
+    m_glXWaitVideoSyncSGI = (int (*)(int, int, unsigned int*))glXGetProcAddress((const GLubyte*)"glXWaitVideoSyncSGI");
+    if (!m_glXWaitVideoSyncSGI)
+    {
+      CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXWaitVideoSyncSGI not found");
+      return false;
+    }
 
-  ReturnV = m_glXWaitVideoSyncSGI(2, 0, &GlxTest);
-  if (ReturnV)
-  {
-    CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXWaitVideoSyncSGI returned %i", ReturnV);
-    return false;
+    ReturnV = m_glXWaitVideoSyncSGI(2, 0, &GlxTest);
+    if (ReturnV)
+    {
+      CLog::Log(LOGDEBUG, "CVideoReferenceClock: glXWaitVideoSyncSGI returned %i", ReturnV);
+      return false;
+    }
   }
 
   m_glXGetVideoSyncSGI = (int (*)(unsigned int*))glXGetProcAddress((const GLubyte*)"glXGetVideoSyncSGI");
@@ -375,9 +392,6 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
-  m_glXSwapIntervalMESA = NULL;
-  m_glXSwapIntervalMESA = (int (*)(int))glXGetProcAddress((const GLubyte*)"glXSwapIntervalMESA");
-
   m_DispCallback.Register();
 
   UpdateRefreshrate(true); //forced refreshrate update
@@ -391,19 +405,6 @@ void CVideoReferenceClock::CleanupGLX()
   CLog::Log(LOGDEBUG, "CVideoReferenceClock: Cleaning up GLX");
 
   m_DispCallback.Unregister();
-
-  bool AtiWorkaround = false;
-  const char* VendorPtr = (const char*)glGetString(GL_VENDOR);
-  if (VendorPtr)
-  {
-    CStdString Vendor = VendorPtr;
-    Vendor.ToLower();
-    if (Vendor.compare(0, 3, "ati") == 0)
-    {
-      CLog::Log(LOGDEBUG, "CVideoReferenceClock: GL_VENDOR: %s, using ati dpy workaround", VendorPtr);
-      AtiWorkaround = true;
-    }
-  }
 
   if (m_vInfo)
   {
@@ -423,7 +424,7 @@ void CVideoReferenceClock::CleanupGLX()
   }
 
   //ati saves the Display* in their libGL, if we close it here, we crash
-  if (m_Dpy && !AtiWorkaround)
+  if (m_Dpy)
   {
     XCloseDisplay(m_Dpy);
     m_Dpy = NULL;
@@ -437,19 +438,6 @@ void CVideoReferenceClock::RunGLX()
   int           ReturnV;
   bool          IsReset = false;
   int64_t       Now;
-
-  bool AtiWorkaround = false;
-  const char* VendorPtr = (const char*)glGetString(GL_VENDOR);
-  if (VendorPtr)
-  {
-    CStdString Vendor = VendorPtr;
-    Vendor.ToLower();
-    if ((Vendor.compare(0, 3, "ati") == 0) && m_glXSwapIntervalMESA)
-    {
-      CLog::Log(LOGDEBUG, "CVideoReferenceClock: GL_VENDOR: %s, using ati workaround", VendorPtr);
-      AtiWorkaround = true;
-    }
-  }
 
   CSingleLock SingleLock(m_CritSection);
   SingleLock.Leave();
@@ -466,7 +454,7 @@ void CVideoReferenceClock::RunGLX()
   while(!m_bStop)
   {
     //wait for the next vblank
-    if (!AtiWorkaround)
+    if (!m_bIsATI)
       ReturnV = m_glXWaitVideoSyncSGI(2, (VblankCount + 1) % 2, &VblankCount);
     else
     {

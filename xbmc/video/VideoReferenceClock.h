@@ -137,7 +137,6 @@ class CVideoReferenceClock : public CThread
 
     int  (*m_glXWaitVideoSyncSGI) (int, int, unsigned int*);
     int  (*m_glXGetVideoSyncSGI)  (unsigned int*);
-    int  (*m_glXSwapIntervalMESA) (int);
 
     Display*     m_Dpy;
     XVisualInfo *m_vInfo;
@@ -146,6 +145,7 @@ class CVideoReferenceClock : public CThread
     int          m_RREventBase;
 
     bool         m_UseNvSettings;
+    bool         m_bIsATI;
     CDisplayCallback m_DispCallback;
 
 #elif defined(_WIN32) && defined(HAS_DX)
