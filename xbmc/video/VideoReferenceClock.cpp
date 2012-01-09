@@ -209,6 +209,8 @@ void CVideoReferenceClock::Process()
     m_RefreshChanged = 0;
     m_Started.Set();
 
+    SetPriority(1);
+
     if (SetupSuccess)
     {
       m_UseVblank = true;          //tell other threads we're using vblank as clock
