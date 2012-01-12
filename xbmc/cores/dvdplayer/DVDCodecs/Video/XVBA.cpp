@@ -585,6 +585,14 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
   if (Success != g_XVBA_vtable.CreateDecode(&sessionInput, &sessionOutput))
   {
     SetError(__FUNCTION__, "failed to create decoder session", __LINE__);
+    CLog::Log(LOGERROR, "Decoder failed with following stats: m_surfaceWidth %u, m_surfaceHeight %u,"
+                        " m_vidWidth %u, m_vidHeight %u, coded_width %d, coded_height %d",
+                        m_surfaceWidth,
+                        m_surfaceHeight,
+                        m_vidWidth,
+                        m_vidHeight,
+                        avctx->coded_width,
+                        avctx->coded_height);
     return false;
   }
   m_xvbaSession = sessionOutput.session;
