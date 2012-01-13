@@ -287,6 +287,7 @@ protected:
 #endif
 #ifdef HAVE_LIBXVBA
     XVBA::CDecoder* xvba;
+    XVBA::CDecoder* xvba_tmp;
 #endif
   };
 

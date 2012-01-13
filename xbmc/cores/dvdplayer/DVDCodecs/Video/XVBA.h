@@ -123,6 +123,7 @@ protected:
 
   XVBADecodeCap m_decoderCap;
   void *m_xvbaSession;
+  unsigned int m_decoderId;
   struct XVBABufferPool
   {
     XVBABufferDescriptor *picture_descriptor_buffer;

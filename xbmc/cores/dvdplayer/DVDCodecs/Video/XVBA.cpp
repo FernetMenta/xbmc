@@ -259,6 +259,8 @@ void *CXVBAContext::GetContext()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+static unsigned int decoderId = 0;
+
 CDecoder::CDecoder()
 {
   m_context = 0;
@@ -312,7 +314,9 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
     return false;
   }
 
-  CLog::Log(LOGNOTICE,"(XVBA::Open) opening dxva decoder");
+  m_decoderId = decoderId++;
+
+  CLog::Log(LOGNOTICE,"(XVBA::Open) opening xvba decoder, id: %d", m_decoderId);
 
   if(avctx->coded_width  == 0
   || avctx->coded_height == 0)
@@ -481,10 +485,12 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
 
 void CDecoder::Close()
 {
-  CLog::Log(LOGNOTICE, "XVBA::Close - closing decoder");
+  CLog::Log(LOGNOTICE, "XVBA::Close - closing decoder, id: %d", m_decoderId);
 
   if (!m_context)
     return;
+
+  FinishGL();
 
   DestroySession();
   if (m_context)

@@ -125,6 +125,7 @@ CLinuxRendererGL::YUVBUFFER::YUVBUFFER()
 #endif
 #ifdef HAVE_LIBXVBA
   xvba = NULL;
+  xvba_tmp = NULL;
 #endif
 }
 
@@ -2468,6 +2469,7 @@ void CLinuxRendererGL::DeleteXVBATexture(int index)
     m_buffers[index].xvba->FinishGL();
 
   SAFE_RELEASE(m_buffers[index].xvba);
+  SAFE_RELEASE(m_buffers[index].xvba_tmp);
 
   if(plane.id && glIsTexture(plane.id))
     glDeleteTextures(1, &plane.id);
@@ -2513,6 +2515,13 @@ void CLinuxRendererGL::UploadXVBATexture(int index)
 {
 #ifdef HAVE_LIBXVBA
   XVBA::CDecoder   *xvba = m_buffers[index].xvba;
+
+  if (m_buffers[index].xvba_tmp)
+  {
+    SAFE_RELEASE(m_buffers[index].xvba);
+    xvba = m_buffers[index].xvba = m_buffers[index].xvba_tmp;
+    m_buffers[index].xvba_tmp = NULL;
+  }
 
   YUVFIELDS &fields = m_buffers[index].fields;
   YUVPLANE &planeFallback = fields[0][1];
@@ -2578,6 +2587,7 @@ void CLinuxRendererGL::DeleteXVBAyv12Texture(int index)
     m_buffers[index].xvba->FinishGL();
 
   SAFE_RELEASE(m_buffers[index].xvba);
+  SAFE_RELEASE(m_buffers[index].xvba_tmp);
 
   if( fields[FIELD_FULL][0].id == 0 ) return;
 
@@ -2779,6 +2789,13 @@ void CLinuxRendererGL::UploadXVBAyv12Texture(int source)
   YV12Image* im        = &buf.image;
   YUVFIELDS& fields    =  buf.fields;
   XVBA::CDecoder *xvba = m_buffers[source].xvba;
+
+  if (m_buffers[source].xvba_tmp)
+  {
+    SAFE_RELEASE(m_buffers[source].xvba);
+    xvba = m_buffers[source].xvba = m_buffers[source].xvba_tmp;
+    m_buffers[source].xvba_tmp = NULL;
+  }
 
   if (!(im->flags&IMAGE_FLAG_READY) || !xvba)
   {
@@ -3661,8 +3678,8 @@ void CLinuxRendererGL::AddProcessor(VAAPI::CHolder& holder)
 void CLinuxRendererGL::AddProcessor(XVBA::CDecoder* xvba)
 {
   YUVBUFFER &buf = m_buffers[NextYV12Texture()];
-  SAFE_RELEASE(buf.xvba);
-  buf.xvba = (XVBA::CDecoder*)xvba->Acquire();
+  SAFE_RELEASE(buf.xvba_tmp);
+  buf.xvba_tmp = (XVBA::CDecoder*)xvba->Acquire();
 }
 #endif
 
