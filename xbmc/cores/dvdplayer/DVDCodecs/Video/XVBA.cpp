@@ -1358,6 +1358,9 @@ void CDecoder::FinishGL()
   CLog::Log(LOGNOTICE, "XVBA::FinishGL - clearing down gl resources");
 
   CSharedLock lock(m_decoderSection);
+  // if decoder was created with non supported codec, we would not have a flipBuffer and segfault
+  if(!m_flipBuffer)
+    return;
 
   for (unsigned int i=0; i<m_numRenderBuffers;++i)
   {
