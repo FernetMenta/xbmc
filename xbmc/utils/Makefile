@@ -59,6 +59,7 @@ SRCS=AlarmClock.cpp \
      Weather.cpp \
      Win32Exception.cpp \
      XMLUtils.cpp \
+     ActorProtocol.cpp \
 
 LIB=utils.a
 

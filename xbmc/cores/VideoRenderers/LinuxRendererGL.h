@@ -33,13 +33,15 @@
 
 #include "threads/Event.h"
 
+#include "cores/dvdplayer/DVDCodecs/Video/VDPAU.h"
+
 class CRenderCapture;
 
-class CVDPAU;
 class CBaseTexture;
 namespace Shaders { class BaseYUV2RGBShader; }
 namespace Shaders { class BaseVideoFilterShader; }
 namespace VAAPI   { struct CHolder; }
+namespace VDPAU   { class CVdpauRenderPicture; }
 
 #define NUM_BUFFERS 3
 
@@ -141,9 +143,10 @@ public:
   virtual void         UnInit();
   virtual void         Reset(); /* resets renderer after seek for example */
   virtual void         Flush();
+  virtual unsigned int GetProcessorSize() { return m_NumYV12Buffers; }
 
 #ifdef HAVE_LIBVDPAU
-  virtual void         AddProcessor(CVDPAU* vdpau);
+  virtual void         AddProcessor(VDPAU::CVdpauRenderPicture* vdpau);
 #endif
 #ifdef HAVE_LIBVA
   virtual void         AddProcessor(VAAPI::CHolder& holder);
@@ -270,7 +273,7 @@ protected:
     GLuint    pbo[MAX_PLANES];
 
 #ifdef HAVE_LIBVDPAU
-    CVDPAU*   vdpau;
+    VDPAU::CVdpauRenderPicture *vdpau;
 #endif
 #ifdef HAVE_LIBVA
     VAAPI::CHolder& vaapi;
