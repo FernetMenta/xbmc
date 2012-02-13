@@ -2169,7 +2169,14 @@ void CApplication::Render()
   m_lastFrameTime = XbmcThreads::SystemClockMillis();
 
   if (flip)
+  {
     g_graphicsContext.Flip(dirtyRegions);
+    int frames = g_renderManager.NotifyDisplayFlip();
+    if (decrement)
+      frames++;
+    CSingleLock lock(m_frameMutex);
+    m_frameCount = frames;
+  }
   CTimeUtils::UpdateFrameTime(flip);
 
   g_renderManager.UpdateResolution();

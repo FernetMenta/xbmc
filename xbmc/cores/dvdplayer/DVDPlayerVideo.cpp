@@ -311,6 +311,7 @@ void CDVDPlayerVideo::Process()
 
   int iDropped = 0; //frames dropped in a row
   bool bRequestDrop = false;
+  int iDropDirective;
 
   m_videoStats.Start();
 
@@ -489,6 +490,10 @@ void CDVDPlayerVideo::Process()
       }
 #endif
 
+      iDropDirective = CalcDropRequirement();
+      if (iDropDirective & EOS_VERYLATE)
+        bRequestDrop = true;
+
       // if player want's us to drop this packet, do so nomatter what
       if(bPacketDrop)
         bRequestDrop = true;
@@ -540,6 +545,8 @@ void CDVDPlayerVideo::Process()
         iDropped++;
       }
 
+      bRequestDrop = false;
+
       // loop while no error
       while (!m_bStop)
       {
@@ -588,6 +595,12 @@ void CDVDPlayerVideo::Process()
 
             if(bPacketDrop)
               picture.iFlags |= DVP_FLAG_DROPPED;
+
+            if (iDropDirective & EOS_DROPPED)
+            {
+              picture.iFlags |= DVP_FLAG_DROPPED;
+              iDropDirective &= ~EOS_DROPPED;
+            }
 
             if (m_iNrOfPicturesNotToSkip > 0)
             {
@@ -1164,38 +1177,38 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   m_FlipTimeStamp += max(0.0, iSleepTime);
   m_FlipTimeStamp += iFrameDuration;
 
-  if (iSleepTime <= 0 && m_speed)
-    m_iLateFrames++;
-  else
-    m_iLateFrames = 0;
-
-  // ask decoder to drop frames next round, as we are very late
-  if(m_iLateFrames > 10)
-  {
-    if (!(pPicture->iFlags & DVP_FLAG_NOSKIP))
-    {
-      //if we're calculating the framerate,
-      //don't drop frames until we've calculated a stable framerate
-      if (m_bAllowDrop || m_speed != DVD_PLAYSPEED_NORMAL)
-      {
-        result |= EOS_VERYLATE;
-        m_pullupCorrection.Flush(); //dropped frames mess up the pattern, so just flush it
-      }
-
-      //if we requested 5 drops in a row and we're still late, drop on output
-      //this keeps a/v sync if the decoder can't drop, or we're still calculating the framerate
-      if (m_iDroppedRequest > 5)
-      {
-        m_iDroppedRequest--; //decrease so we only drop half the frames
-        return result | EOS_DROPPED;
-      }
-      m_iDroppedRequest++;
-    }
-  }
-  else
-  {
-    m_iDroppedRequest = 0;
-  }
+//  if (iSleepTime <= 0 && m_speed)
+//    m_iLateFrames++;
+//  else
+//    m_iLateFrames = 0;
+//
+//  // ask decoder to drop frames next round, as we are very late
+//  if(m_iLateFrames > 10)
+//  {
+//    if (!(pPicture->iFlags & DVP_FLAG_NOSKIP))
+//    {
+//      //if we're calculating the framerate,
+//      //don't drop frames until we've calculated a stable framerate
+//      if (m_bAllowDrop || m_speed != DVD_PLAYSPEED_NORMAL)
+//      {
+//        result |= EOS_VERYLATE;
+//        m_pullupCorrection.Flush(); //dropped frames mess up the pattern, so just flush it
+//      }
+//
+//      //if we requested 5 drops in a row and we're still late, drop on output
+//      //this keeps a/v sync if the decoder can't drop, or we're still calculating the framerate
+//      if (m_iDroppedRequest > 5)
+//      {
+//        m_iDroppedRequest--; //decrease so we only drop half the frames
+//        return result | EOS_DROPPED;
+//      }
+//      m_iDroppedRequest++;
+//    }
+//  }
+//  else
+//  {
+//    m_iDroppedRequest = 0;
+//  }
 
   if( m_speed < 0 )
   {
@@ -1242,6 +1255,16 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
     else
       mDisplayField = FS_BOT;
   }
+
+  int buffer = g_renderManager.WaitForBuffer(m_bStop);
+  while (buffer < 0 && !CThread::m_bStop &&
+         CDVDClock::GetAbsoluteClock(false) < iCurrentClock + iSleepTime + DVD_MSEC_TO_TIME(500) )
+  {
+    Sleep(1);
+    buffer = g_renderManager.WaitForBuffer(m_bStop);
+  }
+  if (buffer < 0)
+    return EOS_DROPPED;
 
   ProcessOverlays(pPicture, pts);
   AutoCrop(pPicture);
@@ -1558,4 +1581,52 @@ void CDVDPlayerVideo::CalcFrameRate()
     m_fStableFrameRate = 0.0;
     m_iFrameRateCount = 0;
   }
+}
+
+int CDVDPlayerVideo::CalcDropRequirement()
+{
+  int result = 0;
+  double iSleepTime = g_renderManager.GetLastSleeptime();
+//  double correct = 0.0;
+//  if (iSleepTime == m_iLastSleepTime && m_iLateFrames > 10)
+//    correct = 0.02;
+//
+//  m_iLastSleepTime = iSleepTime;
+//  iSleepTime += correct;
+
+  if (iSleepTime <= 0 && m_speed)
+    m_iLateFrames++;
+  else
+    m_iLateFrames = 0;
+
+  // ask decoder to drop frames next round, as we are very late
+  if(m_iLateFrames > 10)
+  {
+    if (m_iNrOfPicturesNotToSkip <= 0)
+    {
+      //if we're calculating the framerate,
+      //don't drop frames until we've calculated a stable framerate
+      if ((m_bAllowDrop || m_speed != DVD_PLAYSPEED_NORMAL)
+          && m_iLateFrames % 2)
+      {
+//        CLog::Log(LOGNOTICE,"------- late2: %f", iSleepTime);
+        result |= EOS_VERYLATE;
+        m_pullupCorrection.Flush(); //dropped frames mess up the pattern, so just flush it
+      }
+
+      //if we requested 5 drops in a row and we're still late, drop on output
+      //this keeps a/v sync if the decoder can't drop, or we're still calculating the framerate
+      if (m_iDroppedRequest > 5)
+      {
+        m_iDroppedRequest--; //decrease so we only drop half the frames
+        result |= EOS_DROPPED;
+      }
+      m_iDroppedRequest++;
+    }
+  }
+  else
+  {
+    m_iDroppedRequest = 0;
+  }
+  return result;
 }

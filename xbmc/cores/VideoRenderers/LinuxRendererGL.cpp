@@ -224,7 +224,7 @@ bool CLinuxRendererGL::ValidateRenderer()
 
 void CLinuxRendererGL::ManageTextures()
 {
-  m_NumYV12Buffers = NUM_BUFFERS;
+//  m_NumYV12Buffers = NUM_BUFFERS;
   //m_iYV12RenderBuffer = 0;
   return;
 }
@@ -567,6 +567,15 @@ void CLinuxRendererGL::Flush()
 
   glFinish();
   m_bValidated = false;
+  m_iYV12RenderBuffer = 0;
+}
+
+void CLinuxRendererGL::ReleaseBuffer(int idx)
+{
+#ifdef HAVE_LIBVDPAU
+  YUVBUFFER &buf = m_buffers[idx];
+  SAFE_RELEASE(buf.vdpau);
+#endif
 }
 
 void CLinuxRendererGL::Update(bool bPauseDrawing)
@@ -744,7 +753,6 @@ unsigned int CLinuxRendererGL::PreInit()
     m_resolution = RES_DESKTOP;
 
   m_iYV12RenderBuffer = 0;
-  m_NumYV12Buffers = NUM_BUFFERS;
 
   // setup the background colour
   m_clearColour = (float)(g_advancedSettings.m_videoBlackBarColour & 0xff) / 0xff;
@@ -2217,9 +2225,12 @@ void CLinuxRendererGL::UploadVDPAUTexture(int index)
   {
     fields[0][1].id = plane.id;
     m_eventTexturesDone[index]->Set();
+    CLog::Log(LOGWARNING,"--------- no vdpau texture, index: %d", index);
     return;
   }
 
+//  CLog::Log(LOGNOTICE,"-------- rendered output surf: %d", vdpau->sourceIdx);
+//  CLog::Log(LOGNOTICE,"-------- pts: %f", vdpau->DVDPic.pts);
   fields[0][1].id = vdpau->texture[0];
 
   m_eventTexturesDone[index]->Set();
@@ -3310,18 +3321,18 @@ void CLinuxRendererGL::UnBindPbo(YUVBUFFER& buff)
 }
 
 #ifdef HAVE_LIBVDPAU
-void CLinuxRendererGL::AddProcessor(VDPAU::CVdpauRenderPicture *vdpau)
+void CLinuxRendererGL::AddProcessor(VDPAU::CVdpauRenderPicture *vdpau, int index)
 {
-  YUVBUFFER &buf = m_buffers[NextYV12Texture()];
+  YUVBUFFER &buf = m_buffers[index];
   SAFE_RELEASE(buf.vdpau);
   buf.vdpau = vdpau->Acquire();
 }
 #endif
 
 #ifdef HAVE_LIBVA
-void CLinuxRendererGL::AddProcessor(VAAPI::CHolder& holder)
+void CLinuxRendererGL::AddProcessor(VAAPI::CHolder& holder, int index)
 {
-  YUVBUFFER &buf = m_buffers[NextYV12Texture()];
+  YUVBUFFER &buf = m_buffers[index];
   buf.vaapi.surface = holder.surface;
 }
 #endif

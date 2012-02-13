@@ -182,6 +182,10 @@ public:
 
   CSharedSection& GetSection() { return m_sharedSection; };
 
+  int WaitForBuffer(volatile bool& bStop);
+  int NotifyDisplayFlip();
+  double GetLastSleeptime();
+
 protected:
   void Render(bool clear, DWORD flags, DWORD alpha);
 
@@ -189,6 +193,13 @@ protected:
   void PresentWeave(bool clear, DWORD flags, DWORD alpha);
   void PresentBob(bool clear, DWORD flags, DWORD alpha);
   void PresentBlend(bool clear, DWORD flags, DWORD alpha);
+
+  int  GetNextRenderBufferIndex();
+  void FlipRenderBuffer();
+  int  FlipFreeBuffer();
+  bool HasFreeBuffer();
+  void ResetRenderBuffer();
+  void PrepareNextRender();
 
   EINTERLACEMETHOD AutoInterlaceMethodInternal(EINTERLACEMETHOD mInt);
 
@@ -219,6 +230,40 @@ protected:
 
   double m_displayLatency;
   void UpdateDisplayLatency();
+
+  // Render Buffer State Description:
+  //
+  // Output:      is the buffer about to or having its texture prepared for render (ie from output thread).
+  //              Cannot go past the "Displayed" buffer (otherwise we will probably overwrite buffers not yet
+  //              displayed or even rendered).
+  // Current:     is the current buffer being or having been submitted for render to back buffer.
+  //              Cannot go past "Output" buffer (else it would be rendering old output).
+  // FlipRequest: is the render buffer that has last been submitted for render AND importantly has had
+  //              swap-buffer flip subsequently invoked (thus flip to front buffer is requested for vblank
+  //              subsequent to render completion).
+  // Displayed:   is the buffer that is now considered to be safely copied from back buffer to front buffer
+  //              (we assume that after two swap-buffer flips for the same "Current" render buffer that that
+  //              buffer will be safe, but otherwise we consider that only the previous-to-"Current" is guaranteed).
+  // Last:        is the last buffer successfully submitted for render to back buffer (purpose: to rollback to in
+  //              unexpected case where a texture render fails).
+
+  int m_iCurrentRenderBuffer;
+  int m_iNumRenderBuffers;
+//  int m_iLastRenderBuffer;
+  int m_iFlipRequestRenderBuffer;
+  int m_iOutputRenderBuffer;
+  int m_iDisplayedRenderBuffer;
+  bool m_bAllRenderBuffersDisplayed;
+  CEvent m_flipEvent;
+
+  struct
+  {
+    double presenttime;
+    EFIELDSYNC presentfield;
+    EPRESENTMETHOD presentmethod;
+  }m_renderBuffers[5];
+
+  double     m_sleeptime;
 
   double     m_presenttime;
   double     m_presentcorr;
