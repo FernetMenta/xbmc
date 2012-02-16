@@ -351,9 +351,7 @@ protected:
   bool m_bTestMode;
   bool m_bSystemScreenSaverEnable;
   
-  int        m_frameCount;
-  CCriticalSection m_frameMutex;
-  XbmcThreads::ConditionVariable  m_frameCond;
+  CEvent m_frameEvent;
 
   void Mute();
   void UnMute();

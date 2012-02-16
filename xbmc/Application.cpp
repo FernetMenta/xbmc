@@ -391,8 +391,6 @@ CApplication::CApplication(void)
 #endif
   m_currentStack = new CFileItemList;
 
-  m_frameCount = 0;
-
   m_bPresentFrame = false;
   m_bPlatformDirectories = true;
 
@@ -2026,28 +2024,18 @@ float CApplication::GetDimScreenSaverLevel() const
 
 bool CApplication::WaitFrame(unsigned int timeout)
 {
-  bool done = false;
-
   // Wait for all other frames to be presented
-  CSingleLock lock(m_frameMutex);
-  //wait until event is set, but modify remaining time
+  m_frameEvent.Reset();
 
-  TightConditionVariable<InversePredicate<int&> > cv(m_frameCond, InversePredicate<int&>(m_frameCount));
-  cv.wait(lock,timeout);
-  done = m_frameCount == 0;
+  if (!g_renderManager.HasFrame() && !m_frameEvent.WaitMSec(timeout))
+    return false;
 
-  return done;
+  return g_renderManager.HasFrame();
 }
 
 void CApplication::NewFrame()
 {
-  // We just posted another frame. Keep track and notify.
-  {
-    CSingleLock lock(m_frameMutex);
-    m_frameCount++;
-  }
-
-  m_frameCond.notifyAll();
+  m_frameEvent.Set();
 }
 
 void CApplication::Render()
@@ -2081,12 +2069,13 @@ void CApplication::Render()
     m_bPresentFrame = false;
     if (!extPlayerActive && g_graphicsContext.IsFullScreenVideo() && !IsPaused())
     {
-      CSingleLock lock(m_frameMutex);
+      uint64_t timeout = CurrentHostCounter() + CurrentHostFrequency()/10;
+      while (!g_renderManager.HasFrame() && CurrentHostCounter() < timeout)
+      {
+        m_frameEvent.WaitMSec(100);
+      }
+      m_bPresentFrame = g_renderManager.HasFrame();
 
-      TightConditionVariable<int&> cv(m_frameCond,m_frameCount);
-      cv.wait(lock,100);
-
-      m_bPresentFrame = m_frameCount > 0;
       decrement = m_bPresentFrame;
       hasRendered = true;
     }
@@ -2171,23 +2160,12 @@ void CApplication::Render()
   if (flip)
   {
     g_graphicsContext.Flip(dirtyRegions);
-    int frames = g_renderManager.NotifyDisplayFlip();
-    if (decrement)
-      frames++;
-    CSingleLock lock(m_frameMutex);
-    m_frameCount = frames;
+    g_renderManager.NotifyDisplayFlip();
   }
   CTimeUtils::UpdateFrameTime(flip);
 
   g_renderManager.UpdateResolution();
   g_renderManager.ManageCaptures();
-
-  {
-    CSingleLock lock(m_frameMutex);
-    if(m_frameCount > 0 && decrement)
-      m_frameCount--;
-  }
-  m_frameCond.notifyAll();
 }
 
 void CApplication::SetStandAlone(bool value)
@@ -5406,12 +5384,6 @@ bool CApplication::SwitchToFullScreen()
   // See if we're playing a video, and are in GUI mode
   if ( IsPlayingVideo() && g_windowManager.GetActiveWindow() != WINDOW_FULLSCREEN_VIDEO)
   {
-    // Reset frame count so that timing is FPS will be correct.
-    {
-      CSingleLock lock(m_frameMutex);
-      m_frameCount = 0;
-    }
-
     // then switch to fullscreen mode
     g_windowManager.ActivateWindow(WINDOW_FULLSCREEN_VIDEO);
     return true;
@@ -5587,7 +5559,6 @@ bool CApplication::IsCurrentThread() const
 
 bool CApplication::IsPresentFrame()
 {
-  CSingleLock lock(m_frameMutex);
   bool ret = m_bPresentFrame;
 
   return ret;

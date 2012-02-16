@@ -936,11 +936,11 @@ void CXBMCRenderManager::PrepareNextRender()
   }
 }
 
-int CXBMCRenderManager::NotifyDisplayFlip()
+void CXBMCRenderManager::NotifyDisplayFlip()
 {
   CRetakeLock<CExclusiveLock> lock(m_sharedSection);
   if (!m_pRenderer)
-    return 0;
+    return;
 
   int last = m_iDisplayedRenderBuffer;
   m_iDisplayedRenderBuffer = (m_iCurrentRenderBuffer + m_iNumRenderBuffers - 1) % m_iNumRenderBuffers;
@@ -961,17 +961,21 @@ int CXBMCRenderManager::NotifyDisplayFlip()
     m_overlays.ReleaseBuffer(m_iDisplayedRenderBuffer);
   }
 
-  int frames = (m_iOutputRenderBuffer - m_iCurrentRenderBuffer + m_iNumRenderBuffers) % m_iNumRenderBuffers;
-  if (m_presentstep == PRESENT_FRAME2)
-    frames++;
   lock.Leave();
-
   m_flipEvent.Set();
-  return frames;
 }
 
 double CXBMCRenderManager::GetLastSleeptime()
 {
   CSharedLock lock(m_sharedSection);
   return m_sleeptime;
+}
+
+bool CXBMCRenderManager::HasFrame()
+{
+  CSharedLock lock(m_sharedSection);
+  if (m_presentstep == PRESENT_IDLE && GetNextRenderBufferIndex() < 0)
+    return false;
+  else
+    return true;
 }

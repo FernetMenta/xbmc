@@ -183,8 +183,9 @@ public:
   CSharedSection& GetSection() { return m_sharedSection; };
 
   int WaitForBuffer(volatile bool& bStop);
-  int NotifyDisplayFlip();
+  void NotifyDisplayFlip();
   double GetLastSleeptime();
+  bool HasFrame();
 
 protected:
   void Render(bool clear, DWORD flags, DWORD alpha);
