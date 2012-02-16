@@ -114,6 +114,7 @@ public:
   uint16_t decodedPics;
   uint16_t processedPics;
   uint16_t renderPics;
+  uint64_t latency;
 
   void IncDecoded() { CSingleLock l(m_sec); decodedPics++;}
   void DecDecoded() { CSingleLock l(m_sec); decodedPics--;}
@@ -121,8 +122,10 @@ public:
   void DecProcessed() { CSingleLock l(m_sec); processedPics--;}
   void IncRender() { CSingleLock l(m_sec); renderPics++;}
   void DecRender() { CSingleLock l(m_sec); renderPics--;}
-  void Reset() { CSingleLock l(m_sec); decodedPics=0; processedPics=0;renderPics=0;}
+  void Reset() { CSingleLock l(m_sec); decodedPics=0; processedPics=0;renderPics=0;latency=0;}
   void Get(uint16_t &decoded, uint16_t &processed, uint16_t &render) {CSingleLock l(m_sec); decoded = decodedPics, processed=processedPics, render=renderPics;}
+  void SetLatency(uint64_t time) { CSingleLock l(m_sec); latency = time; }
+  uint64_t GetLatency() { CSingleLock l(m_sec); return latency; }
 private:
   CCriticalSection m_sec;
 };
@@ -312,6 +315,7 @@ struct VdpauBufferPool
     vdpau_render_state *sourceVuv;
     VdpOutputSurface sourceRgb;
   };
+  unsigned short numOutputSurfaces;
   std::vector<Pixmaps> pixmaps;
   std::vector<VdpOutputSurface> outputSurfaces;
   std::deque<Pixmaps*> notVisiblePixmaps;
@@ -332,6 +336,7 @@ public:
   {
     INIT,
     FLUSH,
+    PRECLEANUP,
     TIMEOUT,
   };
   enum InSignal
@@ -382,7 +387,7 @@ protected:
   void Flush();
   bool CreateGlxContext();
   bool DestroyGlxContext();
-  bool InitBufferPool();
+  bool EnsureBufferPool();
   void ReleaseBufferPool();
   void InitMixer();
   bool GLInit();
@@ -462,6 +467,7 @@ public:
   virtual bool GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture);
   virtual void Reset();
   virtual void Close();
+  virtual long Release();
   virtual bool AllowFrameDropping();
   virtual void SetDropState(bool bDrop);
 
@@ -516,6 +522,7 @@ protected:
   static void*  dl_handle;
   DllAvUtil     m_dllAvUtil;
   Display*      m_Display;
+  ThreadIdentifier m_decoderThread;
   bool          m_vdpauConfigured;
   CVdpauConfig  m_vdpauConfig;
   std::vector<vdpau_render_state*> m_videoSurfaces;

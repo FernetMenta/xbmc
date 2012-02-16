@@ -108,6 +108,7 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
     return false;
   }
   m_vdpauConfig.numRenderBuffers = surfaces;
+  m_decoderThread = CThread::GetCurrentThreadId();
 
   if (!dl_handle)
   {
@@ -201,6 +202,46 @@ void CDecoder::Close()
   m_dllAvUtil.Unload();
 }
 
+long CDecoder::Release()
+{
+  // check if we should do some pre-cleanup here
+  // a second decoder might need resources
+  if (CThread::GetCurrentThreadId() == m_decoderThread && m_vdpauConfigured == true)
+  {
+    CSingleLock lock(m_DecoderSection);
+    CLog::Log(LOGNOTICE,"CVDPAU::Release pre-cleanup");
+
+    Message *reply;
+    if (m_vdpauOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::PRECLEANUP,
+                                                   &reply,
+                                                   2000))
+    {
+      bool success = reply->signal == COutputControlProtocol::ACC ? true : false;
+      reply->Release();
+      if (!success)
+      {
+        CLog::Log(LOGERROR, "VDPAU::%s - pre-cleanup returned error", __FUNCTION__);
+        m_DisplayState = VDPAU_ERROR;
+      }
+    }
+    else
+    {
+      CLog::Log(LOGERROR, "VDPAU::%s - pre-cleanup timed out", __FUNCTION__);
+      m_DisplayState = VDPAU_ERROR;
+    }
+
+    for(unsigned int i = 0; i < m_videoSurfaces.size(); ++i)
+    {
+      vdpau_render_state *render = m_videoSurfaces[i];
+      if (render->surface != VDP_INVALID_HANDLE && !(render->state & FF_VDPAU_STATE_USED_FOR_RENDER))
+      {
+        m_vdpauConfig.vdpProcs.vdp_video_surface_destroy(render->surface);
+        render->surface = VDP_INVALID_HANDLE;
+      }
+    }
+  }
+  IHardwareDecoder::Release();
+}
 
 void CDecoder::SetWidthHeight(int width, int height)
 {
@@ -904,6 +945,8 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
   }
 
   m_bufferStats.Get(decoded, processed, render);
+
+  uint64_t startTime = CurrentHostCounter();
   while (!retval)
   {
     if (m_vdpauOutput.m_dataPort.ReceiveInMessage(&msg))
@@ -940,6 +983,8 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
     if (!retval && !m_inMsgEvent.WaitMSec(2000))
       break;
   }
+  m_bufferStats.SetLatency(CurrentHostCounter() - startTime);
+
   if (!retval)
   {
     CLog::Log(LOGERROR, "VDPAU::%s - timed out waiting for output message", __FUNCTION__);
@@ -1398,7 +1443,7 @@ void CMixer::Process()
     else
     {
       msg = m_controlPort.GetMessage();
-      msg->signal = COutputControlProtocol::TIMEOUT;
+      msg->signal = CMixerControlProtocol::TIMEOUT;
       port = 0;
       // signal timeout to state machine
       StateMachine(msg->signal, port, msg);
@@ -2028,7 +2073,8 @@ void CMixer::Flush()
 void CMixer::InitCycle()
 {
   CheckFeatures();
-  if (m_mixerInput[1].DVDPic.iFlags & DVP_FLAG_NOPOSTPROC)
+  unsigned int latency = m_config.stats->GetLatency()*1000/CurrentHostFrequency();
+  if (latency > 2)
     SetPostProcFeatures(false);
   else
     SetPostProcFeatures(true);
@@ -2356,6 +2402,9 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
         case COutputControlProtocol::FLUSH:
           msg->Reply(COutputControlProtocol::ACC);
           return;
+        case COutputControlProtocol::PRECLEANUP:
+          msg->Reply(COutputControlProtocol::ACC);
+          return;
         default:
           break;
         }
@@ -2404,10 +2453,12 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
             reply->Release();
           }
 
+          // set initial number of
+          m_bufferPool.numOutputSurfaces = 4;
+          EnsureBufferPool();
           if (!m_vdpError)
           {
             m_state = O_TOP_CONFIGURED_IDLE;
-            InitMixer();
             msg->Reply(COutputControlProtocol::ACC);
           }
           else
@@ -2428,6 +2479,10 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
         switch (signal)
         {
         case COutputControlProtocol::FLUSH:
+          Flush();
+          msg->Reply(COutputControlProtocol::ACC);
+          return;
+        case COutputControlProtocol::PRECLEANUP:
           Flush();
           msg->Reply(COutputControlProtocol::ACC);
           return;
@@ -2617,9 +2672,6 @@ bool COutput::Init()
   if (!GLInit())
     return false;
 
-  if (!InitBufferPool())
-    return false;
-
   m_mixer.Start();
   m_vdpError = false;
 
@@ -2768,6 +2820,8 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
     if (retPic->DVDPic.format == DVDVideoPicture::FMT_VDPAU)
     {
       m_config.useInteropYuv = false;
+      m_bufferPool.numOutputSurfaces = NUM_RENDER_PICS;
+      EnsureBufferPool();
       GLMapSurfaces();
       retPic->sourceIdx = procPic.outputSurface;
       retPic->texture[0] = m_bufferPool.glOutputSurfaceMap[procPic.outputSurface].texture[0];
@@ -2848,19 +2902,13 @@ int COutput::FindFreePixmap()
     return i;
 }
 
-bool COutput::InitBufferPool()
+bool COutput::EnsureBufferPool()
 {
   VdpStatus vdp_st;
 
   // Creation of outputSurfaces
-  int numOutputSurfaces;
-  if (m_config.usePixmaps)
-    numOutputSurfaces = 4;
-  else
-    numOutputSurfaces = NUM_RENDER_PICS;
-
   VdpOutputSurface outputSurface;
-  for (int i = 0; i < numOutputSurfaces; i++)
+  for (int i = m_bufferPool.outputSurfaces.size(); i < m_bufferPool.numOutputSurfaces; i++)
   {
     vdp_st = m_config.vdpProcs.vdp_output_surface_create(m_config.vdpDevice,
                                       VDP_RGBA_FORMAT_B8G8R8A8,
@@ -2870,11 +2918,15 @@ bool COutput::InitBufferPool()
     if (CheckStatus(vdp_st, __LINE__))
       return false;
     m_bufferPool.outputSurfaces.push_back(outputSurface);
-  }
-  CLog::Log(LOGNOTICE, "VDPAU::COutput::InitBufferPool - Total Output Surfaces Available: %i",
-                        numOutputSurfaces);
 
-  if (m_config.usePixmaps)
+    m_mixer.m_dataPort.SendOutMessage(CMixerDataProtocol::BUFFER,
+                                      &outputSurface,
+                                      sizeof(VdpOutputSurface));
+    CLog::Log(LOGNOTICE, "VDPAU::COutput::InitBufferPool - Output Surface created");
+  }
+
+
+  if (m_config.usePixmaps && m_bufferPool.pixmaps.empty())
   {
     // create pixmpas
     VdpauBufferPool::Pixmaps pixmap;
@@ -3176,10 +3228,10 @@ void COutput::GLMapSurfaces()
   }
   else
   {
-    if (m_bufferPool.glOutputSurfaceMap.empty())
+    if (m_bufferPool.glOutputSurfaceMap.size() != m_bufferPool.numOutputSurfaces)
     {
       VdpauBufferPool::GLVideoSurface glSurface;
-      for (int i=0; i<m_bufferPool.outputSurfaces.size(); i++)
+      for (int i=m_bufferPool.glOutputSurfaceMap.size(); i<m_bufferPool.outputSurfaces.size(); i++)
       {
         glSurface.sourceRgb = m_bufferPool.outputSurfaces[i];
         glGenTextures(1, glSurface.texture);
