@@ -1594,6 +1594,8 @@ int CDVDPlayerVideo::CalcDropRequirement()
 //  m_iLastSleepTime = iSleepTime;
 //  iSleepTime += correct;
 
+  int urgent = iSleepTime < -0.2 ? 1 : 2;
+
   if (iSleepTime <= 0 && m_speed)
     m_iLateFrames++;
   else
@@ -1607,7 +1609,7 @@ int CDVDPlayerVideo::CalcDropRequirement()
       //if we're calculating the framerate,
       //don't drop frames until we've calculated a stable framerate
       if ((m_bAllowDrop || m_speed != DVD_PLAYSPEED_NORMAL)
-          && m_iLateFrames % 2)
+          && m_iLateFrames % urgent)
       {
 //        CLog::Log(LOGNOTICE,"------- late2: %f", iSleepTime);
         result |= EOS_VERYLATE;
