@@ -303,7 +303,7 @@ void CXBMCRenderManager::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
   m_presentevent.Set();
 }
 
-unsigned int CXBMCRenderManager::PreInit()
+unsigned int CXBMCRenderManager::PreInit(CDVDClock *pClock)
 {
   CRetakeLock<CExclusiveLock> lock(m_sharedSection);
 
@@ -311,6 +311,7 @@ unsigned int CXBMCRenderManager::PreInit()
   m_presenterr  = 0.0;
   m_errorindex  = 0;
   memset(m_errorbuff, 0, sizeof(m_errorbuff));
+  m_pClock = pClock;
 
   m_bIsStarted = false;
   m_bPauseDrawing = false;
@@ -592,7 +593,7 @@ void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0L
 //    m_presentstep  = PRESENT_FLIP;
 //    m_presentsource = source;
     FlipFreeBuffer();
-    m_renderBuffers[m_iOutputRenderBuffer].presenttime = timestamp;
+    m_renderBuffers[m_iOutputRenderBuffer].pts = timestamp;
     m_renderBuffers[m_iOutputRenderBuffer].presentfield = presentfield;
     m_renderBuffers[m_iOutputRenderBuffer].presentmethod = presentmethod;
   }
@@ -919,8 +920,12 @@ void CXBMCRenderManager::PrepareNextRender()
     return;
   }
 
-  double presenttime = m_renderBuffers[idx].presenttime;
-  double clocktime = GetPresentTime();
+  double iClockSleep, iPlayingClock, iCurrentClock;
+  iPlayingClock = m_pClock->GetClock(iCurrentClock, false);
+  iClockSleep = m_renderBuffers[idx].pts - iPlayingClock;
+
+  double presenttime = (iCurrentClock + iClockSleep) / DVD_TIME_BASE;
+  double clocktime = iCurrentClock / DVD_TIME_BASE;
   if(presenttime - clocktime > MAXPRESENTDELAY)
     presenttime = clocktime + MAXPRESENTDELAY;
 

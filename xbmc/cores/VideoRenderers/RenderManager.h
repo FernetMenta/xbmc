@@ -39,6 +39,7 @@
 #include "OverlayRenderer.h"
 
 class CRenderCapture;
+class CDVDClock;
 
 namespace DXVA { class CProcessor; }
 namespace VAAPI { class CSurfaceHolder; }
@@ -74,7 +75,7 @@ public:
   int AddVideoPicture(DVDVideoPicture& picture);
 
   void FlipPage(volatile bool& bStop, double timestamp = 0.0, int source = -1, EFIELDSYNC sync = FS_NONE);
-  unsigned int PreInit();
+  unsigned int PreInit(CDVDClock *pClock);
   void UnInit();
   bool Flush();
 
@@ -259,7 +260,7 @@ protected:
 
   struct
   {
-    double presenttime;
+    double pts;
     EFIELDSYNC presentfield;
     EPRESENTMETHOD presentmethod;
   }m_renderBuffers[5];
@@ -277,7 +278,7 @@ protected:
   int        m_presentsource;
   CEvent     m_presentevent;
   CEvent     m_flushEvent;
-
+  CDVDClock  *m_pClock;
 
   OVERLAY::CRenderer m_overlays;
 
