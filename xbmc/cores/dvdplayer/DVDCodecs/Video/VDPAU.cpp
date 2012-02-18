@@ -975,7 +975,7 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
       msg->Release();
     }
 
-    if (decoded + processed + render < 4)
+    if (decoded + processed + render < 6)
     {
       retval |= VC_BUFFER;
     }
