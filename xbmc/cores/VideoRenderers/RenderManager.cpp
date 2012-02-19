@@ -839,11 +839,11 @@ int CXBMCRenderManager::WaitForBuffer(volatile bool& bStop)
     return -1;
 
   //wait up to a second as this is our slowest allowed output rate
-  double timeout = GetPresentTime() + 1.0;
+  double timeout = GetPresentTime() + 0.1;
   while(!HasFreeBuffer() && !bStop)
   {
     lock.Leave();
-    m_flipEvent.WaitMSec(5);
+    m_flipEvent.WaitMSec(50);
     if(GetPresentTime() > timeout && !bStop)
     {
       CLog::Log(LOGWARNING, "CRenderManager::WaitForBuffer - timeout waiting for buffer");
