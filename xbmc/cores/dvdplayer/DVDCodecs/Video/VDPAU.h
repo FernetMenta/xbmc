@@ -20,6 +20,24 @@
  *
  */
 
+/**
+ * design goals:
+ * - improve performance
+ *   max out hw resources: e.g. make 1080p60 play on ION2
+ *   allow advanced de-interlacing on ION
+ *
+ * - add vdpau/opengl interop
+ *
+ * - remove tight dependency to render thread
+ *   prior design needed to hijack render thread in order to do
+ *   gl interop functions. In particular this was a problem for
+ *   init and clear down. Introduction of GL_NV_vdpau_interop
+ *   increased the need to be independent from render thread
+ *
+ * - move to an actor based design in order to reduce the number
+ *   of locks needed.
+ */
+
 #include "DllAvUtil.h"
 #include "DVDVideoCodec.h"
 #include "DVDVideoCodecFFmpeg.h"
@@ -48,9 +66,9 @@ using namespace Actor;
 namespace VDPAU
 {
 
-//-----------------------------------------------------------------------------
-// vdpau functions
-//-----------------------------------------------------------------------------
+/**
+ * VDPAU interface to driver
+ */
 
 struct VDPAU_procs
 {
@@ -108,13 +126,17 @@ class CDecoder;
 
 #define NUM_RENDER_PICS 8
 
+/**
+ * Buffer statistics used to control number of frames in queue
+ */
+
 class CVdpauBufferStats
 {
 public:
   uint16_t decodedPics;
   uint16_t processedPics;
   uint16_t renderPics;
-  uint64_t latency;
+  uint64_t latency;         // time decoder has waited for a frame, ideally there is no latency
 
   void IncDecoded() { CSingleLock l(m_sec); decodedPics++;}
   void DecDecoded() { CSingleLock l(m_sec); decodedPics--;}
@@ -129,6 +151,12 @@ public:
 private:
   CCriticalSection m_sec;
 };
+
+/**
+ *  CVdpauConfig holds all configuration parameters needed by vdpau
+ *  The structure is sent to the internal classes CMixer and COutput
+ *  for init.
+ */
 
 struct CVdpauConfig
 {
@@ -155,12 +183,19 @@ struct CVdpauConfig
   bool useInteropYuv;
 };
 
+/**
+ * Holds a decoded frame
+ * Input to COutput for further processing
+ */
 struct CVdpauDecodedPicture
 {
   DVDVideoPicture DVDPic;
   vdpau_render_state *render;
 };
 
+/**
+ * Frame after having been processed by vdpau mixer
+ */
 struct CVdpauProcessedPicture
 {
   DVDVideoPicture DVDPic;
@@ -169,6 +204,12 @@ struct CVdpauProcessedPicture
   uint8_t numDecodedPics;
 };
 
+/**
+ * Ready to render textures
+ * Sent from COutput back to CDecoder
+ * Objects are referenced by DVDVideoPicture and are sent
+ * to renderer
+ */
 class CVdpauRenderPicture
 {
   friend class CDecoder;
@@ -225,6 +266,11 @@ public:
   };
 };
 
+/**
+ * Embeds the vdpau video mixer
+ * Embedded by COutput class, gets decoded frames from COutput, processes
+ * them in mixer ands sends processed frames back to COutput
+ */
 class CMixer : private CThread
 {
 public:
@@ -294,6 +340,10 @@ protected:
 // Output
 //-----------------------------------------------------------------------------
 
+/**
+ * Buffer pool holds allocated vdpau and gl resources
+ * Embedded in COutput
+ */
 struct VdpauBufferPool
 {
   struct Pixmaps
@@ -349,7 +399,6 @@ public:
   };
 };
 
-
 class COutputDataProtocol : public Protocol
 {
 public:
@@ -365,7 +414,12 @@ public:
   };
 };
 
-
+/**
+ * COutput is embedded in CDecoder and embeds CMixer
+ * The class has its own OpenGl context which is shared with render thread
+ * COuput generated ready to render textures and passes them back to
+ * CDecoder
+ */
 class COutput : private CThread
 {
 public:
@@ -439,6 +493,9 @@ protected:
 // VDPAU decoder
 //-----------------------------------------------------------------------------
 
+/**
+ *  VDPAU main class
+ */
 class CDecoder
  : public CDVDVideoCodecFFmpeg::IHardwareDecoder
  , public IDispResource
