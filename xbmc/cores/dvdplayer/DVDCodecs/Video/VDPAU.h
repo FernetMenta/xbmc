@@ -175,6 +175,8 @@ class CVdpauRenderPicture
   friend class COutput;
 public:
   DVDVideoPicture DVDPic;
+  int texWidth, texHeight;
+  CRect crop;
   GLuint texture[4];
   uint32_t sourceIdx;
   bool valid;

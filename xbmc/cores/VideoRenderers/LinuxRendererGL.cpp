@@ -2264,74 +2264,16 @@ bool CLinuxRendererGL::CreateVDPAUTexture420(int index)
   memset(&im    , 0, sizeof(im));
   memset(&fields, 0, sizeof(fields));
 
-  im.height = m_sourceHeight;
-  im.width  = m_sourceWidth;
   im.cshift_x = 1;
   im.cshift_y = 1;
-
-  im.stride[0] = im.width;
-  im.stride[1] = im.width;
-  im.stride[2] = 0;
 
   im.plane[0] = NULL;
   im.plane[1] = NULL;
   im.plane[2] = NULL;
 
-  // Y plane
-  im.planesize[0] = im.stride[0] * im.height;
-  // packed UV plane
-  im.planesize[1] = im.stride[1] * im.height / 2;
-  // third plane is not used
-  im.planesize[2] = 0;
-
-
   for(int p = 0;p<3;p++)
   {
     pbo[p] = None;
-  }
-
-  // YUV
-  for (int f = FIELD_FULL; f<=FIELD_BOT ; f++)
-  {
-    int fieldshift = (f==FIELD_FULL) ? 0 : 1;
-    YUVPLANES &planes = fields[f];
-
-    planes[0].texwidth  = im.width;
-    planes[0].texheight = im.height >> fieldshift;
-
-    if (m_renderMethod & RENDER_SW)
-    {
-      planes[1].texwidth  = 0;
-      planes[1].texheight = 0;
-      planes[2].texwidth  = 0;
-      planes[2].texheight = 0;
-    }
-    else
-    {
-      planes[1].texwidth  = planes[0].texwidth  >> im.cshift_x;
-      planes[1].texheight = planes[0].texheight >> im.cshift_y;
-      planes[2].texwidth  = planes[1].texwidth;
-      planes[2].texheight = planes[1].texheight;
-    }
-
-    for (int p = 0; p < 3; p++)
-    {
-      planes[p].pixpertex_x = 1;
-      planes[p].pixpertex_y = 1;
-      planes[p].rect.x1 = 0.0;
-      planes[p].rect.x2 = 1.0;
-      planes[p].rect.y1 = 0.0;
-      planes[p].rect.y2 = 1.0;
-    }
-
-    if(m_renderMethod & RENDER_POT)
-    {
-      for(int p = 0; p < 3; p++)
-      {
-        planes[p].texwidth  = NP2(planes[p].texwidth);
-        planes[p].texheight = NP2(planes[p].texheight);
-      }
-    }
   }
 
   glEnable(m_textureTarget);
@@ -2347,6 +2289,7 @@ void CLinuxRendererGL::UploadVDPAUTexture420(int index)
 {
 #ifdef HAVE_LIBVDPAU
   VDPAU::CVdpauRenderPicture *vdpau = m_buffers[index].vdpau;
+  YV12Image &im = m_buffers[index].image;
 
   unsigned int flipindex = m_buffers[index].flipindex;
   YUVFIELDS &fields = m_buffers[index].fields;
@@ -2362,6 +2305,36 @@ void CLinuxRendererGL::UploadVDPAUTexture420(int index)
     return;
   }
 
+  im.height = vdpau->texHeight;
+  im.width  = vdpau->texWidth;
+
+  // YUV
+  for (int f = FIELD_FULL; f<=FIELD_BOT ; f++)
+  {
+    int fieldshift = (f==FIELD_FULL) ? 0 : 1;
+    YUVPLANES &planes = fields[f];
+
+    planes[0].texwidth  = im.width;
+    planes[0].texheight = im.height >> fieldshift;
+
+    planes[1].texwidth  = planes[0].texwidth  >> im.cshift_x;
+    planes[1].texheight = planes[0].texheight >> im.cshift_y;
+    planes[2].texwidth  = planes[1].texwidth;
+    planes[2].texheight = planes[1].texheight;
+
+    for (int p = 0; p < 3; p++)
+    {
+      planes[p].pixpertex_x = 1;
+      planes[p].pixpertex_y = 1;
+    }
+  }
+  // crop
+  m_sourceRect.x1 += vdpau->crop.x1;
+  m_sourceRect.x2 -= vdpau->crop.x2;
+  m_sourceRect.y1 += vdpau->crop.y1;
+  m_sourceRect.y2 -= vdpau->crop.y2;
+
+  // set textures
   fields[1][0].id = vdpau->texture[0];
   fields[1][1].id = vdpau->texture[2];
   fields[2][0].id = vdpau->texture[1];

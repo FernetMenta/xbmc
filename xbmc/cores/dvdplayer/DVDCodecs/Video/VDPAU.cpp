@@ -2149,11 +2149,16 @@ void CMixer::InitCycle()
   {
     m_processPicture.outputSurface = m_outputSurfaces.front();
     m_outputSurfaces.pop();
+    m_processPicture.DVDPic.iWidth = m_config.outWidth;
+    m_processPicture.DVDPic.iHeight = m_config.outHeight;
+  }
+  else
+  {
+    m_processPicture.DVDPic.iWidth = m_config.vidWidth;
+    m_processPicture.DVDPic.iHeight = m_config.vidHeight;
   }
 
   m_processPicture.DVDPic = m_mixerInput[1].DVDPic;
-  m_processPicture.DVDPic.iWidth = m_config.outWidth;
-  m_processPicture.DVDPic.iHeight = m_config.outHeight;
   m_processPicture.render = m_mixerInput[1].render;
   m_processPicture.numDecodedPics = m_decodedPics.size();
 }
@@ -2237,10 +2242,10 @@ void CMixer::ProcessPicture()
       futu_surfaces[0] = m_mixerInput[1].render->surface;
       futu_surfaces[1] = m_mixerInput[1].render->surface;
 
-      m_processPicture.DVDPic.iRepeatPicture = -0.5;
       m_processPicture.DVDPic.pts = DVD_NOPTS_VALUE;
       m_processPicture.DVDPic.dts = DVD_NOPTS_VALUE;
     }
+    m_processPicture.DVDPic.iRepeatPicture = -0.5;
   } // interlaced
 
   VdpRect sourceRect;
@@ -2802,6 +2807,7 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
         retPic->DVDPic = pixmap->DVDPic;
         retPic->valid = true;
         retPic->texture[0] = pixmap->texture;
+        retPic->crop = CRect(0,0,0,0);
         m_bufferPool.notVisiblePixmaps.pop_front();
         m_mixer.m_dataPort.SendOutMessage(CMixerDataProtocol::BUFFER, &pixmap->surface, sizeof(pixmap->surface));
       }
@@ -2825,6 +2831,7 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
       GLMapSurfaces();
       retPic->sourceIdx = procPic.outputSurface;
       retPic->texture[0] = m_bufferPool.glOutputSurfaceMap[procPic.outputSurface].texture[0];
+      retPic->crop = CRect(0,0,0,0);
     }
     else
     {
@@ -2833,6 +2840,12 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
       retPic->sourceIdx = procPic.render->surface;
       for (unsigned int i=0; i<4; ++i)
         retPic->texture[i] = m_bufferPool.glVideoSurfaceMap[procPic.render->surface].texture[i];
+      retPic->texWidth = m_config.surfaceWidth;
+      retPic->texHeight = m_config.surfaceHeight;
+      retPic->crop.x1 = 0;
+      retPic->crop.y1 = 0;
+      retPic->crop.x2 = m_config.surfaceWidth - m_config.vidWidth;
+      retPic->crop.y2 = m_config.surfaceHeight - m_config.vidHeight;
     }
   }
   return retPic;
