@@ -527,8 +527,6 @@ public:
   virtual void Reset();
   virtual void Close();
   virtual long Release();
-  virtual bool AllowFrameDropping();
-  virtual void SetDropState(bool bDrop);
 
   virtual int  Check(AVCodecContext* avctx);
   virtual const std::string Name() { return "vdpau"; }

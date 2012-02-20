@@ -1035,22 +1035,9 @@ void CDecoder::Reset()
   }
 }
 
-bool CDecoder::AllowFrameDropping()
-{
-//  if (m_bVdpauDeinterlacing && m_dropCount < 5)
-//    return false;
-//  else
-//    return true;
-}
-
 void CDecoder::ReturnRenderPicture(CVdpauRenderPicture *renderPic)
 {
   m_vdpauOutput.m_dataPort.SendOutMessage(COutputDataProtocol::RETURNPIC, &renderPic, sizeof(renderPic));
-}
-
-void CDecoder::SetDropState(bool bDrop)
-{
-  m_dropState = bDrop;
 }
 
 bool CDecoder::CheckStatus(VdpStatus vdp_st, int line)

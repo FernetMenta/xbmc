@@ -357,29 +357,15 @@ void CDVDVideoCodecFFmpeg::SetDropState(bool bDrop)
     //  2 seem to be to high.. it causes video to be ruined on following images
     if( bDrop )
     {
-      if (m_pHardware && m_pHardware->AllowFrameDropping())
-      {
-        m_pHardware->SetDropState(true);
-      }
-      else
-      {
-        // TODO: 'hurry_up' has been deprecated in favor of the skip_* variables
-        // Use those instead.
-
-        //m_pCodecContext->hurry_up = 1;
-        m_pCodecContext->skip_frame = AVDISCARD_NONREF;
-        m_pCodecContext->skip_idct = AVDISCARD_NONREF;
-        m_pCodecContext->skip_loop_filter = AVDISCARD_NONREF;
-      }
+      m_pCodecContext->skip_frame = AVDISCARD_NONREF;
+      m_pCodecContext->skip_idct = AVDISCARD_NONREF;
+      m_pCodecContext->skip_loop_filter = AVDISCARD_NONREF;
     }
     else
     {
       m_pCodecContext->skip_frame = AVDISCARD_DEFAULT;
       m_pCodecContext->skip_idct = AVDISCARD_DEFAULT;
       m_pCodecContext->skip_loop_filter = AVDISCARD_DEFAULT;
-
-      if (m_pHardware)
-         m_pHardware->SetDropState(false);
     }
   }
 }
