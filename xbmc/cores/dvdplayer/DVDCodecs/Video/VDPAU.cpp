@@ -1012,6 +1012,9 @@ void CDecoder::Reset()
 {
   CSingleLock lock(m_DecoderSection);
 
+  if (!m_vdpauConfigured)
+    return;
+
   Message *reply;
   if (m_vdpauOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::FLUSH,
                                                  &reply,
