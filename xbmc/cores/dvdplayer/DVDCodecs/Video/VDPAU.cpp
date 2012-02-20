@@ -1027,6 +1027,8 @@ void CDecoder::Reset()
       CLog::Log(LOGERROR, "VDPAU::%s - flush returned error", __FUNCTION__);
       m_DisplayState = VDPAU_ERROR;
     }
+    else
+      m_bufferStats.Reset();
   }
   else
   {
