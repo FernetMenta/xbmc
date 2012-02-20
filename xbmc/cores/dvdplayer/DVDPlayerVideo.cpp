@@ -1595,6 +1595,8 @@ int CDVDPlayerVideo::CalcDropRequirement()
 //  iSleepTime += correct;
 
   int urgent = iSleepTime < -0.2 ? 1 : 2;
+  if (m_speed != DVD_PLAYSPEED_NORMAL)
+    urgent = 2;
 
   if (iSleepTime <= 0 && m_speed)
     m_iLateFrames++;
