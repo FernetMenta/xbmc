@@ -1623,7 +1623,8 @@ int CDVDPlayerVideo::CalcDropRequirement()
         m_iDroppedRequest--; //decrease so we only drop half the frames
         result |= EOS_DROPPED;
       }
-      m_iDroppedRequest++;
+      else
+        m_iDroppedRequest++;
     }
   }
   else
