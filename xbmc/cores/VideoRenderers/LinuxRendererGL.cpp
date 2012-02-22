@@ -2329,10 +2329,10 @@ void CLinuxRendererGL::UploadVDPAUTexture420(int index)
     }
   }
   // crop
-  m_sourceRect.x1 += vdpau->crop.x1;
-  m_sourceRect.x2 -= vdpau->crop.x2;
-  m_sourceRect.y1 += vdpau->crop.y1;
-  m_sourceRect.y2 -= vdpau->crop.y2;
+//  m_sourceRect.x1 += vdpau->crop.x1;
+//  m_sourceRect.x2 -= vdpau->crop.x2;
+//  m_sourceRect.y1 += vdpau->crop.y1;
+//  m_sourceRect.y2 -= vdpau->crop.y2;
 
   // set textures
   fields[1][0].id = vdpau->texture[0];

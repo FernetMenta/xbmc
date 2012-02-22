@@ -322,7 +322,7 @@ int CDecoder::Check(AVCodecContext* avctx)
     }
     else
     {
-      CSharedLock lock(m_DecoderSection);
+      CSingleLock lock(m_DecoderSection);
       state = m_DisplayState;
     }
   }
