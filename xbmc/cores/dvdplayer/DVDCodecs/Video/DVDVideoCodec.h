@@ -242,6 +242,11 @@ public:
     return 0;
   }
 
+  virtual bool GetPts(double &pts)
+  {
+    return false;
+  }
+
   virtual void NormalSpeed(bool normal)
   {
 	return;

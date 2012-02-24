@@ -60,6 +60,7 @@ public:
   virtual unsigned int SetFilters(unsigned int filters);
   virtual const char* GetName() { return m_name.c_str(); }; // m_name is never changed after open
   virtual unsigned GetConvergeCount();
+  virtual bool GetPts(double &pts) {pts=m_decoderPts; return true;}
 
   bool               IsHardwareAllowed()                     { return !m_bSoftware; }
   IHardwareDecoder * GetHardware()                           { return m_pHardware; };
@@ -108,4 +109,5 @@ protected:
   int m_iLastKeyframe;
   double m_dts;
   bool   m_started;
+  double m_decoderPts, m_decoderInterval;
 };

@@ -314,6 +314,7 @@ void CDVDPlayerVideo::Process()
   int iDropDirective;
 
   m_videoStats.Start();
+  m_droppingStats.Reset();
 
   while (!m_bStop)
   {
@@ -416,6 +417,7 @@ void CDVDPlayerVideo::Process()
         m_pVideoCodec->Reset();
       m_packets.clear();
       m_started = false;
+      m_droppingStats.Reset();
     }
     else if (pMsg->IsType(CDVDMsg::GENERAL_FLUSH)) // private message sent by (CDVDPlayerVideo::Flush())
     {
@@ -427,6 +429,7 @@ void CDVDPlayerVideo::Process()
       //we need to recalculate the framerate
       //TODO: this needs to be set on a streamchange instead
       ResetFrameRateCalc();
+      m_droppingStats.Reset();
 
       m_stalled = true;
       m_started = false;
@@ -490,7 +493,7 @@ void CDVDPlayerVideo::Process()
       }
 #endif
 
-      iDropDirective = CalcDropRequirement();
+      iDropDirective = CalcDropRequirement(pts, frametime);
       if (iDropDirective & EOS_VERYLATE)
         bRequestDrop = true;
 
@@ -529,7 +532,7 @@ void CDVDPlayerVideo::Process()
       if(m_pVideoCodec->GetConvergeCount() > 0)
       {
         m_packets.push_back(DVDMessageListItem(pMsg, 0));
-        if(m_packets.size() > m_pVideoCodec->GetConvergeCount() 
+        if(m_packets.size() > m_pVideoCodec->GetConvergeCount()
         || m_packets.size() * frametime > DVD_SEC_TO_TIME(10))
           m_packets.pop_front();
       }
@@ -1583,55 +1586,99 @@ void CDVDPlayerVideo::CalcFrameRate()
   }
 }
 
-int CDVDPlayerVideo::CalcDropRequirement()
+int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime)
 {
   int result = 0;
-  double iSleepTime = g_renderManager.GetLastSleeptime();
-//  double correct = 0.0;
-//  if (iSleepTime == m_iLastSleepTime && m_iLateFrames > 10)
-//    correct = 0.02;
-//
-//  m_iLastSleepTime = iSleepTime;
-//  iSleepTime += correct;
+  double iSleepTime;
+  double iDecoderPts, iRenderPts;
+  double iInterval;
+  double iGain;
+  double iLateness;
 
-  int urgent = iSleepTime < -0.2 ? 1 : 2;
-  if (m_speed != DVD_PLAYSPEED_NORMAL)
-    urgent = 2;
+  // get decoder stats
+  if (!m_pVideoCodec->GetPts(iDecoderPts))
+    iDecoderPts = pts;
 
-  if (iSleepTime <= 0 && m_speed)
-    m_iLateFrames++;
-  else
-    m_iLateFrames = 0;
+  iInterval = frametime;;
 
-  // ask decoder to drop frames next round, as we are very late
-  if(m_iLateFrames > 10)
+  // get render stats
+  g_renderManager.GetStats(iSleepTime, iRenderPts);
+  // add any gains regardless of being late
+  if (m_droppingStats.m_lastDecoderPts > 0)
   {
-    if (m_iNrOfPicturesNotToSkip <= 0)
+    iGain = (iDecoderPts - m_droppingStats.m_lastDecoderPts - iInterval)/(double)DVD_TIME_BASE;
+    if (iGain > 0)
     {
-      //if we're calculating the framerate,
-      //don't drop frames until we've calculated a stable framerate
-      if ((m_bAllowDrop || m_speed != DVD_PLAYSPEED_NORMAL)
-          && m_iLateFrames % urgent)
-      {
-//        CLog::Log(LOGNOTICE,"------- late2: %f", iSleepTime);
-        result |= EOS_VERYLATE;
-        m_pullupCorrection.Flush(); //dropped frames mess up the pattern, so just flush it
-      }
-
-      //if we requested 5 drops in a row and we're still late, drop on output
-      //this keeps a/v sync if the decoder can't drop, or we're still calculating the framerate
-      if (m_iDroppedRequest > 5)
-      {
-        m_iDroppedRequest--; //decrease so we only drop half the frames
-        result |= EOS_DROPPED;
-      }
-      else
-        m_iDroppedRequest++;
+      CDroppingStats::CGain gain;
+      gain.gain = iGain;
+      gain.pts = iDecoderPts;
+      m_droppingStats.m_gain.push_back(gain);
+      m_droppingStats.m_totalGain += iGain;
     }
   }
+  m_droppingStats.m_lastDecoderPts = iDecoderPts;
+
+  // subtract gains
+  while (!m_droppingStats.m_gain.empty() &&
+         iRenderPts >= m_droppingStats.m_gain.front().pts)
+  {
+    m_droppingStats.m_totalGain -= m_droppingStats.m_gain.front().gain;
+    m_droppingStats.m_gain.pop_front();
+  }
+
+//  if (iSleepTime < 0)
+//  {
+//    CLog::Log(LOGNOTICE,"----- sleep: %f, gain :%f",
+//        iSleepTime, m_droppingStats.m_totalGain);
+//  }
+
+  // calculate lateness
+  iLateness = iSleepTime + m_droppingStats.m_totalGain;
+  if (iLateness < 0 && m_speed)
+  {
+    m_droppingStats.m_lateFrames++;
+
+    // if lateness is smaller than frametime, we observe this state
+    // for 10 cycles
+    if (m_droppingStats.m_lateFrames > 10 || iLateness < -1/m_fFrameRate)
+    {
+      // is frame allowed to skip
+      if (m_iNrOfPicturesNotToSkip <= 0)
+      {
+        // try decoder dropping
+        if (m_bAllowDrop || m_speed != DVD_PLAYSPEED_NORMAL)
+        {
+          result |= EOS_VERYLATE;
+          m_pullupCorrection.Flush();
+//          CLog::Log(LOGNOTICE,"-------- drop decoder");
+        }
+        // drop in output
+        if (m_droppingStats.m_dropRequests > 5)
+        {
+          m_droppingStats.m_dropRequests--; //decrease so we only drop half the frames
+          result |= EOS_DROPPED;
+//          CLog::Log(LOGNOTICE,"-------- drop output");
+        }
+        else
+          m_droppingStats.m_dropRequests++;
+      }
+    }
+    else
+      CLog::Log(LOGNOTICE,"-------- no drop allowed: %d", m_iNrOfPicturesNotToSkip);
+  }
   else
   {
-    m_iDroppedRequest = 0;
+    m_droppingStats.m_dropRequests = 0;
+    m_droppingStats.m_lateFrames = 0;
   }
   return result;
+}
+
+void CDroppingStats::Reset()
+{
+  m_gain.clear();
+  m_totalGain = 0;
+  m_lastDecoderPts = 0;
+  m_lateFrames = 0;
+  m_dropRequests = 0;
 }

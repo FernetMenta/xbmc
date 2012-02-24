@@ -185,7 +185,7 @@ public:
 
   int WaitForBuffer(volatile bool& bStop);
   void NotifyDisplayFlip();
-  double GetLastSleeptime();
+  bool GetStats(double &sleeptime, double &pts);
   bool HasFrame();
 
 protected:
@@ -266,6 +266,7 @@ protected:
   }m_renderBuffers[5];
 
   double     m_sleeptime;
+  double     m_presentPts;
 
   double     m_presenttime;
   double     m_presentcorr;

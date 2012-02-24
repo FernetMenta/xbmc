@@ -246,6 +246,7 @@ bool CXBMCRenderManager::Configure(unsigned int width, unsigned int height, unsi
     m_bReconfigured = true;
     m_presentstep = PRESENT_IDLE;
     m_presentevent.Set();
+    ResetRenderBuffer();
   }
 
   return result;
@@ -930,8 +931,9 @@ void CXBMCRenderManager::PrepareNextRender()
     presenttime = clocktime + MAXPRESENTDELAY;
 
   m_sleeptime = presenttime - clocktime;
+  m_presentPts = m_renderBuffers[idx].pts;
 
-  if (g_graphicsContext.IsFullScreenVideo() || presenttime <= clocktime)
+  if (g_graphicsContext.IsFullScreenVideo() || presenttime <= clocktime+0.01)
   {
     m_presenttime = presenttime;
     m_presentmethod = m_renderBuffers[idx].presentmethod;
@@ -970,10 +972,12 @@ void CXBMCRenderManager::NotifyDisplayFlip()
   m_flipEvent.Set();
 }
 
-double CXBMCRenderManager::GetLastSleeptime()
+bool CXBMCRenderManager::GetStats(double &sleeptime, double &pts)
 {
   CSharedLock lock(m_sharedSection);
-  return m_sleeptime;
+  sleeptime = m_sleeptime;
+  pts = m_presentPts;
+  return true;
 }
 
 bool CXBMCRenderManager::HasFrame()

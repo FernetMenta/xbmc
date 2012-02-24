@@ -142,6 +142,7 @@ CDVDVideoCodecFFmpeg::CDVDVideoCodecFFmpeg() : CDVDVideoCodec()
   m_iLastKeyframe = 0;
   m_dts = DVD_NOPTS_VALUE;
   m_started = false;
+  m_decoderPts = DVD_NOPTS_VALUE;
 }
 
 CDVDVideoCodecFFmpeg::~CDVDVideoCodecFFmpeg()
@@ -570,6 +571,7 @@ int CDVDVideoCodecFFmpeg::Decode(BYTE* pData, int iSize, double dts, double pts)
 void CDVDVideoCodecFFmpeg::Reset()
 {
   m_started = false;
+  m_decoderPts = DVD_NOPTS_VALUE;
   m_iLastKeyframe = m_pCodecContext->has_b_frames;
   m_dllAvCodec.avcodec_flush_buffers(m_pCodecContext);
 
@@ -674,6 +676,11 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(DVDVideoPicture* pDvdVideoPicture)
     pDvdVideoPicture->pts = pts_itod(m_pFrame->reordered_opaque);
   else
     pDvdVideoPicture->pts = DVD_NOPTS_VALUE;
+
+  if (pDvdVideoPicture->pts != DVD_NOPTS_VALUE)
+    m_decoderPts = pDvdVideoPicture->pts;
+  else
+    m_decoderPts = m_dts;
 
   if(!m_started)
     pDvdVideoPicture->iFlags |= DVP_FLAG_DROPPED;

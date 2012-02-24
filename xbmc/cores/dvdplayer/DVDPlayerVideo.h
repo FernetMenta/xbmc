@@ -38,6 +38,23 @@ class CDVDOverlayCodecCC;
 
 #define VIDEO_PICTURE_QUEUE_SIZE 1
 
+class CDroppingStats
+{
+public:
+  void Reset();
+  struct CGain
+  {
+    double gain;
+    double pts;
+  };
+  std::deque<CGain> m_gain;
+  double m_totalGain;
+  double m_lastDecoderPts;
+  unsigned int m_lateFrames;
+  unsigned int m_dropRequests;
+};
+
+
 class CDVDPlayerVideo : public CThread
 {
 public:
@@ -134,7 +151,7 @@ protected:
 
   void   ResetFrameRateCalc();
   void   CalcFrameRate();
-  int    CalcDropRequirement();
+  int    CalcDropRequirement(double pts, double frametime);
 
   double m_fFrameRate;       //framerate of the video currently playing
   bool   m_bCalcFrameRate;  //if we should calculate the framerate from the timestamps
@@ -195,5 +212,7 @@ protected:
   CPullupCorrection m_pullupCorrection;
 
   std::list<DVDMessageListItem> m_packets;
+
+  CDroppingStats m_droppingStats;
 };
 
