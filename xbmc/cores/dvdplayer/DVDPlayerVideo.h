@@ -42,6 +42,7 @@ class CDroppingStats
 {
 public:
   void Reset();
+  void AddOutputDropGain(double pts, double frametime);
   struct CGain
   {
     double gain;
@@ -50,8 +51,10 @@ public:
   std::deque<CGain> m_gain;
   double m_totalGain;
   double m_lastDecoderPts;
+  double m_lastRenderPts;
   unsigned int m_lateFrames;
   unsigned int m_dropRequests;
+  bool m_requestOutputDrop;
 };
 
 

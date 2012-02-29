@@ -481,6 +481,11 @@ void CDVDPlayerVideo::Process()
         m_iNrOfPicturesNotToSkip = 1;
       }
 
+      bRequestDrop = false;
+      iDropDirective = CalcDropRequirement(pts, frametime);
+      if (iDropDirective & EOS_VERYLATE)
+        bRequestDrop = true;
+
 #ifdef PROFILE
       bRequestDrop = false;
 #else
@@ -492,10 +497,6 @@ void CDVDPlayerVideo::Process()
         m_iLateFrames     = 0;
       }
 #endif
-
-      iDropDirective = CalcDropRequirement(pts, frametime);
-      if (iDropDirective & EOS_VERYLATE)
-        bRequestDrop = true;
 
       // if player want's us to drop this packet, do so nomatter what
       if(bPacketDrop)
@@ -598,12 +599,6 @@ void CDVDPlayerVideo::Process()
 
             if(bPacketDrop)
               picture.iFlags |= DVP_FLAG_DROPPED;
-
-            if (iDropDirective & EOS_DROPPED)
-            {
-              picture.iFlags |= DVP_FLAG_DROPPED;
-              iDropDirective &= ~EOS_DROPPED;
-            }
 
             if (m_iNrOfPicturesNotToSkip > 0)
             {
@@ -1213,6 +1208,14 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
 //    m_iDroppedRequest = 0;
 //  }
 
+  if (m_droppingStats.m_requestOutputDrop
+     && !(pPicture->iFlags & DVP_FLAG_NOSKIP))
+  {
+    m_droppingStats.AddOutputDropGain(pts, 1/m_fFrameRate);
+    m_droppingStats.m_requestOutputDrop = false;
+    return result | EOS_DROPPED;
+  }
+
   if( m_speed < 0 )
   {
     if( iClockSleep < -DVD_MSEC_TO_TIME(200)
@@ -1594,10 +1597,14 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime)
   double iInterval;
   double iGain;
   double iLateness;
+  bool   bNewFrame;
 
   // get decoder stats
   if (!m_pVideoCodec->GetPts(iDecoderPts))
     iDecoderPts = pts;
+
+  if (iDecoderPts == m_droppingStats.m_lastDecoderPts)
+    return result;
 
   iInterval = frametime;;
 
@@ -1656,21 +1663,23 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime)
         if (m_droppingStats.m_dropRequests > 5)
         {
           m_droppingStats.m_dropRequests--; //decrease so we only drop half the frames
+          m_droppingStats.m_requestOutputDrop = true;
           result |= EOS_DROPPED;
 //          CLog::Log(LOGNOTICE,"-------- drop output");
         }
         else
           m_droppingStats.m_dropRequests++;
       }
+      else
+        CLog::Log(LOGNOTICE,"-------- no drop allowed: %d", m_iNrOfPicturesNotToSkip);
     }
-    else
-      CLog::Log(LOGNOTICE,"-------- no drop allowed: %d", m_iNrOfPicturesNotToSkip);
   }
   else
   {
     m_droppingStats.m_dropRequests = 0;
     m_droppingStats.m_lateFrames = 0;
   }
+  m_droppingStats.m_lastRenderPts = iRenderPts;
   return result;
 }
 
@@ -1679,6 +1688,17 @@ void CDroppingStats::Reset()
   m_gain.clear();
   m_totalGain = 0;
   m_lastDecoderPts = 0;
+  m_lastRenderPts = 0;
   m_lateFrames = 0;
   m_dropRequests = 0;
+  m_requestOutputDrop = false;
+}
+
+void CDroppingStats::AddOutputDropGain(double pts, double frametime)
+{
+  CDroppingStats::CGain gain;
+  gain.gain = frametime;
+  gain.pts = pts;
+  m_gain.push_back(gain);
+  m_totalGain += frametime;
 }
