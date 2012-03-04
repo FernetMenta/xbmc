@@ -74,7 +74,7 @@ public:
 
   int AddVideoPicture(DVDVideoPicture& picture);
 
-  void FlipPage(volatile bool& bStop, double timestamp = 0.0, int source = -1, EFIELDSYNC sync = FS_NONE);
+  void FlipPage(volatile bool& bStop, double timestamp = 0.0, int source = -1, EFIELDSYNC sync = FS_NONE, int speed = 0);
   unsigned int PreInit(CDVDClock *pClock);
   void UnInit();
   bool Flush();
@@ -187,6 +187,7 @@ public:
   void NotifyDisplayFlip();
   bool GetStats(double &sleeptime, double &pts);
   bool HasFrame();
+  void EnableBuffering(bool enable);
 
 protected:
   void Render(bool clear, DWORD flags, DWORD alpha);
@@ -256,6 +257,8 @@ protected:
   int m_iOutputRenderBuffer;
   int m_iDisplayedRenderBuffer;
   bool m_bAllRenderBuffersDisplayed;
+  bool m_bUseBuffering;
+  int m_speed;
   CEvent m_flipEvent;
 
   struct

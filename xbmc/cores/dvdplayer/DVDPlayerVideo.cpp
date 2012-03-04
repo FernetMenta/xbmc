@@ -447,6 +447,8 @@ void CDVDPlayerVideo::Process()
       m_speed = static_cast<CDVDMsgInt*>(pMsg)->m_value;
       if(m_speed == DVD_PLAYSPEED_PAUSE)
         m_iNrOfPicturesNotToSkip = 0;
+      m_droppingStats.Reset();
+      g_renderManager.EnableBuffering(m_speed == DVD_PLAYSPEED_NORMAL);
     }
     else if (pMsg->IsType(CDVDMsg::PLAYER_STARTED))
     {
@@ -495,6 +497,7 @@ void CDVDPlayerVideo::Process()
         bRequestDrop = false;
         m_iDroppedRequest = 0;
         m_iLateFrames     = 0;
+        m_droppingStats.m_requestOutputDrop = false;
       }
 #endif
 
@@ -1218,15 +1221,22 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
 
   if( m_speed < 0 )
   {
-    if( iClockSleep < -DVD_MSEC_TO_TIME(200)
-    && !(pPicture->iFlags & DVP_FLAG_NOSKIP) )
+    double decoderPts = m_droppingStats.m_lastDecoderPts;
+    double renderPts = m_droppingStats.m_lastRenderPts;
+    if (pts > renderPts)
+    {
+      if (decoderPts >= renderPts)
+      {
+        Sleep(200);
+      }
       return result | EOS_DROPPED;
+    }
   }
 
   if( (pPicture->iFlags & DVP_FLAG_DROPPED) )
     return result | EOS_DROPPED;
 
-  if( m_speed != DVD_PLAYSPEED_NORMAL && limited )
+  if( m_speed != DVD_PLAYSPEED_NORMAL && m_speed >= 0 && limited )
   {
     // calculate frame dropping pattern to render at this speed
     // we do that by deciding if this or next frame is closest
@@ -1288,7 +1298,7 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   if (index < 0)
     return EOS_DROPPED;
 
-  g_renderManager.FlipPage(CThread::m_bStop, pts, -1, mDisplayField);
+  g_renderManager.FlipPage(CThread::m_bStop, pts, -1, mDisplayField, m_speed);
 
   return result;
 #else

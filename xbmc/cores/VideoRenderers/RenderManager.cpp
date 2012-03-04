@@ -525,25 +525,21 @@ void CXBMCRenderManager::RemoveCapture(CRenderCapture* capture)
     m_captures.erase(it);
 }
 
-void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0LL*/, int source /*= -1*/, EFIELDSYNC sync /*= FS_NONE*/)
+void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0LL*/, int source /*= -1*/, EFIELDSYNC sync /*= FS_NONE*/, int speed /*= 0*/)
 {
-//  if(timestamp - GetPresentTime() > MAXPRESENTDELAY)
-//    timestamp =  GetPresentTime() + MAXPRESENTDELAY;
-
-  /* can't flip, untill timestamp */
-//  if(!g_graphicsContext.IsFullScreenVideo())
-//    WaitPresentTime(timestamp);
-//
-//  /* make sure any queued frame was fully presented */
-//  double timeout = m_presenttime + 1.0;
-//  while(m_presentstep != PRESENT_IDLE && !bStop)
-//  {
-//    if(!m_presentevent.WaitMSec(100) && GetPresentTime() > timeout && !bStop)
-//    {
-//      CLog::Log(LOGWARNING, "CRenderManager::FlipPage - timeout waiting for previous frame");
-//      return;
-//    }
-//  };
+  if (!m_bUseBuffering)
+  {
+    /* make sure any queued frame was fully presented */
+    double timeout = m_presenttime + 1.0;
+    while(m_presentstep != PRESENT_IDLE && !bStop)
+    {
+      if(!m_presentevent.WaitMSec(100) && GetPresentTime() > timeout && !bStop)
+      {
+        CLog::Log(LOGWARNING, "CRenderManager::FlipPage - timeout waiting for previous frame");
+        return;
+      }
+    }
+  }
 
   if(bStop)
     return;
@@ -591,25 +587,29 @@ void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0L
         }
       }
     }
-//    m_presentstep  = PRESENT_FLIP;
-//    m_presentsource = source;
+
     FlipFreeBuffer();
     m_renderBuffers[m_iOutputRenderBuffer].pts = timestamp;
     m_renderBuffers[m_iOutputRenderBuffer].presentfield = presentfield;
     m_renderBuffers[m_iOutputRenderBuffer].presentmethod = presentmethod;
+    m_speed = speed;
   }
 
   g_application.NewFrame();
-  /* wait untill render thread have flipped buffers */
-//  timeout = m_presenttime + 1.0;
-//  while(m_presentstep == PRESENT_FLIP && !bStop)
-//  {
-//    if(!m_presentevent.WaitMSec(100) && GetPresentTime() > timeout && !bStop)
-//    {
-//      CLog::Log(LOGWARNING, "CRenderManager::FlipPage - timeout waiting for flip to complete");
-//      return;
-//    }
-//  }
+
+  if (!m_bUseBuffering)
+  {
+    /* wait untill render thread have flipped buffers */
+    double timeout = m_presenttime + 1.0;
+    while(m_presentstep == PRESENT_FLIP && !bStop)
+    {
+      if(!m_presentevent.WaitMSec(100) && GetPresentTime() > timeout && !bStop)
+      {
+        CLog::Log(LOGWARNING, "CRenderManager::FlipPage - timeout waiting for flip to complete");
+        return;
+      }
+    }
+  }
 }
 
 float CXBMCRenderManager::GetMaximumFPS()
@@ -880,18 +880,20 @@ int CXBMCRenderManager::FlipFreeBuffer()
   {
     m_bAllRenderBuffersDisplayed = false;
     m_iOutputRenderBuffer = (m_iOutputRenderBuffer + 1) % m_iNumRenderBuffers;
-//    CLog::Log(LOGNOTICE,"-------- flip free: %d", m_iOutputRenderBuffer);
     return m_iOutputRenderBuffer;
-  }
-  else
-  {
-    CLog::Log(LOGERROR,"------------------ cant flip free buffer");
-    return -1;
   }
 }
 
 bool CXBMCRenderManager::HasFreeBuffer()
 {
+  if (!m_bUseBuffering)
+  {
+    if (m_iOutputRenderBuffer != m_iCurrentRenderBuffer)
+      return false;
+    else
+      return true;
+  }
+
   int outputPlus1 = (m_iOutputRenderBuffer + 1) % m_iNumRenderBuffers;
   if ((m_iOutputRenderBuffer == m_iDisplayedRenderBuffer && !m_bAllRenderBuffersDisplayed)
      || outputPlus1 == m_iCurrentRenderBuffer)
@@ -909,6 +911,8 @@ void CXBMCRenderManager::ResetRenderBuffer()
   m_iDisplayedRenderBuffer = 0;
   m_bAllRenderBuffersDisplayed = true;
   m_sleeptime = 1.0;
+  m_bUseBuffering = true;
+  m_speed = 0;
 }
 
 void CXBMCRenderManager::PrepareNextRender()
@@ -916,7 +920,8 @@ void CXBMCRenderManager::PrepareNextRender()
   int idx = GetNextRenderBufferIndex();
   if (idx < 0)
   {
-    CLog::Log(LOGNOTICE,"----------- no buffer, out: %d, current: %d, display: %d",
+    if (m_speed >= 0)
+      CLog::Log(LOGNOTICE,"----------- no buffer, out: %d, current: %d, display: %d",
         m_iOutputRenderBuffer, m_iCurrentRenderBuffer, m_iDisplayedRenderBuffer);
     return;
   }
@@ -924,6 +929,9 @@ void CXBMCRenderManager::PrepareNextRender()
   double iClockSleep, iPlayingClock, iCurrentClock;
   iPlayingClock = m_pClock->GetClock(iCurrentClock, false);
   iClockSleep = m_renderBuffers[idx].pts - iPlayingClock;
+
+  if (m_speed)
+    iClockSleep = iClockSleep * DVD_PLAYSPEED_NORMAL / m_speed;
 
   double presenttime = (iCurrentClock + iClockSleep) / DVD_TIME_BASE;
   double clocktime = iCurrentClock / DVD_TIME_BASE;
@@ -941,6 +949,12 @@ void CXBMCRenderManager::PrepareNextRender()
     m_presentstep  = PRESENT_FLIP;
     m_presentsource = idx;
   }
+}
+
+void CXBMCRenderManager::EnableBuffering(bool enable)
+{
+  CRetakeLock<CExclusiveLock> lock(m_sharedSection);
+  m_bUseBuffering = enable;
 }
 
 void CXBMCRenderManager::NotifyDisplayFlip()
@@ -983,7 +997,9 @@ bool CXBMCRenderManager::GetStats(double &sleeptime, double &pts)
 bool CXBMCRenderManager::HasFrame()
 {
   CSharedLock lock(m_sharedSection);
-  if (m_presentstep == PRESENT_IDLE && GetNextRenderBufferIndex() < 0)
+  if (m_presentstep == PRESENT_IDLE &&
+      GetNextRenderBufferIndex() < 0 &&
+      m_speed > 0)
     return false;
   else
     return true;
