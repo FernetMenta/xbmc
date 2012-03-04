@@ -351,6 +351,14 @@ void CDVDVideoCodecFFmpeg::SetDropState(bool bDrop)
 {
   if( m_pCodecContext )
   {
+    if (bDrop && m_pHardware && m_pHardware->CanSkipDeint())
+    {
+      m_requestSkipDeint = true;
+      bDrop = false;
+    }
+    else
+      m_requestSkipDeint = false;
+
     // i don't know exactly how high this should be set
     // couldn't find any good docs on it. think it varies
     // from codec to codec on what it does
@@ -682,6 +690,16 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(DVDVideoPicture* pDvdVideoPicture)
   else
     m_decoderPts = m_dts;
 
+  if (m_requestSkipDeint)
+  {
+    pDvdVideoPicture->iFlags |= DVP_FLAG_DROPDEINT;
+    m_skippedDeint = 1;
+  }
+  else
+    m_skippedDeint = 0;
+
+  m_requestSkipDeint = false;
+
   if(!m_started)
     pDvdVideoPicture->iFlags |= DVP_FLAG_DROPPED;
 
@@ -901,4 +919,10 @@ unsigned CDVDVideoCodecFFmpeg::GetConvergeCount()
     return m_iLastKeyframe;
   else
     return 0;
+}
+
+void CDVDVideoCodecFFmpeg::SetSpeed(int speed)
+{
+  if (m_pHardware)
+    m_pHardware->SetSpeed(speed);
 }

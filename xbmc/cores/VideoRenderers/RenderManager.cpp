@@ -920,7 +920,7 @@ void CXBMCRenderManager::PrepareNextRender()
   int idx = GetNextRenderBufferIndex();
   if (idx < 0)
   {
-    if (m_speed >= 0)
+    if (m_speed >= DVD_PLAYSPEED_NORMAL)
       CLog::Log(LOGNOTICE,"----------- no buffer, out: %d, current: %d, display: %d",
         m_iOutputRenderBuffer, m_iCurrentRenderBuffer, m_iDisplayedRenderBuffer);
     return;
@@ -938,11 +938,10 @@ void CXBMCRenderManager::PrepareNextRender()
   if(presenttime - clocktime > MAXPRESENTDELAY)
     presenttime = clocktime + MAXPRESENTDELAY;
 
-  m_sleeptime = presenttime - clocktime;
-  m_presentPts = m_renderBuffers[idx].pts;
-
   if (g_graphicsContext.IsFullScreenVideo() || presenttime <= clocktime+0.01)
   {
+    m_sleeptime = presenttime - clocktime;
+    m_presentPts = m_renderBuffers[idx].pts;
     m_presenttime = presenttime;
     m_presentmethod = m_renderBuffers[idx].presentmethod;
     m_presentfield = m_renderBuffers[idx].presentfield;
@@ -967,13 +966,13 @@ void CXBMCRenderManager::NotifyDisplayFlip()
   m_iDisplayedRenderBuffer = (m_iCurrentRenderBuffer + m_iNumRenderBuffers - 1) % m_iNumRenderBuffers;
   m_iFlipRequestRenderBuffer = m_iCurrentRenderBuffer;
 
-  // we have caught up with output so all buffers are re-usable
-  if (last != m_iDisplayedRenderBuffer
-      && m_iDisplayedRenderBuffer == m_iOutputRenderBuffer)
-  {
-    CLog::Log(LOGNOTICE,"-------------- all displayed");
-    m_bAllRenderBuffersDisplayed = true;
-  }
+//  // we have caught up with output so all buffers are re-usable
+//  if (last != m_iDisplayedRenderBuffer
+//      && m_iDisplayedRenderBuffer == m_iOutputRenderBuffer)
+//  {
+//    CLog::Log(LOGNOTICE,"-------------- all displayed");
+//    m_bAllRenderBuffersDisplayed = true;
+//  }
 
   if (last != m_iDisplayedRenderBuffer
       && m_iDisplayedRenderBuffer != m_iCurrentRenderBuffer)
