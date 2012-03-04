@@ -984,7 +984,13 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
     if (!retval && !m_inMsgEvent.WaitMSec(2000))
       break;
   }
-  m_bufferStats.SetParams(CurrentHostCounter() - startTime, m_speed);
+  uint64_t diff = CurrentHostCounter() - startTime;
+  if (retval & VC_PICTURE)
+  {
+    m_bufferStats.SetParams(diff, m_speed);
+    if (diff*1000/CurrentHostFrequency() > 50)
+      CLog::Log(LOGDEBUG,"CVDPAU::Decode long wait: %d", (int)((diff*1000)/CurrentHostFrequency()));
+  }
 
   if (!retval)
   {
@@ -1278,7 +1284,8 @@ void CMixer::StateMachine(int signal, Protocol *port, Message *msg)
           }
           else
           {
-//            CLog::Log(LOGNOTICE,"---mixer wait decoded: %d, outputSurf: %d", m_decodedPics.size(), m_outputSurfaces.size());
+            if (m_extTimeout != 0)
+              CLog::Log(LOGWARNING,"CVDPAU::Mixer timeout - decoded: %d, outputSurf: %d", (int)m_decodedPics.size(), (int)m_outputSurfaces.size());
             m_extTimeout = 100;
           }
           return;
@@ -1343,7 +1350,9 @@ void CMixer::StateMachine(int signal, Protocol *port, Message *msg)
           }
           else
           {
-            m_extTimeout = 500;
+            if (m_extTimeout != 0)
+              CLog::Log(LOGNOTICE,"---mixer wait2 decoded: %d, outputSurf: %d", (int)m_decodedPics.size(), (int)m_outputSurfaces.size());
+            m_extTimeout = 100;
           }
           return;
         default:
@@ -2079,8 +2088,8 @@ void CMixer::InitCycle()
   uint64_t latency;
   int speed;
   m_config.stats->GetParams(latency, speed);
-  latency *= 1000/CurrentHostFrequency();
-  if (latency > 2 || speed != DVD_PLAYSPEED_NORMAL)
+  latency = (latency*1000)/CurrentHostFrequency();
+  if (latency > 10 || speed != DVD_PLAYSPEED_NORMAL)
     SetPostProcFeatures(false);
   else
     SetPostProcFeatures(true);
@@ -2114,7 +2123,6 @@ void CMixer::InitCycle()
       if (m_mixerInput[1].DVDPic.iFlags & DVP_FLAG_DROPDEINT)
       {
         m_mixersteps = 1;
-        CLog::Log(LOGNOTICE, "----------------- drop deint");
       }
 
       if(m_mixerInput[1].DVDPic.iFlags & DVP_FLAG_TOP_FIELD_FIRST)
@@ -2562,7 +2570,7 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
         case COutputControlProtocol::TIMEOUT:
           uint16_t decoded, processed, render;
           m_config.stats->Get(decoded, processed, render);
-          CLog::Log(LOGDEBUG, "COutput: timeout idle: decoded: %d, proc: %d, render: %d", decoded, processed, render);
+          CLog::Log(LOGDEBUG, "CVDPAU::COutput - timeout idle: decoded: %d, proc: %d, render: %d", decoded, processed, render);
           return;
         default:
           break;
