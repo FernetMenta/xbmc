@@ -97,6 +97,7 @@ CDecoder::CDecoder() : m_vdpauOutput(&m_inMsgEvent)
   m_picAge.b_age    = m_picAge.ip_age[0] = m_picAge.ip_age[1] = 256*256*256*64;
   m_vdpauConfigured = false;
   m_DisplayState = VDPAU_OPEN;
+  m_speed = DVD_PLAYSPEED_NORMAL;
 }
 
 bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int surfaces)
@@ -983,7 +984,7 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
     if (!retval && !m_inMsgEvent.WaitMSec(2000))
       break;
   }
-  m_bufferStats.SetLatency(CurrentHostCounter() - startTime);
+  m_bufferStats.SetParams(CurrentHostCounter() - startTime, m_speed);
 
   if (!retval)
   {
@@ -1035,6 +1036,16 @@ void CDecoder::Reset()
     CLog::Log(LOGERROR, "VDPAU::%s - flush timed out", __FUNCTION__);
     m_DisplayState = VDPAU_ERROR;
   }
+}
+
+bool CDecoder::CanSkipDeint()
+{
+  return m_bufferStats.CanSkipDeint();
+}
+
+void CDecoder::SetSpeed(int speed)
+{
+  m_speed = speed;
 }
 
 void CDecoder::ReturnRenderPicture(CVdpauRenderPicture *renderPic)
@@ -2065,11 +2076,16 @@ void CMixer::Flush()
 void CMixer::InitCycle()
 {
   CheckFeatures();
-  unsigned int latency = m_config.stats->GetLatency()*1000/CurrentHostFrequency();
-  if (latency > 2)
+  uint64_t latency;
+  int speed;
+  m_config.stats->GetParams(latency, speed);
+  latency *= 1000/CurrentHostFrequency();
+  if (latency > 2 || speed != DVD_PLAYSPEED_NORMAL)
     SetPostProcFeatures(false);
   else
     SetPostProcFeatures(true);
+
+  m_config.stats->SetCanSkipDeint(false);
 
   EDEINTERLACEMODE   mode = g_settings.m_currentVideoSettings.m_DeinterlaceMode;
   EINTERLACEMETHOD method = GetDeinterlacingMethod();
@@ -2090,7 +2106,16 @@ void CMixer::InitCycle()
         || method == VS_INTERLACEMETHOD_VDPAU_TEMPORAL_SPATIAL_HALF)
         m_mixersteps = 1;
       else
+      {
         m_mixersteps = 2;
+        m_config.stats->SetCanSkipDeint(true);
+      }
+
+      if (m_mixerInput[1].DVDPic.iFlags & DVP_FLAG_DROPDEINT)
+      {
+        m_mixersteps = 1;
+        CLog::Log(LOGNOTICE, "----------------- drop deint");
+      }
 
       if(m_mixerInput[1].DVDPic.iFlags & DVP_FLAG_TOP_FIELD_FIRST)
         m_mixerfield = VDP_VIDEO_MIXER_PICTURE_STRUCTURE_TOP_FIELD;

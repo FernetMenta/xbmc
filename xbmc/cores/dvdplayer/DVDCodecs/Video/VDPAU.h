@@ -124,7 +124,7 @@ struct VDPAU_procs
 
 class CDecoder;
 
-#define NUM_RENDER_PICS 8
+#define NUM_RENDER_PICS 9
 
 /**
  * Buffer statistics used to control number of frames in queue
@@ -137,7 +137,8 @@ public:
   uint16_t processedPics;
   uint16_t renderPics;
   uint64_t latency;         // time decoder has waited for a frame, ideally there is no latency
-  bool     buffering;
+  int playSpeed;
+  bool canSkipDeint;
 
   void IncDecoded() { CSingleLock l(m_sec); decodedPics++;}
   void DecDecoded() { CSingleLock l(m_sec); decodedPics--;}
@@ -147,8 +148,10 @@ public:
   void DecRender() { CSingleLock l(m_sec); renderPics--;}
   void Reset() { CSingleLock l(m_sec); decodedPics=0; processedPics=0;renderPics=0;latency=0;}
   void Get(uint16_t &decoded, uint16_t &processed, uint16_t &render) {CSingleLock l(m_sec); decoded = decodedPics, processed=processedPics, render=renderPics;}
-  void SetLatency(uint64_t time) { CSingleLock l(m_sec); latency = time; }
-  uint64_t GetLatency() { CSingleLock l(m_sec); return latency; }
+  void SetParams(uint64_t time, int speed) { CSingleLock l(m_sec); latency = time; playSpeed = speed; }
+  void GetParams(uint64_t &lat, int &speed) { CSingleLock l(m_sec); lat = latency; speed = playSpeed; }
+  void SetCanSkipDeint(bool canSkip) { CSingleLock l(m_sec); canSkipDeint = canSkip; }
+  bool CanSkipDeint() { CSingleLock l(m_sec); if (canSkipDeint) return true; else return false;}
 private:
   CCriticalSection m_sec;
 };
@@ -528,6 +531,8 @@ public:
   virtual void Reset();
   virtual void Close();
   virtual long Release();
+  virtual bool CanSkipDeint();
+  virtual void SetSpeed(int speed);
 
   virtual int  Check(AVCodecContext* avctx);
   virtual const std::string Name() { return "vdpau"; }
@@ -592,8 +597,9 @@ protected:
   CEvent        m_inMsgEvent;
   CVdpauRenderPicture *m_presentPicture;
 
-  int m_dropCount;
-  bool m_dropState;
+  int m_speed;
+//  int m_dropCount;
+//  bool m_dropState;
 };
 
 }
