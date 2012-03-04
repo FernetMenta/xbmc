@@ -137,6 +137,7 @@ public:
   uint16_t processedPics;
   uint16_t renderPics;
   uint64_t latency;         // time decoder has waited for a frame, ideally there is no latency
+  bool     buffering;
 
   void IncDecoded() { CSingleLock l(m_sec); decodedPics++;}
   void DecDecoded() { CSingleLock l(m_sec); decodedPics--;}

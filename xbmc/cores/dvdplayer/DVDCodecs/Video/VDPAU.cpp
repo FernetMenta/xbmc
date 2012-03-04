@@ -2032,7 +2032,7 @@ void CMixer::Flush()
     m_mixerInput.pop_back();
     CSingleLock lock(*m_config.videoSurfaceSec);
     if (pic.render)
-      pic.render->state = ~FF_VDPAU_STATE_USED_FOR_RENDER;
+      pic.render->state &= ~FF_VDPAU_STATE_USED_FOR_RENDER;
   }
   while (!m_decodedPics.empty())
   {
@@ -2040,7 +2040,7 @@ void CMixer::Flush()
     m_decodedPics.pop();
     CSingleLock lock(*m_config.videoSurfaceSec);
     if (pic.render)
-      pic.render->state = ~FF_VDPAU_STATE_USED_FOR_RENDER;
+      pic.render->state &= ~FF_VDPAU_STATE_USED_FOR_RENDER;
   }
   Message *msg;
   while (m_dataPort.ReceiveOutMessage(&msg))
@@ -2050,7 +2050,7 @@ void CMixer::Flush()
       CVdpauDecodedPicture pic = *(CVdpauDecodedPicture*)msg->data;
       CSingleLock lock(*m_config.videoSurfaceSec);
       if (pic.render)
-        pic.render->state = ~FF_VDPAU_STATE_USED_FOR_RENDER;
+        pic.render->state &= ~FF_VDPAU_STATE_USED_FOR_RENDER;
     }
     else if (msg->signal == CMixerDataProtocol::BUFFER)
     {
@@ -2707,7 +2707,7 @@ void COutput::Flush()
       {
         CSingleLock lock(*m_config.videoSurfaceSec);
         if (pic.render)
-          pic.render->state = ~FF_VDPAU_STATE_USED_FOR_RENDER;
+          pic.render->state &= ~FF_VDPAU_STATE_USED_FOR_RENDER;
       }
     }
     msg->Release();
@@ -2720,7 +2720,7 @@ void COutput::Flush()
       CVdpauDecodedPicture pic = *(CVdpauDecodedPicture*)msg->data;
       CSingleLock lock(*m_config.videoSurfaceSec);
       if (pic.render)
-        pic.render->state = ~FF_VDPAU_STATE_USED_FOR_RENDER;
+        pic.render->state &= ~FF_VDPAU_STATE_USED_FOR_RENDER;
     }
     else if (msg->signal == COutputDataProtocol::RETURNPIC)
     {
