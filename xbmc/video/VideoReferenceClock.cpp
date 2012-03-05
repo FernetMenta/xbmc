@@ -161,6 +161,8 @@ void CVideoReferenceClock::Process()
     m_RefreshChanged = 0;
     m_Started.Set();
 
+    SetPriority(1);
+
     if (SetupSuccess)
     {
       m_UseVblank = true;          //tell other threads we're using vblank as clock
@@ -270,12 +272,21 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
+  m_bIsATI = false;
+  m_bPolling = false;
+
   CStdString Vendor = g_Windowing.GetRenderVendor();
   Vendor.ToLower();
   if (Vendor.compare(0, 3, "ati") == 0)
   {
     CLog::Log(LOGDEBUG, "CVideoReferenceClock: GL_VENDOR: %s, using ati workaround", Vendor.c_str());
     m_bIsATI = true;
+    m_bPolling = true;
+  }
+  else if (Vendor.compare(0, 6, "nvidia") == 0)
+  {
+    CLog::Log(LOGDEBUG, "CVideoReferenceClock: GL_VENDOR: %s, use polling", Vendor.c_str());
+    m_bPolling = true;
   }
 
   m_vInfo = glXChooseVisual(m_Dpy, DefaultScreen(m_Dpy), singleBufferAttributes);
@@ -285,7 +296,7 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
-  if (!m_bIsATI)
+  if (!m_bPolling)
   {
     Swa.border_pixel = 0;
     Swa.event_mask = StructureNotifyMask;
@@ -313,7 +324,7 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
-  if (!m_bIsATI)
+  if (!m_bPolling)
     ReturnV = glXMakeCurrent(m_Dpy, m_Window, m_Context);
   else
     ReturnV = glXMakeCurrent(m_Dpy, m_glPixmap, m_Context);
@@ -324,7 +335,7 @@ bool CVideoReferenceClock::SetupGLX()
     return false;
   }
 
-  if (!m_bIsATI)
+  if (!m_bPolling)
   {
     m_glXWaitVideoSyncSGI = (int (*)(int, int, unsigned int*))glXGetProcAddress((const GLubyte*)"glXWaitVideoSyncSGI");
     if (!m_glXWaitVideoSyncSGI)
@@ -567,7 +578,7 @@ void CVideoReferenceClock::RunGLX()
   while(!m_bStop)
   {
     //wait for the next vblank
-    if (!m_bIsATI)
+    if (!m_bPolling)
     {
       ReturnV = m_glXWaitVideoSyncSGI(2, (VblankCount + 1) % 2, &VblankCount);
       m_glXGetVideoSyncSGI(&VblankCount); //the vblank count returned by glXWaitVideoSyncSGI is not always correct
@@ -591,7 +602,7 @@ void CVideoReferenceClock::RunGLX()
       sleepTime = std::max(int(300000LL/m_RefreshRate), sleepTime);
 
       unsigned int iterations = 0;
-      while (VblankCount == PrevVblankCount && !m_bStop)
+      while (VblankCount == PrevVblankCount && iterations < 500 && !m_bStop)
       {
         usleep(sleepTime);
         m_glXGetVideoSyncSGI(&VblankCount);
@@ -652,7 +663,7 @@ void CVideoReferenceClock::RunGLX()
       }
 
       CLog::Log(LOGDEBUG, "CVideoReferenceClock: Attaching glX context");
-      if (!m_bIsATI)
+      if (!m_bPolling)
         ReturnV = glXMakeCurrent(m_Dpy, m_Window, m_Context);
       else
         ReturnV = glXMakeCurrent(m_Dpy, m_glPixmap, m_Context);

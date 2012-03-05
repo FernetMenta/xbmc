@@ -125,6 +125,7 @@ class CVideoReferenceClock : public CThread
 
     bool         m_UseNvSettings;
     bool         m_bIsATI;
+    bool         m_bPolling;
 
 #elif defined(_WIN32) && defined(HAS_DX)
     bool   SetupD3D();
