@@ -1231,7 +1231,17 @@ void CDecoder::CopyYV12(int index, uint8_t *dest)
 
   if (!m_flipBuffer[index].outPic)
   {
-    CLog::Log(LOGWARNING, "XVBA::Present: present picture is NULL");
+    CLog::Log(LOGWARNING, "XVBA::CopyYV12: current picture is NULL");
+    return;
+  }
+  if (!m_flipBuffer[index].outPic->render)
+  {
+    CLog::Log(LOGWARNING, "XVBA::CopyYV12: current render is NULL");
+    return;
+  }
+  if (!m_flipBuffer[index].outPic->render->surface)
+  {
+    CLog::Log(LOGWARNING, "XVBA::CopyYV12: current surface is NULL");
     return;
   }
 
@@ -1252,7 +1262,7 @@ void CDecoder::CopyYV12(int index, uint8_t *dest)
   { CSingleLock lock(m_apiSec);
     if (Success != g_XVBA_vtable.GetSurface(&input))
     {
-      CLog::Log(LOGERROR,"(XVBA::CopyYV12) failed to get  surface");
+      CLog::Log(LOGERROR,"XVBA::CopyYV12: failed to get surface");
     }
   }
 }
