@@ -956,6 +956,12 @@ void CXBMCRenderManager::EnableBuffering(bool enable)
   m_bUseBuffering = enable;
 }
 
+void CXBMCRenderManager::DiscardBuffer()
+{
+  CRetakeLock<CExclusiveLock> lock(m_sharedSection);
+  m_iOutputRenderBuffer = m_iCurrentRenderBuffer;
+}
+
 void CXBMCRenderManager::NotifyDisplayFlip()
 {
   CRetakeLock<CExclusiveLock> lock(m_sharedSection);

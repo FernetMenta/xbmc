@@ -418,6 +418,7 @@ void CDVDPlayerVideo::Process()
       m_packets.clear();
       m_started = false;
       m_droppingStats.Reset();
+      g_renderManager.DiscardBuffer();
     }
     else if (pMsg->IsType(CDVDMsg::GENERAL_FLUSH)) // private message sent by (CDVDPlayerVideo::Flush())
     {
@@ -430,6 +431,7 @@ void CDVDPlayerVideo::Process()
       //TODO: this needs to be set on a streamchange instead
       ResetFrameRateCalc();
       m_droppingStats.Reset();
+      g_renderManager.DiscardBuffer();
 
       m_stalled = true;
       m_started = false;
@@ -582,6 +584,7 @@ void CDVDPlayerVideo::Process()
 
           m_pVideoCodec->Reset();
           m_packets.clear();
+          g_renderManager.DiscardBuffer();
           break;
         }
 

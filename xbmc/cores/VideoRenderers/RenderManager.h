@@ -188,6 +188,7 @@ public:
   bool GetStats(double &sleeptime, double &pts);
   bool HasFrame();
   void EnableBuffering(bool enable);
+  void DiscardBuffer();
 
 protected:
   void Render(bool clear, DWORD flags, DWORD alpha);
