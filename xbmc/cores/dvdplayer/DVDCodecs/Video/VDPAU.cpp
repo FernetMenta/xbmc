@@ -926,12 +926,6 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
     m_vdpauOutput.m_dataPort.SendOutMessage(COutputDataProtocol::NEWFRAME, &pic, sizeof(pic));
   }
 
-  if (m_presentPicture)
-  {
-    m_presentPicture->ReturnUnused();
-    m_presentPicture = 0;
-  }
-
   int retval = 0;
   uint16_t decoded, processed, render;
   Message *msg;
@@ -954,6 +948,12 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
     {
       if (msg->signal == COutputDataProtocol::PICTURE)
       {
+        if (m_presentPicture)
+        {
+          m_presentPicture->ReturnUnused();
+          m_presentPicture = 0;
+        }
+
         m_presentPicture = *(CVdpauRenderPicture**)msg->data;
         m_presentPicture->vdpau = this;
         m_bufferStats.DecRender();
@@ -2771,6 +2771,25 @@ void COutput::Flush()
       CVdpauRenderPicture *pic;
       pic = *((CVdpauRenderPicture**)msg->data);
       ProcessReturnPicture(pic);
+    }
+  }
+
+  // reset used render flag which was cleared on mixer flush
+  std::deque<CVdpauRenderPicture*>::iterator it;
+  for (it = m_bufferPool.usedRenderPics.begin(); it != m_bufferPool.usedRenderPics.end(); ++it)
+  {
+    if ((*it)->DVDPic.format == DVDVideoPicture::FMT_VDPAU_420)
+    {
+      std::map<VdpVideoSurface, VdpauBufferPool::GLVideoSurface>::iterator it2;
+      it2 = m_bufferPool.glVideoSurfaceMap.find((*it)->sourceIdx);
+      if (it2 == m_bufferPool.glVideoSurfaceMap.end())
+      {
+        CLog::Log(LOGDEBUG, "COutput::Flush - gl surface not found");
+        continue;
+      }
+      vdpau_render_state *render = it2->second.sourceVuv;
+      if (render)
+        render->state |= FF_VDPAU_STATE_USED_FOR_RENDER;
     }
   }
 }
