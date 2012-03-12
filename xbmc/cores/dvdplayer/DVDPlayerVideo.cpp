@@ -247,6 +247,7 @@ void CDVDPlayerVideo::OpenStream(CDVDStreamInfo &hint, CDVDVideoCodec* codec)
   m_stalled = m_messageQueue.GetPacketCount(CDVDMsg::DEMUXER_PACKET) == 0;
   m_started = false;
   m_codecname = m_pVideoCodec->GetName();
+  g_renderManager.EnableBuffering(false);
 }
 
 void CDVDPlayerVideo::CloseStream(bool bWaitForBuffers)
@@ -419,7 +420,7 @@ void CDVDPlayerVideo::Process()
       picture.iFlags &= ~DVP_FLAG_ALLOCATED;
       m_started = false;
       m_droppingStats.Reset();
-      g_renderManager.DiscardBuffer();
+      g_renderManager.EnableBuffering(false);
     }
     else if (pMsg->IsType(CDVDMsg::GENERAL_FLUSH)) // private message sent by (CDVDPlayerVideo::Flush())
     {
@@ -433,7 +434,7 @@ void CDVDPlayerVideo::Process()
       //TODO: this needs to be set on a streamchange instead
       ResetFrameRateCalc();
       m_droppingStats.Reset();
-      g_renderManager.DiscardBuffer();
+      g_renderManager.EnableBuffering(false);
 
       m_stalled = true;
       m_started = false;
@@ -452,7 +453,7 @@ void CDVDPlayerVideo::Process()
       if(m_speed == DVD_PLAYSPEED_PAUSE)
         m_iNrOfPicturesNotToSkip = 0;
       m_droppingStats.Reset();
-      g_renderManager.EnableBuffering(m_speed == DVD_PLAYSPEED_NORMAL);
+//      g_renderManager.EnableBuffering(m_speed == DVD_PLAYSPEED_NORMAL);
       if (m_pVideoCodec)
         m_pVideoCodec->SetSpeed(m_speed);
     }
@@ -702,6 +703,7 @@ void CDVDPlayerVideo::Process()
               m_codecname = m_pVideoCodec->GetName();
               m_started = true;
               m_messageParent.Put(new CDVDMsgInt(CDVDMsg::PLAYER_STARTED, DVDPLAYER_VIDEO));
+              g_renderManager.EnableBuffering(true);
             }
 
             // guess next frame pts. iDuration is always valid

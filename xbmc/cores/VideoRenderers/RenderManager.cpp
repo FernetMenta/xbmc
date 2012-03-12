@@ -332,6 +332,7 @@ unsigned int CXBMCRenderManager::PreInit(CDVDClock *pClock)
   UpdateDisplayLatency();
 
   ResetRenderBuffer();
+  m_bUseBuffering = false;
   m_overlays.SetNumBuffers(m_iNumRenderBuffers);
   m_pRenderer->SetProcessorSize(m_iNumRenderBuffers);
   return m_pRenderer->PreInit();
@@ -911,7 +912,7 @@ void CXBMCRenderManager::ResetRenderBuffer()
   m_iDisplayedRenderBuffer = 0;
   m_bAllRenderBuffersDisplayed = true;
   m_sleeptime = 1.0;
-  m_bUseBuffering = true;
+//  m_bUseBuffering = true;
   m_speed = 0;
 }
 
@@ -954,6 +955,10 @@ void CXBMCRenderManager::EnableBuffering(bool enable)
 {
   CRetakeLock<CExclusiveLock> lock(m_sharedSection);
   m_bUseBuffering = enable;
+  if (!m_bUseBuffering)
+    m_iOutputRenderBuffer = m_iCurrentRenderBuffer;
+
+  CLog::Log(LOGDEBUG, "CXBMCRenderManager::EnableBuffering - %d", m_bUseBuffering);
 }
 
 void CXBMCRenderManager::DiscardBuffer()
