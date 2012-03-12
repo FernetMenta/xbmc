@@ -416,6 +416,7 @@ void CDVDPlayerVideo::Process()
       if(m_pVideoCodec)
         m_pVideoCodec->Reset();
       m_packets.clear();
+      picture.iFlags &= ~DVP_FLAG_ALLOCATED;
       m_started = false;
       m_droppingStats.Reset();
       g_renderManager.DiscardBuffer();
@@ -425,6 +426,7 @@ void CDVDPlayerVideo::Process()
       if(m_pVideoCodec)
         m_pVideoCodec->Reset();
       m_packets.clear();
+      picture.iFlags &= ~DVP_FLAG_ALLOCATED;
 
       m_pullupCorrection.Flush();
       //we need to recalculate the framerate
@@ -584,6 +586,7 @@ void CDVDPlayerVideo::Process()
 
           m_pVideoCodec->Reset();
           m_packets.clear();
+          picture.iFlags &= ~DVP_FLAG_ALLOCATED;
           g_renderManager.DiscardBuffer();
           break;
         }
