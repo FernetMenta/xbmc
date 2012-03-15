@@ -154,7 +154,7 @@ protected:
 
   void   ResetFrameRateCalc();
   void   CalcFrameRate();
-  int    CalcDropRequirement(double pts, double frametime);
+  int    CalcDropRequirement(double pts, double frametime, double repeatPic);
 
   double m_fFrameRate;       //framerate of the video currently playing
   bool   m_bCalcFrameRate;  //if we should calculate the framerate from the timestamps

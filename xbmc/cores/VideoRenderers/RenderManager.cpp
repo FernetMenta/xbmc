@@ -815,6 +815,10 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
   else if(pic.format == DVDVideoPicture::FMT_VAAPI)
     m_pRenderer->AddProcessor(*pic.vaapi, index);
 #endif
+#ifdef HAVE_LIBXVBA
+  else if(pic.format == DVDVideoPicture::FMT_XVBA)
+    m_pRenderer->AddProcessor(pic.xvba, index);
+#endif
   m_pRenderer->ReleaseImage(index, false);
 
   return index;
@@ -858,6 +862,10 @@ int CXBMCRenderManager::WaitForBuffer(volatile bool& bStop)
   { CRetakeLock<CExclusiveLock> lock(m_sharedSection);
     m_overlays.SetBuffer((m_iOutputRenderBuffer + 1) % m_iNumRenderBuffers);
   }
+
+  if (bStop)
+    return -1;
+
   return 1;
 }
 
@@ -912,6 +920,7 @@ void CXBMCRenderManager::ResetRenderBuffer()
   m_iDisplayedRenderBuffer = 0;
   m_bAllRenderBuffersDisplayed = true;
   m_sleeptime = 1.0;
+  m_presentPts = DVD_NOPTS_VALUE;
 //  m_bUseBuffering = true;
   m_speed = 0;
 }

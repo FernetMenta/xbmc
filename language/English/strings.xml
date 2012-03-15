@@ -1236,6 +1236,7 @@
   <string id="13432">Allow hardware acceleration (VideoToolbox)</string>
   <string id="13433">Allow Vdpau OpenGL interop RGB</string>
   <string id="13434">Allow Vdpau OpenGL interop YUV</string>
+  <string id="13435">Allow hardware acceleration (XVBA)</string>
 
   <string id="13500">A/V sync method</string>
   <string id="13501">Audio clock</string>
@@ -1544,6 +1545,7 @@
   <string id="16324">Software Blend</string>
   <string id="16325">Auto - ION Optimized</string>
   <string id="16326">VDPAU Bob</string>
+  <string id="16327">XVBA</string>
   
   <string id="16400">Post-processing</string>
 
