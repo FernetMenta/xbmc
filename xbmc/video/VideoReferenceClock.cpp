@@ -118,7 +118,7 @@ CVideoReferenceClock::CVideoReferenceClock() : CThread("CVideoReferenceClock")
 
 #if defined(HAS_GLX) && defined(HAS_XRANDR)
   m_Dpy = NULL;
-  m_UseNvSettings = true;
+  m_UseNvSettings = false;
 #endif
 }
 
