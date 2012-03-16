@@ -38,6 +38,7 @@
 #include "cores/VideoRenderers/RenderFlags.h"
 
 using namespace VDPAU;
+#define NUM_RENDER_PICS 9
 
 #define ARSIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -2424,7 +2425,7 @@ enum OUTPUT_STATES
   O_TOP_CONFIGURED_WORK,          // 5
 };
 
-int OUTPUT_parentStates[] = {
+int VDPAU_OUTPUT_parentStates[] = {
     -1,
     0, //TOP_ERROR
     0, //TOP_UNCONFIGURED
@@ -2435,7 +2436,7 @@ int OUTPUT_parentStates[] = {
 
 void COutput::StateMachine(int signal, Protocol *port, Message *msg)
 {
-  for (int state = m_state; ; state = OUTPUT_parentStates[state])
+  for (int state = m_state; ; state = VDPAU_OUTPUT_parentStates[state])
   {
     switch (state)
     {

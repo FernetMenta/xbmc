@@ -124,8 +124,6 @@ struct VDPAU_procs
 
 class CDecoder;
 
-#define NUM_RENDER_PICS 9
-
 /**
  * Buffer statistics used to control number of frames in queue
  */

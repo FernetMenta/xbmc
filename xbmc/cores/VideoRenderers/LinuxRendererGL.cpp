@@ -578,12 +578,11 @@ void CLinuxRendererGL::Flush()
 
 void CLinuxRendererGL::ReleaseBuffer(int idx)
 {
-#ifdef HAVE_LIBVDPAU
   YUVBUFFER &buf = m_buffers[idx];
+#ifdef HAVE_LIBVDPAU
   SAFE_RELEASE(buf.vdpau);
 #endif
 #ifdef HAVE_LIBXVBA
-  YUVBUFFER &buf = m_buffers[idx];
   SAFE_RELEASE(buf.xvba);
 #endif
 }
