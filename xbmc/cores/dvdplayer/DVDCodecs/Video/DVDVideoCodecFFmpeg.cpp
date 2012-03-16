@@ -942,3 +942,9 @@ void CDVDVideoCodecFFmpeg::SetSpeed(int speed)
   if (m_pHardware)
     m_pHardware->SetSpeed(speed);
 }
+
+void CDVDVideoCodecFFmpeg::SetProcessingState(int cmd)
+{
+  if (m_pHardware)
+    m_pHardware->SetProcessingState(cmd);
+}

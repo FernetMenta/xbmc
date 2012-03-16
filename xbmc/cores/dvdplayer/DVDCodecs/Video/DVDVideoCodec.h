@@ -132,6 +132,7 @@ struct DVDVideoUserData
 #define DVP_FLAG_NOSKIP             0x00000010 // indicate this picture should never be dropped
 #define DVP_FLAG_DROPPED            0x00000020 // indicate that this picture has been dropped in decoder stage, will have no data
 #define DVP_FLAG_DROPDEINT          0x00000040 // indicate that this picture was requested to have been dropped in deint stage
+#define DVP_FLAG_PTS_CALC           0x00000080 // indicate that this picture had no valid timestamp
 
 // DVP_FLAG 0x00000100 - 0x00000f00 is in use by libmpeg2!
 
@@ -215,6 +216,7 @@ public:
    */
   virtual void SetDropState(bool bDrop) = 0;
 
+  virtual void SetProcessingState(int cmd) {}
 
   enum EFilterFlags {
     FILTER_NONE                =  0x0,

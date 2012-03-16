@@ -930,7 +930,7 @@ void CXBMCRenderManager::PrepareNextRender()
   int idx = GetNextRenderBufferIndex();
   if (idx < 0)
   {
-    if (m_speed >= DVD_PLAYSPEED_NORMAL)
+    if (m_speed >= DVD_PLAYSPEED_NORMAL && g_graphicsContext.IsFullScreenVideo())
       CLog::Log(LOGNOTICE,"----------- no buffer, out: %d, current: %d, display: %d",
         m_iOutputRenderBuffer, m_iCurrentRenderBuffer, m_iDisplayedRenderBuffer);
     return;
@@ -948,9 +948,10 @@ void CXBMCRenderManager::PrepareNextRender()
   if(presenttime - clocktime > MAXPRESENTDELAY)
     presenttime = clocktime + MAXPRESENTDELAY;
 
+  m_sleeptime = presenttime - clocktime;
+
   if (g_graphicsContext.IsFullScreenVideo() || presenttime <= clocktime+0.01)
   {
-    m_sleeptime = presenttime - clocktime;
     m_presentPts = m_renderBuffers[idx].pts;
     m_presenttime = presenttime;
     m_presentmethod = m_renderBuffers[idx].presentmethod;

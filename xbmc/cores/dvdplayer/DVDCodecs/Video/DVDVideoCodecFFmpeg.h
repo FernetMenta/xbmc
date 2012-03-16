@@ -46,6 +46,7 @@ public:
     virtual void Reset     () {}
     virtual bool CanSkipDeint() {return false; }
     virtual void SetSpeed(int speed) {}
+    virtual void SetProcessingState(int cmd) {}
     virtual const std::string Name() = 0;
     virtual CCriticalSection* Section() { return NULL; }
   };
@@ -64,6 +65,7 @@ public:
   virtual unsigned GetConvergeCount();
   virtual bool GetPts(double &pts, int &skippedDeint) {pts=m_decoderPts; skippedDeint=m_skippedDeint;return true;}
   virtual void SetSpeed(int speed);
+  virtual void SetProcessingState(int cmd);
 
   bool               IsHardwareAllowed()                     { return !m_bSoftware; }
   IHardwareDecoder * GetHardware()                           { return m_pHardware; };
