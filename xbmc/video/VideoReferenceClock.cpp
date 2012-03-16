@@ -135,7 +135,7 @@ CVideoReferenceClock::CVideoReferenceClock() : CThread("CVideoReferenceClock")
   m_Context = NULL;
   m_pixmap = None;
   m_glPixmap = None;
-  m_UseNvSettings = true;
+  m_UseNvSettings = false;
   m_bIsATI = false;
 #endif
 }
