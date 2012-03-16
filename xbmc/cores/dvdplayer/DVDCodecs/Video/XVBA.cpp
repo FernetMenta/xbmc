@@ -1857,6 +1857,7 @@ bool COutput::Init()
 
 bool COutput::Uninit()
 {
+  ReleaseBufferPool();
   DestroyGlxContext();
   return true;
 }
