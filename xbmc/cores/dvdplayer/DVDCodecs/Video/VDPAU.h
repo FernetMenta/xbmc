@@ -139,6 +139,7 @@ public:
   uint64_t latency;         // time decoder has waited for a frame, ideally there is no latency
   int playSpeed;
   bool canSkipDeint;
+  int processCmd;
 
   void IncDecoded() { CSingleLock l(m_sec); decodedPics++;}
   void DecDecoded() { CSingleLock l(m_sec); decodedPics--;}
@@ -150,6 +151,8 @@ public:
   void Get(uint16_t &decoded, uint16_t &processed, uint16_t &render) {CSingleLock l(m_sec); decoded = decodedPics, processed=processedPics, render=renderPics;}
   void SetParams(uint64_t time, int speed) { CSingleLock l(m_sec); latency = time; playSpeed = speed; }
   void GetParams(uint64_t &lat, int &speed) { CSingleLock l(m_sec); lat = latency; speed = playSpeed; }
+  void SetCmd(int cmd) { CSingleLock l(m_sec); processCmd = cmd; }
+  void GetCmd(int &cmd) { CSingleLock l(m_sec); cmd = processCmd; processCmd = 0; }
   void SetCanSkipDeint(bool canSkip) { CSingleLock l(m_sec); canSkipDeint = canSkip; }
   bool CanSkipDeint() { CSingleLock l(m_sec); if (canSkipDeint) return true; else return false;}
 private:
@@ -533,6 +536,7 @@ public:
   virtual long Release();
   virtual bool CanSkipDeint();
   virtual void SetSpeed(int speed);
+  virtual void SetProcessingState(int cmd);
 
   virtual int  Check(AVCodecContext* avctx);
   virtual const std::string Name() { return "vdpau"; }
@@ -561,6 +565,7 @@ protected:
   void FiniVDPAUProcs();
   void FiniVDPAUOutput();
   void ReturnRenderPicture(CVdpauRenderPicture *renderPic);
+  long ReleasePicReference();
 
   static void ReadFormatOf( PixelFormat fmt
                           , VdpDecoderProfile &decoder_profile

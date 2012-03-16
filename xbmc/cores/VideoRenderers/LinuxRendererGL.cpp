@@ -3496,8 +3496,9 @@ void CLinuxRendererGL::UnBindPbo(YUVBUFFER& buff)
 void CLinuxRendererGL::AddProcessor(VDPAU::CVdpauRenderPicture *vdpau, int index)
 {
   YUVBUFFER &buf = m_buffers[index];
+  VDPAU::CVdpauRenderPicture *pic = vdpau->Acquire();
   SAFE_RELEASE(buf.vdpau);
-  buf.vdpau = vdpau->Acquire();
+  buf.vdpau = pic;
 }
 #endif
 

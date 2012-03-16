@@ -207,7 +207,7 @@ long CDecoder::Release()
 {
   // check if we should do some pre-cleanup here
   // a second decoder might need resources
-  if (CThread::GetCurrentThreadId() == m_decoderThread && m_vdpauConfigured == true)
+  if (m_vdpauConfigured == true)
   {
     CSingleLock lock(m_DecoderSection);
     CLog::Log(LOGNOTICE,"CVDPAU::Release pre-cleanup");
@@ -242,6 +242,11 @@ long CDecoder::Release()
     }
   }
   IHardwareDecoder::Release();
+}
+
+long CDecoder::ReleasePicReference()
+{
+  return IHardwareDecoder::Release();
 }
 
 void CDecoder::SetWidthHeight(int width, int height)
@@ -1054,6 +1059,11 @@ void CDecoder::SetSpeed(int speed)
   m_speed = speed;
 }
 
+void CDecoder::SetProcessingState(int cmd)
+{
+  m_bufferStats.SetCmd(cmd);
+}
+
 void CDecoder::ReturnRenderPicture(CVdpauRenderPicture *renderPic)
 {
   m_vdpauOutput.m_dataPort.SendOutMessage(COutputDataProtocol::RETURNPIC, &renderPic, sizeof(renderPic));
@@ -1105,9 +1115,11 @@ long CVdpauRenderPicture::Release()
 
   lock.Leave();
   if (vdpau)
+  {
     vdpau->ReturnRenderPicture(this);
-  SAFE_RELEASE(vdpau);
-
+    vdpau->ReleasePicReference();
+    vdpau = NULL;
+  }
   return refCount;
 }
 
@@ -1284,8 +1296,8 @@ void CMixer::StateMachine(int signal, Protocol *port, Message *msg)
           }
           else
           {
-            if (m_extTimeout != 0)
-              CLog::Log(LOGWARNING,"CVDPAU::Mixer timeout - decoded: %d, outputSurf: %d", (int)m_decodedPics.size(), (int)m_outputSurfaces.size());
+//            if (m_extTimeout != 0)
+//              CLog::Log(LOGWARNING,"CVDPAU::Mixer timeout - decoded: %d, outputSurf: %d", (int)m_decodedPics.size(), (int)m_outputSurfaces.size());
             m_extTimeout = 100;
           }
           return;
@@ -1350,8 +1362,8 @@ void CMixer::StateMachine(int signal, Protocol *port, Message *msg)
           }
           else
           {
-            if (m_extTimeout != 0)
-              CLog::Log(LOGNOTICE,"---mixer wait2 decoded: %d, outputSurf: %d", (int)m_decodedPics.size(), (int)m_outputSurfaces.size());
+//            if (m_extTimeout != 0)
+//              CLog::Log(LOGNOTICE,"---mixer wait2 decoded: %d, outputSurf: %d", (int)m_decodedPics.size(), (int)m_outputSurfaces.size());
             m_extTimeout = 100;
           }
           return;
@@ -2089,12 +2101,14 @@ void CMixer::InitCycle()
   int speed;
   m_config.stats->GetParams(latency, speed);
   latency = (latency*1000)/CurrentHostFrequency();
-  if (latency > 10 || speed != DVD_PLAYSPEED_NORMAL)
+  if (speed != DVD_PLAYSPEED_NORMAL)
     SetPostProcFeatures(false);
   else
     SetPostProcFeatures(true);
 
   m_config.stats->SetCanSkipDeint(false);
+  int cmd = 0;
+  m_config.stats->GetCmd(cmd);
 
   EDEINTERLACEMODE   mode = g_settings.m_currentVideoSettings.m_DeinterlaceMode;
   EINTERLACEMETHOD method = GetDeinterlacingMethod();
@@ -2120,7 +2134,8 @@ void CMixer::InitCycle()
         m_config.stats->SetCanSkipDeint(true);
       }
 
-      if (m_mixerInput[1].DVDPic.iFlags & DVP_FLAG_DROPDEINT)
+      if ((m_mixerInput[1].DVDPic.iFlags & DVP_FLAG_DROPDEINT)
+          || cmd == 1)
       {
         m_mixersteps = 1;
       }
@@ -2174,13 +2189,13 @@ void CMixer::InitCycle()
   {
     m_processPicture.outputSurface = m_outputSurfaces.front();
     m_outputSurfaces.pop();
-    m_processPicture.DVDPic.iWidth = m_config.outWidth;
-    m_processPicture.DVDPic.iHeight = m_config.outHeight;
+    m_mixerInput[1].DVDPic.iWidth = m_config.outWidth;
+    m_mixerInput[1].DVDPic.iHeight = m_config.outHeight;
   }
   else
   {
-    m_processPicture.DVDPic.iWidth = m_config.vidWidth;
-    m_processPicture.DVDPic.iHeight = m_config.vidHeight;
+    m_mixerInput[1].DVDPic.iWidth = m_config.vidWidth;
+    m_mixerInput[1].DVDPic.iHeight = m_config.vidHeight;
   }
 
   m_processPicture.DVDPic = m_mixerInput[1].DVDPic;
@@ -2568,9 +2583,9 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
         switch (signal)
         {
         case COutputControlProtocol::TIMEOUT:
-          uint16_t decoded, processed, render;
-          m_config.stats->Get(decoded, processed, render);
-          CLog::Log(LOGDEBUG, "CVDPAU::COutput - timeout idle: decoded: %d, proc: %d, render: %d", decoded, processed, render);
+//          uint16_t decoded, processed, render;
+//          m_config.stats->Get(decoded, processed, render);
+//          CLog::Log(LOGDEBUG, "CVDPAU::COutput - timeout idle: decoded: %d, proc: %d, render: %d", decoded, processed, render);
           return;
         default:
           break;
@@ -3417,6 +3432,8 @@ bool COutput::CreateGlxContext()
   m_Display = g_Windowing.GetDisplay();
   glContext = g_Windowing.GetGlxContext();
   m_Window = g_Windowing.GetWmWindow();
+
+  CSingleLock lock(g_graphicsContext);
 
   // Get our window attribs.
   XWindowAttributes wndattribs;
