@@ -513,7 +513,7 @@ long CDecoder::Release()
 {
   // check if we should do some pre-cleanup here
   // a second decoder might need resources
-  if (CThread::GetCurrentThreadId() == m_decoderThread && m_xvbaConfig.xvbaSession)
+  if (m_xvbaConfig.xvbaSession)
   {
     CSingleLock lock(m_decoderSection);
     CLog::Log(LOGNOTICE,"XVBA::Release pre-cleanup");
@@ -1370,6 +1370,11 @@ void CDecoder::SetSpeed(int speed)
   m_speed = speed;
 }
 
+void CDecoder::SetProcessingState(int cmd)
+{
+  m_bufferStats.SetCmd(cmd);
+}
+
 //-----------------------------------------------------------------------------
 // RenderPicture
 //-----------------------------------------------------------------------------
@@ -1631,7 +1636,7 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
             {
               uint16_t decoded, processed, render;
               m_config.stats->Get(decoded, processed, render);
-              CLog::Log(LOGDEBUG, "CVDPAU::COutput - timeout idle: decoded: %d, proc: %d, render: %d", decoded, processed, render);
+//              CLog::Log(LOGDEBUG, "CVDPAU::COutput - timeout idle: decoded: %d, proc: %d, render: %d", decoded, processed, render);
             }
             m_extTimeout = 100;
           }
@@ -1942,27 +1947,39 @@ CXvbaRenderPicture* COutput::ProcessPicture()
   XvbaBufferPool::GLVideoSurface *glSurface = &m_bufferPool.glSurfaces[idx];
   glSurface->used = true;
 
-  // transfer surface
-  XVBA_Transfer_Surface_Input transInput;
-  transInput.size = sizeof(transInput);
-  transInput.session = m_config.xvbaSession;
-  transInput.src_surface = m_processPicture.render->surface;
-  transInput.target_surface = glSurface->glSurface;
-  transInput.flag = m_field;
-  { CSingleLock lock(*(m_config.apiSec));
-    if (Success != g_XVBA_vtable.TransferSurface(&transInput))
-    {
-      CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
-      m_xvbaError = true;
-      return retPic;
-    }
-  }
+  int cmd = 0;
+  m_config.stats->GetCmd(cmd);
 
-  // make sure that transfer is completed
-  uint64_t maxTimeout = 1000000000LL;
-  GLsync ReadyFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-  glClientWaitSync(ReadyFence, GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeout);
-  glDeleteSync(ReadyFence);
+  if (!cmd)
+  {
+    // transfer surface
+    XVBA_Transfer_Surface_Input transInput;
+    transInput.size = sizeof(transInput);
+    transInput.session = m_config.xvbaSession;
+    transInput.src_surface = m_processPicture.render->surface;
+    transInput.target_surface = glSurface->glSurface;
+    transInput.flag = m_field;
+    { CSingleLock lock(*(m_config.apiSec));
+      if (Success != g_XVBA_vtable.TransferSurface(&transInput))
+      {
+        CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
+        m_xvbaError = true;
+        return retPic;
+      }
+    }
+
+    // make sure that transfer is completed
+    uint64_t maxTimeout = 1000000000LL;
+    GLsync ReadyFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    glClientWaitSync(ReadyFence, GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeout);
+    glDeleteSync(ReadyFence);
+//  glFinish();
+  }
+  else
+  {
+    CLog::Log(LOGDEBUG,"XVBA::ProcessPicture - skipped transfer surface");
+    m_processPicture.DVDPic.iFlags |= DVP_FLAG_DROPPED;
+  }
 
   // prepare render pic
   retPic = m_bufferPool.freeRenderPics.front();
@@ -2054,7 +2071,14 @@ void COutput::InitCycle()
 
       if (m_processPicture.DVDPic.iFlags & DVP_FLAG_DROPDEINT)
       {
-        m_deinterlacing = false;
+        m_deintSkip = true;
+      }
+
+      // do only half deinterlacing
+      if (speed != DVD_PLAYSPEED_NORMAL || !g_graphicsContext.IsFullScreenVideo())
+      {
+        m_config.stats->SetCanSkipDeint(false);
+        m_deintSkip = true;
       }
 
       if(m_processPicture.DVDPic.iFlags & DVP_FLAG_TOP_FIELD_FIRST)
@@ -2067,11 +2091,6 @@ void COutput::InitCycle()
   {
     m_deinterlacing = false;
     m_field = XVBA_FRAME;
-  }
-
-  if (latency > 10 || speed != DVD_PLAYSPEED_NORMAL)
-  {
-    m_deintSkip = true;
   }
 
   m_processPicture.DVDPic.format = DVDVideoPicture::FMT_XVBA;
