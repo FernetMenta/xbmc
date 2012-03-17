@@ -132,7 +132,6 @@ struct DVDVideoUserData
 #define DVP_FLAG_NOSKIP             0x00000010 // indicate this picture should never be dropped
 #define DVP_FLAG_DROPPED            0x00000020 // indicate that this picture has been dropped in decoder stage, will have no data
 #define DVP_FLAG_DROPDEINT          0x00000040 // indicate that this picture was requested to have been dropped in deint stage
-#define DVP_FLAG_PTS_CALC           0x00000080 // indicate that this picture had no valid timestamp
 
 #define DVP_FLAG_SKIP_PROC          0x00000100
 #define DVP_FLAG_DRAIN              0x00000200

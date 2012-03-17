@@ -2009,7 +2009,7 @@ CXvbaRenderPicture* COutput::ProcessPicture()
       retPic->DVDPic.pts = DVD_NOPTS_VALUE;
       retPic->DVDPic.dts = DVD_NOPTS_VALUE;
     }
-    retPic->DVDPic.iRepeatPicture = -0.5;
+    retPic->DVDPic.iRepeatPicture = 0.0;
   }
 
   return retPic;

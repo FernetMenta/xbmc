@@ -500,15 +500,15 @@ void CDVDPlayerVideo::Process()
           bRequestDrop = true;
         }
       }
+      int codecControl = 0;
       if (iDropDirective & (EOS_VERYLATE | EOS_BUFFER_LEVEL))
       {
-        int codecControl = 0;
         if (iDropDirective & EOS_VERYLATE)
           codecControl |= DVP_FLAG_SKIP_PROC;
         if (iDropDirective & EOS_BUFFER_LEVEL)
           codecControl |= DVP_FLAG_DRAIN;
-        m_pVideoCodec->SetCodecControl(codecControl);
       }
+      m_pVideoCodec->SetCodecControl(codecControl);
       if (iDropDirective & EOS_DROPPED)
       {
         m_iDroppedFrames++;
@@ -642,10 +642,7 @@ void CDVDPlayerVideo::Process()
             // if both dts/pts invalid, use pts calulated from picture.iDuration
             // if pts invalid use dts, else use picture.pts as passed
             if (picture.dts == DVD_NOPTS_VALUE && picture.pts == DVD_NOPTS_VALUE)
-            {
               picture.pts = pts;
-              picture.iFlags |= DVP_FLAG_PTS_CALC;
-            }
             else if (picture.pts == DVD_NOPTS_VALUE)
               picture.pts = picture.dts;
 
@@ -715,6 +712,9 @@ void CDVDPlayerVideo::Process()
             int iResult = OutputPicture(pTempYUVPackedPicture, pts);
             CDVDCodecUtils::FreePicture(pTempYUVPackedPicture);
 #endif
+
+            if (!m_bFpsInvalid)
+              frametime = (double)DVD_TIME_BASE/m_fFrameRate;
 
             if(m_started == false)
             {
@@ -1151,8 +1151,7 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
     limited = true;
 
   //correct any pattern in the timestamps
-  if (!(pPicture->iFlags & DVP_FLAG_PTS_CALC))
-    m_pullupCorrection.Add(pts);
+  m_pullupCorrection.Add(pts);
   pts += m_pullupCorrection.GetCorrection();
 
   //try to calculate the framerate
@@ -1661,7 +1660,10 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
 
   bNewFrame = iDecoderPts != m_droppingStats.m_lastDecoderPts;
 
-  iInterval = 1/m_fFrameRate*(double)DVD_TIME_BASE;
+  if (repeatPic)
+    iInterval = 1/m_fFrameRate/abs(repeatPic)*(double)DVD_TIME_BASE;
+  else
+    iInterval = 1/m_fFrameRate*(double)DVD_TIME_BASE;
 
   // add any gains regardless of being late
   if (m_droppingStats.m_lastDecoderPts > 0 && bNewFrame && m_bAllowDrop)
@@ -1677,7 +1679,7 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
       result |= EOS_DROPPED;
       CLog::Log(LOGNOTICE,"-------- dropped de-interlacing cycle");
     }
-    else if (iGain >= 0.5/m_fFrameRate)
+    else if (iGain >= m_fFrameRate)
     {
       CDroppingStats::CGain gain;
       gain.gain = iGain;
