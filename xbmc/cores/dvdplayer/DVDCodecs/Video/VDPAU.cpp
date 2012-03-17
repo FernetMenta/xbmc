@@ -2299,7 +2299,7 @@ void CMixer::ProcessPicture()
       m_processPicture.DVDPic.pts = DVD_NOPTS_VALUE;
       m_processPicture.DVDPic.dts = DVD_NOPTS_VALUE;
     }
-    m_processPicture.DVDPic.iRepeatPicture = -0.5;
+    m_processPicture.DVDPic.iRepeatPicture = 0.0;
   } // interlaced
 
   VdpRect sourceRect;
