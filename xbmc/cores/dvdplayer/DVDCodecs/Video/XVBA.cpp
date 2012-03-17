@@ -1464,6 +1464,7 @@ COutput::~COutput()
 
 void COutput::Dispose()
 {
+  CSingleLock lock(g_graphicsContext);
   m_bStop = true;
   m_outMsgEvent.Set();
   StopThread();
@@ -1981,7 +1982,7 @@ CXvbaRenderPicture* COutput::ProcessPicture()
     GLsync ReadyFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     glClientWaitSync(ReadyFence, GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeout);
     glDeleteSync(ReadyFence);
-//  glFinish();
+//  glFinish();GL_SYNC_FLUSH_COMMANDS_BIT
   }
   else
   {
@@ -2198,6 +2199,8 @@ bool COutput::CreateGlxContext()
   m_Display = g_Windowing.GetDisplay();
   glContext = g_Windowing.GetGlxContext();
   m_Window = g_Windowing.GetWmWindow();
+
+  CSingleLock lock(g_graphicsContext);
 
   // Get our window attribs.
   XWindowAttributes wndattribs;

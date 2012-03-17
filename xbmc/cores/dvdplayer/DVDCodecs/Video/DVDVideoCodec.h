@@ -251,7 +251,7 @@ public:
     return 0;
   }
 
-  virtual bool GetPts(double &pts, int &skippedDeint)
+  virtual bool GetPts(double &pts, int &skippedDeint, int &interlaced)
   {
     return false;
   }

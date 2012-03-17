@@ -62,7 +62,7 @@ public:
   virtual unsigned int SetFilters(unsigned int filters);
   virtual const char* GetName() { return m_name.c_str(); }; // m_name is never changed after open
   virtual unsigned GetConvergeCount();
-  virtual bool GetPts(double &pts, int &skippedDeint) {pts=m_decoderPts; skippedDeint=m_skippedDeint;return true;}
+  virtual bool GetPts(double &pts, int &skippedDeint, int &interlaced) {pts=m_decoderPts; skippedDeint=m_skippedDeint; if (m_pFrame) interlaced = m_pFrame->interlaced_frame; return true;}
   virtual void SetSpeed(int speed);
   virtual void SetCodecControl(int state);
 

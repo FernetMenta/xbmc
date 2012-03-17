@@ -2411,6 +2411,7 @@ COutput::~COutput()
 
 void COutput::Dispose()
 {
+  CSingleLock lock(g_graphicsContext);
   m_bStop = true;
   m_outMsgEvent.Set();
   StopThread();

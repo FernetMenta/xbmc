@@ -51,7 +51,7 @@ namespace XVBA
 class CDecoder;
 class CXVBAContext;
 
-#define NUM_RENDER_PICS 8
+#define NUM_RENDER_PICS 9
 
 /**
  * Buffer statistics used to control number of frames in queue
