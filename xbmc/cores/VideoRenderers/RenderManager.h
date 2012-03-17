@@ -185,7 +185,7 @@ public:
 
   int WaitForBuffer(volatile bool& bStop);
   void NotifyDisplayFlip();
-  bool GetStats(double &sleeptime, double &pts);
+  bool GetStats(double &sleeptime, double &pts, int &bufferLevel);
   bool HasFrame();
   void EnableBuffering(bool enable);
   void DiscardBuffer();
@@ -284,6 +284,7 @@ protected:
   CEvent     m_presentevent;
   CEvent     m_flushEvent;
   CDVDClock  *m_pClock;
+  uint64_t   m_rendertime;
 
   OVERLAY::CRenderer m_overlays;
 

@@ -325,7 +325,6 @@ public:
   virtual const std::string Name() { return "xvba"; }
   virtual bool CanSkipDeint();
   virtual void SetSpeed(int speed);
-  virtual void SetProcessingState(int cmd);
 
   bool Supports(EINTERLACEMETHOD method);
   long ReleasePicReference();
@@ -373,6 +372,7 @@ protected:
   CXvbaRenderPicture *m_presentPicture;
 
   int m_speed;
+  int m_codecControl;
 };
 
 }

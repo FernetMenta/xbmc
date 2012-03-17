@@ -534,7 +534,6 @@ public:
   virtual long Release();
   virtual bool CanSkipDeint();
   virtual void SetSpeed(int speed);
-  virtual void SetProcessingState(int cmd);
 
   virtual int  Check(AVCodecContext* avctx);
   virtual const std::string Name() { return "vdpau"; }
@@ -601,8 +600,7 @@ protected:
   CVdpauRenderPicture *m_presentPicture;
 
   int m_speed;
-//  int m_dropCount;
-//  bool m_dropState;
+  int m_codecControl;
 };
 
 }

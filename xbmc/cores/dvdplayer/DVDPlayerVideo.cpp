@@ -492,14 +492,22 @@ void CDVDPlayerVideo::Process()
 
       bRequestDrop = false;
       iDropDirective = CalcDropRequirement(pts, frametime, picture.iRepeatPicture);
-      if (iDropDirective & EOS_VERYLATE)
+      if (iDropDirective & EOS_LATE)
       {
         if (m_bAllowDrop)
         {
           m_pullupCorrection.Flush();
           bRequestDrop = true;
         }
-        m_pVideoCodec->SetProcessingState(1);
+      }
+      if (iDropDirective & (EOS_VERYLATE | EOS_BUFFER_LEVEL))
+      {
+        int codecControl = 0;
+        if (iDropDirective & EOS_VERYLATE)
+          codecControl |= DVP_FLAG_SKIP_PROC;
+        if (iDropDirective & EOS_BUFFER_LEVEL)
+          codecControl |= DVP_FLAG_DRAIN;
+        m_pVideoCodec->SetCodecControl(codecControl);
       }
       if (iDropDirective & EOS_DROPPED)
       {
@@ -1636,13 +1644,20 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
   double iLateness;
   bool   bNewFrame;
   int    iSkippedDeint = 0;
+  int    iBufferLevel;
 
   // get decoder stats
   if (!m_pVideoCodec->GetPts(iDecoderPts, iSkippedDeint))
     iDecoderPts = pts;
 
   // get render stats
-  g_renderManager.GetStats(iSleepTime, iRenderPts);
+  g_renderManager.GetStats(iSleepTime, iRenderPts, iBufferLevel);
+
+  if (iBufferLevel < 2)
+  {
+    result |= EOS_BUFFER_LEVEL;
+//    CLog::Log(LOGNOTICE,"--------------------- hurry: %d", iBufferLevel);
+  }
 
   bNewFrame = iDecoderPts != m_droppingStats.m_lastDecoderPts;
 
@@ -1704,7 +1719,11 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
       // is frame allowed to skip
       if (m_iNrOfPicturesNotToSkip <= 0)
       {
-        result |= EOS_VERYLATE;
+        result |= EOS_LATE;
+
+        if (iLateness < -2/m_fFrameRate)
+          result |= EOS_VERYLATE;
+
         // drop in output
         if (m_droppingStats.m_dropRequests > 5 && g_graphicsContext.IsFullScreenVideo())
         {

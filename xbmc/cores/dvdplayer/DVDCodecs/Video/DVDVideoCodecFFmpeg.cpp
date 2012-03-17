@@ -715,6 +715,7 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(DVDVideoPicture* pDvdVideoPicture)
     m_skippedDeint = 0;
 
   m_requestSkipDeint = false;
+  pDvdVideoPicture->iFlags |= m_codecControlState;
 
   if(!m_started)
     pDvdVideoPicture->iFlags |= DVP_FLAG_DROPPED;
@@ -943,8 +944,7 @@ void CDVDVideoCodecFFmpeg::SetSpeed(int speed)
     m_pHardware->SetSpeed(speed);
 }
 
-void CDVDVideoCodecFFmpeg::SetProcessingState(int cmd)
+void CDVDVideoCodecFFmpeg::SetCodecControl(int state)
 {
-  if (m_pHardware)
-    m_pHardware->SetProcessingState(cmd);
+  m_codecControlState = state;
 }

@@ -930,6 +930,12 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
     pic.render = render;
     m_bufferStats.IncDecoded();
     m_vdpauOutput.m_dataPort.SendOutMessage(COutputDataProtocol::NEWFRAME, &pic, sizeof(pic));
+
+    m_codecControl = pic.DVDPic.iFlags & (DVP_FLAG_DRAIN | DVP_FLAG_SKIP_PROC);
+    if (m_codecControl & DVP_FLAG_SKIP_PROC)
+    {
+      m_bufferStats.SetCmd(DVP_FLAG_SKIP_PROC);
+    }
   }
 
   int retval = 0;
@@ -987,7 +993,13 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
       retval |= VC_BUFFER;
     }
 
-    if (!retval && !m_inMsgEvent.WaitMSec(2000))
+    bool bWait = !retval;
+    if ((m_codecControl & DVP_FLAG_DRAIN)
+       && (decoded + processed + render > 2)
+       && !(retval & VC_PICTURE))
+      bWait = true;
+
+    if (bWait && !m_inMsgEvent.WaitMSec(2000))
       break;
   }
   uint64_t diff = CurrentHostCounter() - startTime;
@@ -1058,11 +1070,6 @@ bool CDecoder::CanSkipDeint()
 void CDecoder::SetSpeed(int speed)
 {
   m_speed = speed;
-}
-
-void CDecoder::SetProcessingState(int cmd)
-{
-  m_bufferStats.SetCmd(cmd);
 }
 
 void CDecoder::ReturnRenderPicture(CVdpauRenderPicture *renderPic)
@@ -2108,8 +2115,6 @@ void CMixer::InitCycle()
     SetPostProcFeatures(true);
 
   m_config.stats->SetCanSkipDeint(false);
-  int cmd = 0;
-  m_config.stats->GetCmd(cmd);
 
   EDEINTERLACEMODE   mode = g_settings.m_currentVideoSettings.m_DeinterlaceMode;
   EINTERLACEMETHOD method = GetDeinterlacingMethod();
@@ -2127,7 +2132,8 @@ void CMixer::InitCycle()
       ||  method == VS_INTERLACEMETHOD_VDPAU_INVERSE_TELECINE )
     {
       if(method == VS_INTERLACEMETHOD_VDPAU_TEMPORAL_HALF
-        || method == VS_INTERLACEMETHOD_VDPAU_TEMPORAL_SPATIAL_HALF)
+        || method == VS_INTERLACEMETHOD_VDPAU_TEMPORAL_SPATIAL_HALF
+        || !g_graphicsContext.IsFullScreenVideo())
         m_mixersteps = 1;
       else
       {
@@ -2135,8 +2141,7 @@ void CMixer::InitCycle()
         m_config.stats->SetCanSkipDeint(true);
       }
 
-      if ((m_mixerInput[1].DVDPic.iFlags & DVP_FLAG_DROPDEINT)
-          || cmd == 1)
+      if (m_mixerInput[1].DVDPic.iFlags & DVP_FLAG_DROPDEINT)
       {
         m_mixersteps = 1;
       }
@@ -2223,6 +2228,14 @@ void CMixer::ProcessPicture()
 {
   if (m_processPicture.DVDPic.format == DVDVideoPicture::FMT_VDPAU_420)
     return;
+
+  int cmd = 0;
+  m_config.stats->GetCmd(cmd);
+  if (cmd & DVP_FLAG_SKIP_PROC)
+  {
+    m_processPicture.DVDPic.iFlags |= DVP_FLAG_DROPPED;
+    return;
+  }
 
   VdpStatus vdp_st;
 

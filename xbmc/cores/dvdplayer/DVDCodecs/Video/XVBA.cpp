@@ -1196,6 +1196,12 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
     pic.render = render;
     m_bufferStats.IncDecoded();
     m_xvbaOutput.m_dataPort.SendOutMessage(COutputDataProtocol::NEWFRAME, &pic, sizeof(pic));
+
+    m_codecControl = pic.DVDPic.iFlags & (DVP_FLAG_DRAIN | DVP_FLAG_SKIP_PROC);
+    if (m_codecControl & DVP_FLAG_SKIP_PROC)
+    {
+      m_bufferStats.SetCmd(DVP_FLAG_SKIP_PROC);
+    }
   }
 
   int retval = 0;
@@ -1253,7 +1259,13 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
       retval |= VC_BUFFER;
     }
 
-    if (!retval && !m_inMsgEvent.WaitMSec(2000))
+    bool bWait = !retval;
+    if ((m_codecControl & DVP_FLAG_DRAIN)
+       && (decoded + processed + render > 2)
+       && !(retval & VC_PICTURE))
+      bWait = true;
+
+    if (bWait && !m_inMsgEvent.WaitMSec(2000))
       break;
   }
   uint64_t diff = CurrentHostCounter() - startTime;
@@ -1368,11 +1380,6 @@ bool CDecoder::CanSkipDeint()
 void CDecoder::SetSpeed(int speed)
 {
   m_speed = speed;
-}
-
-void CDecoder::SetProcessingState(int cmd)
-{
-  m_bufferStats.SetCmd(cmd);
 }
 
 //-----------------------------------------------------------------------------
@@ -1951,7 +1958,7 @@ CXvbaRenderPicture* COutput::ProcessPicture()
   int cmd = 0;
   m_config.stats->GetCmd(cmd);
 
-  if (!cmd)
+  if (!(cmd & DVP_FLAG_SKIP_PROC))
   {
     // transfer surface
     XVBA_Transfer_Surface_Input transInput;

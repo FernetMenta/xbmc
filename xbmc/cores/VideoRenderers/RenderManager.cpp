@@ -26,6 +26,7 @@
 #include "utils/MathUtils.h"
 #include "threads/SingleLock.h"
 #include "utils/log.h"
+#include "utils/TimeUtils.h"
 
 #include "Application.h"
 #include "settings/Settings.h"
@@ -670,6 +671,8 @@ void CXBMCRenderManager::Present()
     WaitPresentTime(m_presenttime);
 
   m_presentevent.Set();
+
+  m_rendertime = CurrentHostCounter();
 }
 
 /* simple present method */
@@ -983,6 +986,14 @@ void CXBMCRenderManager::NotifyDisplayFlip()
   if (!m_pRenderer)
     return;
 
+//  if (g_graphicsContext.IsFullScreenVideo())
+//  {
+//    uint64_t diff = CurrentHostCounter() - m_rendertime;
+//    int waittime = (int)((diff*1000LL)/CurrentHostFrequency());
+//    if (waittime > 5)
+//      CLog::Log(LOGNOTICE,"------------------ wait swap buffers: %d", waittime);
+//  }
+
   int last = m_iDisplayedRenderBuffer;
   m_iDisplayedRenderBuffer = (m_iCurrentRenderBuffer + m_iNumRenderBuffers - 1) % m_iNumRenderBuffers;
   m_iFlipRequestRenderBuffer = m_iCurrentRenderBuffer;
@@ -1006,11 +1017,12 @@ void CXBMCRenderManager::NotifyDisplayFlip()
   m_flipEvent.Set();
 }
 
-bool CXBMCRenderManager::GetStats(double &sleeptime, double &pts)
+bool CXBMCRenderManager::GetStats(double &sleeptime, double &pts, int &bufferLevel)
 {
   CSharedLock lock(m_sharedSection);
   sleeptime = m_sleeptime;
   pts = m_presentPts;
+  bufferLevel = (m_iOutputRenderBuffer - m_iCurrentRenderBuffer + m_iNumRenderBuffers) % m_iNumRenderBuffers;
   return true;
 }
 
