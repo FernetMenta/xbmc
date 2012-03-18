@@ -2274,12 +2274,14 @@ void CLinuxRendererGL::DeleteVDPAUTexture(int index)
 {
 #ifdef HAVE_LIBVDPAU
   YUVPLANE &plane = m_buffers[index].fields[0][0];
+  YUVFIELDS &fields = m_buffers[index].fields;
 
   SAFE_RELEASE(m_buffers[index].vdpau);
 
   if(plane.id && glIsTexture(plane.id))
     glDeleteTextures(1, &plane.id);
   plane.id = 0;
+  fields[0][1].id = 0;
 #endif
 }
 
@@ -2339,12 +2341,17 @@ void CLinuxRendererGL::DeleteVDPAUTexture420(int index)
 {
 #ifdef HAVE_LIBVDPAU
   YUVPLANE &plane = m_buffers[index].fields[0][0];
+  YUVFIELDS &fields = m_buffers[index].fields;
 
   SAFE_RELEASE(m_buffers[index].vdpau);
 
   if(plane.id && glIsTexture(plane.id))
     glDeleteTextures(1, &plane.id);
   plane.id = 0;
+  fields[1][0].id = 0;
+  fields[1][1].id = 0;
+  fields[2][0].id = 0;
+  fields[2][1].id = 0;
 
 #endif
 }
@@ -2611,12 +2618,14 @@ void CLinuxRendererGL::DeleteXVBATexture(int index)
 {
 #ifdef HAVE_LIBXVBA
   YUVPLANE &plane = m_buffers[index].fields[0][0];
+  YUVFIELDS &fields = m_buffers[index].fields;
 
   SAFE_RELEASE(m_buffers[index].xvba);
 
   if(plane.id && glIsTexture(plane.id))
     glDeleteTextures(1, &plane.id);
   plane.id = 0;
+  fields[0][1].id = 0;
 #endif
 }
 
