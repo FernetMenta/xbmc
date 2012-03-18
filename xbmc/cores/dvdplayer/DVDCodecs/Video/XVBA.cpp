@@ -1417,6 +1417,8 @@ long CXvbaRenderPicture::Release()
 
 void CXvbaRenderPicture::Transfer()
 {
+  CSingleLock lock(*renderPicSection);
+
   if (valid)
     xvbaOutput->TransferSurface(sourceIdx);
 }
@@ -1949,6 +1951,11 @@ void COutput::TransferSurface(uint32_t source)
 {
   XvbaBufferPool::GLVideoSurface *glSurface = &m_bufferPool.glSurfaces[source];
 
+  if (glSurface->transferred)
+    return;
+
+  glSurface->transferred = true;
+
   // transfer surface
   XVBA_Transfer_Surface_Input transInput;
   transInput.size = sizeof(transInput);
@@ -1984,12 +1991,13 @@ CXvbaRenderPicture* COutput::ProcessPicture()
   glSurface->used = true;
   glSurface->field = m_field;
   glSurface->render = m_processPicture.render;
+  glSurface->transferred = false;
 
   int cmd = 0;
   m_config.stats->GetCmd(cmd);
 
-  if (!(cmd & DVP_FLAG_SKIP_PROC))
-  {
+//  if (!(cmd & DVP_FLAG_SKIP_PROC))
+//  {
     // transfer surface
 //    XVBA_Transfer_Surface_Input transInput;
 //    transInput.size = sizeof(transInput);
@@ -2012,12 +2020,12 @@ CXvbaRenderPicture* COutput::ProcessPicture()
 //    glClientWaitSync(ReadyFence, GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeout);
 //    glDeleteSync(ReadyFence);
 //  glFinish();GL_SYNC_FLUSH_COMMANDS_BIT
-  }
-  else
-  {
-    CLog::Log(LOGDEBUG,"XVBA::ProcessPicture - skipped transfer surface");
-    m_processPicture.DVDPic.iFlags |= DVP_FLAG_DROPPED;
-  }
+//  }
+//  else
+//  {
+//    CLog::Log(LOGDEBUG,"XVBA::ProcessPicture - skipped transfer surface");
+//    m_processPicture.DVDPic.iFlags |= DVP_FLAG_DROPPED;
+//  }
 
   // prepare render pic
   retPic = m_bufferPool.freeRenderPics.front();
@@ -2066,8 +2074,11 @@ void COutput::ProcessReturnPicture(CXvbaRenderPicture *pic)
   if (m_config.useSharedSurfaces)
   {
     xvba_render_state *render = m_bufferPool.glSurfaces[pic->sourceIdx].render;
-    { CSingleLock lock(*m_config.videoSurfaceSec);
+    if (render)
+    {
+      CSingleLock lock(*m_config.videoSurfaceSec);
       render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+      render = 0;
     }
     m_bufferPool.glSurfaces[pic->sourceIdx].used = false;
     return;
@@ -2199,6 +2210,7 @@ bool COutput::EnsureBufferPool()
       surface.glSurface = surfOutput.surface;
       surface.id = i;
       surface.used = false;
+      surface.render = 0;
       m_bufferPool.glSurfaces.push_back(surface);
     }
     glDisable(textureTarget);
@@ -2209,6 +2221,8 @@ bool COutput::EnsureBufferPool()
 
 void COutput::ReleaseBufferPool()
 {
+  CSingleLock lock(m_bufferPool.renderPicSec);
+
   if (m_config.useSharedSurfaces)
   {
     for (unsigned int i = 0; i < m_bufferPool.glSurfaces.size(); ++i)
@@ -2222,6 +2236,14 @@ void COutput::ReleaseBufferPool()
   for (unsigned int i = 0; i < m_bufferPool.usedRenderPics.size(); ++i)
   {
     m_bufferPool.usedRenderPics[i]->valid = false;
+    unsigned int idx = m_bufferPool.usedRenderPics[i]->sourceIdx;
+    if (m_bufferPool.glSurfaces[idx].render)
+    {
+      { CSingleLock lock(*m_config.videoSurfaceSec);
+        m_bufferPool.glSurfaces[idx].render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+        m_bufferPool.glSurfaces[idx].render = 0;
+      }
+    }
   }
 }
 

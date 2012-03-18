@@ -167,6 +167,7 @@ struct XvbaBufferPool
   {
     unsigned int id;
     bool used;
+    bool transferred;
     GLuint texture;
     void *glSurface;
     xvba_render_state *render;
