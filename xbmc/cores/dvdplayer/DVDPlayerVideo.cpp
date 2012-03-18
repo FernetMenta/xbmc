@@ -1678,6 +1678,7 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
       m_droppingStats.m_gain.push_back(gain);
       m_droppingStats.m_totalGain += gain.gain;
       result |= EOS_DROPPED;
+      m_droppingStats.m_dropRequests = 0;
       CLog::Log(LOGNOTICE,"-------- dropped de-interlacing cycle");
     }
     else if (iGain > 1/m_fFrameRate)
@@ -1688,6 +1689,7 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
       m_droppingStats.m_gain.push_back(gain);
       m_droppingStats.m_totalGain += iGain;
       result |= EOS_DROPPED;
+      m_droppingStats.m_dropRequests = 0;
       CLog::Log(LOGNOTICE,"-------- dropped in decoder, gain: %f, interval: %f, pts: %f, frametime: %f", iGain, iInterval, iDecoderPts, 1/m_fFrameRate);
     }
 
