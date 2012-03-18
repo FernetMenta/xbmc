@@ -285,6 +285,7 @@ protected:
   CEvent     m_flushEvent;
   CDVDClock  *m_pClock;
   uint64_t   m_rendertime;
+  unsigned int m_swapCount;
 
   OVERLAY::CRenderer m_overlays;
 

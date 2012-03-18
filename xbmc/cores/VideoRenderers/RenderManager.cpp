@@ -54,6 +54,8 @@
 #include "../dvdplayer/DVDCodecs/Video/DVDVideoCodec.h"
 #include "../dvdplayer/DVDCodecs/DVDCodecUtils.h"
 
+#include "windowing/WindowingFactory.h"
+
 #define MAXPRESENTDELAY 0.500
 
 /* at any point we want an exclusive lock on rendermanager */
@@ -332,6 +334,13 @@ unsigned int CXBMCRenderManager::PreInit(CDVDClock *pClock)
 
   UpdateDisplayLatency();
 
+  m_swapCount = 1;
+  std::string Vendor = g_Windowing.GetRenderVendor();
+  std::transform(Vendor.begin(), Vendor.end(), Vendor.begin(), ::tolower);
+  if (Vendor.compare(0, 3, "ati") == 0)
+  {
+    m_swapCount = 2;
+  }
   ResetRenderBuffer();
   m_bUseBuffering = false;
   m_overlays.SetNumBuffers(m_iNumRenderBuffers);
@@ -906,9 +915,9 @@ bool CXBMCRenderManager::HasFreeBuffer()
       return true;
   }
 
-  int outputPlus1 = (m_iOutputRenderBuffer + 1) % m_iNumRenderBuffers;
+  int outputPlusSwap = (m_iOutputRenderBuffer + m_swapCount) % m_iNumRenderBuffers;
   if ((m_iOutputRenderBuffer == m_iDisplayedRenderBuffer && !m_bAllRenderBuffersDisplayed)
-     || outputPlus1 == m_iCurrentRenderBuffer)
+     || outputPlusSwap == m_iCurrentRenderBuffer)
     return false;
   else
     return true;
@@ -995,7 +1004,7 @@ void CXBMCRenderManager::NotifyDisplayFlip()
 //  }
 
   int last = m_iDisplayedRenderBuffer;
-  m_iDisplayedRenderBuffer = (m_iCurrentRenderBuffer + m_iNumRenderBuffers - 1) % m_iNumRenderBuffers;
+  m_iDisplayedRenderBuffer = (m_iCurrentRenderBuffer + m_iNumRenderBuffers - m_swapCount) % m_iNumRenderBuffers;
   m_iFlipRequestRenderBuffer = m_iCurrentRenderBuffer;
 
 //  // we have caught up with output so all buffers are re-usable
