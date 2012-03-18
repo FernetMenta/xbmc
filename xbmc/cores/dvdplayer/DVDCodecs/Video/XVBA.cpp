@@ -1415,6 +1415,12 @@ long CXvbaRenderPicture::Release()
   return refCount;
 }
 
+void CXvbaRenderPicture::Transfer()
+{
+  if (valid)
+    xvbaOutput->TransferSurface(sourceIdx);
+}
+
 void CXvbaRenderPicture::ReturnUnused()
 {
   { CSingleLock lock(*renderPicSection);
@@ -1939,6 +1945,27 @@ bool COutput::IsDecodingFinished()
   return false;
 }
 
+void COutput::TransferSurface(uint32_t source)
+{
+  XvbaBufferPool::GLVideoSurface *glSurface = &m_bufferPool.glSurfaces[source];
+
+  // transfer surface
+  XVBA_Transfer_Surface_Input transInput;
+  transInput.size = sizeof(transInput);
+  transInput.session = m_config.xvbaSession;
+  transInput.src_surface = glSurface->render->surface;
+  transInput.target_surface = glSurface->glSurface;
+  transInput.flag = glSurface->field;
+  { CSingleLock lock(*(m_config.apiSec));
+    if (Success != g_XVBA_vtable.TransferSurface(&transInput))
+    {
+      CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
+      m_xvbaError = true;
+      return;
+    }
+  }
+}
+
 CXvbaRenderPicture* COutput::ProcessPicture()
 {
   CXvbaRenderPicture *retPic = 0;
@@ -1955,6 +1982,8 @@ CXvbaRenderPicture* COutput::ProcessPicture()
   unsigned int idx = FindFreeSurface();
   XvbaBufferPool::GLVideoSurface *glSurface = &m_bufferPool.glSurfaces[idx];
   glSurface->used = true;
+  glSurface->field = m_field;
+  glSurface->render = m_processPicture.render;
 
   int cmd = 0;
   m_config.stats->GetCmd(cmd);
@@ -1962,26 +1991,26 @@ CXvbaRenderPicture* COutput::ProcessPicture()
   if (!(cmd & DVP_FLAG_SKIP_PROC))
   {
     // transfer surface
-    XVBA_Transfer_Surface_Input transInput;
-    transInput.size = sizeof(transInput);
-    transInput.session = m_config.xvbaSession;
-    transInput.src_surface = m_processPicture.render->surface;
-    transInput.target_surface = glSurface->glSurface;
-    transInput.flag = m_field;
-    { CSingleLock lock(*(m_config.apiSec));
-      if (Success != g_XVBA_vtable.TransferSurface(&transInput))
-      {
-        CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
-        m_xvbaError = true;
-        return retPic;
-      }
-    }
+//    XVBA_Transfer_Surface_Input transInput;
+//    transInput.size = sizeof(transInput);
+//    transInput.session = m_config.xvbaSession;
+//    transInput.src_surface = m_processPicture.render->surface;
+//    transInput.target_surface = glSurface->glSurface;
+//    transInput.flag = m_field;
+//    { CSingleLock lock(*(m_config.apiSec));
+//      if (Success != g_XVBA_vtable.TransferSurface(&transInput))
+//      {
+//        CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
+//        m_xvbaError = true;
+//        return retPic;
+//      }
+//    }
 
     // make sure that transfer is completed
-    uint64_t maxTimeout = 1000000000LL;
-    GLsync ReadyFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    glClientWaitSync(ReadyFence, GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeout);
-    glDeleteSync(ReadyFence);
+//    uint64_t maxTimeout = 1000000000LL;
+//    GLsync ReadyFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+//    glClientWaitSync(ReadyFence, GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeout);
+//    glDeleteSync(ReadyFence);
 //  glFinish();GL_SYNC_FLUSH_COMMANDS_BIT
   }
   else
@@ -2001,6 +2030,7 @@ CXvbaRenderPicture* COutput::ProcessPicture()
   retPic->crop = CRect(0,0,0,0);
   retPic->texWidth = m_config.surfaceWidth;
   retPic->texHeight = m_config.surfaceHeight;
+  retPic->xvbaOutput = this;
 
   // set repeat pic for de-interlacing
   if (m_deinterlacing)
@@ -2035,6 +2065,10 @@ void COutput::ProcessReturnPicture(CXvbaRenderPicture *pic)
 
   if (m_config.useSharedSurfaces)
   {
+    xvba_render_state *render = m_bufferPool.glSurfaces[pic->sourceIdx].render;
+    { CSingleLock lock(*m_config.videoSurfaceSec);
+      render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+    }
     m_bufferPool.glSurfaces[pic->sourceIdx].used = false;
     return;
   }
@@ -2114,9 +2148,9 @@ void COutput::InitCycle()
 
 void COutput::FiniCycle()
 {
-  { CSingleLock lock(*m_config.videoSurfaceSec);
-    m_processPicture.render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
-  }
+//  { CSingleLock lock(*m_config.videoSurfaceSec);
+//    m_processPicture.render->state &= ~FF_XVBA_STATE_USED_FOR_RENDER;
+//  }
   m_config.stats->DecDecoded();
 }
 

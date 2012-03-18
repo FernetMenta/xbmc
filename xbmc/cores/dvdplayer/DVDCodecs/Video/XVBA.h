@@ -50,6 +50,7 @@ namespace XVBA
 
 class CDecoder;
 class CXVBAContext;
+class COutput;
 
 #define NUM_RENDER_PICS 9
 
@@ -144,10 +145,12 @@ public:
   CDecoder *xvba;
   CXvbaRenderPicture* Acquire();
   long Release();
+  void Transfer();
 private:
   void ReturnUnused();
   int refCount;
   CCriticalSection *renderPicSection;
+  COutput *xvbaOutput;
 };
 
 //-----------------------------------------------------------------------------
@@ -166,6 +169,8 @@ struct XvbaBufferPool
     bool used;
     GLuint texture;
     void *glSurface;
+    xvba_render_state *render;
+    XVBA_SURFACE_FLAG field;
   };
   std::vector<GLVideoSurface> glSurfaces;
   std::vector<CXvbaRenderPicture> allRenderPics;
@@ -221,6 +226,7 @@ public:
   virtual ~COutput();
   void Start();
   void Dispose();
+  void TransferSurface(uint32_t source);
   COutputControlProtocol m_controlPort;
   COutputDataProtocol m_dataPort;
 protected:
