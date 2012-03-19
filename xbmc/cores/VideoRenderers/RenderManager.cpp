@@ -962,6 +962,16 @@ void CXBMCRenderManager::PrepareNextRender()
 
   m_sleeptime = presenttime - clocktime;
 
+//  double interval;
+//  if (g_VideoReferenceClock.GetRefreshRate(&interval) > 0)
+//  {
+//    if (m_swaptime > interval * 0.7)
+//    {
+//      presenttime += interval;
+//      CLog::Log(LOGDEBUG,"------------  very long swaptime");
+//    }
+//  }
+
   if (g_graphicsContext.IsFullScreenVideo() || presenttime <= clocktime+0.01)
   {
     m_presentPts = m_renderBuffers[idx].pts;
@@ -998,9 +1008,12 @@ void CXBMCRenderManager::NotifyDisplayFlip()
 //  if (g_graphicsContext.IsFullScreenVideo())
 //  {
 //    uint64_t diff = CurrentHostCounter() - m_rendertime;
+//    m_swaptime = ((double)(diff))/CurrentHostFrequency();
 //    int waittime = (int)((diff*1000LL)/CurrentHostFrequency());
-//    if (waittime > 5)
-//      CLog::Log(LOGNOTICE,"------------------ wait swap buffers: %d", waittime);
+//    if (waittime > 15)
+//    {
+//      CLog::Log(LOGNOTICE,"------------------ wait swap buffers: %f, sleep: %f", m_swaptime, m_sleeptime);
+//    }
 //  }
 
   int last = m_iDisplayedRenderBuffer;

@@ -491,7 +491,7 @@ void CDVDPlayerVideo::Process()
       }
 
       bRequestDrop = false;
-      iDropDirective = CalcDropRequirement(pts, frametime,0);
+      iDropDirective = CalcDropRequirement(pts);
       if (iDropDirective & EOS_LATE)
       {
         if (m_bAllowDrop)
@@ -1253,6 +1253,7 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   {
     m_droppingStats.AddOutputDropGain(pts, 1/m_fFrameRate);
     m_droppingStats.m_requestOutputDrop = false;
+    CLog::Log(LOGDEBUG,"%s - dropped in output", __FUNCTION__);
     return result | EOS_DROPPED;
   }
 
@@ -1633,7 +1634,7 @@ void CDVDPlayerVideo::CalcFrameRate()
   }
 }
 
-int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double repeatPic)
+int CDVDPlayerVideo::CalcDropRequirement(double pts)
 {
   int result = 0;
   double iSleepTime;
@@ -1656,7 +1657,7 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
   if (iBufferLevel < 2)
   {
     result |= EOS_BUFFER_LEVEL;
-//    CLog::Log(LOGNOTICE,"--------------------- hurry: %d", iBufferLevel);
+    CLog::Log(LOGNOTICE,"--------------------- hurry: %d", iBufferLevel);
   }
 
   bNewFrame = iDecoderPts != m_droppingStats.m_lastDecoderPts;
@@ -1667,7 +1668,10 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
     iInterval = 1/m_fFrameRate*(double)DVD_TIME_BASE;
 
   // add any gains regardless of being late
-  if (m_droppingStats.m_lastDecoderPts > 0 && bNewFrame && m_bAllowDrop)
+  if (m_droppingStats.m_lastDecoderPts > 0
+      && bNewFrame
+      && m_bAllowDrop
+      && m_droppingStats.m_dropRequests > 0)
   {
     iGain = (iDecoderPts - m_droppingStats.m_lastDecoderPts - iInterval)/(double)DVD_TIME_BASE;
     if (iSkippedDeint)
@@ -1679,7 +1683,7 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
       m_droppingStats.m_totalGain += gain.gain;
       result |= EOS_DROPPED;
       m_droppingStats.m_dropRequests = 0;
-      CLog::Log(LOGNOTICE,"-------- dropped de-interlacing cycle");
+      CLog::Log(LOGDEBUG,"CDVDPlayerVideo::CalcDropRequirement - dropped de-interlacing cycle, Sleeptime: %f, Bufferlevel: %d", iSleepTime, iBufferLevel);
     }
     else if (iGain > 1/m_fFrameRate)
     {
@@ -1690,7 +1694,7 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, double frametime, double re
       m_droppingStats.m_totalGain += iGain;
       result |= EOS_DROPPED;
       m_droppingStats.m_dropRequests = 0;
-      CLog::Log(LOGNOTICE,"-------- dropped in decoder, gain: %f, interval: %f, pts: %f, frametime: %f", iGain, iInterval, iDecoderPts, 1/m_fFrameRate);
+      CLog::Log(LOGDEBUG,"CDVDPlayerVideo::CalcDropRequirement - dropped in decoder, Sleeptime: %f, Bufferlevel: %d, Gain: %f", iSleepTime, iBufferLevel, iGain);
     }
 
   }
