@@ -31,6 +31,7 @@
   #include <sstream>
   #include <X11/extensions/Xrandr.h>
   #include "windowing/WindowingFactory.h"
+  #include "settings/AdvancedSettings.h"
   #define NVSETTINGSCMD "nvidia-settings -nt -q RefreshRate3"
 #elif defined(__APPLE__) && !defined(__arm__)
   #include <QuartzCore/CVDisplayLink.h>
@@ -161,8 +162,6 @@ void CVideoReferenceClock::Process()
     m_RefreshChanged = 0;
     m_Started.Set();
 
-    SetPriority(1);
-
     if (SetupSuccess)
     {
       m_UseVblank = true;          //tell other threads we're using vblank as clock
@@ -283,10 +282,10 @@ bool CVideoReferenceClock::SetupGLX()
     m_bIsATI = true;
     m_bPolling = true;
   }
-  else if (Vendor.compare(0, 6, "nvidia") == 0)
+  if (g_advancedSettings.m_vblankPolling)
   {
-    CLog::Log(LOGDEBUG, "CVideoReferenceClock: GL_VENDOR: %s, use polling", Vendor.c_str());
     m_bPolling = true;
+    CLog::Log(LOGDEBUG, "CVideoReferenceClock: use polling");
   }
 
   m_vInfo = glXChooseVisual(m_Dpy, DefaultScreen(m_Dpy), singleBufferAttributes);
@@ -379,6 +378,9 @@ bool CVideoReferenceClock::SetupGLX()
 
   UpdateRefreshrate(true); //forced refreshrate update
   m_MissedVblanks = 0;
+
+  if (m_bPolling)
+    SetPriority(1);
 
   return true;
 }
@@ -1286,6 +1288,9 @@ int64_t CVideoReferenceClock::Wait(int64_t Target)
 
   if (m_UseVblank) //when true the vblank is used as clock source
   {
+    if (Target < m_CurrTime)
+      Target = m_CurrTime + 0.5/m_RefreshRate;
+
     while (m_CurrTime < Target)
     {
       //calculate how long to sleep before we should have gotten a signal that a vblank happened
