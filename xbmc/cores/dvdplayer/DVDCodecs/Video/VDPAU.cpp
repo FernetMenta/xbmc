@@ -505,7 +505,7 @@ void CDecoder::FiniVDPAUOutput()
   m_vdpauConfig.vdpDecoder = VDP_INVALID_HANDLE;
 
   CSingleLock lock(m_videoSurfaceSec);
-  CLog::Log(LOGDEBUG, "CVDPAU::FiniVDPAUOutput destroying %ld video surfaces", m_videoSurfaces.size());
+  CLog::Log(LOGDEBUG, "CVDPAU::FiniVDPAUOutput destroying %d video surfaces", (int)m_videoSurfaces.size());
 
   for(unsigned int i = 0; i < m_videoSurfaces.size(); ++i)
   {
@@ -596,6 +596,7 @@ bool CDecoder::ConfigVDPAU(AVCodecContext* avctx, int ref_frames)
     return false;
 
   // initialize output
+  CSingleLock lock(g_graphicsContext);
   m_vdpauConfig.stats = &m_bufferStats;
   m_vdpauConfig.vdpau = this;
   m_bufferStats.Reset();
@@ -3052,6 +3053,8 @@ void COutput::ReleaseBufferPool()
 {
   VdpStatus vdp_st;
 
+  CSingleLock lock(m_bufferPool.renderPicSec);
+
   if (m_config.usePixmaps)
   {
     for (unsigned int i = 0; i < m_bufferPool.pixmaps.size(); ++i)
@@ -3447,8 +3450,6 @@ bool COutput::CreateGlxContext()
   m_Display = g_Windowing.GetDisplay();
   glContext = g_Windowing.GetGlxContext();
   m_Window = g_Windowing.GetWmWindow();
-
-  CSingleLock lock(g_graphicsContext);
 
   // Get our window attribs.
   XWindowAttributes wndattribs;

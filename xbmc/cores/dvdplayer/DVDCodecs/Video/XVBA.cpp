@@ -697,6 +697,7 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
 
 
   // initialize output
+  CSingleLock lock(g_graphicsContext);
   m_xvbaConfig.stats = &m_bufferStats;
   m_bufferStats.Reset();
   m_xvbaOutput.Start();
@@ -2255,8 +2256,6 @@ bool COutput::CreateGlxContext()
   m_Display = g_Windowing.GetDisplay();
   glContext = g_Windowing.GetGlxContext();
   m_Window = g_Windowing.GetWmWindow();
-
-  CSingleLock lock(g_graphicsContext);
 
   // Get our window attribs.
   XWindowAttributes wndattribs;
