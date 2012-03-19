@@ -98,6 +98,7 @@ void CAdvancedSettings::Initialize()
   m_videoCaptureUseOcclusionQuery = -1; //-1 is auto detect
   m_videoVDPAUdeintHD = -1;
   m_videoVDPAUdeintSD = -1;
+  m_videoVDPAUtelecine = false;
   m_videoVDPAUmaxHeight = -1;
   m_videoVDPAUdeintSkipChromaHD = false;
   m_DXVACheckCompatibility = false;
@@ -475,6 +476,7 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
     XMLUtils::GetInt(pElement,"vdpauHDdeint",m_videoVDPAUdeintHD);
     XMLUtils::GetInt(pElement,"vdpauSDdeint",m_videoVDPAUdeintSD);
     XMLUtils::GetInt(pElement,"vdpauMaxHeight",m_videoVDPAUmaxHeight);
+    XMLUtils::GetBoolean(pElement,"vdpauInvTelecine",m_videoVDPAUtelecine);
     XMLUtils::GetBoolean(pElement,"vdpauHDdeintSkipChroma",m_videoVDPAUdeintSkipChromaHD);
 
     TiXmlElement* pAdjustRefreshrate = pElement->FirstChildElement("adjustrefreshrate");

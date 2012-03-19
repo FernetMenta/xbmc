@@ -1821,31 +1821,32 @@ void CMixer::SetDeinterlacing()
 
   if (mode == VS_DEINTERLACEMODE_OFF)
   {
-    VdpBool enabled[]={0,0,0};
+    VdpBool enabled[] = {0,0,0};
     vdp_st = m_config.vdpProcs.vdp_video_mixer_set_feature_enables(m_videoMixer, ARSIZE(feature), feature, enabled);
   }
   else
   {
     if (method == VS_INTERLACEMETHOD_AUTO)
     {
-      VdpBool enabled[]={1,1,1};
+      VdpBool enabled[] = {1,1,0};
+      if (g_advancedSettings.m_videoVDPAUtelecine)
+        enabled[2] = 1;
       vdp_st = m_config.vdpProcs.vdp_video_mixer_set_feature_enables(m_videoMixer, ARSIZE(feature), feature, enabled);
     }
     else if (method == VS_INTERLACEMETHOD_VDPAU_TEMPORAL
          ||  method == VS_INTERLACEMETHOD_VDPAU_TEMPORAL_HALF)
     {
-      VdpBool enabled[]={1,0,0};
+      VdpBool enabled[] = {1,0,0};
+      if (g_advancedSettings.m_videoVDPAUtelecine)
+        enabled[2] = 1;
       vdp_st = m_config.vdpProcs.vdp_video_mixer_set_feature_enables(m_videoMixer, ARSIZE(feature), feature, enabled);
     }
     else if (method == VS_INTERLACEMETHOD_VDPAU_TEMPORAL_SPATIAL
          ||  method == VS_INTERLACEMETHOD_VDPAU_TEMPORAL_SPATIAL_HALF)
     {
-      VdpBool enabled[]={1,1,0};
-      vdp_st = m_config.vdpProcs.vdp_video_mixer_set_feature_enables(m_videoMixer, ARSIZE(feature), feature, enabled);
-    }
-    else if (method == VS_INTERLACEMETHOD_VDPAU_INVERSE_TELECINE)
-    {
-      VdpBool enabled[]={1,0,1};
+      VdpBool enabled[] = {1,1,0};
+      if (g_advancedSettings.m_videoVDPAUtelecine)
+        enabled[2] = 1;
       vdp_st = m_config.vdpProcs.vdp_video_mixer_set_feature_enables(m_videoMixer, ARSIZE(feature), feature, enabled);
     }
     else
