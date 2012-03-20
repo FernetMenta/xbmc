@@ -1255,18 +1255,22 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
       msg->Release();
     }
 
-    if (decoded + render < 5)
+    if ((m_codecControl & DVP_FLAG_DRAIN))
     {
-      retval |= VC_BUFFER;
+      if (decoded + processed + render < 2)
+      {
+        retval |= VC_BUFFER;
+      }
+    }
+    else
+    {
+      if (decoded + processed + render < 4)
+      {
+        retval |= VC_BUFFER;
+      }
     }
 
-    bool bWait = !retval;
-    if ((m_codecControl & DVP_FLAG_DRAIN)
-       && (decoded + processed + render > 2)
-       && !(retval & VC_PICTURE))
-      bWait = true;
-
-    if (bWait && !m_inMsgEvent.WaitMSec(2000))
+    if (!retval && !m_inMsgEvent.WaitMSec(2000))
       break;
   }
   uint64_t diff = CurrentHostCounter() - startTime;
@@ -1390,6 +1394,7 @@ void CDecoder::SetSpeed(int speed)
 CXvbaRenderPicture* CXvbaRenderPicture::Acquire()
 {
   CSingleLock lock(*renderPicSection);
+
   if (refCount == 0)
     xvba->Acquire();
 
@@ -1406,12 +1411,8 @@ long CXvbaRenderPicture::Release()
     return refCount;
 
   lock.Leave();
-  if (xvba)
-  {
-    xvba->ReturnRenderPicture(this);
-    xvba->ReleasePicReference();
-    xvba = NULL;
-  }
+  xvba->ReturnRenderPicture(this);
+  xvba->ReleasePicReference();
 
   return refCount;
 }
