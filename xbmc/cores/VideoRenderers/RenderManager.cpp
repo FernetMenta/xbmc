@@ -249,7 +249,7 @@ bool CXBMCRenderManager::Configure(unsigned int width, unsigned int height, unsi
     m_bReconfigured = true;
     m_presentstep = PRESENT_IDLE;
     m_presentevent.Set();
-    ResetRenderBuffer();
+//    ResetRenderBuffer();
   }
 
   return result;
