@@ -1111,6 +1111,7 @@ bool CDecoder::CheckStatus(VdpStatus vdp_st, int line)
 CVdpauRenderPicture* CVdpauRenderPicture::Acquire()
 {
   CSingleLock lock(*renderPicSection);
+
   if (refCount == 0)
     vdpau->Acquire();
 
@@ -1127,12 +1128,9 @@ long CVdpauRenderPicture::Release()
     return refCount;
 
   lock.Leave();
-  if (vdpau)
-  {
-    vdpau->ReturnRenderPicture(this);
-    vdpau->ReleasePicReference();
-    vdpau = NULL;
-  }
+  vdpau->ReturnRenderPicture(this);
+  vdpau->ReleasePicReference();
+
   return refCount;
 }
 
