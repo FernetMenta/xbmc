@@ -1723,18 +1723,18 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts)
 
     // if lateness is smaller than frametime, we observe this state
     // for 10 cycles
-    if (m_droppingStats.m_lateFrames > 10 || iLateness < -1/m_fFrameRate)
+    if (m_droppingStats.m_lateFrames > 10 || iLateness < -2/m_fFrameRate)
     {
       // is frame allowed to skip
       if (m_iNrOfPicturesNotToSkip <= 0)
       {
         result |= EOS_LATE;
 
-        if (iLateness < -2/m_fFrameRate)
+        if (iLateness < -3/m_fFrameRate)
           result |= EOS_VERYLATE;
 
         // drop in output
-        if (m_droppingStats.m_dropRequests > 5 && g_graphicsContext.IsFullScreenVideo())
+        if (m_droppingStats.m_dropRequests > 7 && g_graphicsContext.IsFullScreenVideo())
         {
           m_droppingStats.m_dropRequests--; //decrease so we only drop half the frames
           m_droppingStats.m_requestOutputDrop = true;

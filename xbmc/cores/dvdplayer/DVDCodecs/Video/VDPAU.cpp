@@ -989,27 +989,31 @@ int CDecoder::Decode(AVCodecContext *avctx, AVFrame *pFrame, bool bSoftDrain, bo
       msg->Release();
     }
 
-    if (decoded + processed + render < 6)
+    if ((m_codecControl & DVP_FLAG_DRAIN))
     {
-      retval |= VC_BUFFER;
+      if (decoded + processed + render < 4)
+      {
+        retval |= VC_BUFFER;
+      }
+    }
+    else
+    {
+      if (decoded + processed + render < 6)
+      {
+        retval |= VC_BUFFER;
+      }
     }
 
-    bool bWait = !retval;
-    if ((m_codecControl & DVP_FLAG_DRAIN)
-       && (decoded + processed + render > 2)
-       && !(retval & VC_PICTURE))
-      bWait = true;
-
-    if (bWait && !m_inMsgEvent.WaitMSec(2000))
+    if (!retval && !m_inMsgEvent.WaitMSec(2000))
       break;
   }
   uint64_t diff = CurrentHostCounter() - startTime;
   if (retval & VC_PICTURE)
   {
     m_bufferStats.SetParams(diff, m_speed);
-    if (diff*1000/CurrentHostFrequency() > 50)
-      CLog::Log(LOGDEBUG,"CVDPAU::Decode long wait: %d", (int)((diff*1000)/CurrentHostFrequency()));
   }
+  if (diff*1000/CurrentHostFrequency() > 50)
+    CLog::Log(LOGDEBUG,"CVDPAU::Decode long wait: %d", (int)((diff*1000)/CurrentHostFrequency()));
 
   if (!retval)
   {
