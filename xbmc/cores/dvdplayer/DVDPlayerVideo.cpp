@@ -1657,7 +1657,7 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts)
   if (iBufferLevel < 2)
   {
     result |= EOS_BUFFER_LEVEL;
-    CLog::Log(LOGNOTICE,"--------------------- hurry: %d", iBufferLevel);
+    CLog::Log(LOGDEBUG,"--------------------- hurry: %d", iBufferLevel);
   }
 
   bNewFrame = iDecoderPts != m_droppingStats.m_lastDecoderPts;
