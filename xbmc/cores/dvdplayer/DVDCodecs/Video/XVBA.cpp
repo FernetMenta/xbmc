@@ -1982,9 +1982,9 @@ CXvbaRenderPicture* COutput::ProcessPicture()
   if (m_deintStep == 1)
   {
     if(m_field == XVBA_TOP_FIELD)
-      m_field = XVBA_BOTTOM_FIELD;
-    else
       m_field = XVBA_TOP_FIELD;
+    else
+      m_field = XVBA_BOTTOM_FIELD;
   }
 
   // find unused shared surface
