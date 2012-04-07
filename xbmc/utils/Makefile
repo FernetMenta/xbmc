@@ -70,6 +70,7 @@ SRCS=AlarmClock.cpp \
      Weather.cpp \
      XBMCTinyXML.cpp \
      XMLUtils.cpp \
+     ActorProtocol.cpp \
 
 LIB=utils.a
 

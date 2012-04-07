@@ -5114,7 +5114,15 @@ msgctxt "#13434"
 msgid "Play only this"
 msgstr ""
 
-#empty strings from id 13435 to 13499
+msgctxt "#13435"
+msgid "Allow Vdpau OpenGL interop"
+msgstr ""
+
+msgctxt "#13436"
+msgid "Allow Vdpau OpenGL interop YUV"
+msgstr ""
+
+#empty strings from id 13437 to 13499
 
 msgctxt "#13500"
 msgid "A/V sync method"
@@ -6333,7 +6341,7 @@ msgid "Software Blend"
 msgstr ""
 
 msgctxt "#16325"
-msgid "Auto - ION Optimized"
+msgid "VDPAU - Bob"
 msgstr ""
 
 #empty strings from id 16326 to 16399
