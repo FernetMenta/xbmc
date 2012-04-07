@@ -250,8 +250,9 @@ bool CXBMCRenderManager::Configure(unsigned int width, unsigned int height, unsi
 
   // check if decoder supports buffering
   m_bCodecSupportsBuffering = false;
-//  if (format == RENDER_FMT_VDPAU)
-//    m_bCodecSupportsBuffering = true;
+  if (format == RENDER_FMT_VDPAU ||
+      format == RENDER_FMT_VDPAU_420)
+    m_bCodecSupportsBuffering = true;
 
   bool result = m_pRenderer->Configure(width, height, d_width, d_height, fps, flags, format, extended_format, orientation);
   if(result)
@@ -856,7 +857,8 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
     CDVDCodecUtils::CopyDXVA2Picture(&image, &pic);
   }
 #ifdef HAVE_LIBVDPAU
-  else if(pic.format == RENDER_FMT_VDPAU)
+  else if(pic.format == RENDER_FMT_VDPAU
+       || pic.format == RENDER_FMT_VDPAU_420)
     m_pRenderer->AddProcessor(pic.vdpau, index);
 #endif
 #ifdef HAVE_LIBOPENMAX
