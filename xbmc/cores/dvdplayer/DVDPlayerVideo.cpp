@@ -1160,6 +1160,10 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
         formatstr = "VDPAU";
         buffering = true;
         break;
+      case RENDER_FMT_VDPAU_420:
+        formatstr = "VDPAU_420";
+        buffering = true;
+        break;
       case RENDER_FMT_DXVA:
         formatstr = "DXVA";
         buffering = true;
