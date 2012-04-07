@@ -596,6 +596,40 @@ void CGUIWindowSettingsCategory::UpdateSettings()
         pControl->SetEnabled(true);
       }
     }
+    else if (strSetting.Equals("videoplayer.usevdpauinteropyuv"))
+    {
+      bool hasInterop = g_guiSettings.GetBool("videoplayer.usevdpauinterop");
+#ifndef GL_NV_vdpau_interop
+      hasInterop = false;
+#endif
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if (pControl && hasInterop && glewIsSupported("GL_NV_vdpau_interop"))
+      {
+        pControl->SetEnabled(true);
+      }
+      else
+      {
+        pControl->SetEnabled(false);
+        g_guiSettings.SetBool("videoplayer.usevdpauinteropyuv",false);
+      }
+    }
+    else if (strSetting.Equals("videoplayer.usevdpauinterop"))
+    {
+      bool hasInterop = g_guiSettings.GetBool("videoplayer.usevdpau");
+#ifndef GL_NV_vdpau_interop
+      hasInterop = false;
+#endif
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if (pControl && hasInterop && glewIsSupported("GL_NV_vdpau_interop"))
+      {
+        pControl->SetEnabled(true);
+      }
+      else
+      {
+        pControl->SetEnabled(false);
+        g_guiSettings.SetBool("videoplayer.usevdpauinterop",false);
+      }
+    }
     else
 #endif
     if (strSetting.Equals("videoscreen.resolution"))
