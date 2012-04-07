@@ -721,6 +721,8 @@ void CGUISettings::Initialize()
 
 #ifdef HAVE_LIBVDPAU
   AddBool(vp, "videoplayer.usevdpau", 13425, true);
+  AddBool(vp, "videoplayer.usevdpauinterop", 13436, true);
+  AddBool(vp, "videoplayer.usevdpauinteropyuv", 13437, false);
 #endif
 #ifdef HAVE_LIBVA
   AddBool(vp, "videoplayer.usevaapi", 13426, true);
