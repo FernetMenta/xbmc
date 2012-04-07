@@ -5767,7 +5767,15 @@ msgctxt "#13435"
 msgid "Enable HQ Scalers for scalings above"
 msgstr ""
 
-#empty strings from id 13436 to 13499
+msgctxt "#13436"
+msgid "Allow Vdpau OpenGL interop"
+msgstr ""
+
+msgctxt "#13437"
+msgid "Allow Vdpau OpenGL interop YUV"
+msgstr ""
+
+#empty strings from id 13438 to 13499
 
 #: system/settings/settings.xml
 msgctxt "#13500"
@@ -6842,7 +6850,7 @@ msgid "Software Blend"
 msgstr ""
 
 msgctxt "#16325"
-msgid "Auto - ION Optimized"
+msgid "VDPAU - Bob"
 msgstr ""
 
 #empty strings from id 16326 to 16399
