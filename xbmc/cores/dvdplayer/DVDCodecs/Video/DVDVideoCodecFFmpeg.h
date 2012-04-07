@@ -28,7 +28,6 @@
 #include "DllSwScale.h"
 #include "DllAvFilter.h"
 
-class CVDPAU;
 class CCriticalSection;
 
 class CDVDVideoCodecFFmpeg : public CDVDVideoCodec

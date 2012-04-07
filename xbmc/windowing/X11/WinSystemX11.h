@@ -71,6 +71,7 @@ public:
   void GetConnectedOutputs(std::vector<CStdString> *outputs);
   bool IsCurrentOutput(CStdString output);
   void NotifyMouseCoverage(bool covered);
+  GLXContext GetGlxContext() { return m_glContext; }
 
 protected:
   bool RefreshGlxContext();
