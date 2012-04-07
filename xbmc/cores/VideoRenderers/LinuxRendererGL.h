@@ -38,12 +38,11 @@
 
 class CRenderCapture;
 
-class CVDPAU;
 class CBaseTexture;
 namespace Shaders { class BaseYUV2RGBShader; }
 namespace Shaders { class BaseVideoFilterShader; }
 namespace VAAPI   { struct CHolder; }
-
+namespace VDPAU   { class CVdpauRenderPicture; }
 
 #undef ALIGN
 #define ALIGN(value, alignment) (((value)+((alignment)-1))&~((alignment)-1))
@@ -142,7 +141,7 @@ public:
   virtual unsigned int GetProcessorSize() { return m_NumYV12Buffers; }
 
 #ifdef HAVE_LIBVDPAU
-  virtual void         AddProcessor(CVDPAU* vdpau, int index);
+  virtual void         AddProcessor(VDPAU::CVdpauRenderPicture* vdpau, int index);
 #endif
 #ifdef HAVE_LIBVA
   virtual void         AddProcessor(VAAPI::CHolder& holder, int index);
@@ -193,6 +192,10 @@ protected:
   void DeleteVDPAUTexture(int index);
   bool CreateVDPAUTexture(int index);
 
+  void UploadVDPAUTexture420(int index);
+  void DeleteVDPAUTexture420(int index);
+  bool CreateVDPAUTexture420(int index);
+
   void UploadVAAPITexture(int index);
   void DeleteVAAPITexture(int index);
   bool CreateVAAPITexture(int index);
@@ -219,6 +222,7 @@ protected:
   void RenderSinglePass(int renderBuffer, int field); // single pass glsl renderer
   void RenderSoftware(int renderBuffer, int field);   // single pass s/w yuv2rgb renderer
   void RenderVDPAU(int renderBuffer, int field);      // render using vdpau hardware
+  void RenderVDPAUYV12(int renderBuffer, int field);      // render using vdpau hardware
   void RenderVAAPI(int renderBuffer, int field);      // render using vdpau hardware
 
   struct
@@ -279,7 +283,7 @@ protected:
     GLuint    pbo[MAX_PLANES];
 
 #ifdef HAVE_LIBVDPAU
-    CVDPAU*   vdpau;
+    VDPAU::CVdpauRenderPicture *vdpau;
 #endif
 #ifdef HAVE_LIBVA
     VAAPI::CHolder& vaapi;
@@ -325,6 +329,7 @@ protected:
   bool  m_nonLinStretch;
   bool  m_nonLinStretchGui;
   float m_pixelRatio;
+  bool  m_skipRender;
 };
 
 
