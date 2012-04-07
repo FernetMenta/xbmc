@@ -1083,6 +1083,10 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
         flags |= CONF_FLAGS_FORMAT_VDPAU;
         formatstr = "VDPAU";
         break;
+      case DVDVideoPicture::FMT_VDPAU_420:
+        flags |= CONF_FLAGS_FORMAT_VDPAU_420;
+        formatstr = "VDPAU_420";
+        break;
       case DVDVideoPicture::FMT_DXVA:
         flags |= CONF_FLAGS_FORMAT_DXVA;
         formatstr = "DXVA";

@@ -34,7 +34,7 @@
 
 namespace DXVA { class CSurfaceContext; }
 namespace VAAPI { struct CHolder; }
-class CVDPAU;
+namespace VDPAU { class CVdpauRenderPicture; }
 class COpenMax;
 class COpenMaxVideo;
 struct OpenMaxVideoBuffer;
@@ -59,7 +59,7 @@ struct DVDVideoPicture
       DXVA::CSurfaceContext* context;
     };
     struct {
-      CVDPAU* vdpau;
+      VDPAU::CVdpauRenderPicture* vdpau;
     };
     struct {
       VAAPI::CHolder* vaapi;
@@ -102,6 +102,7 @@ struct DVDVideoPicture
   enum EFormat {
     FMT_YUV420P = 0,
     FMT_VDPAU,
+    FMT_VDPAU_420,
     FMT_NV12,
     FMT_UYVY,
     FMT_YUY2,

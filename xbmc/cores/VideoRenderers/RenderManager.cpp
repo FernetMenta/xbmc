@@ -776,7 +776,8 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
     CDVDCodecUtils::CopyDXVA2Picture(&image, &pic);
   }
 #ifdef HAVE_LIBVDPAU
-  else if(pic.format == DVDVideoPicture::FMT_VDPAU)
+  else if(pic.format == DVDVideoPicture::FMT_VDPAU
+       || pic.format == DVDVideoPicture::FMT_VDPAU_420)
     m_pRenderer->AddProcessor(pic.vdpau);
 #endif
 #ifdef HAVE_LIBOPENMAX
