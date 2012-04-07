@@ -35,7 +35,7 @@
 
 namespace DXVA { class CSurfaceContext; }
 namespace VAAPI { struct CHolder; }
-class CVDPAU;
+namespace VDPAU { class CVdpauRenderPicture; }
 class COpenMax;
 class COpenMaxVideo;
 struct OpenMaxVideoBuffer;
@@ -56,7 +56,7 @@ struct DVDVideoPicture
       DXVA::CSurfaceContext* context;
     };
     struct {
-      CVDPAU* vdpau;
+      VDPAU::CVdpauRenderPicture* vdpau;
     };
     struct {
       VAAPI::CHolder* vaapi;
