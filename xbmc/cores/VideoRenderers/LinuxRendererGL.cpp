@@ -224,7 +224,7 @@ bool CLinuxRendererGL::ValidateRenderer()
 
 void CLinuxRendererGL::ManageTextures()
 {
-  m_NumYV12Buffers = 2;
+//  m_NumYV12Buffers = NUM_BUFFERS;
   //m_iYV12RenderBuffer = 0;
   return;
 }
@@ -240,6 +240,11 @@ bool CLinuxRendererGL::ValidateRenderTarget()
     }
     else
       CLog::Log(LOGNOTICE,"Using GL_TEXTURE_2D");
+
+    // function pointer for texture might change in
+    // call to LoadShaders
+    for (int i = 0 ; i < NUM_BUFFERS ; i++)
+      (this->*m_textureDelete)(i);
 
      // create the yuv textures
     LoadShaders();
@@ -569,6 +574,18 @@ void CLinuxRendererGL::Flush()
 
   glFinish();
   m_bValidated = false;
+  m_iYV12RenderBuffer = 0;
+}
+
+void CLinuxRendererGL::ReleaseBuffer(int idx)
+{
+  YUVBUFFER &buf = m_buffers[idx];
+#ifdef HAVE_LIBVDPAU
+  SAFE_RELEASE(buf.vdpau);
+#endif
+#ifdef HAVE_LIBVA
+  buf.vaapi.surface.reset();
+#endif
 }
 
 void CLinuxRendererGL::Update(bool bPauseDrawing)
@@ -746,7 +763,6 @@ unsigned int CLinuxRendererGL::PreInit()
     m_resolution = RES_DESKTOP;
 
   m_iYV12RenderBuffer = 0;
-  m_NumYV12Buffers = 2;
 
   // setup the background colour
   m_clearColour = (float)(g_advancedSettings.m_videoBlackBarColour & 0xff) / 0xff;
@@ -1110,7 +1126,10 @@ void CLinuxRendererGL::Render(DWORD flags, int renderBuffer)
     m_currentField = FIELD_FULL;
 
   // call texture load function
+  m_skipRender = false;
   (this->*m_textureUpload)(renderBuffer);
+  if (m_skipRender)
+    return;
 
   if (m_renderMethod & RENDER_GLSL)
   {
@@ -2217,16 +2236,13 @@ void CLinuxRendererGL::UploadVDPAUTexture(int index)
   YUVFIELDS &fields = m_buffers[index].fields;
   YUVPLANE &plane = fields[0][0];
 
-  if (!vdpau)
+  if (!vdpau || !vdpau->valid)
   {
-    fields[0][1].id = plane.id;
     m_eventTexturesDone[index]->Set();
-    CLog::Log(LOGWARNING,"--------- no vdpau texture, index: %d", index);
+    m_skipRender = true;
     return;
   }
 
-//  CLog::Log(LOGNOTICE,"-------- rendered output surf: %d", vdpau->sourceIdx);
-//  CLog::Log(LOGNOTICE,"-------- pts: %f", vdpau->DVDPic.pts);
   fields[0][1].id = vdpau->texture[0];
 
   m_eventTexturesDone[index]->Set();
@@ -2296,13 +2312,10 @@ void CLinuxRendererGL::UploadVDPAUTexture420(int index)
   YUVFIELDS &fields = m_buffers[index].fields;
   YUVPLANE &plane = fields[0][0];
 
-  if (!vdpau)
+  if (!vdpau || !vdpau->valid)
   {
-    fields[1][0].id = plane.id;
-    fields[1][1].id = plane.id;
-    fields[2][0].id = plane.id;
-    fields[2][1].id = plane.id;
     m_eventTexturesDone[index]->Set();
+    m_skipRender = true;
     return;
   }
 
@@ -2494,7 +2507,7 @@ void CLinuxRendererGL::UploadVAAPITexture(int index)
   || status == VA_STATUS_ERROR_INVALID_DISPLAY)
   {
     va.display->lost(true);
-    for(int i = 0; i < NUM_BUFFERS; i++)
+    for(int i = 0; i < m_NumYV12Buffers; i++)
     {
       m_buffers[i].vaapi.display.reset();
       m_buffers[i].vaapi.surface.reset();
@@ -3155,7 +3168,8 @@ bool CLinuxRendererGL::Supports(EINTERLACEMETHOD method)
   if(method == VS_INTERLACEMETHOD_AUTO)
     return true;
 
-  if(m_renderMethod & RENDER_VDPAU)
+  if(m_renderMethod & RENDER_VDPAU ||
+      CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_VDPAU_420)
   {
 #ifdef HAVE_LIBVDPAU
     VDPAU::CVdpauRenderPicture *vdpauPic = m_buffers[m_iYV12RenderBuffer].vdpau;
@@ -3293,9 +3307,9 @@ void CLinuxRendererGL::UnBindPbo(YUVBUFFER& buff)
 }
 
 #ifdef HAVE_LIBVDPAU
-void CLinuxRendererGL::AddProcessor(VDPAU::CVdpauRenderPicture *vdpau)
+void CLinuxRendererGL::AddProcessor(VDPAU::CVdpauRenderPicture *vdpau, int index)
 {
-  YUVBUFFER &buf = m_buffers[NextYV12Texture()];
+  YUVBUFFER &buf = m_buffers[index];
   VDPAU::CVdpauRenderPicture *pic = vdpau->Acquire();
   SAFE_RELEASE(buf.vdpau);
   buf.vdpau = pic;
@@ -3303,9 +3317,9 @@ void CLinuxRendererGL::AddProcessor(VDPAU::CVdpauRenderPicture *vdpau)
 #endif
 
 #ifdef HAVE_LIBVA
-void CLinuxRendererGL::AddProcessor(VAAPI::CHolder& holder)
+void CLinuxRendererGL::AddProcessor(VAAPI::CHolder& holder, int index)
 {
-  YUVBUFFER &buf = m_buffers[NextYV12Texture()];
+  YUVBUFFER &buf = m_buffers[index];
   buf.vaapi.surface = holder.surface;
 }
 #endif

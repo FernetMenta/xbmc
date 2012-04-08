@@ -367,7 +367,7 @@ bool CDVDPlayer::OpenFile(const CFileItem& file, const CPlayerOptions &options)
     m_ready.Reset();
 	
 #if defined(HAS_VIDEO_PLAYBACK)
-    g_renderManager.PreInit();
+    g_renderManager.PreInit(&m_clock);
 #endif
 	
     Create();
@@ -1588,7 +1588,7 @@ void CDVDPlayer::HandlePlaySpeed()
 
     }
     else if (m_CurrentVideo.id >= 0
-          &&  m_CurrentVideo.inited == true
+          &&  (m_CurrentVideo.inited == true || GetPlaySpeed() < 0) // allow rewind at end of file
           &&  m_SpeedState.lastpts  != m_dvdPlayerVideo.GetCurrentPts()
           &&  m_SpeedState.lasttime != GetTime())
     {
@@ -2268,6 +2268,12 @@ void CDVDPlayer::HandleMessages()
 
         if (speed != DVD_PLAYSPEED_PAUSE && m_playSpeed != DVD_PLAYSPEED_PAUSE && speed != m_playSpeed)
           m_callback.OnPlayBackSpeedChanged(speed / DVD_PLAYSPEED_NORMAL);
+
+        // do a seek after rewind, clock is not in sync with current pts
+        if (m_playSpeed < 0 && speed >= 0)
+        {
+          m_messenger.Put(new CDVDMsgPlayerSeek(GetTime(), true, true, true));
+        }
 
         // if playspeed is different then DVD_PLAYSPEED_NORMAL or DVD_PLAYSPEED_PAUSE
         // audioplayer, stops outputing audio to audiorendere, but still tries to

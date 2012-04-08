@@ -135,7 +135,7 @@ public:
   uint16_t processedPics;
   uint16_t renderPics;
   uint64_t latency;         // time decoder has waited for a frame, ideally there is no latency
-  int playSpeed;
+  int cmdFlags;
   bool canSkipDeint;
   int processCmd;
 
@@ -147,8 +147,8 @@ public:
   void DecRender() { CSingleLock l(m_sec); renderPics--;}
   void Reset() { CSingleLock l(m_sec); decodedPics=0; processedPics=0;renderPics=0;latency=0;}
   void Get(uint16_t &decoded, uint16_t &processed, uint16_t &render) {CSingleLock l(m_sec); decoded = decodedPics, processed=processedPics, render=renderPics;}
-  void SetParams(uint64_t time, int speed) { CSingleLock l(m_sec); latency = time; playSpeed = speed; }
-  void GetParams(uint64_t &lat, int &speed) { CSingleLock l(m_sec); lat = latency; speed = playSpeed; }
+  void SetParams(uint64_t time, int flags) { CSingleLock l(m_sec); latency = time; cmdFlags = flags; }
+  void GetParams(uint64_t &lat, int &flags) { CSingleLock l(m_sec); lat = latency; flags = cmdFlags; }
   void SetCmd(int cmd) { CSingleLock l(m_sec); processCmd = cmd; }
   void GetCmd(int &cmd) { CSingleLock l(m_sec); cmd = processCmd; processCmd = 0; }
   void SetCanSkipDeint(bool canSkip) { CSingleLock l(m_sec); canSkipDeint = canSkip; }

@@ -155,10 +155,10 @@ public:
   virtual EINTERLACEMETHOD AutoInterlaceMethod();
 
 #ifdef HAVE_LIBOPENMAX
-  virtual void         AddProcessor(COpenMax* openMax, DVDVideoPicture *picture);
+  virtual void         AddProcessor(COpenMax* openMax, DVDVideoPicture *picture, int index);
 #endif
 #ifdef HAVE_VIDEOTOOLBOXDECODER
-  virtual void         AddProcessor(CDVDVideoCodecVideoToolBox* vtb, DVDVideoPicture *picture);
+  virtual void         AddProcessor(CDVDVideoCodecVideoToolBox* vtb, DVDVideoPicture *picture, int index);
 #endif
 protected:
   virtual void Render(DWORD flags, int index);
