@@ -34,6 +34,10 @@ INCLUDES += -I${prefix}/opt/android-source/system/core/include
 INCLUDES += -I${prefix}/opt/android-source/libhardware/include
 endif
 
+ifeq (@USE_XVBA@,1)
+SRCS += XVBA.cpp
+endif
+
 ifeq (@USE_LIBAMCODEC@,1)
 SRCS += AMLCodec.cpp
 SRCS += DVDVideoCodecAmlogic.cpp

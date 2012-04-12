@@ -44,6 +44,8 @@ namespace Shaders { class BaseYUV2RGBShader; }
 namespace Shaders { class BaseVideoFilterShader; }
 namespace VAAPI   { struct CHolder; }
 namespace VDPAU   { class CVdpauRenderPicture; }
+namespace XVBA    { class CXvbaRenderPicture; }
+
 
 #undef ALIGN
 #define ALIGN(value, alignment) (((value)+((alignment)-1))&~((alignment)-1))
@@ -89,6 +91,7 @@ enum RenderMethod
   RENDER_POT=0x10,
   RENDER_VAAPI=0x20,
   RENDER_CVREF = 0x40,
+  RENDER_XVBA=0x80,
 };
 
 enum RenderQuality
@@ -151,7 +154,9 @@ public:
 #ifdef TARGET_DARWIN
   virtual void         AddProcessor(struct __CVBuffer *cvBufferRef, int index);
 #endif
-
+#ifdef HAVE_LIBXVBA
+  virtual void         AddProcessor(XVBA::CXvbaRenderPicture* xvba, int index);
+#endif
   virtual void RenderUpdate(bool clear, DWORD flags = 0, DWORD alpha = 255);
 
   // Feature support
@@ -206,6 +211,10 @@ protected:
   void DeleteCVRefTexture(int index);
   bool CreateCVRefTexture(int index);
 
+  bool UploadXVBATexture(int index);
+  void DeleteXVBATexture(int index);
+  bool CreateXVBATexture(int index);
+
   bool UploadYUV422PackedTexture(int index);
   void DeleteYUV422PackedTexture(int index);
   bool CreateYUV422PackedTexture(int index);
@@ -225,6 +234,7 @@ protected:
   void RenderVDPAU(int renderBuffer, int field);      // render using vdpau hardware
   void RenderProgressiveWeave(int renderBuffer, int field); // render using vdpau hardware
   void RenderVAAPI(int renderBuffer, int field);      // render using vdpau hardware
+  void RenderXVBA(int renderBuffer, int field);      // render using xvba hardware
 
   struct
   {
@@ -292,6 +302,9 @@ protected:
 #endif
 #ifdef TARGET_DARWIN_OSX
     struct __CVBuffer *cvBufferRef;
+#endif
+#ifdef HAVE_LIBXVBA
+    XVBA::CXvbaRenderPicture *xvba;
 #endif
   };
 

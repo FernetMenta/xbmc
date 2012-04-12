@@ -410,6 +410,11 @@
           <level>2</level>
           <default>true</default>
         </setting>
+        <setting id="videoplayer.usexvba" type="boolean" label="13438" help="">
+          <visible>HAVE_LIBXVBA</visible>
+          <level>2</level>
+          <default>true</default>
+        </setting> 
         <setting id="videoplayer.usestagefright" type="boolean" label="13436" help="36260">
           <visible>HAVE_LIBSTAGEFRIGHTDECODER</visible>
           <level>2</level>
