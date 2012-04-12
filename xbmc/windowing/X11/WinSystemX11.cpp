@@ -227,21 +227,26 @@ bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
 #if defined(HAS_XRANDR)
   XOutput out;
   XMode mode;
-  out.name = res.strOutput;
-  mode.w   = res.iWidth;
-  mode.h   = res.iHeight;
-  mode.hz  = res.fRefreshRate;
-  mode.id  = res.strId;
+
+  if (m_bFullScreen)
+  {
+    out.name = res.strOutput;
+    mode.w   = res.iWidth;
+    mode.h   = res.iHeight;
+    mode.hz  = res.fRefreshRate;
+    mode.id  = res.strId;
+  }
+  else
+  {
+    out.name = g_settings.m_ResInfo[RES_DESKTOP].strOutput;
+    mode.w   = g_settings.m_ResInfo[RES_DESKTOP].iWidth;
+    mode.h   = g_settings.m_ResInfo[RES_DESKTOP].iHeight;
+    mode.hz  = g_settings.m_ResInfo[RES_DESKTOP].fRefreshRate;
+    mode.id  = g_settings.m_ResInfo[RES_DESKTOP].strId;
+  }
  
   XOutput currout  = g_xrandr.GetCurrentOutput();
   XMode   currmode = g_xrandr.GetCurrentMode(currout.name);
-
-  if(!m_bFullScreen)
-  {
-    // reset mode to desktop resolution
-    out.name = g_settings.m_ResInfo[RES_DESKTOP].strOutput;
-    mode = g_xrandr.GetCurrentMode(out.name);
-  }
 
   // only call xrandr if mode changes
   if (currout.name != out.name || currmode.w != mode.w || currmode.h != mode.h ||
@@ -251,7 +256,6 @@ bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
     OnLostDevice();
     g_xrandr.SetMode(out, mode);
   }
-
 #endif
 
   int options = SDL_OPENGL;
