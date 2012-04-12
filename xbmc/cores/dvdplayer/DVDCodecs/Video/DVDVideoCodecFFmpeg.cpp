@@ -60,6 +60,9 @@
 #ifdef TARGET_DARWIN_OSX
 #include "VDA.h"
 #endif
+#ifdef HAVE_LIBXVBA
+#include "XVBA.h"
+#endif
 
 using namespace boost;
 
@@ -100,6 +103,19 @@ enum PixelFormat CDVDVideoCodecFFmpeg::GetFormat( struct AVCodecContext * avctx
     else
       dec->Release();
   }
+#endif
+#ifdef HAVE_LIBXVBA
+    if(*cur == AV_PIX_FMT_XVBA_VLD && CSettings::Get().GetBool("videoplayer.usexvba"))
+    {
+      XVBA::CDecoder* dec = new XVBA::CDecoder();
+      if(dec->Open(avctx, *cur, ctx->m_uSurfacesCount))
+      {
+        ctx->SetHardware(dec);
+        return *cur;
+      }
+      else
+        dec->Release();
+    }
 #endif
 #ifdef HAVE_LIBVA
     // mpeg4 vaapi decoding is disabled
