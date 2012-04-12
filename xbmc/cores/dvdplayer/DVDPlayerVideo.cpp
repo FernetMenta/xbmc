@@ -1017,6 +1017,7 @@ static std::string GetRenderFormatName(ERenderFormat format)
     case RENDER_FMT_OMXEGL:    return "OMXEGL";
     case RENDER_FMT_CVBREF:    return "BGRA";
     case RENDER_FMT_BYPASS:    return "BYPASS";
+    case RENDER_FMT_XVBA:      return "XVBA";
     case RENDER_FMT_NONE:      return "NONE";
   }
   return "UNKNOWN";
