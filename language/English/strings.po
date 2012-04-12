@@ -4842,7 +4842,11 @@ msgctxt "#13434"
 msgid "Allow Vdpau OpenGL interop YUV"
 msgstr ""
 
-#empty strings from id 13435 to 13499
+msgctxt "#13435"
+msgid "Allow hardware acceleration (XVBA))"
+msgstr ""
+
+#empty strings from id 13436 to 13499
 
 msgctxt "#13500"
 msgid "A/V sync method"
@@ -6034,7 +6038,11 @@ msgctxt "#16325"
 msgid "VDPAU - Bob"
 msgstr ""
 
-#empty strings from id 16326 to 16399
+msgctxt "#16326"
+msgid "XVBA"
+msgstr ""
+
+#empty strings from id 16327 to 16399
 
 msgctxt "#16400"
 msgid "Post-processing"
