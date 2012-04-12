@@ -941,6 +941,10 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
   else if(pic.format == RENDER_FMT_VAAPI)
     m_pRenderer->AddProcessor(*pic.vaapi, index);
 #endif
+#ifdef HAVE_LIBXVBA
+  else if(pic.format == RENDER_FMT_XVBA)
+    m_pRenderer->AddProcessor(pic.xvba, index);
+#endif
   m_pRenderer->ReleaseImage(index, false);
 
   return index;
