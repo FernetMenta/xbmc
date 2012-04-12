@@ -61,6 +61,9 @@
        VA_MICRO_VERSION == 0 && VA_SDS_VERSION < 5)))
 
 #endif
+#ifdef HAVE_LIBXVBA
+#include "cores/dvdplayer/DVDCodecs/Video/XVBA.h"
+#endif
 
 #ifdef HAS_GLX
 #include <GL/glx.h>
@@ -120,6 +123,9 @@ CLinuxRendererGL::YUVBUFFER::YUVBUFFER()
   flipindex = 0;
 #ifdef HAVE_LIBVDPAU
   vdpau = NULL;
+#endif
+#ifdef HAVE_LIBXVBA
+  xvba = NULL;
 #endif
 }
 
@@ -583,6 +589,9 @@ void CLinuxRendererGL::ReleaseBuffer(int idx)
 #ifdef HAVE_LIBVDPAU
   SAFE_RELEASE(buf.vdpau);
 #endif
+#ifdef HAVE_LIBXVBA
+  SAFE_RELEASE(buf.xvba);
+#endif
 #ifdef HAVE_LIBVA
   buf.vaapi.surface.reset();
 #endif
@@ -842,7 +851,7 @@ void CLinuxRendererGL::UpdateVideoFilter()
   case VS_SCALINGMETHOD_LINEAR:
     SetTextureFilter(m_scalingMethod == VS_SCALINGMETHOD_NEAREST ? GL_NEAREST : GL_LINEAR);
     m_renderQuality = RQ_SINGLEPASS;
-    if (((m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI)) && m_nonLinStretch)
+    if (((m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI) || (m_renderMethod & RENDER_XVBA)) && m_nonLinStretch)
     {
       m_pVideoFilterShader = new StretchFilterShader();
       if (!m_pVideoFilterShader->CompileAndLink())
@@ -922,6 +931,11 @@ void CLinuxRendererGL::LoadShaders(int field)
   {
     CLog::Log(LOGNOTICE, "GL: Using VAAPI render method");
     m_renderMethod = RENDER_VAAPI;
+  }
+  else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA)
+  {
+    CLog::Log(LOGNOTICE, "GL: Using XVBA render method");
+    m_renderMethod = RENDER_XVBA;
   }
   else
   {
@@ -1063,6 +1077,12 @@ void CLinuxRendererGL::LoadShaders(int field)
     m_textureCreate = &CLinuxRendererGL::CreateVAAPITexture;
     m_textureDelete = &CLinuxRendererGL::DeleteVAAPITexture;
   }
+  else if (CONF_FLAGS_FORMAT_MASK(m_iFlags) == CONF_FLAGS_FORMAT_XVBA)
+  {
+    m_textureUpload = &CLinuxRendererGL::UploadXVBATexture;
+    m_textureCreate = &CLinuxRendererGL::CreateXVBATexture;
+    m_textureDelete = &CLinuxRendererGL::DeleteXVBATexture;
+  }
   else
   {
     // setup default YV12 texture handlers
@@ -1164,6 +1184,13 @@ void CLinuxRendererGL::Render(DWORD flags, int renderBuffer)
   {
     UpdateVideoFilter();
     RenderVAAPI(renderBuffer, m_currentField);
+  }
+#endif
+#ifdef HAVE_LIBXVBA
+  else if (m_renderMethod & RENDER_XVBA)
+  {
+    UpdateVideoFilter();
+    RenderXVBA(renderBuffer, m_currentField);
   }
 #endif
   else
@@ -1619,6 +1646,77 @@ void CLinuxRendererGL::RenderVAAPI(int index, int field)
     return;
   }
 #endif
+
+  glBindTexture (m_textureTarget, 0);
+  glDisable(m_textureTarget);
+#endif
+}
+
+void CLinuxRendererGL::RenderXVBA(int index, int field)
+{
+#ifdef HAVE_LIBXVBA
+  YUVPLANE &plane = m_buffers[index].fields[0][1];
+
+  glEnable(m_textureTarget);
+  glActiveTextureARB(GL_TEXTURE0);
+
+  glBindTexture(m_textureTarget, plane.id);
+
+  // Try some clamping or wrapping
+  glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  if (m_pVideoFilterShader)
+  {
+    GLint filter;
+    if (!m_pVideoFilterShader->GetTextureFilter(filter))
+      filter = m_scalingMethod == VS_SCALINGMETHOD_NEAREST ? GL_NEAREST : GL_LINEAR;
+
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MAG_FILTER, filter);
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MIN_FILTER, filter);
+    m_pVideoFilterShader->SetSourceTexture(0);
+    m_pVideoFilterShader->SetWidth(m_sourceWidth);
+    m_pVideoFilterShader->SetHeight(m_sourceHeight);
+
+    //disable non-linear stretch when a dvd menu is shown, parts of the menu are rendered through the overlay renderer
+    //having non-linear stretch on breaks the alignment
+    if (g_application.m_pPlayer && g_application.m_pPlayer->IsInMenu())
+      m_pVideoFilterShader->SetNonLinStretch(1.0);
+    else
+      m_pVideoFilterShader->SetNonLinStretch(pow(g_settings.m_fPixelRatio, g_advancedSettings.m_videoNonLinStretchRatio));
+
+    m_pVideoFilterShader->Enable();
+  }
+  else
+  {
+    GLint filter = m_scalingMethod == VS_SCALINGMETHOD_NEAREST ? GL_NEAREST : GL_LINEAR;
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MAG_FILTER, filter);
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MIN_FILTER, filter);
+  }
+
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  VerifyGLState();
+
+  glBegin(GL_QUADS);
+  if (m_textureTarget==GL_TEXTURE_2D)
+  {
+    glTexCoord2f(plane.rect.x1, plane.rect.y1); glVertex2f(m_destRect.x1, m_destRect.y1);
+    glTexCoord2f(plane.rect.x2, plane.rect.y1); glVertex2f(m_destRect.x2, m_destRect.y1);
+    glTexCoord2f(plane.rect.x2, plane.rect.y2); glVertex2f(m_destRect.x2, m_destRect.y2);
+    glTexCoord2f(plane.rect.x1, plane.rect.y2); glVertex2f(m_destRect.x1, m_destRect.y2);
+  }
+  else
+  {
+    glTexCoord2f(m_destRect.x1, m_destRect.y1); glVertex4f(m_destRect.x1, m_destRect.y1, 0.0f, 0.0f);
+    glTexCoord2f(m_destRect.x2, m_destRect.y1); glVertex4f(m_destRect.x2, m_destRect.y1, 1.0f, 0.0f);
+    glTexCoord2f(m_destRect.x2, m_destRect.y2); glVertex4f(m_destRect.x2, m_destRect.y2, 1.0f, 1.0f);
+    glTexCoord2f(m_destRect.x1, m_destRect.y2); glVertex4f(m_destRect.x1, m_destRect.y2, 0.0f, 1.0f);
+  }
+  glEnd();
+  VerifyGLState();
+
+  if (m_pVideoFilterShader)
+    m_pVideoFilterShader->Disable();
 
   glBindTexture (m_textureTarget, 0);
   glDisable(m_textureTarget);
@@ -2522,6 +2620,93 @@ void CLinuxRendererGL::UploadVAAPITexture(int index)
 #endif
 }
 
+void CLinuxRendererGL::DeleteXVBATexture(int index)
+{
+#ifdef HAVE_LIBXVBA
+  YUVPLANE &plane = m_buffers[index].fields[0][0];
+  YUVFIELDS &fields = m_buffers[index].fields;
+
+  SAFE_RELEASE(m_buffers[index].xvba);
+
+  if(plane.id && glIsTexture(plane.id))
+    glDeleteTextures(1, &plane.id);
+  plane.id = 0;
+  fields[0][1].id = 0;
+#endif
+}
+
+bool CLinuxRendererGL::CreateXVBATexture(int index)
+{
+#ifdef HAVE_LIBXVBA
+  YV12Image &im = m_buffers[index].image;
+  YUVFIELDS &fields = m_buffers[index].fields;
+  YUVPLANE &plane = fields[0][0];
+
+  DeleteXVBATexture(index);
+
+  memset(&im , 0, sizeof(im));
+  memset(&fields, 0, sizeof(fields));
+
+  glGenTextures(1, &plane.id);
+
+  m_eventTexturesDone[index]->Set();
+#endif
+  return true;
+}
+
+void CLinuxRendererGL::UploadXVBATexture(int index)
+{
+#ifdef HAVE_LIBXVBA
+  XVBA::CXvbaRenderPicture *xvba = m_buffers[index].xvba;
+  YV12Image &im = m_buffers[index].image;
+
+  YUVFIELDS &fields = m_buffers[index].fields;
+  YUVPLANE &plane = fields[0][1];
+
+  if (!xvba)
+  {
+    fields[0][1].id = fields[0][0].id;
+    m_eventTexturesDone[index]->Set();
+    CLog::Log(LOGWARNING,"CLinuxRendererGL::UploadXVBATexture no xvba texture, index: %d", index);
+    return;
+  }
+//  xvba->Transfer();
+
+  fields[0][1].id = xvba->texture;
+
+  im.height = xvba->texHeight;
+  im.width  = xvba->texWidth;
+
+  plane.texwidth  = xvba->texWidth;
+  plane.texheight = xvba->texHeight;
+  plane.pixpertex_x = 1;
+  plane.pixpertex_y = 1;
+
+  plane.rect = m_sourceRect;
+  plane.width  = im.width;
+  plane.height = im.height;
+
+  plane.height  /= plane.pixpertex_y;
+  plane.rect.y1 /= plane.pixpertex_y;
+  plane.rect.y2 /= plane.pixpertex_y;
+  plane.width   /= plane.pixpertex_x;
+  plane.rect.x1 /= plane.pixpertex_x;
+  plane.rect.x2 /= plane.pixpertex_x;
+
+  if (m_textureTarget == GL_TEXTURE_2D)
+  {
+    plane.height  /= plane.texheight;
+    plane.rect.y1 /= plane.texheight;
+    plane.rect.y2 /= plane.texheight;
+    plane.width   /= plane.texwidth;
+    plane.rect.x1 /= plane.texwidth;
+    plane.rect.x2 /= plane.texwidth;
+  }
+
+  m_eventTexturesDone[index]->Set();
+#endif
+}
+
 void CLinuxRendererGL::UploadYUV422PackedTexture(int source)
 {
   YUVBUFFER& buf    =  m_buffers[source];
@@ -3105,6 +3290,9 @@ bool CLinuxRendererGL::Supports(ERENDERFEATURE feature)
     if (m_renderMethod & RENDER_VAAPI)
       return false;
 
+    if (m_renderMethod & RENDER_XVBA)
+      return false;
+
     return (m_renderMethod & RENDER_GLSL)
         || (m_renderMethod & RENDER_ARB)
         || ((m_renderMethod & RENDER_SW) && glewIsSupported("GL_ARB_imaging") == GL_TRUE);
@@ -3116,6 +3304,9 @@ bool CLinuxRendererGL::Supports(ERENDERFEATURE feature)
       return true;
 
     if (m_renderMethod & RENDER_VAAPI)
+      return false;
+
+    if (m_renderMethod & RENDER_XVBA)
       return false;
 
     return (m_renderMethod & RENDER_GLSL)
@@ -3141,7 +3332,8 @@ bool CLinuxRendererGL::Supports(ERENDERFEATURE feature)
   if (feature == RENDERFEATURE_NONLINSTRETCH)
   {
     if (((m_renderMethod & RENDER_GLSL) && !(m_renderMethod & RENDER_POT)) ||
-        (m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI))
+        (m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI) ||
+        (m_renderMethod & RENDER_XVBA))
       return true;
   }
 
@@ -3198,6 +3390,16 @@ bool CLinuxRendererGL::Supports(EINTERLACEMETHOD method)
     return false;
   }
 
+  if(m_renderMethod & RENDER_XVBA)
+  {
+#ifdef HAVE_LIBXVBA
+    XVBA::CXvbaRenderPicture *xvba = m_buffers[m_iYV12RenderBuffer].xvba;
+    if(xvba)
+      return xvba->xvba->Supports(method);
+#endif
+    return false;
+  }
+
 #ifdef TARGET_DARWIN
   // YADIF too slow for HD but we have no methods to fall back
   // to something that works so just turn it off.
@@ -3240,7 +3442,7 @@ bool CLinuxRendererGL::Supports(ESCALINGMETHOD method)
   || method == VS_SCALINGMETHOD_LANCZOS3)
   {
     if ((glewIsSupported("GL_EXT_framebuffer_object") && (m_renderMethod & RENDER_GLSL)) ||
-        (m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI))
+        (m_renderMethod & RENDER_VDPAU) || (m_renderMethod & RENDER_VAAPI) || (m_renderMethod & RENDER_XVBA))
     {
       // spline36 and lanczos3 are only allowed through advancedsettings.xml
       if(method != VS_SCALINGMETHOD_SPLINE36
@@ -3321,6 +3523,16 @@ void CLinuxRendererGL::AddProcessor(VAAPI::CHolder& holder, int index)
 {
   YUVBUFFER &buf = m_buffers[index];
   buf.vaapi.surface = holder.surface;
+}
+#endif
+
+#ifdef HAVE_LIBXVBA
+void CLinuxRendererGL::AddProcessor(XVBA::CXvbaRenderPicture* xvba, int index)
+{
+  YUVBUFFER &buf = m_buffers[index];
+  XVBA::CXvbaRenderPicture *pic = xvba->Acquire();
+  SAFE_RELEASE(buf.xvba);
+  buf.xvba = pic;
 }
 #endif
 

@@ -236,7 +236,8 @@ bool CXBMCRenderManager::Configure(unsigned int width, unsigned int height, unsi
   // check if decoder supports buffering
   m_bCodecSupportsBuffering = false;
   if ((CONF_FLAGS_FORMAT_MASK(flags) == CONF_FLAGS_FORMAT_VDPAU)
-     || CONF_FLAGS_FORMAT_MASK(flags) == CONF_FLAGS_FORMAT_VDPAU_420)
+     || CONF_FLAGS_FORMAT_MASK(flags) == CONF_FLAGS_FORMAT_VDPAU_420
+     || CONF_FLAGS_FORMAT_MASK(flags) == CONF_FLAGS_FORMAT_XVBA)
     m_bCodecSupportsBuffering = true;
 
   bool result = m_pRenderer->Configure(width, height, d_width, d_height, fps, flags, format);
@@ -821,6 +822,10 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
 #ifdef HAVE_LIBVA
   else if(pic.format == DVDVideoPicture::FMT_VAAPI)
     m_pRenderer->AddProcessor(*pic.vaapi, index);
+#endif
+#ifdef HAVE_LIBXVBA
+  else if(pic.format == DVDVideoPicture::FMT_XVBA)
+    m_pRenderer->AddProcessor(pic.xvba, index);
 #endif
   m_pRenderer->ReleaseImage(index, false);
 

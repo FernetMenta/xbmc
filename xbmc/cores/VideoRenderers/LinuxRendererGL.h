@@ -40,6 +40,8 @@ namespace Shaders { class BaseYUV2RGBShader; }
 namespace Shaders { class BaseVideoFilterShader; }
 namespace VAAPI   { struct CHolder; }
 namespace VDPAU   { class CVdpauRenderPicture; }
+namespace XVBA    { class CXvbaRenderPicture; }
+
 #define NUM_BUFFERS 10
 
 
@@ -93,6 +95,7 @@ enum RenderMethod
   RENDER_VDPAU=0x08,
   RENDER_POT=0x10,
   RENDER_VAAPI=0x20,
+  RENDER_XVBA=0x40,
 };
 
 enum RenderQuality
@@ -151,7 +154,9 @@ public:
 #ifdef HAVE_LIBVA
   virtual void         AddProcessor(VAAPI::CHolder& holder, int index);
 #endif
-
+#ifdef HAVE_LIBXVBA
+  virtual void         AddProcessor(XVBA::CXvbaRenderPicture* xvba, int index);
+#endif
   virtual void RenderUpdate(bool clear, DWORD flags = 0, DWORD alpha = 255);
 
   // Feature support
@@ -205,6 +210,10 @@ protected:
   void DeleteYUV422PackedTexture(int index);
   bool CreateYUV422PackedTexture(int index);
 
+  void UploadXVBATexture(int index);
+  void DeleteXVBATexture(int index);
+  bool CreateXVBATexture(int index);
+
   void UploadRGBTexture(int index);
   void ToRGBFrame(YV12Image* im, unsigned flipIndexPlane, unsigned flipIndexBuf);
   void ToRGBFields(YV12Image* im, unsigned flipIndexPlaneTop, unsigned flipIndexPlaneBot, unsigned flipIndexBuf);
@@ -218,6 +227,7 @@ protected:
   void RenderSoftware(int renderBuffer, int field);   // single pass s/w yuv2rgb renderer
   void RenderVDPAU(int renderBuffer, int field);      // render using vdpau hardware
   void RenderVAAPI(int renderBuffer, int field);      // render using vdpau hardware
+  void RenderXVBA(int renderBuffer, int field);      // render using xvba hardware
 
   CFrameBufferObject m_fbo;
 
@@ -276,6 +286,9 @@ protected:
 #endif
 #ifdef HAVE_LIBVA
     VAAPI::CHolder& vaapi;
+#endif
+#ifdef HAVE_LIBXVBA
+    XVBA::CXvbaRenderPicture *xvba;
 #endif
   };
 
