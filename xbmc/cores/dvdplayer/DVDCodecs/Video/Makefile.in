@@ -22,6 +22,9 @@ SRCS += OpenMax.cpp
 SRCS += OpenMaxVideo.cpp
 SRCS += DVDVideoCodecOpenMax.cpp
 endif
+ifeq (@USE_XVBA@,1)
+SRCS += XVBA.cpp
+endif
 
 ifeq (@USE_LIBAMCODEC@,1)
 SRCS += AMLCodec.cpp
