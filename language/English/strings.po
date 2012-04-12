@@ -5773,7 +5773,11 @@ msgctxt "#13436"
 msgid "Prefer VDPAU Video Mixer"
 msgstr ""
 
-#empty strings from id 13437 to 13499
+msgctxt "#13437"
+msgid "Allow hardware acceleration (XVBA)"
+msgstr ""
+
+#empty strings from id 13438 to 13499
 
 #: system/settings/settings.xml
 msgctxt "#13500"
@@ -6851,7 +6855,11 @@ msgctxt "#16325"
 msgid "VDPAU - Bob"
 msgstr ""
 
-#empty strings from id 16326 to 16399
+msgctxt "#16326"
+msgid "XVBA"
+msgstr ""
+
+#empty strings from id 16327 to 16399
 
 msgctxt "#16400"
 msgid "Post-processing"
