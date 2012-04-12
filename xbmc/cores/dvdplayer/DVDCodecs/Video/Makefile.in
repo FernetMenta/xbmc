@@ -14,6 +14,10 @@ ifeq (@USE_CRYSTALHD@,1)
 SRCS += CrystalHD.cpp
 SRCS += DVDVideoCodecCrystalHD.cpp
 endif
+ifeq (@USE_XVBA@,1)
+SRCS+=  XVBA.cpp \
+
+endif
 ifeq (@USE_VDA@,1)
 SRCS += DVDVideoCodecVDA.cpp
 endif
