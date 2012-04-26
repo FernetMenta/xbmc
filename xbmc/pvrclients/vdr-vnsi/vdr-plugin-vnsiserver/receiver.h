@@ -83,6 +83,7 @@ private:
   cTimeMs           m_last_tick;
   bool              m_SignalLost;
   bool              m_IFrameSeen;
+  bool              m_reattach;
 
   struct {
     uint32_t channel;
