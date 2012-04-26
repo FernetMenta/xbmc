@@ -221,10 +221,10 @@ void CWinSystemX11::RefreshWindow()
     return;
   }
 
-  g_graphicsContext.SetVideoResolution((RESOLUTION)i, true);
-  g_guiSettings.SetInt("window.width", mode.w);
-  g_guiSettings.SetInt("window.height", mode.h);
-  g_settings.Save();
+  if (g_graphicsContext.IsFullScreenRoot())
+    g_graphicsContext.SetVideoResolution((RESOLUTION)i, true);
+  else
+    g_graphicsContext.SetVideoResolution(RES_WINDOW, true);
 }
 
 bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
