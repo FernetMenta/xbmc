@@ -91,7 +91,7 @@ static int end_frame(AVCodecContext *avctx)
   pic_descriptor->height_in_mb                                = s->mb_height;
   pic_descriptor->picture_structure                           = s->picture_structure;
   pic_descriptor->chroma_format                               = s->chroma_format ? s->chroma_format : 1;
-  pic_descriptor->avc_intra_flag                              = (h->slice_type == FF_I_TYPE) ? 1 : 0;
+  pic_descriptor->avc_intra_flag                              = (h->slice_type == AV_PICTURE_TYPE_I) ? 1 : 0;
   pic_descriptor->avc_reference                               = (s->current_picture_ptr->f.reference & 3) ? 1 : 0;
 
   pic_descriptor->avc_bit_depth_luma_minus8                   = h->sps.bit_depth_luma - 8;
@@ -136,11 +136,12 @@ static int end_frame(AVCodecContext *avctx)
   pic_descriptor->pps_info.avc.xvba_avc_pps_reserved          = 0; // must be 0
 
   memcpy(iq_matrix->bScalingLists4x4, h->pps.scaling_matrix4, sizeof(iq_matrix->bScalingLists4x4));
-  memcpy(iq_matrix->bScalingLists8x8, h->pps.scaling_matrix8, sizeof(iq_matrix->bScalingLists8x8));
+  memcpy(iq_matrix->bScalingLists8x8[0], h->pps.scaling_matrix8[0], sizeof(iq_matrix->bScalingLists8x8[0]));
+  memcpy(iq_matrix->bScalingLists8x8[1], h->pps.scaling_matrix8[3], sizeof(iq_matrix->bScalingLists8x8[0]));
 
   // Wait for an I-frame before start decoding. Workaround for ATI UVD and UVD+ GPUs
   if (!h->got_first_iframe) {
-      if (h->slice_type != FF_I_TYPE && h->slice_type != FF_SI_TYPE)
+      if (h->slice_type != AV_PICTURE_TYPE_I && h->slice_type != AV_PICTURE_TYPE_SI)
           return -1;
       h->got_first_iframe = 1;
   }
@@ -172,9 +173,7 @@ AVHWAccel ff_h264_xvba_hwaccel = {
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = CODEC_ID_H264,
     .pix_fmt        = PIX_FMT_XVBA_VLD,
-    .capabilities   = 0,
     .start_frame    = start_frame,
     .end_frame      = end_frame,
     .decode_slice   = decode_slice,
-    .priv_data_size = 0,
 };
