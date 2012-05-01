@@ -82,7 +82,7 @@ static int end_frame(AVCodecContext *avctx)
     // xvba-video set this to 1 only 4:2:0 supported
     // doc says: if not set, choose 1 - we try this
     pic_descriptor->chroma_format                           = 1;
-    pic_descriptor->avc_intra_flag                          = s->pict_type == FF_I_TYPE || v->bi_type == 1;
+    pic_descriptor->avc_intra_flag                          = s->pict_type == AV_PICTURE_TYPE_I || v->bi_type == 1;
     pic_descriptor->avc_reference                           = (s->current_picture_ptr->f.reference & 3) ? 1 : 0;
     
     // VC-1 explicit parameters see page 30 of sdk
@@ -128,13 +128,13 @@ static int end_frame(AVCodecContext *avctx)
     pic_descriptor->past_surface                            = 0;
     pic_descriptor->future_surface                          = 0;
     switch (s->pict_type) {
-    case FF_B_TYPE:
+    case AV_PICTURE_TYPE_B:
         next = (struct xvba_render_state *)s->next_picture.f.data[0];
         assert(next);
         if (next)
           pic_descriptor->past_surface = next->surface;
         // fall-through
-    case FF_P_TYPE:
+    case AV_PICTURE_TYPE_P:
         last = (struct xvba_render_state *)s->last_picture.f.data[0];
         assert(last);
         if (last)
@@ -173,11 +173,9 @@ AVHWAccel ff_wmv3_xvba_hwaccel = {
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = CODEC_ID_WMV3,
     .pix_fmt        = PIX_FMT_XVBA_VLD,
-    .capabilities   = 0,
     .start_frame    = start_frame,
     .end_frame      = end_frame,
     .decode_slice   = decode_slice,
-    .priv_data_size = 0,
 };
 #endif
 
@@ -186,9 +184,7 @@ AVHWAccel ff_vc1_xvba_hwaccel = {
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = CODEC_ID_VC1,
     .pix_fmt        = PIX_FMT_XVBA_VLD,
-    .capabilities   = 0,
     .start_frame    = start_frame,
     .end_frame      = end_frame,
     .decode_slice   = decode_slice,
-    .priv_data_size = 0,
 };
