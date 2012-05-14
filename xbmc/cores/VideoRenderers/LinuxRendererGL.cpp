@@ -606,6 +606,7 @@ void CLinuxRendererGL::Update(bool bPauseDrawing)
 
 void CLinuxRendererGL::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
 {
+  int previous_index = m_iLastRenderBuffer > -1 ? m_iLastRenderBuffer : m_iYV12RenderBuffer;
   int index = m_iYV12RenderBuffer;
 
   if (!ValidateRenderer())
@@ -681,7 +682,31 @@ void CLinuxRendererGL::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
     Render(flags | RENDER_FLAG_BOT , index);
   }
   else
-    Render(flags, index);
+  {
+    if (flags & RENDER_FLAG_INTERLEAVE)
+    {
+      glEnable(GL_POLYGON_STIPPLE);
+      if (flags & RENDER_FLAG_TOP)
+      {
+        glPolygonStipple(stipple_weave);
+        Render(flags, index);
+        glPolygonStipple(stipple_weave+4);
+        Render((flags & ~RENDER_FLAG_TOP) | RENDER_FLAG_BOT, previous_index);
+      }
+      else if (flags & RENDER_FLAG_BOT)
+      {
+        glPolygonStipple(stipple_weave+4);
+        Render(flags, index);
+        glPolygonStipple(stipple_weave);
+        Render((flags & ~RENDER_FLAG_BOT) | RENDER_FLAG_TOP, previous_index);
+      }
+      glDisable(GL_POLYGON_STIPPLE);
+    }
+    else
+    {
+      Render(flags, index);
+    }
+  }
 
   VerifyGLState();
   glEnable(GL_BLEND);
