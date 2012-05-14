@@ -195,6 +195,7 @@ protected:
 
   void PresentSingle(bool clear, DWORD flags, DWORD alpha);
   void PresentWeave(bool clear, DWORD flags, DWORD alpha);
+  void PresentWeaveX2(bool clear, DWORD flags, DWORD alpha);
   void PresentBob(bool clear, DWORD flags, DWORD alpha);
   void PresentBlend(bool clear, DWORD flags, DWORD alpha);
 
@@ -229,6 +230,7 @@ protected:
     PRESENT_METHOD_SINGLE = 0,
     PRESENT_METHOD_BLEND,
     PRESENT_METHOD_WEAVE,
+    PRESENT_METHOD_WEAVEX2,
     PRESENT_METHOD_BOB,
   };
 

@@ -574,6 +574,7 @@ void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0L
       else
       {
         if      (interlacemethod == VS_INTERLACEMETHOD_RENDER_BLEND)            presentmethod = PRESENT_METHOD_BLEND;
+        else if (interlacemethod == VS_INTERLACEMETHOD_RENDER_WEAVEX2)          presentmethod = PRESENT_METHOD_WEAVEX2;
         else if (interlacemethod == VS_INTERLACEMETHOD_RENDER_WEAVE)            presentmethod = PRESENT_METHOD_WEAVE;
         else if (interlacemethod == VS_INTERLACEMETHOD_RENDER_WEAVE_INVERTED) { presentmethod = PRESENT_METHOD_WEAVE ; invert = true; }
         else if (interlacemethod == VS_INTERLACEMETHOD_RENDER_BOB)              presentmethod = PRESENT_METHOD_BOB;
@@ -644,6 +645,8 @@ void CXBMCRenderManager::Render(bool clear, DWORD flags, DWORD alpha)
     PresentBob(clear, flags, alpha);
   else if( m_presentmethod == PRESENT_METHOD_WEAVE )
     PresentWeave(clear, flags, alpha);
+  else if( m_presentmethod == PRESENT_METHOD_WEAVEX2 )
+    PresentWeaveX2(clear, flags, alpha);
   else if( m_presentmethod == PRESENT_METHOD_BLEND )
     PresentBlend(clear, flags, alpha);
   else
@@ -710,6 +713,26 @@ void CXBMCRenderManager::PresentBob(bool clear, DWORD flags, DWORD alpha)
       m_pRenderer->RenderUpdate(clear, flags | RENDER_FLAG_BOT | RENDER_FLAG_FIELD1, alpha);
     else
       m_pRenderer->RenderUpdate(clear, flags | RENDER_FLAG_TOP | RENDER_FLAG_FIELD1, alpha);
+    m_presentstep = PRESENT_IDLE;
+  }
+}
+
+void CXBMCRenderManager::PresentWeaveX2(bool clear, DWORD flags, DWORD alpha)
+{
+  CSingleLock lock(g_graphicsContext);
+
+  if(m_presentstep == PRESENT_FRAME)
+  {
+    if( m_presentfield == FS_BOT)
+      m_pRenderer->RenderUpdate(clear, flags | RENDER_FLAG_BOT | RENDER_FLAG_INTERLEAVE, alpha);
+    else
+      m_pRenderer->RenderUpdate(clear, flags | RENDER_FLAG_TOP | RENDER_FLAG_INTERLEAVE, alpha);
+    m_presentstep = PRESENT_FRAME2;
+    g_application.NewFrame();
+  }
+  else
+  {
+    m_pRenderer->RenderUpdate(clear, flags | RENDER_FLAG_BOTH, alpha);
     m_presentstep = PRESENT_IDLE;
   }
 }
