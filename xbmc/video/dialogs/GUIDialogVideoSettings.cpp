@@ -99,6 +99,7 @@ void CGUIDialogVideoSettings::CreateSettings()
     entries.push_back(make_pair(VS_INTERLACEMETHOD_RENDER_BLEND         , 20131));
     entries.push_back(make_pair(VS_INTERLACEMETHOD_RENDER_WEAVE_INVERTED, 20130));
     entries.push_back(make_pair(VS_INTERLACEMETHOD_RENDER_WEAVE         , 20129));
+    entries.push_back(make_pair(VS_INTERLACEMETHOD_RENDER_WEAVEX2       , 20188));
     entries.push_back(make_pair(VS_INTERLACEMETHOD_RENDER_BOB_INVERTED  , 16022));
     entries.push_back(make_pair(VS_INTERLACEMETHOD_RENDER_BOB           , 16021));
     entries.push_back(make_pair(VS_INTERLACEMETHOD_DEINTERLACE          , 16020));
