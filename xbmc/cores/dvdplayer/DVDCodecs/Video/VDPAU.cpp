@@ -368,7 +368,8 @@ bool CDecoder::Supports(EINTERLACEMETHOD method)
 
   if (g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv"))
   {
-    if (method == VS_INTERLACEMETHOD_RENDER_BOB)
+    if (method == VS_INTERLACEMETHOD_RENDER_BOB
+     || method == VS_INTERLACEMETHOD_RENDER_WEAVEX2)
       return true;
   }
 
@@ -2147,7 +2148,8 @@ void CMixer::InitCycle()
                                         DVP_FLAG_INTERLACED);
       m_config.useInteropYuv = false;
     }
-    else if (method == VS_INTERLACEMETHOD_RENDER_BOB && m_config.useInteropYuv)
+    else if ((method == VS_INTERLACEMETHOD_RENDER_BOB
+           || method == VS_INTERLACEMETHOD_RENDER_WEAVEX2) && m_config.useInteropYuv)
     {
       m_mixersteps = 1;
       m_mixerfield = VDP_VIDEO_MIXER_PICTURE_STRUCTURE_FRAME;
