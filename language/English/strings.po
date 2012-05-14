@@ -6042,7 +6042,11 @@ msgctxt "#16326"
 msgid "XVBA"
 msgstr ""
 
-#empty strings from id 16327 to 16399
+msgctxt "#16327"
+msgid "WeaveX2"
+msgstr ""
+
+#empty strings from id 16328 to 16399
 
 msgctxt "#16400"
 msgid "Post-processing"
