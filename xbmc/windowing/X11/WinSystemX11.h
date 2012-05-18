@@ -52,6 +52,7 @@ public:
   virtual void ResetOSScreensaver();
 
   virtual void NotifyAppActiveChange(bool bActivated);
+  virtual void NotifyAppFocusChange(bool bGaining);
 
   virtual bool Minimize();
   virtual bool Restore() ;
@@ -70,13 +71,21 @@ protected:
   bool RefreshGlxContext();
   void CheckDisplayEvents();
   void OnLostDevice();
+  bool SetWindow(int width, int height, bool fullscreen);
 
+#if defined(HAS_SDL_VIDEO_X11)
   SDL_Surface* m_SDLSurface;
-  GLXContext   m_glContext;
   GLXWindow    m_glWindow;
   Window       m_wmWindow;
+#else
+  Window       m_glWindow;
+#endif
+  GLXContext   m_glContext;
   Display*     m_dpy;
+  Cursor       m_invisibleCursor;
+  Pixmap       m_icon;
   bool         m_bWasFullScreenBeforeMinimize;
+  bool         m_bIgnoreNextFocusMessage;
   int          m_RREventBase;
   CCriticalSection             m_resourceSection;
   std::vector<IDispResource*>  m_resources;
@@ -85,6 +94,7 @@ protected:
 private:
   bool IsSuitableVisual(XVisualInfo *vInfo);
   static int XErrorHandler(Display* dpy, XErrorEvent* error);
+  bool CreateIconPixmap();
 
   CStopWatch m_screensaverReset;
 };

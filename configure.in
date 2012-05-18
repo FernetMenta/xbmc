@@ -202,6 +202,12 @@ AC_ARG_ENABLE([sdl],
   [enable SDL (default is auto)])],
   [use_sdl=$enableval],
   [use_sdl=auto])
+  
+AC_ARG_ENABLE([sdlx11],
+  [AS_HELP_STRING([--enable-sdlx11],
+  [enable SDL_VIDEO_X11 (default is no) 'Linux Only'])],
+  [use_sdlx11=$enableval],
+  [use_sdlx11=no])
 
 AC_ARG_ENABLE([vdpau],
   [AS_HELP_STRING([--enable-vdpau],
@@ -876,6 +882,13 @@ else
       AC_MSG_ERROR($missing_library))
     AC_CHECK_LIB([SDL_image],  [main],, AC_MSG_ERROR($missing_library))
     AC_DEFINE([HAVE_SDL],[1],["Define to 1 if using sdl"])
+  fi
+  
+  if test "x$use_sdlx11" != "xno"; then
+    if test "x$use_sdl" == "xno"; then
+      AC_MSG_ERROR("sdl is required for sdl video on X11")
+    fi
+    AC_DEFINE([HAVE_SDL_VIDEO_X11],[1],["Define to 1 if using sdl video on X11"])
   fi
 fi
 
@@ -1793,6 +1806,12 @@ if test "$use_x11" = "yes"; then
   final_message="$final_message\n  X11:\t\tYes"
 else
   final_message="$final_message\n  X11:\t\tNo"
+fi
+
+if test "$use_sdlx11" = "yes"; then
+  final_message="$final_message\n  SDL_X11:\tYes"
+else
+  final_message="$final_message\n  SDL_X11:\tNo"
 fi
 
 if test "$use_libbluray" = "yes"; then

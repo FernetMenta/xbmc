@@ -32,7 +32,6 @@
 #include "XRandR.h"
 #include <vector>
 #include "threads/SingleLock.h"
-#include <X11/Xlib.h>
 #include "cores/VideoRenderers/RenderManager.h"
 #include "utils/TimeUtils.h"
 #include "settings/GUISettings.h"
@@ -41,18 +40,27 @@
 #include <X11/extensions/Xrandr.h>
 #endif
 
+#if !defined(HAS_SDL_VIDEO_X11)
+#include "../WinEvents.h"
+#include "input/MouseStat.h"
+#endif
+
 using namespace std;
 
 CWinSystemX11::CWinSystemX11() : CWinSystemBase()
 {
   m_eWindowSystem = WINDOW_SYSTEM_X11;
   m_glContext = NULL;
+#if defined(HAS_SDL_VIDEO_X11)
   m_SDLSurface = NULL;
+  m_wmWindow = 0;
+#endif
   m_dpy = NULL;
   m_glWindow = 0;
-  m_wmWindow = 0;
   m_bWasFullScreenBeforeMinimize = false;
+  m_bIgnoreNextFocusMessage = false;
   m_dpyLostTime = 0;
+  m_invisibleCursor = 0;
 
   XSetErrorHandler(XErrorHandler);
 }
@@ -66,6 +74,7 @@ bool CWinSystemX11::InitWindowSystem()
   if ((m_dpy = XOpenDisplay(NULL)))
   {
 
+#if defined(HAS_SDL_VIDEO_X11)
     SDL_EnableUNICODE(1);
     // set repeat to 10ms to ensure repeat time < frame time
     // so that hold times can be reliably detected
@@ -76,6 +85,7 @@ bool CWinSystemX11::InitWindowSystem()
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,  8);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+#endif
 
     return CWinSystemBase::InitWindowSystem();
   }
@@ -125,6 +135,8 @@ bool CWinSystemX11::CreateNewWindow(const CStdString& name, bool fullScreen, RES
 {
   RESOLUTION_INFO& desktop = g_settings.m_ResInfo[RES_DESKTOP];
 
+#if defined(HAS_SDL_VIDEO_X11)
+
   if (fullScreen &&
       (res.iWidth != desktop.iWidth || res.iHeight != desktop.iHeight ||
        res.fRefreshRate != desktop.fRefreshRate || res.iScreen != desktop.iScreen))
@@ -147,9 +159,12 @@ bool CWinSystemX11::CreateNewWindow(const CStdString& name, bool fullScreen, RES
 
   SDL_WM_SetIcon(SDL_CreateRGBSurfaceFrom(iconTexture.GetPixels(), iconTexture.GetWidth(), iconTexture.GetHeight(), 32, iconTexture.GetPitch(), 0xff0000, 0x00ff00, 0x0000ff, 0xff000000L), NULL);
   SDL_WM_SetCaption("XBMC Media Center", NULL);
-
+#else
+  if(!SetFullScreen(fullScreen, res, false))
+    return false;
+#endif
   // register XRandR Events
-#if defined(HAS_XRANDR)
+#if defined(HAS_XRANDR) && defined(HAS_SDL_VIDEO_X11)
   int iReturn;
   XRRQueryExtension(m_dpy, &m_RREventBase, &iReturn);
   XRRSelectInput(m_dpy, m_wmWindow, RRScreenChangeNotifyMask);
@@ -161,6 +176,34 @@ bool CWinSystemX11::CreateNewWindow(const CStdString& name, bool fullScreen, RES
 
 bool CWinSystemX11::DestroyWindow()
 {
+#if !defined(HAS_SDL_VIDEO_X11)
+  if (!m_glWindow)
+    return true;
+
+  if (m_glContext)
+    glXMakeCurrent(m_dpy, None, NULL);
+
+  if (m_invisibleCursor)
+  {
+    XUndefineCursor(m_dpy, m_glWindow);
+    XFreeCursor(m_dpy, m_invisibleCursor);
+    m_invisibleCursor = 0;
+  }
+
+  CWinEvents::Quit();
+
+  XUnmapWindow(m_dpy, m_glWindow);
+  XSync(m_dpy,True);
+  XUngrabKeyboard(m_dpy, CurrentTime);
+  XUngrabPointer(m_dpy, CurrentTime);
+  XDestroyWindow(m_dpy, m_glWindow);
+  m_glWindow = 0;
+
+  if (m_icon)
+    XFreePixmap(m_dpy, m_icon);
+
+#endif
+
   return true;
 }
 
@@ -170,20 +213,27 @@ bool CWinSystemX11::ResizeWindow(int newWidth, int newHeight, int newLeft, int n
   && m_nHeight == newHeight)
     return true;
 
-  m_nWidth  = newWidth;
-  m_nHeight = newHeight;
-
+#if defined (HAS_SDL_VIDEO_X11)
   int options = SDL_OPENGL;
   if (m_bFullScreen)
     options |= SDL_FULLSCREEN;
   else
     options |= SDL_RESIZABLE;
 
-  if ((m_SDLSurface = SDL_SetVideoMode(m_nWidth, m_nHeight, 0, options)))
+  if (!(m_SDLSurface = SDL_SetVideoMode(m_nWidth, m_nHeight, 0, options)))
   {
-    RefreshGlxContext();
-    return true;
+    return false;
   }
+#else
+  if (!SetWindow(newWidth, newHeight, false))
+  {
+    return false;
+  }
+#endif
+
+  RefreshGlxContext();
+  m_nWidth  = newWidth;
+  m_nHeight = newHeight;
 
   return false;
 }
@@ -229,15 +279,12 @@ void CWinSystemX11::RefreshWindow()
 
 bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
-  m_nWidth      = res.iWidth;
-  m_nHeight     = res.iHeight;
-  m_bFullScreen = fullScreen;
 
 #if defined(HAS_XRANDR)
   XOutput out;
   XMode mode;
 
-  if (m_bFullScreen)
+  if (fullScreen)
   {
     out.name = res.strOutput;
     mode.w   = res.iWidth;
@@ -267,23 +314,31 @@ bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   }
 #endif
 
+#if defined(HAS_SDL_VIDEO_X11)
   int options = SDL_OPENGL;
   if (m_bFullScreen)
     options |= SDL_FULLSCREEN;
   else
     options |= SDL_RESIZABLE;
 
-  if ((m_SDLSurface = SDL_SetVideoMode(m_nWidth, m_nHeight, 0, options)))
+  if (!(m_SDLSurface = SDL_SetVideoMode(res.iWidth, res.iHeight, 0, options)))
   {
-    if ((m_SDLSurface->flags & SDL_OPENGL) != SDL_OPENGL)
-      CLog::Log(LOGERROR, "CWinSystemX11::SetFullScreen SDL_OPENGL not set, SDL_GetError:%s", SDL_GetError());
-
-    RefreshGlxContext();
-
-    return true;
+    return false;
   }
+  if ((m_SDLSurface->flags & SDL_OPENGL) != SDL_OPENGL)
+     CLog::Log(LOGERROR, "CWinSystemX11::SetFullScreen SDL_OPENGL not set, SDL_GetError:%s", SDL_GetError());
+#else
+  if (!SetWindow(res.iWidth, res.iHeight, fullScreen))
+    return false;
+#endif
 
-  return false;
+  RefreshGlxContext();
+
+  m_nWidth      = res.iWidth;
+  m_nHeight     = res.iHeight;
+  m_bFullScreen = fullScreen;
+
+  return true;
 }
 
 void CWinSystemX11::UpdateResolutions()
@@ -383,6 +438,8 @@ bool CWinSystemX11::IsSuitableVisual(XVisualInfo *vInfo)
 bool CWinSystemX11::RefreshGlxContext()
 {
   bool retVal = false;
+
+#if defined(HAS_SDL_VIDEO_X11)
   SDL_SysWMinfo info;
   SDL_VERSION(&info.version);
   if (SDL_GetWMInfo(&info) <= 0)
@@ -398,6 +455,17 @@ bool CWinSystemX11::RefreshGlxContext()
     glXMakeCurrent(m_dpy, m_glWindow, m_glContext);
     return true;
   }
+  m_glWindow = info.info.x11.window;
+  m_wmWindow = info.info.x11.wmwindow;
+#else
+  if (m_glContext)
+  {
+    CLog::Log(LOGDEBUG, "CWinSystemX11::RefreshGlxContext: refreshing context");
+    glXMakeCurrent(m_dpy, None, NULL);
+    glXMakeCurrent(m_dpy, m_glWindow, m_glContext);
+    return true;
+  }
+#endif
 
   XVisualInfo vMask;
   XVisualInfo *visuals;
@@ -405,8 +473,6 @@ bool CWinSystemX11::RefreshGlxContext()
   int availableVisuals    = 0;
   vMask.screen = DefaultScreen(m_dpy);
   XWindowAttributes winAttr;
-  m_glWindow = info.info.x11.window;
-  m_wmWindow = info.info.x11.wmwindow;
 
   /* Assume a depth of 24 in case the below calls to XGetWindowAttributes()
      or XGetVisualInfo() fail. That shouldn't happen unless something is
@@ -477,7 +543,14 @@ bool CWinSystemX11::RefreshGlxContext()
 
 void CWinSystemX11::ShowOSMouse(bool show)
 {
+#if defined(HAS_SDL_VIDEO_X11)
   SDL_ShowCursor(show ? 1 : 0);
+#else
+  if (show)
+    XUndefineCursor(m_dpy,m_glWindow);
+  else if (m_invisibleCursor)
+    XDefineCursor(m_dpy,m_glWindow, m_invisibleCursor);
+#endif
 }
 
 void CWinSystemX11::ResetOSScreensaver()
@@ -506,13 +579,33 @@ void CWinSystemX11::NotifyAppActiveChange(bool bActivated)
   if (bActivated && m_bWasFullScreenBeforeMinimize && !g_graphicsContext.IsFullScreenRoot())
     g_graphicsContext.ToggleFullScreenRoot();
 }
+
+void CWinSystemX11::NotifyAppFocusChange(bool bGaining)
+{
+#if !defined(HAS_SDL_VIDEO_X11)
+  if (bGaining && m_bWasFullScreenBeforeMinimize && !m_bIgnoreNextFocusMessage &&
+      !g_graphicsContext.IsFullScreenRoot())
+    g_graphicsContext.ToggleFullScreenRoot();
+  if (!bGaining)
+    m_bIgnoreNextFocusMessage = false;
+#endif
+}
+
 bool CWinSystemX11::Minimize()
 {
   m_bWasFullScreenBeforeMinimize = g_graphicsContext.IsFullScreenRoot();
   if (m_bWasFullScreenBeforeMinimize)
+  {
+    m_bIgnoreNextFocusMessage = true;
     g_graphicsContext.ToggleFullScreenRoot();
+  }
 
+#if defined(HAS_SDL_VIDEO_X11)
   SDL_WM_IconifyWindow();
+#else
+  XIconifyWindow(m_dpy, m_glWindow, DefaultScreen(m_dpy));
+#endif
+
   return true;
 }
 bool CWinSystemX11::Restore()
@@ -521,13 +614,21 @@ bool CWinSystemX11::Restore()
 }
 bool CWinSystemX11::Hide()
 {
+#if defined(HAS_SDL_VIDEO_X11)
   XUnmapWindow(m_dpy, m_wmWindow);
+#else
+  XUnmapWindow(m_dpy, m_glWindow);
+#endif
   XSync(m_dpy, False);
   return true;
 }
 bool CWinSystemX11::Show(bool raise)
 {
+#if defined(HAS_SDL_VIDEO_X11)
   XMapWindow(m_dpy, m_wmWindow);
+#else
+  XMapWindow(m_dpy, m_glWindow);
+#endif
   XSync(m_dpy, False);
   return true;
 }
@@ -610,6 +711,281 @@ int CWinSystemX11::XErrorHandler(Display* dpy, XErrorEvent* error)
             buf, error->type, error->serial, (int)error->error_code, (int)error->request_code, (int)error->minor_code);
 
   return 0;
+}
+
+bool CWinSystemX11::SetWindow(int width, int height, bool fullscreen)
+{
+#if !defined(HAS_SDL_VIDEO_X11)
+
+  bool changeWindow = false;
+  bool changeSize = false;
+  bool mouseActive = false;
+  float mouseX, mouseY;
+
+  if (m_glWindow && (m_bFullScreen != fullscreen))
+  {
+    mouseActive = g_Mouse.IsActive();
+    if (mouseActive)
+    {
+      Window root_return, child_return;
+      int root_x_return, root_y_return;
+      int win_x_return, win_y_return;
+      unsigned int mask_return;
+      bool isInWin = XQueryPointer(m_dpy, m_glWindow, &root_return, &child_return,
+                                   &root_x_return, &root_y_return,
+                                   &win_x_return, &win_y_return,
+                                   &mask_return);
+      if (isInWin)
+      {
+        mouseX = (float)win_x_return/m_nWidth;
+        mouseY = (float)win_y_return/m_nHeight;
+        g_Mouse.SetActive(false);
+      }
+      else
+        mouseActive = false;
+    }
+    DestroyWindow();
+  }
+
+  // create main window
+  if (!m_glWindow)
+  {
+    GLint att[] =
+    {
+      GLX_RGBA,
+      GLX_RED_SIZE, 8,
+      GLX_GREEN_SIZE, 8,
+      GLX_BLUE_SIZE, 8,
+      GLX_ALPHA_SIZE, 8,
+      GLX_DEPTH_SIZE, 24,
+      GLX_DOUBLEBUFFER,
+      None
+    };
+    Colormap cmap;
+    XSetWindowAttributes swa;
+    XVisualInfo *vi;
+
+    vi = glXChooseVisual(m_dpy, DefaultScreen(m_dpy), att);
+    cmap = XCreateColormap(m_dpy, RootWindow(m_dpy, vi->screen), vi->visual, AllocNone);
+
+    int def_vis = (vi->visual == DefaultVisual(m_dpy, vi->screen));
+    swa.override_redirect = fullscreen ? True : False;
+    swa.border_pixel = fullscreen ? 0 : 5;
+    swa.background_pixel = def_vis ? BlackPixel(m_dpy, vi->screen) : 0;
+    swa.colormap = cmap;
+    swa.background_pixel = def_vis ? BlackPixel(m_dpy, vi->screen) : 0;
+    swa.event_mask = FocusChangeMask | KeyPressMask | KeyReleaseMask |
+                     ButtonPressMask | ButtonReleaseMask | PointerMotionMask |
+                     PropertyChangeMask | StructureNotifyMask | KeymapStateMask |
+                     EnterWindowMask | LeaveWindowMask | ExposureMask;
+    unsigned long mask = CWBackPixel | CWBorderPixel | CWColormap | CWOverrideRedirect | CWEventMask;
+
+    m_glWindow = XCreateWindow(m_dpy, RootWindow(m_dpy, vi->screen),
+                    0, 0, width, height, 0, vi->depth,
+                    InputOutput, vi->visual,
+                    mask, &swa);
+
+    // define invisible cursor
+    Pixmap bitmapNoData;
+    XColor black;
+    static char noData[] = { 0,0,0,0,0,0,0,0 };
+    black.red = black.green = black.blue = 0;
+
+    bitmapNoData = XCreateBitmapFromData(m_dpy, m_glWindow, noData, 8, 8);
+    m_invisibleCursor = XCreatePixmapCursor(m_dpy, bitmapNoData, bitmapNoData,
+                                            &black, &black, 0, 0);
+    XFreePixmap(m_dpy, bitmapNoData);
+    XDefineCursor(m_dpy,m_glWindow, m_invisibleCursor);
+
+    //init X11 events
+    CWinEvents::Init(m_dpy, m_glWindow);
+
+    changeWindow = true;
+    changeSize = true;
+  }
+
+  if ((width != m_nWidth) || (height != m_nHeight))
+  {
+    changeSize = true;
+  }
+
+  if (changeSize || changeWindow)
+  {
+    CWinEvents::PendingResize(width, height);
+    XResizeWindow(m_dpy, m_glWindow, width, height);
+  }
+
+  if (changeWindow)
+  {
+    m_icon = None;
+    if (!fullscreen)
+    {
+      CreateIconPixmap();
+      XWMHints wm_hints;
+      XClassHint class_hints;
+      XTextProperty windowName, iconName;
+      std::string titleString = "XBMC Media Center";
+      char *title = (char*)titleString.c_str();
+
+      XStringListToTextProperty(&title, 1, &windowName);
+      XStringListToTextProperty(&title, 1, &iconName);
+      wm_hints.initial_state = NormalState;
+      wm_hints.input = True;
+      wm_hints.icon_pixmap = m_icon;
+      wm_hints.flags = StateHint | IconPixmapHint | InputHint;
+
+      XSetWMProperties(m_dpy, m_glWindow, &windowName, &iconName,
+                            NULL, 0, NULL, &wm_hints,
+                            NULL);
+
+      // register interest in the delete window message
+      Atom wmDeleteMessage = XInternAtom(m_dpy, "WM_DELETE_WINDOW", False);
+      XSetWMProtocols(m_dpy, m_glWindow, &wmDeleteMessage, 1);
+    }
+    XMapRaised(m_dpy, m_glWindow);
+    XSync(m_dpy,True);
+
+    if (changeWindow && mouseActive)
+    {
+      XWarpPointer(m_dpy, None, m_glWindow, 0, 0, 0, 0, mouseX*width, mouseY*height);
+    }
+
+    if (fullscreen)
+    {
+      int result = -1;
+      while (result != GrabSuccess)
+      {
+        result = XGrabPointer(m_dpy, m_glWindow, True, ButtonPressMask, GrabModeAsync, GrabModeAsync, m_glWindow, None, CurrentTime);
+        XbmcThreads::ThreadSleep(100);
+      }
+      XGrabKeyboard(m_dpy, m_glWindow, True, GrabModeAsync, GrabModeAsync, CurrentTime);
+
+    }
+  }
+#endif
+
+  return true;
+}
+
+bool CWinSystemX11::CreateIconPixmap()
+{
+#if !defined(HAS_SDL_VIDEO_X11)
+  int depth;
+  XImage *img = NULL;
+  Visual *vis;
+  XWindowAttributes wndattribs;
+  XVisualInfo visInfo;
+  double rRatio;
+  double gRatio;
+  double bRatio;
+  int outIndex = 0;
+  int i,j;
+  int numBufBytes;
+  unsigned char *buf;
+  uint32_t *newBuf = 0;
+  size_t numNewBufBytes;
+
+  // Get visual Info
+  XGetWindowAttributes(m_dpy, m_glWindow, &wndattribs);
+  visInfo.visualid = wndattribs.visual->visualid;
+  int nvisuals = 0;
+  XVisualInfo* visuals = XGetVisualInfo(m_dpy, VisualIDMask, &visInfo, &nvisuals);
+  if (nvisuals != 1)
+  {
+    CLog::Log(LOGERROR, "CWinSystemX11::CreateIconPixmap - could not find visual");
+    return false;
+  }
+  visInfo = visuals[0];
+  XFree(visuals);
+
+  depth = visInfo.depth;
+  vis = visInfo.visual;
+
+  if (depth < 15)
+  {
+    CLog::Log(LOGERROR, "CWinSystemX11::CreateIconPixmap - no suitable depth");
+    return false;
+  }
+
+  rRatio = vis->red_mask / 255.0;
+  gRatio = vis->green_mask / 255.0;
+  bRatio = vis->blue_mask / 255.0;
+
+  CTexture iconTexture;
+  iconTexture.LoadFromFile("special://xbmc/media/icon.png");
+  buf = iconTexture.GetPixels();
+
+  numBufBytes = iconTexture.GetWidth() * iconTexture.GetHeight() * 4;
+
+  if (depth>=24)
+    numNewBufBytes = (4 * (iconTexture.GetWidth() * iconTexture.GetHeight()));
+  else
+    numNewBufBytes = (2 * (iconTexture.GetWidth() * iconTexture.GetHeight()));
+
+  newBuf = (uint32_t*)malloc(numNewBufBytes);
+  if (!newBuf)
+  {
+    CLog::Log(LOGERROR, "CWinSystemX11::CreateIconPixmap - malloc failed");
+    return false;
+  }
+
+  for (i=0; i<iconTexture.GetHeight();++i)
+  {
+    for (j=0; j<iconTexture.GetWidth();++j)
+    {
+      unsigned int pos = i*iconTexture.GetPitch()+j*4;
+      unsigned int r, g, b;
+      r = (buf[pos+2] * rRatio);
+      g = (buf[pos+1] * gRatio);
+      b = (buf[pos+0] * bRatio);
+      r &= vis->red_mask;
+      g &= vis->green_mask;
+      b &= vis->blue_mask;
+      newBuf[outIndex] = r | g | b;
+      ++outIndex;
+    }
+  }
+  img = XCreateImage(m_dpy, vis, depth,ZPixmap, 0, (char *)newBuf,
+                     iconTexture.GetWidth(), iconTexture.GetHeight(),
+                     (depth>=24)?32:16, 0);
+  if (!img)
+  {
+    CLog::Log(LOGERROR, "CWinSystemX11::CreateIconPixmap - could not create image");
+    free(newBuf);
+    return false;
+  }
+  if (!XInitImage(img))
+  {
+    CLog::Log(LOGERROR, "CWinSystemX11::CreateIconPixmap - init image failed");
+    XDestroyImage(img);
+    return false;
+  }
+
+  // set byte order
+  union
+  {
+    char c[sizeof(short)];
+    short s;
+  } order;
+  order.s = 1;
+  if ((1 == order.c[0]))
+  {
+    img->byte_order = LSBFirst;
+  }
+  else
+  {
+    img->byte_order = MSBFirst;
+  }
+
+  // create icon pixmap from image
+  m_icon = XCreatePixmap(m_dpy, m_glWindow, img->width, img->height, depth);
+  GC gc = XCreateGC(m_dpy, m_glWindow, 0, NULL);
+  XPutImage(m_dpy, m_icon, gc, img, 0, 0, 0, 0, img->width, img->height);
+  XFreeGC(m_dpy, gc);
+  XDestroyImage(img); // this also frees newBuf
+
+#endif
+  return true;
 }
 
 #endif
