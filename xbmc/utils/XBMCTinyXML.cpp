@@ -20,6 +20,7 @@
 #include "XBMCTinyXML.h"
 #include "filesystem/File.h"
 #include "RegExp.h"
+#include "utils/log.h"
 
 #define MAX_ENTITY_LENGTH 8 // size of largest entity "&#xNNNN;"
 #define BUFFER_SIZE 4096
@@ -95,7 +96,7 @@ bool CXBMCTinyXML::LoadFile(FILE *f, TiXmlEncoding encoding)
   while ((result = fread(buf, 1, BUFFER_SIZE, f)) > 0)
   {
     data.reserve(BUFFER_SIZE * (++count));
-    data.append(buf);
+    data.append(buf, result);
   }
   return Parse(data, NULL, encoding) != NULL;
 }
