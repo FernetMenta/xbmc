@@ -633,6 +633,7 @@ bool CWinSystemX11::Show(bool raise)
   return true;
 }
 
+#if defined(HAS_SDL_VIDEO_X11)
 void CWinSystemX11::CheckDisplayEvents()
 {
 #if defined(HAS_XRANDR)
@@ -672,6 +673,20 @@ void CWinSystemX11::CheckDisplayEvents()
   }
 #endif
 }
+#endif
+
+void CWinSystemX11::NotifyXRREvent()
+{
+  CLog::Log(LOGDEBUG, "%s - notify display reset event", __FUNCTION__);
+  RefreshWindow();
+
+  CSingleLock lock(m_resourceSection);
+
+  // tell any shared resources
+  for (vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); i++)
+    (*i)->OnResetDevice();
+
+}
 
 void CWinSystemX11::OnLostDevice()
 {
@@ -684,9 +699,12 @@ void CWinSystemX11::OnLostDevice()
     for (vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); i++)
       (*i)->OnLostDevice();
   }
-
+#if defined(HAS_SDL_VIDEO_X11)
   // fail safe timer
   m_dpyLostTime = CurrentHostCounter();
+#else
+  CWinEvents::SetXRRFailSafeTimer(3000);
+#endif
 }
 
 void CWinSystemX11::Register(IDispResource *resource)

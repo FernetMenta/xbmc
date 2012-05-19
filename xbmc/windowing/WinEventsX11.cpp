@@ -34,6 +34,10 @@
 #include "guilib/GUIWindowManager.h"
 #include "input/MouseStat.h"
 
+#if defined(HAS_XRANDR)
+#include <X11/extensions/Xrandr.h>
+#endif
+
 CWinEventsX11* CWinEventsX11::WinEvents = 0;
 
 static uint32_t SymMappingsX11[][2] =
@@ -199,6 +203,7 @@ bool CWinEventsX11::Init(Display *dpy, Window win)
   WinEvents->m_pendingWidth = -1;
   WinEvents->m_pendingHeight = -1;
   WinEvents->m_wmDeleteMessage = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+  WinEvents->m_xrrEventPending = false;
   memset(&(WinEvents->m_lastKey), 0, sizeof(XBMC_Event));
 
   // open input method
@@ -262,6 +267,13 @@ bool CWinEventsX11::Init(Display *dpy, Window win)
     WinEvents->m_symLookupTable[SymMappingsX11[i][0]] = SymMappingsX11[i][1];
   }
 
+  // register for xrandr events
+#if defined(HAS_XRANDR)
+  int iReturn;
+  XRRQueryExtension(WinEvents->m_display, &WinEvents->m_RREventBase, &iReturn);
+  XRRSelectInput(WinEvents->m_display, WinEvents->m_window, RRScreenChangeNotifyMask);
+#endif
+
   return true;
 }
 
@@ -278,6 +290,15 @@ void CWinEventsX11::PendingResize(int width, int height)
 {
   WinEvents->m_pendingWidth = width;
   WinEvents->m_pendingHeight = height;
+}
+
+void CWinEventsX11::SetXRRFailSafeTimer(int millis)
+{
+  if (!WinEvents)
+    return;
+
+  WinEvents->m_xrrFailSafeTimer.Set(millis);
+  WinEvents->m_xrrEventPending = true;
 }
 
 bool CWinEventsX11::MessagePump()
@@ -542,10 +563,34 @@ bool CWinEventsX11::MessagePump()
         ret |= g_application.OnEvent(newEvent);
         break;
       }
+
+      default:
+      {
+        break;
+      }
     }// switch event.type
+#if defined(HAS_XRANDR)
+    if (WinEvents && (xevent.type == WinEvents->m_RREventBase + RRScreenChangeNotify))
+    {
+      XRRUpdateConfiguration(&xevent);
+      if (xevent.xgeneric.serial != serial)
+        g_Windowing.NotifyXRREvent();
+      WinEvents->m_xrrEventPending = false;
+      serial = xevent.xgeneric.serial;
+    }
+#endif
   }// while
 
   ret |= ProcessKeyRepeat();
+
+#if defined(HAS_XRANDR)
+  if (WinEvents && WinEvents->m_xrrEventPending && WinEvents->m_xrrFailSafeTimer.IsTimePast())
+  {
+    CLog::Log(LOGERROR,"CWinEventsX11::MessagePump - missed XRR Events");
+    g_Windowing.NotifyXRREvent();
+    WinEvents->m_xrrEventPending = false;
+  }
+#endif
 
   return ret;
 }

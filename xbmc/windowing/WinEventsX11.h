@@ -33,6 +33,7 @@ public:
   static bool Init(Display *dpy, Window win);
   static void Quit();
   static void PendingResize(int width, int height);
+  static void SetXRRFailSafeTimer(int millis);
   static bool MessagePump();
 
 protected:
@@ -55,4 +56,7 @@ protected:
   XbmcThreads::EndTime m_repeatKeyTimeout;
   std::map<uint32_t,uint32_t> m_symLookupTable;
   int m_keymodState;
+  int m_RREventBase;
+  XbmcThreads::EndTime m_xrrFailSafeTimer;
+  bool m_xrrEventPending;
 };

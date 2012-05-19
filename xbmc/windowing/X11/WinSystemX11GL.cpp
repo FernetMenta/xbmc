@@ -43,7 +43,9 @@ CWinSystemX11GL::~CWinSystemX11GL()
 
 bool CWinSystemX11GL::PresentRenderImpl(const CDirtyRegionList& dirty)
 {
+#if defined(HAS_SDL_VIDEO_X11)
   CheckDisplayEvents();
+#endif
 
   if(m_iVSyncMode == 3)
   {

@@ -66,10 +66,13 @@ public:
   GLXWindow GetWindow() { return m_glWindow; }
   GLXContext GetGlxContext() { return m_glContext; }
   void RefreshWindow();
+  void NotifyXRREvent();
 
 protected:
   bool RefreshGlxContext();
+#if defined(HAS_SDL_VIDEO_X11)
   void CheckDisplayEvents();
+#endif
   void OnLostDevice();
   bool SetWindow(int width, int height, bool fullscreen);
 
