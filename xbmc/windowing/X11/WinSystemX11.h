@@ -75,6 +75,7 @@ protected:
 #endif
   void OnLostDevice();
   bool SetWindow(int width, int height, bool fullscreen);
+  void RotateResolutions();
 
 #if defined(HAS_SDL_VIDEO_X11)
   SDL_Surface* m_SDLSurface;
@@ -87,6 +88,7 @@ protected:
   Display*     m_dpy;
   Cursor       m_invisibleCursor;
   Pixmap       m_icon;
+  bool         m_bIsRotated;
   bool         m_bWasFullScreenBeforeMinimize;
   bool         m_bIgnoreNextFocusMessage;
   int          m_RREventBase;
