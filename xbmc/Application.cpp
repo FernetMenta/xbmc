@@ -2378,7 +2378,10 @@ void CApplication::Render()
   m_lastFrameTime = XbmcThreads::SystemClockMillis();
 
   if (flip)
+  {
     g_graphicsContext.Flip(dirtyRegions);
+    g_renderManager.NotifyDisplayFlip();
+  }
   CTimeUtils::UpdateFrameTime(flip);
 
   g_TextureManager.FreeUnusedTextures();
