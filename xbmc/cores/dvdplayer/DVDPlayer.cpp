@@ -463,7 +463,7 @@ bool CDVDPlayer::OpenFile(const CFileItem& file, const CPlayerOptions &options)
     m_ready.Reset();
 
 #if defined(HAS_VIDEO_PLAYBACK)
-    g_renderManager.PreInit();
+    g_renderManager.PreInit(&m_clock);
 #endif
 
     Create();

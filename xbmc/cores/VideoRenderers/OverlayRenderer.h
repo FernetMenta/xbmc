@@ -98,6 +98,9 @@ namespace OVERLAY {
     void Flip();
     void Render();
     void Flush();
+    void SetNumBuffers(int numBuffers) { m_iNumBuffers = numBuffers; }
+    void SetBuffer(int idx);
+    void ReleaseBuffer(int idx);
 
   protected:
 
@@ -124,7 +127,8 @@ namespace OVERLAY {
     void      Release(SElementV& list);
 
     CCriticalSection m_section;
-    SElementV        m_buffers[2];
+    SElementV        m_buffers[10];
+    int              m_iNumBuffers;
     int              m_decode;
     int              m_render;
 
