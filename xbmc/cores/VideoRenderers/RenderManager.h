@@ -134,6 +134,7 @@ public:
   void RegisterRenderUpdateCallBack(const void *ctx, RenderUpdateCallBackFn fn);
   int WaitForBuffer(volatile bool& bStop);
   void NotifyDisplayFlip();
+  bool HasFrame();
   void EnableBuffering(bool enable);
   void DiscardBuffer();
 
