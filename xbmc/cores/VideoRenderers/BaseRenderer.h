@@ -72,10 +72,13 @@ public:
   void GetVideoRect(CRect &source, CRect &dest);
   float GetAspectRatio() const;
 
-  virtual bool AddVideoPicture(DVDVideoPicture* picture) { return false; }
+  virtual bool AddVideoPicture(DVDVideoPicture* picture, int index) { return false; }
   virtual void Flush() {};
 
   virtual unsigned int GetProcessorSize() { return 0; }
+  virtual unsigned int GetMaxProcessorSize() { return 0; }
+  virtual void SetProcessorSize(int numBuffers) { }
+  virtual void ReleaseBuffer(int idx) { }
 
   // Supported pixel formats, can be called before configure
   std::vector<ERenderFormat> SupportedFormats()  { return std::vector<ERenderFormat>(); }

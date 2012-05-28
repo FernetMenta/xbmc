@@ -251,6 +251,7 @@ void CDVDPlayerVideo::OpenStream(CDVDStreamInfo &hint, CDVDVideoCodec* codec)
   m_stalled = m_messageQueue.GetPacketCount(CDVDMsg::DEMUXER_PACKET) == 0;
   m_started = false;
   m_codecname = m_pVideoCodec->GetName();
+  g_renderManager.EnableBuffering(false);
 }
 
 void CDVDPlayerVideo::CloseStream(bool bWaitForBuffers)
@@ -420,6 +421,7 @@ void CDVDPlayerVideo::Process()
       picture.iFlags &= ~DVP_FLAG_ALLOCATED;
       m_packets.clear();
       m_started = false;
+      g_renderManager.EnableBuffering(false);
     }
     else if (pMsg->IsType(CDVDMsg::GENERAL_FLUSH)) // private message sent by (CDVDPlayerVideo::Flush())
     {
@@ -432,6 +434,7 @@ void CDVDPlayerVideo::Process()
       //we need to recalculate the framerate
       //TODO: this needs to be set on a streamchange instead
       ResetFrameRateCalc();
+      g_renderManager.EnableBuffering(false);
 
       m_stalled = true;
       m_started = false;
@@ -567,6 +570,8 @@ void CDVDPlayerVideo::Process()
 
           m_pVideoCodec->Reset();
           m_packets.clear();
+          picture.iFlags &= ~DVP_FLAG_ALLOCATED;
+          g_renderManager.DiscardBuffer();
           break;
         }
 
@@ -681,6 +686,7 @@ void CDVDPlayerVideo::Process()
               m_codecname = m_pVideoCodec->GetName();
               m_started = true;
               m_messageParent.Put(new CDVDMsgInt(CDVDMsg::PLAYER_STARTED, DVDPLAYER_VIDEO));
+              g_renderManager.EnableBuffering(true);
             }
 
             // guess next frame pts. iDuration is always valid
@@ -1296,6 +1302,16 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
       mDisplayField = FS_BOT;
   }
 
+  int buffer = g_renderManager.WaitForBuffer(m_bStop);
+  while (buffer < 0 && !CThread::m_bStop &&
+         CDVDClock::GetAbsoluteClock(false) < iCurrentClock + iSleepTime + DVD_MSEC_TO_TIME(500) )
+  {
+    Sleep(1);
+    buffer = g_renderManager.WaitForBuffer(m_bStop);
+  }
+  if (buffer < 0)
+    return EOS_DROPPED;
+
   ProcessOverlays(pPicture, pts);
   AutoCrop(pPicture);
 
@@ -1312,7 +1328,7 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   if (index < 0)
     return EOS_DROPPED;
 
-  g_renderManager.FlipPage(CThread::m_bStop, (iCurrentClock + iSleepTime) / DVD_TIME_BASE, -1, mDisplayField);
+  g_renderManager.FlipPage(CThread::m_bStop, pts, -1, mDisplayField, m_speed);
 
   return result;
 #else

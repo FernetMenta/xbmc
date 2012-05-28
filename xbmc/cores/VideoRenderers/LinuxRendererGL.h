@@ -44,7 +44,7 @@ namespace Shaders { class BaseYUV2RGBShader; }
 namespace Shaders { class BaseVideoFilterShader; }
 namespace VAAPI   { struct CHolder; }
 namespace VDPAU   { class CVdpauRenderPicture; }
-#define NUM_BUFFERS 3
+#define NUM_BUFFERS 10
 
 
 #undef ALIGN
@@ -138,15 +138,19 @@ public:
   virtual void         UnInit();
   virtual void         Reset(); /* resets renderer after seek for example */
   virtual void         Flush();
+  virtual void         ReleaseBuffer(int idx);
+  virtual void         SetProcessorSize(int numBuffers) { m_NumYV12Buffers = numBuffers; }
+  virtual unsigned int GetMaxProcessorSize() { return NUM_BUFFERS; }
+  virtual unsigned int GetProcessorSize() { return m_NumYV12Buffers; }
 
 #ifdef HAVE_LIBVDPAU
-  virtual void         AddProcessor(VDPAU::CVdpauRenderPicture* vdpau);
+  virtual void         AddProcessor(VDPAU::CVdpauRenderPicture* vdpau, int index);
 #endif
 #ifdef HAVE_LIBVA
-  virtual void         AddProcessor(VAAPI::CHolder& holder);
+  virtual void         AddProcessor(VAAPI::CHolder& holder, int index);
 #endif
 #ifdef TARGET_DARWIN
-  virtual void         AddProcessor(struct __CVBuffer *cvBufferRef);
+  virtual void         AddProcessor(struct __CVBuffer *cvBufferRef, int index);
 #endif
 
   virtual void RenderUpdate(bool clear, DWORD flags = 0, DWORD alpha = 255);
