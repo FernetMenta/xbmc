@@ -1104,3 +1104,14 @@ void CXBMCRenderManager::NotifyDisplayFlip()
   lock.Leave();
   m_flipEvent.Set();
 }
+
+bool CXBMCRenderManager::HasFrame()
+{
+  CSharedLock lock(m_sharedSection);
+  if (m_presentstep == PRESENT_IDLE &&
+      GetNextRenderBufferIndex() < 0 &&
+      m_speed > 0)
+    return false;
+  else
+    return true;
+}
