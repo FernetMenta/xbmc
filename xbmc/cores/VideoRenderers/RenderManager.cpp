@@ -550,7 +550,7 @@ void CXBMCRenderManager::SetViewMode(int iViewMode)
     m_pRenderer->SetViewMode(iViewMode);
 }
 
-void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0LL*/, int source /*= -1*/, EFIELDSYNC sync /*= FS_NONE*/)
+void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0LL*/, double pts /* = 0 */, int source /*= -1*/, EFIELDSYNC sync /*= FS_NONE*/)
 {
   if (!m_bUseBuffering)
   {
@@ -614,6 +614,7 @@ void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0L
 
     if (FlipFreeBuffer() >= 0)
     {
+      m_renderBuffers[m_iOutputRenderBuffer].pts = pts;
       m_renderBuffers[m_iOutputRenderBuffer].timestamp = timestamp;
       m_renderBuffers[m_iOutputRenderBuffer].presentfield = presentfield;
       m_renderBuffers[m_iOutputRenderBuffer].presentmethod = presentmethod;
@@ -1040,6 +1041,7 @@ void CXBMCRenderManager::ResetRenderBuffer()
   m_bAllRenderBuffersDisplayed = true;
   m_sleeptime = 1.0;
   m_speed = DVD_PLAYSPEED_NORMAL;
+  m_presentPts = DVD_NOPTS_VALUE;
   m_bRenderBufferUsed = false;
   m_bOverlayReleased = false;
 }
@@ -1082,6 +1084,7 @@ void CXBMCRenderManager::PrepareNextRender()
 
   if (g_graphicsContext.IsFullScreenVideo() || presenttime <= clocktime + frametime)
   {
+    m_presentPts = m_renderBuffers[idx].pts;
     m_presenttime = presenttime;
     m_presentmethod = m_renderBuffers[idx].presentmethod;
     m_presentfield = m_renderBuffers[idx].presentfield;
@@ -1140,6 +1143,18 @@ void CXBMCRenderManager::NotifyDisplayFlip()
 
   lock.Leave();
   m_flipEvent.Set();
+}
+
+bool CXBMCRenderManager::GetStats(double &sleeptime, double &pts, int &bufferLevel)
+{
+  CSharedLock lock(m_sharedSection);
+  sleeptime = m_sleeptime;
+  pts = m_presentPts;
+  if (m_iNumRenderBuffers < 3)
+    bufferLevel = -1;
+  else
+    bufferLevel = (m_iOutputRenderBuffer - m_iCurrentRenderBuffer + m_iNumRenderBuffers) % m_iNumRenderBuffers;
+  return true;
 }
 
 bool CXBMCRenderManager::HasFrame()
