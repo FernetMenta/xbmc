@@ -303,6 +303,8 @@ bool CXBMCRenderManager::Configure(unsigned int width, unsigned int height, unsi
     m_bIsStarted = true;
     m_bReconfigured = true;
     m_presentstep = PRESENT_IDLE;
+    m_presentPts = DVD_NOPTS_VALUE;
+    m_sleeptime = 1.0;
     m_presentevent.notifyAll();
 
     CLog::Log(LOGDEBUG, "CXBMCRenderManager::Configure - %d", m_QueueSize);
@@ -646,7 +648,7 @@ void CXBMCRenderManager::SetViewMode(int iViewMode)
     m_pRenderer->SetViewMode(iViewMode);
 }
 
-void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0LL*/, int source /*= -1*/, EFIELDSYNC sync /*= FS_NONE*/)
+void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0LL*/, double pts /* = 0 */, int source /*= -1*/, EFIELDSYNC sync /*= FS_NONE*/)
 {
   { CSharedLock lock(m_sharedSection);
 
@@ -719,6 +721,7 @@ void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0L
     decodeBuffer->timestamp = timestamp;
     decodeBuffer->presentfield = sync;
     decodeBuffer->presentmethod = presentmethod;
+    decodeBuffer->pts = pts;
     m_freeBuffers.pop_front();
     m_queuedBuffers.push_back(decodeBuffer);
 
@@ -1082,12 +1085,15 @@ void CXBMCRenderManager::PrepareNextRender()
   else
     next = (nxt->timestamp <= clocktime);
 
+  m_sleeptime = nxt->timestamp - clocktime;
+
   if (next)
   {
     m_presenttime   = nxt->timestamp;
     m_presentmethod = nxt->presentmethod;
     m_presentfield  = nxt->presentfield;
     m_presentstep   = PRESENT_FLIP;
+    m_presentPts    = nxt->pts;
     if(m_presentBuffer)
       m_renderedBuffers.push_back(m_presentBuffer);
     m_presentBuffer = nxt;
@@ -1117,4 +1123,13 @@ void CXBMCRenderManager::DiscardBuffer()
   if(m_presentstep == PRESENT_READY)
     m_presentstep   = PRESENT_IDLE;
   m_presentevent.notifyAll();
+}
+
+bool CXBMCRenderManager::GetStats(double &sleeptime, double &pts, int &bufferLevel)
+{
+  CSharedLock lock(m_sharedSection);
+  sleeptime = m_sleeptime;
+  pts = m_presentPts;
+  bufferLevel = m_queuedBuffers.size() + m_renderedBuffers.size();
+  return true;
 }
