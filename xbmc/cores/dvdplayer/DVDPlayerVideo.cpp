@@ -734,6 +734,8 @@ void CDVDPlayerVideo::Process()
             CDVDCodecUtils::FreePicture(pTempYUVPackedPicture);
 #endif
 
+            frametime = (double)DVD_TIME_BASE/m_fFrameRate;
+
             if(m_started == false)
             {
               m_codecname = m_pVideoCodec->GetName();
