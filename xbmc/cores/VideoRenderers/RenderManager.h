@@ -31,6 +31,7 @@
 #include "OverlayRenderer.h"
 
 class CRenderCapture;
+class CDVDClock;
 
 namespace DXVA { class CProcessor; }
 namespace VAAPI { class CSurfaceHolder; }
@@ -70,8 +71,8 @@ public:
 
   int AddVideoPicture(DVDVideoPicture& picture);
 
-  void FlipPage(volatile bool& bStop, double timestamp = 0.0, int source = -1, EFIELDSYNC sync = FS_NONE);
-  unsigned int PreInit();
+  void FlipPage(volatile bool& bStop, double timestamp = 0.0, int source = -1, EFIELDSYNC sync = FS_NONE, int speed = 0);
+  unsigned int PreInit(CDVDClock *pClock);
   void UnInit();
   bool Flush();
 
@@ -131,6 +132,10 @@ public:
   CSharedSection& GetSection() { return m_sharedSection; };
 
   void RegisterRenderUpdateCallBack(const void *ctx, RenderUpdateCallBackFn fn);
+  int WaitForBuffer(volatile bool& bStop);
+  void NotifyDisplayFlip();
+  void EnableBuffering(bool enable);
+  void DiscardBuffer();
 
 protected:
   void Render(bool clear, DWORD flags, DWORD alpha);
@@ -138,6 +143,13 @@ protected:
   void PresentSingle(bool clear, DWORD flags, DWORD alpha);
   void PresentFields(bool clear, DWORD flags, DWORD alpha);
   void PresentBlend(bool clear, DWORD flags, DWORD alpha);
+
+  int  GetNextRenderBufferIndex();
+  void FlipRenderBuffer();
+  int  FlipFreeBuffer();
+  bool HasFreeBuffer();
+  void ResetRenderBuffer();
+  void PrepareNextRender();
 
   EINTERLACEMETHOD AutoInterlaceMethodInternal(EINTERLACEMETHOD mInt);
 
@@ -169,6 +181,37 @@ protected:
   double m_displayLatency;
   void UpdateDisplayLatency();
 
+  // Render Buffer State Description:
+  //
+  // Output:      is the buffer about to or having its texture prepared for render (ie from output thread).
+  //              Cannot go past the "Displayed" buffer (otherwise we will probably overwrite buffers not yet
+  //              displayed or even rendered).
+  // Current:     is the current buffer being or having been submitted for render to back buffer.
+  //              Cannot go past "Output" buffer (else it would be rendering old output).
+  // Displayed:   is the buffer that is now considered to be safely copied from back buffer to front buffer
+  //              (we assume that after two swap-buffer flips for the same "Current" render buffer that that
+  //              buffer will be safe, but otherwise we consider that only the previous-to-"Current" is guaranteed).
+
+  int m_iCurrentRenderBuffer;
+  int m_iNumRenderBuffers;
+  int m_iOutputRenderBuffer;
+  int m_iDisplayedRenderBuffer;
+  bool m_bAllRenderBuffersDisplayed;
+  bool m_bUseBuffering;
+  bool m_bCodecSupportsBuffering;
+  int m_speed;
+  CEvent m_flipEvent;
+
+  struct
+  {
+    double pts;
+    EFIELDSYNC presentfield;
+    EPRESENTMETHOD presentmethod;
+  }m_renderBuffers[5];
+
+  double     m_sleeptime;
+  double     m_presentPts;
+
   double     m_presenttime;
   double     m_presentcorr;
   double     m_presenterr;
@@ -180,6 +223,7 @@ protected:
   int        m_presentsource;
   CEvent     m_presentevent;
   CEvent     m_flushEvent;
+  CDVDClock  *m_pClock;
 
 
   OVERLAY::CRenderer m_overlays;
