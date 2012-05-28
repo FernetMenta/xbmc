@@ -1105,6 +1105,18 @@ void CXBMCRenderManager::NotifyDisplayFlip()
   m_flipEvent.Set();
 }
 
+bool CXBMCRenderManager::GetStats(double &sleeptime, double &pts, int &bufferLevel)
+{
+  CSharedLock lock(m_sharedSection);
+  sleeptime = m_sleeptime;
+  pts = m_presentPts;
+  if (m_iNumRenderBuffers < 3)
+    bufferLevel = -1;
+  else
+    bufferLevel = (m_iOutputRenderBuffer - m_iCurrentRenderBuffer + m_iNumRenderBuffers) % m_iNumRenderBuffers;
+  return true;
+}
+
 bool CXBMCRenderManager::HasFrame()
 {
   CSharedLock lock(m_sharedSection);
