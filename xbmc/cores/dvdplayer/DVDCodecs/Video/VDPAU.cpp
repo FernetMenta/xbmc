@@ -363,8 +363,7 @@ bool CDecoder::Supports(VdpVideoMixerFeature feature)
 bool CDecoder::Supports(EINTERLACEMETHOD method)
 {
   if(method == VS_INTERLACEMETHOD_VDPAU_BOB
-  || method == VS_INTERLACEMETHOD_AUTO
-  || method == VS_INTERLACEMETHOD_AUTO_ION)
+  || method == VS_INTERLACEMETHOD_AUTO)
     return true;
 
   if (g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv"))
