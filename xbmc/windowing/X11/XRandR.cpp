@@ -40,6 +40,7 @@ using namespace std;
 CXRandR::CXRandR(bool query)
 {
   m_bInit = false;
+  m_numScreens = 1;
   if (query)
     Query();
 }
@@ -56,82 +57,86 @@ bool CXRandR::Query(bool force)
     return false;
 
   m_outputs.clear();
-  m_current.clear();
 
-  CStdString cmd;
-  cmd  = getenv("XBMC_BIN_HOME");
-  cmd += "/xbmc-xrandr";
-
-  FILE* file = popen(cmd.c_str(),"r");
-  if (!file)
+  // query all screens
+  for(unsigned int screennum=0; screennum<m_numScreens; ++screennum)
   {
-    CLog::Log(LOGERROR, "CXRandR::Query - unable to execute xrandr tool");
-    return false;
-  }
+    CStdString cmd;
+    cmd  = getenv("XBMC_BIN_HOME");
+    cmd += "/xbmc-xrandr";
+    cmd.append("-q --screen %d", screennum);
+
+    FILE* file = popen(cmd.c_str(),"r");
+    if (!file)
+    {
+      CLog::Log(LOGERROR, "CXRandR::Query - unable to execute xrandr tool");
+      return false;
+    }
 
 
-  CXBMCTinyXML xmlDoc;
-  if (!xmlDoc.LoadFile(file, TIXML_DEFAULT_ENCODING))
-  {
-    CLog::Log(LOGERROR, "CXRandR::Query - unable to open xrandr xml");
+    CXBMCTinyXML xmlDoc;
+    if (!xmlDoc.LoadFile(file, TIXML_DEFAULT_ENCODING))
+    {
+      CLog::Log(LOGERROR, "CXRandR::Query - unable to open xrandr xml");
+      pclose(file);
+      return false;
+    }
     pclose(file);
-    return false;
-  }
-  pclose(file);
 
-  TiXmlElement *pRootElement = xmlDoc.RootElement();
-  if (strcasecmp(pRootElement->Value(), "screen") != 0)
-  {
-    // TODO ERROR
-    return false;
-  }
-
-  for (TiXmlElement* output = pRootElement->FirstChildElement("output"); output; output = output->NextSiblingElement("output"))
-  {
-    XOutput xoutput;
-    xoutput.name = output->Attribute("name");
-    xoutput.name.TrimLeft(" \n\r\t");
-    xoutput.name.TrimRight(" \n\r\t");
-    xoutput.isConnected = (strcasecmp(output->Attribute("connected"), "true") == 0);
-    xoutput.w = (output->Attribute("w") != NULL ? atoi(output->Attribute("w")) : 0);
-    xoutput.h = (output->Attribute("h") != NULL ? atoi(output->Attribute("h")) : 0);
-    xoutput.x = (output->Attribute("x") != NULL ? atoi(output->Attribute("x")) : 0);
-    xoutput.y = (output->Attribute("y") != NULL ? atoi(output->Attribute("y")) : 0);
-    xoutput.wmm = (output->Attribute("wmm") != NULL ? atoi(output->Attribute("wmm")) : 0);
-    xoutput.hmm = (output->Attribute("hmm") != NULL ? atoi(output->Attribute("hmm")) : 0);
-    if (output->Attribute("rotation") != NULL
-        && (strcasecmp(output->Attribute("rotation"), "left") == 0 || strcasecmp(output->Attribute("rotation"), "right") == 0))
+    TiXmlElement *pRootElement = xmlDoc.RootElement();
+    if (strcasecmp(pRootElement->Value(), "screen") != screennum)
     {
-      xoutput.isRotated = true;
+      // TODO ERROR
+      return false;
     }
-    else
-      xoutput.isRotated = false;
 
-    if (!xoutput.isConnected)
-       continue;
-
-    bool hascurrent = false;
-    for (TiXmlElement* mode = output->FirstChildElement("mode"); mode; mode = mode->NextSiblingElement("mode"))
+    for (TiXmlElement* output = pRootElement->FirstChildElement("output"); output; output = output->NextSiblingElement("output"))
     {
-      XMode xmode;
-      xmode.id = mode->Attribute("id");
-      xmode.name = mode->Attribute("name");
-      xmode.hz = atof(mode->Attribute("hz"));
-      xmode.w = atoi(mode->Attribute("w"));
-      xmode.h = atoi(mode->Attribute("h"));
-      xmode.isPreferred = (strcasecmp(mode->Attribute("preferred"), "true") == 0);
-      xmode.isCurrent = (strcasecmp(mode->Attribute("current"), "true") == 0);
-      xoutput.modes.push_back(xmode);
-      if (xmode.isCurrent)
+      XOutput xoutput;
+      xoutput.name = output->Attribute("name");
+      xoutput.name.TrimLeft(" \n\r\t");
+      xoutput.name.TrimRight(" \n\r\t");
+      xoutput.isConnected = (strcasecmp(output->Attribute("connected"), "true") == 0);
+      xoutput.screen = screennum;
+      xoutput.w = (output->Attribute("w") != NULL ? atoi(output->Attribute("w")) : 0);
+      xoutput.h = (output->Attribute("h") != NULL ? atoi(output->Attribute("h")) : 0);
+      xoutput.x = (output->Attribute("x") != NULL ? atoi(output->Attribute("x")) : 0);
+      xoutput.y = (output->Attribute("y") != NULL ? atoi(output->Attribute("y")) : 0);
+      xoutput.wmm = (output->Attribute("wmm") != NULL ? atoi(output->Attribute("wmm")) : 0);
+      xoutput.hmm = (output->Attribute("hmm") != NULL ? atoi(output->Attribute("hmm")) : 0);
+      if (output->Attribute("rotation") != NULL
+          && (strcasecmp(output->Attribute("rotation"), "left") == 0 || strcasecmp(output->Attribute("rotation"), "right") == 0))
       {
-        m_current.push_back(xoutput);
-        hascurrent = true;
+        xoutput.isRotated = true;
       }
+      else
+        xoutput.isRotated = false;
+
+      if (!xoutput.isConnected)
+        continue;
+
+      bool hascurrent = false;
+      for (TiXmlElement* mode = output->FirstChildElement("mode"); mode; mode = mode->NextSiblingElement("mode"))
+      {
+        XMode xmode;
+        xmode.id = mode->Attribute("id");
+        xmode.name = mode->Attribute("name");
+        xmode.hz = atof(mode->Attribute("hz"));
+        xmode.w = atoi(mode->Attribute("w"));
+        xmode.h = atoi(mode->Attribute("h"));
+        xmode.isPreferred = (strcasecmp(mode->Attribute("preferred"), "true") == 0);
+        xmode.isCurrent = (strcasecmp(mode->Attribute("current"), "true") == 0);
+        xoutput.modes.push_back(xmode);
+        if (xmode.isCurrent)
+        {
+          hascurrent = true;
+        }
+      }
+      if (hascurrent)
+        m_outputs.push_back(xoutput);
+      else
+        CLog::Log(LOGWARNING, "CXRandR::Query - output %s has no current mode, assuming disconnected", xoutput.name.c_str());
     }
-    if (hascurrent)
-      m_outputs.push_back(xoutput);
-    else
-      CLog::Log(LOGWARNING, "CXRandR::Query - output %s has no current mode, assuming disconnected", xoutput.name.c_str());
   }
   return m_outputs.size() > 0;
 }
@@ -248,17 +253,6 @@ bool CXRandR::SetMode(XOutput output, XMode mode)
   return true;
 }
 
-XOutput CXRandR::GetCurrentOutput()
-{
-  Query();
-  for (unsigned int j = 0; j < m_outputs.size(); j++)
-  {
-    if(m_outputs[j].isConnected)
-      return m_outputs[j];
-  }
-  XOutput empty;
-  return empty;
-}
 XMode CXRandR::GetCurrentMode(CStdString outputName)
 {
   Query();
@@ -330,6 +324,43 @@ void CXRandR::LoadCustomModeLinesToAllOutputs(void)
       }
     }
   }
+}
+
+void CXRandR::SetNumScreens(unsigned int num)
+{
+  m_numScreens = num;
+  m_bInit = false;
+}
+
+bool CXRandR::IsOutputConnected(CStdString name)
+{
+  bool result = false;
+  Query();
+
+  for (unsigned int i = 0; i < m_outputs.size(); ++i)
+  {
+    if (m_outputs[i].name == name)
+    {
+      result = true;
+      break;
+    }
+  }
+  return result;
+}
+
+XOutput* CXRandR::GetOutput(CStdString outputName)
+{
+  XOutput *result = 0;
+  Query();
+  for (unsigned int i = 0; i < m_outputs.size(); ++i)
+  {
+    if (m_outputs[i].name == outputName)
+    {
+      result = &m_outputs[i];
+      break;
+    }
+  }
+  return result;
 }
 
 CXRandR g_xrandr;

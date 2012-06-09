@@ -297,7 +297,8 @@ bool CVideoReferenceClock::SetupGLX()
   }
   else
   {
-    m_pixmap = XCreatePixmap(m_Dpy, DefaultRootWindow(m_Dpy), 256, 256, m_vInfo->depth);
+    Window window = g_Windowing.GetWindow();
+    m_pixmap = XCreatePixmap(m_Dpy, window, 256, 256, m_vInfo->depth);
     if (!m_pixmap)
     {
       CLog::Log(LOGDEBUG, "CVideoReferenceClock: unable to create pixmap");
@@ -538,7 +539,8 @@ void CVideoReferenceClock::CleanupGLX()
   }
 
   //ati saves the Display* in their libGL, if we close it here, we crash
-  if (m_Dpy && !m_bIsATI)
+  // update: on fglrx it crashes if the display is not closed
+  if (m_Dpy)
   {
     XCloseDisplay(m_Dpy);
     m_Dpy = NULL;

@@ -67,6 +67,9 @@ public:
   GLXContext GetGlxContext() { return m_glContext; }
   void RefreshWindow();
   void NotifyXRREvent();
+  void GetConnectedOutputs(std::vector<CStdString> *outputs);
+  bool IsCurrentOutput(CStdString output);
+  void NotifyMouseCoverage(bool covered);
 
 protected:
   bool RefreshGlxContext();
@@ -74,16 +77,16 @@ protected:
   void CheckDisplayEvents();
 #endif
   void OnLostDevice();
-  bool SetWindow(int width, int height, bool fullscreen);
+  bool SetWindow(int width, int height, bool fullscreen, const CStdString &output);
   void RotateResolutions();
 
 #if defined(HAS_SDL_VIDEO_X11)
   SDL_Surface* m_SDLSurface;
   GLXWindow    m_glWindow;
-  Window       m_wmWindow;
 #else
   Window       m_glWindow;
 #endif
+  Window       m_wmWindow;
   GLXContext   m_glContext;
   Display*     m_dpy;
   Cursor       m_invisibleCursor;
@@ -95,6 +98,9 @@ protected:
   CCriticalSection             m_resourceSection;
   std::vector<IDispResource*>  m_resources;
   uint64_t                     m_dpyLostTime;
+  CStdString                   m_currentOutput;
+  bool                         m_initDone;
+  bool                         m_windowDirty;
 
 private:
   bool IsSuitableVisual(XVisualInfo *vInfo);
