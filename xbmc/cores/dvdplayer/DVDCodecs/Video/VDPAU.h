@@ -38,6 +38,8 @@
  *   of locks needed.
  */
 
+#include "system_gl.h"
+
 #include "DllAvUtil.h"
 #include "DVDVideoCodec.h"
 #include "DVDVideoCodecFFmpeg.h"
