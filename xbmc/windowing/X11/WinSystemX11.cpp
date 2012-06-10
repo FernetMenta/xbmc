@@ -167,7 +167,6 @@ bool CWinSystemX11::CreateNewWindow(const CStdString& name, bool fullScreen, RES
   SDL_WM_SetIcon(SDL_CreateRGBSurfaceFrom(iconTexture.GetPixels(), iconTexture.GetWidth(), iconTexture.GetHeight(), 32, iconTexture.GetPitch(), 0xff0000, 0x00ff00, 0x0000ff, 0xff000000L), NULL);
   SDL_WM_SetCaption("XBMC Media Center", NULL);
 #else
-  UpdateResolutions();
   if(!SetFullScreen(fullScreen, res, false))
     return false;
 #endif
@@ -375,6 +374,8 @@ void CWinSystemX11::UpdateResolutions()
 {
   CWinSystemBase::UpdateResolutions();
 
+  if (!m_initDone)
+    return;
 
 #if defined(HAS_XRANDR)
   CStdString currentMonitor;
@@ -382,8 +383,7 @@ void CWinSystemX11::UpdateResolutions()
   g_xrandr.SetNumScreens(numScreens);
   if(g_xrandr.Query())
   {
-    if (m_initDone)
-      currentMonitor = g_guiSettings.GetString("videoscreen.monitor");
+    currentMonitor = g_guiSettings.GetString("videoscreen.monitor");
     // check if the monitor is connected
     XOutput *out = g_xrandr.GetOutput(currentMonitor);
     if (!out)
@@ -391,8 +391,7 @@ void CWinSystemX11::UpdateResolutions()
       // choose first output
       currentMonitor = g_xrandr.GetModes()[0].name;
       out = g_xrandr.GetOutput(currentMonitor);
-      if (m_initDone)
-        g_guiSettings.SetString("videoscreen.monitor", currentMonitor);
+      g_guiSettings.SetString("videoscreen.monitor", currentMonitor);
     }
     XMode mode = g_xrandr.GetCurrentMode(currentMonitor);
     m_bIsRotated = out->isRotated;
