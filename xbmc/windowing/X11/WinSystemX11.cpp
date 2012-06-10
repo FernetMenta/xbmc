@@ -571,7 +571,7 @@ bool CWinSystemX11::RefreshGlxContext()
   XVisualInfo *visuals;
   XVisualInfo *vInfo      = NULL;
   int availableVisuals    = 0;
-  vMask.screen = DefaultScreen(m_dpy);
+  vMask.screen = m_nScreen;
   XWindowAttributes winAttr;
 
   /* Assume a depth of 24 in case the below calls to XGetWindowAttributes()
@@ -733,7 +733,7 @@ bool CWinSystemX11::Minimize()
 #if defined(HAS_SDL_VIDEO_X11)
   SDL_WM_IconifyWindow();
 #else
-  XIconifyWindow(m_dpy, m_glWindow, DefaultScreen(m_dpy));
+  XIconifyWindow(m_dpy, m_glWindow, m_nScreen);
 #endif
 
   return true;

@@ -405,7 +405,7 @@ void CDecoder::InitVDPAUProcs()
     m_Display = XOpenDisplay(NULL);
   }
 
-  int mScreen = DefaultScreen(m_Display);
+  int mScreen = g_Windowing.GetCurrentScreen();
   VdpStatus vdp_st;
 
   // Create Device
@@ -3094,10 +3094,10 @@ bool COutput::MakePixmap(VdpauBufferPool::Pixmaps &pixmap)
 
     // Get our window attribs.
   XWindowAttributes wndattribs;
-  XGetWindowAttributes(m_Display, DefaultRootWindow(m_Display), &wndattribs);
+  XGetWindowAttributes(m_Display, g_Windowing.GetWindow(), &wndattribs);
 
   pixmap.pixmap = XCreatePixmap(m_Display,
-                           DefaultRootWindow(m_Display),
+                           g_Windowing.GetWindow(),
                            m_config.outWidth,
                            m_config.outHeight,
                            wndattribs.depth);
@@ -3147,7 +3147,7 @@ bool COutput::MakePixmapGL(VdpauBufferPool::Pixmaps &pixmap)
   };
 
   GLXFBConfig *fbConfigs;
-  fbConfigs = glXChooseFBConfig(m_Display, DefaultScreen(m_Display), doubleVisAttributes, &num);
+  fbConfigs = glXChooseFBConfig(m_Display, g_Windowing.GetCurrentScreen(), doubleVisAttributes, &num);
   if (fbConfigs==NULL)
   {
     CLog::Log(LOGERROR, "VDPAU::COutput::MakPixmapGL - No compatible framebuffers found");
@@ -3449,7 +3449,7 @@ bool COutput::CreateGlxContext()
   XFree(visuals);
 
   m_pixmap = XCreatePixmap(m_Display,
-                           DefaultRootWindow(m_Display),
+                           m_Window,
                            192,
                            108,
                            visInfo.depth);
