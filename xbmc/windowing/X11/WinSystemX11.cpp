@@ -64,6 +64,7 @@ CWinSystemX11::CWinSystemX11() : CWinSystemBase()
   m_dpyLostTime = 0;
   m_invisibleCursor = 0;
   m_initDone = false;
+  m_bIsInternalXrr = false;
 
   XSetErrorHandler(XErrorHandler);
 }
@@ -140,9 +141,9 @@ bool CWinSystemX11::DestroyWindowSystem()
 
 bool CWinSystemX11::CreateNewWindow(const CStdString& name, bool fullScreen, RESOLUTION_INFO& res, PHANDLE_EVENT_FUNC userFunction)
 {
-  RESOLUTION_INFO& desktop = g_settings.m_ResInfo[RES_DESKTOP];
-
 #if defined(HAS_SDL_VIDEO_X11)
+
+  RESOLUTION_INFO& desktop = g_settings.m_ResInfo[RES_DESKTOP];
 
   if (fullScreen &&
       (res.iWidth != desktop.iWidth || res.iHeight != desktop.iHeight ||
@@ -249,55 +250,6 @@ bool CWinSystemX11::ResizeWindow(int newWidth, int newHeight, int newLeft, int n
   return false;
 }
 
-void CWinSystemX11::RefreshWindow()
-{
-  if (!g_xrandr.Query(true))
-  {
-    CLog::Log(LOGERROR, "WinSystemX11::RefreshWindow - failed to query xrandr");
-    return;
-  }
-  CStdString currentOutput = g_settings.m_ResInfo[RES_DESKTOP].strOutput;
-  XOutput *out = g_xrandr.GetOutput(currentOutput);
-  XMode   mode = g_xrandr.GetCurrentMode(currentOutput);
-
-  RotateResolutions();
-
-  // only overwrite desktop resolution, if we are not in fullscreen mode
-  if (!g_graphicsContext.IsFullScreenVideo())
-  {
-    CLog::Log(LOGDEBUG, "CWinSystemX11::RefreshWindow - store desktop resolution, width: %d, height: %d, hz: %2.2f", mode.w, mode.h, mode.hz);
-    if (!out->isRotated)
-      UpdateDesktopResolution(g_settings.m_ResInfo[RES_DESKTOP], out->screen, mode.w, mode.h, mode.hz);
-    else
-      UpdateDesktopResolution(g_settings.m_ResInfo[RES_DESKTOP], out->screen, mode.h, mode.w, mode.hz);
-    g_settings.m_ResInfo[RES_DESKTOP].strId     = mode.id;
-    g_settings.m_ResInfo[RES_DESKTOP].strOutput = currentOutput;
-  }
-
-  RESOLUTION_INFO res;
-  unsigned int i;
-  bool found(false);
-  for (i = RES_DESKTOP; i < g_settings.m_ResInfo.size(); ++i)
-  {
-    if (g_settings.m_ResInfo[i].strId == mode.id)
-    {
-      found = true;
-      break;
-    }
-  }
-
-  if (!found)
-  {
-    CLog::Log(LOGERROR, "CWinSystemX11::RefreshWindow - could not find resolution");
-    return;
-  }
-
-  if (g_graphicsContext.IsFullScreenRoot())
-    g_graphicsContext.SetVideoResolution((RESOLUTION)i, true);
-  else
-    g_graphicsContext.SetVideoResolution(RES_WINDOW, true);
-}
-
 bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
 
@@ -338,6 +290,7 @@ bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   {
     CLog::Log(LOGNOTICE, "CWinSystemX11::SetFullScreen - calling xrandr");
     OnLostDevice();
+    m_bIsInternalXrr = true;
     g_xrandr.SetMode(out, mode);
   }
 #endif
@@ -381,7 +334,7 @@ void CWinSystemX11::UpdateResolutions()
   CStdString currentMonitor;
   int numScreens = XScreenCount(m_dpy);
   g_xrandr.SetNumScreens(numScreens);
-  if(g_xrandr.Query())
+  if(g_xrandr.Query(true))
   {
     currentMonitor = g_guiSettings.GetString("videoscreen.monitor");
     // check if the monitor is connected
@@ -486,30 +439,6 @@ void CWinSystemX11::GetConnectedOutputs(std::vector<CStdString> *outputs)
 bool CWinSystemX11::IsCurrentOutput(CStdString output)
 {
   return m_currentOutput.Equals(output);
-}
-
-void CWinSystemX11::RotateResolutions()
-{
-#if 0 //defined(HAS_XRANDR)
-  XOutput out  = g_xrandr.GetOutput();
-  if (out.isRotated == m_bIsRotated)
-    return;
-
-  for (unsigned int i = 0; i < g_settings.m_ResInfo.size(); ++i)
-  {
-    int width = g_settings.m_ResInfo[i].iWidth;
-    g_settings.m_ResInfo[i].iWidth = g_settings.m_ResInfo[i].iHeight;
-    g_settings.m_ResInfo[i].iHeight = width;
-  }
-  // update desktop resolution
-//  int h = g_settings.m_ResInfo[RES_DESKTOP].iHeight;
-//  int w = g_settings.m_ResInfo[RES_DESKTOP].iWidth;
-//  float hz = g_settings.m_ResInfo[RES_DESKTOP].fRefreshRate;
-//  UpdateDesktopResolution(g_settings.m_ResInfo[RES_DESKTOP], 0, w, h, hz);
-
-  m_bIsRotated = out.isRotated;
-
-#endif
 }
 
 bool CWinSystemX11::IsSuitableVisual(XVisualInfo *vInfo)
@@ -809,13 +738,45 @@ void CWinSystemX11::NotifyXRREvent()
 {
   CLog::Log(LOGDEBUG, "%s - notify display reset event", __FUNCTION__);
   m_windowDirty = true;
-  RefreshWindow();
 
-//  CSingleLock lock(m_resourceSection);
-//
-//  // tell any shared resources
-//  for (vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); i++)
-//    (*i)->OnResetDevice();
+  // if external event update resolutions
+  if (!m_bIsInternalXrr)
+  {
+    UpdateResolutions();
+  }
+  else if (!g_xrandr.Query(true))
+  {
+    CLog::Log(LOGERROR, "WinSystemX11::RefreshWindow - failed to query xrandr");
+    return;
+  }
+  m_bIsInternalXrr = false;
+
+  CStdString currentOutput = g_guiSettings.GetString("videoscreen.monitor");
+  XOutput *out = g_xrandr.GetOutput(currentOutput);
+  XMode   mode = g_xrandr.GetCurrentMode(currentOutput);
+
+  RESOLUTION_INFO res;
+  unsigned int i;
+  bool found(false);
+  for (i = RES_DESKTOP; i < g_settings.m_ResInfo.size(); ++i)
+  {
+    if (g_settings.m_ResInfo[i].strId == mode.id)
+    {
+      found = true;
+      break;
+    }
+  }
+
+  if (!found)
+  {
+    CLog::Log(LOGERROR, "CWinSystemX11::RefreshWindow - could not find resolution");
+    i = RES_DESKTOP;
+  }
+
+  if (g_graphicsContext.IsFullScreenRoot())
+    g_graphicsContext.SetVideoResolution((RESOLUTION)i, true);
+  else
+    g_graphicsContext.SetVideoResolution(RES_WINDOW, true);
 
 }
 

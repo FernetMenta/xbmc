@@ -66,7 +66,6 @@ public:
   Display*  GetDisplay() { return m_dpy; }
   GLXWindow GetWindow() { return m_glWindow; }
   GLXContext GetGlxContext() { return m_glContext; }
-  void RefreshWindow();
   void NotifyXRREvent();
   void GetConnectedOutputs(std::vector<CStdString> *outputs);
   bool IsCurrentOutput(CStdString output);
@@ -79,7 +78,6 @@ protected:
 #endif
   void OnLostDevice();
   bool SetWindow(int width, int height, bool fullscreen, const CStdString &output);
-  void RotateResolutions();
 
 #if defined(HAS_SDL_VIDEO_X11)
   SDL_Surface* m_SDLSurface;
@@ -102,6 +100,7 @@ protected:
   CStdString                   m_currentOutput;
   bool                         m_initDone;
   bool                         m_windowDirty;
+  bool                         m_bIsInternalXrr;
 
 private:
   bool IsSuitableVisual(XVisualInfo *vInfo);
