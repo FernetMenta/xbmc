@@ -24,6 +24,7 @@
 
 #include "WinSystemX11GL.h"
 #include "utils/log.h"
+#include "Application.h"
 
 CWinSystemX11GL::CWinSystemX11GL()
 {
@@ -46,6 +47,9 @@ bool CWinSystemX11GL::PresentRenderImpl(const CDirtyRegionList& dirty)
 #if defined(HAS_SDL_VIDEO_X11)
   CheckDisplayEvents();
 #endif
+
+  if (m_bIsInternalXrr)
+    return true;
 
   if(m_iVSyncMode == 3)
   {
@@ -248,16 +252,24 @@ bool CWinSystemX11GL::CreateNewWindow(const CStdString& name, bool fullScreen, R
 
 bool CWinSystemX11GL::ResizeWindow(int newWidth, int newHeight, int newLeft, int newTop)
 {
+  m_newGlContext = false;
   CWinSystemX11::ResizeWindow(newWidth, newHeight, newLeft, newTop);
   CRenderSystemGL::ResetRenderSystem(newWidth, newHeight, false, 0);
+
+  if (m_newGlContext)
+    g_application.ReloadSkin();
 
   return true;
 }
 
 bool CWinSystemX11GL::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
+  m_newGlContext = false;
   CWinSystemX11::SetFullScreen(fullScreen, res, blankOtherDisplays);
   CRenderSystemGL::ResetRenderSystem(res.iWidth, res.iHeight, fullScreen, res.fRefreshRate);
+
+  if (m_newGlContext)
+    g_application.ReloadSkin();
 
   return true;
 }

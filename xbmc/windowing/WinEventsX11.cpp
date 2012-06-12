@@ -204,10 +204,9 @@ bool CWinEventsX11::Init(Display *dpy, Window win)
   WinEvents->m_keybuf = (char*)malloc(32*sizeof(char));
   WinEvents->m_utf16buf = (uint16_t*)malloc(32*sizeof(uint16_t));
   WinEvents->m_keymodState = 0;
-  WinEvents->m_pendingWidth = -1;
-  WinEvents->m_pendingHeight = -1;
   WinEvents->m_wmDeleteMessage = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
   WinEvents->m_xrrEventPending = false;
+  WinEvents->m_structureChanged = false;
   memset(&(WinEvents->m_lastKey), 0, sizeof(XBMC_Event));
 
   // open input method
@@ -290,10 +289,14 @@ void CWinEventsX11::Quit()
   WinEvents = 0;
 }
 
-void CWinEventsX11::PendingResize(int width, int height)
+bool CWinEventsX11::HasStructureChanged()
 {
-  WinEvents->m_pendingWidth = width;
-  WinEvents->m_pendingHeight = height;
+  if (!WinEvents)
+    return false;
+
+  bool ret = WinEvents->m_structureChanged;
+  WinEvents->m_structureChanged = false;
+  return ret;
 }
 
 void CWinEventsX11::SetXRRFailSafeTimer(int millis)
@@ -382,16 +385,7 @@ bool CWinEventsX11::MessagePump()
         if (xevent.xconfigure.window != WinEvents->m_window)
           break;
 
-        // ignore events after a resize until we get desired width / height
-        if ((WinEvents->m_pendingWidth != -1) && (WinEvents->m_pendingHeight != -1))
-        {
-          if ((WinEvents->m_pendingWidth != xevent.xconfigure.width) &&
-              (WinEvents->m_pendingHeight != xevent.xconfigure.height))
-            break;
-        }
-        WinEvents->m_pendingWidth = -1;
-        WinEvents->m_pendingHeight = -1;
-
+        WinEvents->m_structureChanged = true;
         XBMC_Event newEvent;
         memset(&newEvent, 0, sizeof(newEvent));
         newEvent.type = XBMC_VIDEORESIZE;
@@ -531,7 +525,6 @@ bool CWinEventsX11::MessagePump()
       // lose mouse coverage
       case LeaveNotify:
       {
-        CLog::Log(LOGNOTICE,"------------- leave");
         g_Windowing.NotifyMouseCoverage(false);
         g_Mouse.SetActive(false);
         break;

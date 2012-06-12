@@ -32,7 +32,7 @@ public:
   virtual ~CWinEventsX11();
   static bool Init(Display *dpy, Window win);
   static void Quit();
-  static void PendingResize(int width, int height);
+  static bool HasStructureChanged();
   static void SetXRRFailSafeTimer(int millis);
   static bool MessagePump();
 
@@ -50,8 +50,6 @@ protected:
   uint16_t *m_utf16buf;
   XIM m_xim;
   XIC m_xic;
-  int m_pendingWidth;
-  int m_pendingHeight;
   XBMC_Event m_lastKey;
   XbmcThreads::EndTime m_repeatKeyTimeout;
   std::map<uint32_t,uint32_t> m_symLookupTable;
@@ -59,4 +57,5 @@ protected:
   int m_RREventBase;
   XbmcThreads::EndTime m_xrrFailSafeTimer;
   bool m_xrrEventPending;
+  bool m_structureChanged;
 };

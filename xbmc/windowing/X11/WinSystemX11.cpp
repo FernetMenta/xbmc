@@ -204,7 +204,7 @@ bool CWinSystemX11::DestroyWindow()
   CWinEvents::Quit();
 
   XUnmapWindow(m_dpy, m_glWindow);
-  XSync(m_dpy,True);
+  XSync(m_dpy,TRUE);
   XUngrabKeyboard(m_dpy, CurrentTime);
   XUngrabPointer(m_dpy, CurrentTime);
   XDestroyWindow(m_dpy, m_glWindow);
@@ -242,9 +242,9 @@ bool CWinSystemX11::ResizeWindow(int newWidth, int newHeight, int newLeft, int n
   }
 #endif
 
-  RefreshGlxContext();
   m_nWidth  = newWidth;
   m_nHeight = newHeight;
+  m_bFullScreen = false;
   m_currentOutput = g_guiSettings.GetString("videoscreen.monitor");
 
   return false;
@@ -292,6 +292,7 @@ bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
     OnLostDevice();
     m_bIsInternalXrr = true;
     g_xrandr.SetMode(out, mode);
+    return true;
   }
 #endif
 
@@ -312,8 +313,6 @@ bool CWinSystemX11::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
   if (!SetWindow(res.iWidth, res.iHeight, fullScreen, g_guiSettings.GetString("videoscreen.monitor")))
     return false;
 #endif
-
-  RefreshGlxContext();
 
   m_nWidth      = res.iWidth;
   m_nHeight     = res.iHeight;
@@ -484,14 +483,12 @@ bool CWinSystemX11::RefreshGlxContext()
   m_glWindow = info.info.x11.window;
   m_wmWindow = info.info.x11.wmwindow;
 #else
-  if (m_glContext)
+  bool keepContext = m_currentOutput.Equals(g_guiSettings.GetString("videoscreen.monitor"));
+  if (m_glContext && keepContext)
   {
     CLog::Log(LOGDEBUG, "CWinSystemX11::RefreshGlxContext: refreshing context");
-    glFinish();
     glXMakeCurrent(m_dpy, None, NULL);
     glXMakeCurrent(m_dpy, m_glWindow, m_glContext);
-    XSync(m_dpy, FALSE);
-    g_Windowing.ResetVSync();
     return true;
   }
 #endif
@@ -552,14 +549,14 @@ bool CWinSystemX11::RefreshGlxContext()
     {
       glXMakeCurrent(m_dpy, None, NULL);
       glXDestroyContext(m_dpy, m_glContext);
+      XSync(m_dpy, False);
+      m_newGlContext = true;
     }
 
     if ((m_glContext = glXCreateContext(m_dpy, vInfo, NULL, True)))
     {
       // make this context current
       glXMakeCurrent(m_dpy, m_glWindow, m_glContext);
-      g_Windowing.ResetVSync();
-      XSync(m_dpy, False);
       retVal = true;
     }
     else
@@ -856,6 +853,7 @@ bool CWinSystemX11::SetWindow(int width, int height, bool fullscreen, const CStd
     }
     OnLostDevice();
     DestroyWindow();
+    m_windowDirty = true;
   }
 
   // create main window
@@ -919,14 +917,13 @@ bool CWinSystemX11::SetWindow(int width, int height, bool fullscreen, const CStd
     changeSize = true;
   }
 
-  if ((width != m_nWidth) || (height != m_nHeight))
+  if (!CWinEvents::HasStructureChanged() && ((width != m_nWidth) || (height != m_nHeight)))
   {
     changeSize = true;
   }
 
   if (changeSize || changeWindow)
   {
-    CWinEvents::PendingResize(width, height);
     XResizeWindow(m_dpy, m_glWindow, width, height);
   }
 
@@ -958,7 +955,7 @@ bool CWinSystemX11::SetWindow(int width, int height, bool fullscreen, const CStd
       XSetWMProtocols(m_dpy, m_glWindow, &wmDeleteMessage, 1);
     }
     XMapRaised(m_dpy, m_glWindow);
-    XSync(m_dpy,True);
+    XSync(m_dpy,TRUE);
 
     if (changeWindow && mouseActive)
     {
@@ -975,12 +972,19 @@ bool CWinSystemX11::SetWindow(int width, int height, bool fullscreen, const CStd
       }
       XGrabKeyboard(m_dpy, m_glWindow, True, GrabModeAsync, GrabModeAsync, CurrentTime);
     }
+
+    CDirtyRegionList dr;
+    RefreshGlxContext();
+    XSync(m_dpy, FALSE);
+    g_graphicsContext.Clear(0);
+    g_graphicsContext.Flip(dr);
+    g_Windowing.ResetVSync();
+    m_windowDirty = false;
+
     CSingleLock lock(m_resourceSection);
     // tell any shared resources
     for (vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); i++)
       (*i)->OnResetDevice();
-
-    m_windowDirty = false;
   }
 #endif
 
