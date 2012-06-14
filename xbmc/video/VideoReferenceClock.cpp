@@ -132,6 +132,9 @@ void CVideoReferenceClock::Process()
   m_D3dCallback.Reset();
   g_Windowing.Register(&m_D3dCallback);
 #endif
+#if defined(HAS_GLX)
+  g_Windowing.Register(this);
+#endif
 
   while(!m_bStop)
   {
@@ -203,6 +206,9 @@ void CVideoReferenceClock::Process()
 #if defined(_WIN32) && defined(HAS_DX)
   g_Windowing.Unregister(&m_D3dCallback);
 #endif
+#if defined(HAS_GLX)
+  g_Windowing.Unregister(this);
+#endif
 }
 
 bool CVideoReferenceClock::WaitStarted(int MSecs)
@@ -212,6 +218,17 @@ bool CVideoReferenceClock::WaitStarted(int MSecs)
 }
 
 #if defined(HAS_GLX) && defined(HAS_XRANDR)
+
+void CVideoReferenceClock::OnLostDevice()
+{
+
+}
+
+void CVideoReferenceClock::OnResetDevice()
+{
+  m_xrrEvent = true;
+}
+
 bool CVideoReferenceClock::SetupGLX()
 {
   int singleBufferAttributes[] = {
@@ -231,6 +248,8 @@ bool CVideoReferenceClock::SetupGLX()
   m_Window = 0;
   m_pixmap = None;
   m_glPixmap = None;
+
+  m_xrrEvent = false;
 
   CLog::Log(LOGDEBUG, "CVideoReferenceClock: Setting up GLX");
 
@@ -362,10 +381,6 @@ bool CVideoReferenceClock::SetupGLX()
     CLog::Log(LOGDEBUG, "CVideoReferenceClock: RandR not supported");
     return false;
   }
-
-  //set up receiving of RandR events, we'll get one when the refreshrate changes
-  XRRQueryExtension(m_Dpy, &m_RREventBase, &ReturnV);
-  XRRSelectInput(m_Dpy, RootWindow(m_Dpy, m_vInfo->screen), RRScreenChangeNotifyMask);
 
   UpdateRefreshrate(true); //forced refreshrate update
   m_MissedVblanks = 0;
@@ -568,6 +583,9 @@ void CVideoReferenceClock::RunGLX()
 
   while(!m_bStop)
   {
+    if (m_xrrEvent)
+      return;
+
     //wait for the next vblank
     if (!m_bIsATI)
     {
@@ -631,7 +649,6 @@ void CVideoReferenceClock::RunGLX()
       UpdateClock((int)(VblankCount - PrevVblankCount), true);
       SingleLock.Leave();
       SendVblankSignal();
-      UpdateRefreshrate();
       IsReset = false;
     }
     else if (!m_bStop)
@@ -1168,23 +1185,10 @@ bool CVideoReferenceClock::UpdateRefreshrate(bool Forced /*= false*/)
 
 #if defined(HAS_GLX) && defined(HAS_XRANDR)
 
-  //check for RandR events
-  bool   GotEvent = Forced || m_RefreshChanged == 2;
-  XEvent Event;
-  while (XCheckTypedEvent(m_Dpy, m_RREventBase + RRScreenChangeNotify, &Event))
-  {
-    if (Event.type == m_RREventBase + RRScreenChangeNotify)
-    {
-      CLog::Log(LOGDEBUG, "CVideoReferenceClock: Received RandR event %i", Event.type);
-      GotEvent = true;
-    }
-    XRRUpdateConfiguration(&Event);
-  }
-
   if (!Forced)
     m_RefreshChanged = 0;
 
-  if (!GotEvent) //refreshrate did not change
+  if (!Forced) //refreshrate did not change
     return false;
 
   //the refreshrate can be wrong on nvidia drivers, so read it from nvidia-settings when it's available
