@@ -134,6 +134,7 @@ void CVideoReferenceClock::Process()
 #endif
 #if defined(HAS_GLX)
   g_Windowing.Register(this);
+  m_xrrEvent = false;
 #endif
 
   while(!m_bStop)
@@ -195,6 +196,12 @@ void CVideoReferenceClock::Process()
     //clean up the vblank clock
 #if defined(HAS_GLX) && defined(HAS_XRANDR)
     CleanupGLX();
+    if (m_xrrEvent)
+    {
+      m_releaseEvent.Set();
+      m_resetEvent.Wait();
+      m_xrrEvent = false;
+    }
 #elif defined(_WIN32) && defined(HAS_DX)
     CleanupD3D();
 #elif defined(TARGET_DARWIN)
@@ -221,12 +228,18 @@ bool CVideoReferenceClock::WaitStarted(int MSecs)
 
 void CVideoReferenceClock::OnLostDevice()
 {
-
+  if (m_xrrEvent)
+  {
+    m_releaseEvent.Reset();
+    m_xrrEvent = true;
+    m_releaseEvent.Wait();
+  }
 }
 
 void CVideoReferenceClock::OnResetDevice()
 {
-  m_xrrEvent = true;
+  m_xrrEvent = false;
+  m_resetEvent.Set();
 }
 
 bool CVideoReferenceClock::SetupGLX()
@@ -248,8 +261,6 @@ bool CVideoReferenceClock::SetupGLX()
   m_Window = 0;
   m_pixmap = None;
   m_glPixmap = None;
-
-  m_xrrEvent = false;
 
   CLog::Log(LOGDEBUG, "CVideoReferenceClock: Setting up GLX");
 

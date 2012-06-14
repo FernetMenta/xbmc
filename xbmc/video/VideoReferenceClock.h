@@ -132,6 +132,7 @@ class CVideoReferenceClock : public CThread
     Pixmap       m_pixmap;
     GLXPixmap    m_glPixmap;
     bool         m_xrrEvent;
+    CEvent       m_releaseEvent, m_resetEvent;
 
     bool         m_UseNvSettings;
     bool         m_bIsATI;
