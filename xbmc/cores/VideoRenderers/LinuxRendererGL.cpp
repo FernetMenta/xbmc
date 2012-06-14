@@ -692,14 +692,14 @@ void CLinuxRendererGL::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
   else if(m_format == RENDER_FMT_VDPAU_420
       && !(flags & (RENDER_FLAG_TOP | RENDER_FLAG_BOT)))
   {
-    glEnable(GL_POLYGON_STIPPLE);
-
-    glPolygonStipple(stipple_weave);
+    glDisable(GL_BLEND);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     Render(flags | RENDER_FLAG_TOP, index);
-    glPolygonStipple(stipple_weave+4);
-    Render(flags | RENDER_FLAG_BOT , index);
 
-    glDisable(GL_POLYGON_STIPPLE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(1.0f, 1.0f, 1.0f, 128 / 255.0f);
+    Render(flags | RENDER_FLAG_BOT , index);
   }
   else
     Render(flags, index);
