@@ -199,7 +199,11 @@ void CVideoReferenceClock::Process()
     if (m_xrrEvent)
     {
       m_releaseEvent.Set();
-      m_resetEvent.Wait();
+      while (!m_bStop)
+      {
+        if (m_resetEvent.WaitMSec(100))
+          break;
+      }
       m_xrrEvent = false;
     }
 #elif defined(_WIN32) && defined(HAS_DX)
@@ -228,9 +232,10 @@ bool CVideoReferenceClock::WaitStarted(int MSecs)
 
 void CVideoReferenceClock::OnLostDevice()
 {
-  if (m_xrrEvent)
+  if (!m_xrrEvent)
   {
     m_releaseEvent.Reset();
+    m_resetEvent.Reset();
     m_xrrEvent = true;
     m_releaseEvent.Wait();
   }
