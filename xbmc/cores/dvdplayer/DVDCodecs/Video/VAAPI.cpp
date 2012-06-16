@@ -261,6 +261,15 @@ void CDecoder::Close()
 
 bool CDecoder::Open(AVCodecContext *avctx, enum PixelFormat fmt, unsigned int surfaces)
 {
+#ifdef HAVE_LIBXVBA
+  std::string Vendor = g_Windowing.GetRenderVendor();
+  std::transform(Vendor.begin(), Vendor.end(), Vendor.begin(), ::tolower);
+  if (Vendor.compare(0, 3, "ati") == 0)
+  {
+    return false;
+  }
+#endif
+
   VAEntrypoint entrypoint = VAEntrypointVLD;
   VAProfile    profile;
 
