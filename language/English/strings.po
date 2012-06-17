@@ -4845,7 +4845,7 @@ msgid "Allow Vdpau OpenGL interop YUV"
 msgstr ""
 
 msgctxt "#13435"
-msgid "Allow hardware acceleration (XVBA))"
+msgid "Allow hardware acceleration (XVBA)"
 msgstr ""
 
 #empty strings from id 13436 to 13499
