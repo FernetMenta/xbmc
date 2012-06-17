@@ -64,6 +64,7 @@ class CVideoReferenceClock : public CThread
 {
   public:
     CVideoReferenceClock();
+    virtual ~CVideoReferenceClock();
 
     int64_t GetTime(bool interpolated = true);
     int64_t GetFrequency();

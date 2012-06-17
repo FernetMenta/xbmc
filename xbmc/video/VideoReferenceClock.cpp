@@ -122,6 +122,18 @@ CVideoReferenceClock::CVideoReferenceClock() : CThread("CVideoReferenceClock")
 #endif
 }
 
+CVideoReferenceClock::~CVideoReferenceClock()
+{
+#if defined(HAS_GLX)
+  // some ATI voodoo, if we don't close the display, we crash on exit
+  if (m_Dpy)
+  {
+    XCloseDisplay(m_Dpy);
+    m_Dpy = NULL;
+  }
+#endif
+}
+
 void CVideoReferenceClock::Process()
 {
   bool SetupSuccess = false;
@@ -570,8 +582,7 @@ void CVideoReferenceClock::CleanupGLX()
   }
 
   //ati saves the Display* in their libGL, if we close it here, we crash
-  // update: on fglrx it crashes if the display is not closed
-  if (m_Dpy)
+  if (m_Dpy && !m_bIsATI)
   {
     XCloseDisplay(m_Dpy);
     m_Dpy = NULL;
