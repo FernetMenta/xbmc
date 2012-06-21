@@ -59,6 +59,7 @@
 #include "network/upnp/UPnPSettings.h"
 #endif
 #include "utils/RssManager.h"
+#include "windowing/WindowingFactory.h"
 
 using namespace std;
 using namespace XFILE;
