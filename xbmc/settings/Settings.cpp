@@ -55,6 +55,7 @@
 #include "filesystem/File.h"
 #include "filesystem/DirectoryCache.h"
 #include "DatabaseManager.h"
+#include "windowing/WindowingFactory.h"
 
 using namespace std;
 using namespace XFILE;
