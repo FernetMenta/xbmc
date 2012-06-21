@@ -25,6 +25,7 @@
 #include "threads/SingleLock.h"
 #include "utils/log.h"
 #include "utils/XBMCTinyXML.h"
+#include "windowing/WindowingFactory.h"
 
 using namespace std;
 using namespace XFILE;
