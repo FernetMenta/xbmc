@@ -23,7 +23,6 @@
 
 #ifdef HAS_GLX
 
-#include <SDL/SDL_syswm.h>
 #include "WinSystemX11.h"
 #include "settings/Settings.h"
 #include "guilib/Texture.h"
@@ -626,13 +625,38 @@ void CWinSystemX11::ResetOSScreensaver()
     {
       m_screensaverReset.StartZero();
       XResetScreenSaver(m_dpy);
-      //need to flush the output buffer, since we don't check for events on m_dpy
-      XFlush(m_dpy);
     }
   }
   else
   {
     m_screensaverReset.Stop();
+  }
+}
+
+void CWinSystemX11::EnableSystemScreenSaver(bool bEnable)
+{
+  if (!m_dpy)
+    return;
+
+  if (bEnable)
+    XForceScreenSaver(m_dpy, ScreenSaverActive);
+  else
+  {
+    Window root_return, child_return;
+    int root_x_return, root_y_return;
+    int win_x_return, win_y_return;
+    unsigned int mask_return;
+    bool isInWin = XQueryPointer(m_dpy, RootWindow(m_dpy, m_nScreen), &root_return, &child_return,
+                                 &root_x_return, &root_y_return,
+                                 &win_x_return, &win_y_return,
+                                 &mask_return);
+
+    XWarpPointer(m_dpy, None, RootWindow(m_dpy, m_nScreen), 0, 0, 0, 0, root_x_return+300, root_y_return+300);
+    XSync(m_dpy, FALSE);
+    XWarpPointer(m_dpy, None, RootWindow(m_dpy, m_nScreen), 0, 0, 0, 0, 0, 0);
+    XSync(m_dpy, FALSE);
+    XWarpPointer(m_dpy, None, RootWindow(m_dpy, m_nScreen), 0, 0, 0, 0, root_x_return, root_y_return);
+    XSync(m_dpy, FALSE);
   }
 }
 
@@ -893,6 +917,8 @@ bool CWinSystemX11::SetWindow(int width, int height, bool fullscreen, const CStd
   // create main window
   if (!m_glWindow)
   {
+    EnableSystemScreenSaver(false);
+
     GLint att[] =
     {
       GLX_RGBA,
@@ -999,7 +1025,7 @@ bool CWinSystemX11::SetWindow(int width, int height, bool fullscreen, const CStd
     if (fullscreen)
     {
       int result = -1;
-      while (result != GrabSuccess)
+      while (result != GrabSuccess && result != AlreadyGrabbed)
       {
         result = XGrabPointer(m_dpy, m_glWindow, True, ButtonPressMask, GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
         XbmcThreads::ThreadSleep(100);
