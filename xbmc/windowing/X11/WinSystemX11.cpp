@@ -407,7 +407,7 @@ void CWinSystemX11::UpdateResolutions()
       res.strMode.Format("%s: %s @ %.2fHz", out->name.c_str(), mode.name.c_str(), mode.hz);
       res.strOutput    = out->name;
       res.strId        = mode.id;
-      res.iSubtitles   = (int)(0.95*mode.h);
+      res.iSubtitles   = (int)(0.965*mode.h);
       res.fRefreshRate = mode.hz;
       res.bFullScreen  = true;
 
@@ -452,7 +452,7 @@ bool CWinSystemX11::HasCalibration(const RESOLUTION_INFO &resInfo)
     return true;
   if (resInfo.fPixelRatio != fPixRatio)
     return true;
-  if (resInfo.iSubtitles != (int)(0.95*resInfo.iHeight))
+  if (resInfo.iSubtitles != (int)(0.965*resInfo.iHeight))
     return true;
 
   return false;

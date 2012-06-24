@@ -577,7 +577,7 @@ void CSettings::UpdateCalibrations()
     {
       if (it->strMode.Equals(m_ResInfo[res].strMode))
       {
-        if (!g_Windowing.HasCalibration(m_ResInfo[res]))
+        if (g_Windowing.HasCalibration(m_ResInfo[res]))
           (*it) = m_ResInfo[res];
         else
           m_Calibrations.erase(it);
