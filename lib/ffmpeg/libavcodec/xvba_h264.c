@@ -102,6 +102,16 @@ static int end_frame(AVCodecContext *avctx)
   pic_descriptor->avc_num_ref_frames                          = h->sps.ref_frame_count;
   pic_descriptor->avc_reserved_8bit                           = 0;
 
+  /* Set correct level */
+  if (pic_descriptor->level == 41) {
+    const unsigned int mbw = pic_descriptor->width_in_mb;
+    const unsigned int mbh = pic_descriptor->height_in_mb;
+    const unsigned int max_ref_frames = 12288 * 1024 / (mbw * mbh * 384);
+    const unsigned int num_ref_frames = pic_descriptor->avc_num_ref_frames;
+    if (max_ref_frames < num_ref_frames)
+        pic_descriptor->level = 51;
+  }
+
   pic_descriptor->avc_num_slice_groups_minus1                 = h->pps.slice_group_count - 1;
   pic_descriptor->avc_num_ref_idx_l0_active_minus1            = h->pps.ref_count[0] - 1;
   pic_descriptor->avc_num_ref_idx_l1_active_minus1            = h->pps.ref_count[1] - 1;
