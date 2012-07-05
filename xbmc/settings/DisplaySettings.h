@@ -77,6 +77,7 @@ public:
 
   void ApplyCalibrations();
   void UpdateCalibrations();
+  void ClearCustomResolutions();
 
   float GetZoomAmount() const { return m_zoomAmount; }
   void SetZoomAmount(float zoomAmount) { m_zoomAmount = zoomAmount; }
@@ -92,6 +93,7 @@ public:
   static void SettingOptionsResolutionsFiller(const CSetting *setting, std::vector< std::pair<std::string, int> > &list, int &current);
   static void SettingOptionsScreensFiller(const CSetting *setting, std::vector< std::pair<std::string, int> > &list, int &current);
   static void SettingOptionsVerticalSyncsFiller(const CSetting *setting, std::vector< std::pair<std::string, int> > &list, int &current);
+  static void SettingOptionsMonitorsFiller(const CSetting *setting, std::vector< std::pair<std::string, std::string> > &list, std::string &current);
 
 protected:
   CDisplaySettings();
