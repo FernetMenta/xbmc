@@ -197,7 +197,8 @@ bool CDisplaySettings::OnSettingChanging(const CSetting *setting)
   const std::string &settingId = setting->GetId();
   if (settingId == "videoscreen.resolution" ||
       settingId == "videoscreen.screen" ||
-      settingId == "videoscreen.screenmode")
+      settingId == "videoscreen.screenmode" ||
+      settingId == "videoscreen.monitor")
   {
     // check if this is the revert call for a failed OnSettingChanging
     // in which case we don't want to ask the user again
@@ -210,6 +211,11 @@ bool CDisplaySettings::OnSettingChanging(const CSetting *setting)
         newRes = GetResolutionForScreen();
       else if (settingId == "videoscreen.screenmode")
         newRes = GetResolutionFromString(((CSettingString*)setting)->GetValue());
+      else if (settingId == "videoscreen.monitor")
+      {
+        g_Windowing.UpdateResolutions();
+        newRes = GetResolutionForScreen();
+      }
 
       // We need to change and save videoscreen.screenmode which will
       // trigger another call to this OnSettingChanging() which should not
@@ -218,8 +224,10 @@ bool CDisplaySettings::OnSettingChanging(const CSetting *setting)
       bool save = settingId != "videoscreen.screenmode";
       if (save)
         m_ignoreSettingChanging.insert(make_pair("videoscreen.screenmode", true));
+
+      bool outputChanged = !g_Windowing.IsCurrentOutput(CSettings::Get().GetString("videoscreen.monitor"));
       SetCurrentResolution(newRes, save);
-      g_graphicsContext.SetVideoResolution(newRes);
+      g_graphicsContext.SetVideoResolution(newRes, outputChanged);
 
       // check if this setting is temporarily blocked from showing the dialog
       if (m_ignoreSettingChanging.find(make_pair(settingId, false)) == m_ignoreSettingChanging.end())
@@ -565,11 +573,16 @@ void CDisplaySettings::SettingOptionsScreensFiller(const CSetting *setting, std:
   if (g_advancedSettings.m_canWindowed)
     list.push_back(make_pair(g_localizeStrings.Get(242), DM_WINDOWED));
 
+#if defined(HAS_GLX)
+  list.push_back(make_pair(g_localizeStrings.Get(244), 0));
+#else
+
   for (int idx = 0; idx < g_Windowing.GetNumScreens(); idx++)
   {
     int screen = CDisplaySettings::Get().GetResolutionInfo(RES_DESKTOP + idx).iScreen;
     list.push_back(make_pair(StringUtils::Format(g_localizeStrings.Get(241), screen + 1), screen));
   }
+#endif
 }
 
 void CDisplaySettings::SettingOptionsVerticalSyncsFiller(const CSetting *setting, std::vector< std::pair<std::string, int> > &list, int &current)
@@ -580,4 +593,27 @@ void CDisplaySettings::SettingOptionsVerticalSyncsFiller(const CSetting *setting
   list.push_back(make_pair(g_localizeStrings.Get(13106), VSYNC_DISABLED));
   list.push_back(make_pair(g_localizeStrings.Get(13107), VSYNC_VIDEO));
   list.push_back(make_pair(g_localizeStrings.Get(13108), VSYNC_ALWAYS));
+}
+
+void CDisplaySettings::SettingOptionsMonitorsFiller(const CSetting *setting, std::vector< std::pair<std::string, std::string> > &list, std::string &current)
+{
+  std::vector<CStdString> monitors;
+  g_Windowing.GetConnectedOutputs(&monitors);
+  for (unsigned int i=0; i<monitors.size(); ++i)
+  {
+    if(CDisplaySettings::Get().GetResolutionInfo(RES_DESKTOP).strOutput.Equals(monitors[i]))
+    {
+      current = monitors[i];
+    }
+    list.push_back(make_pair(monitors[i], monitors[i]));
+  }
+}
+
+void CDisplaySettings::ClearCustomResolutions()
+{
+  if (m_resolutions.size() > RES_CUSTOM)
+  {
+    std::vector<RESOLUTION_INFO>::iterator firstCustom = m_resolutions.begin()+RES_CUSTOM;
+    m_resolutions.erase(firstCustom, m_resolutions.end());
+  }
 }
