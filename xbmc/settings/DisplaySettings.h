@@ -70,6 +70,7 @@ public:
 
   void ApplyCalibrations();
   void UpdateCalibrations();
+  void ClearCustomResolutions();
 
   float GetZoomAmount() const { return m_zoomAmount; }
   void SetZoomAmount(float zoomAmount) { m_zoomAmount = zoomAmount; }
