@@ -380,3 +380,12 @@ RESOLUTION CDisplaySettings::GetResolutionFromString(const std::string &strResol
 
   return RES_DESKTOP;
 }
+
+void CDisplaySettings::ClearCustomResolutions()
+{
+  if (m_resolutions.size() > RES_CUSTOM)
+  {
+    std::vector<RESOLUTION_INFO>::iterator firstCustom = m_resolutions.begin()+RES_CUSTOM;
+    m_resolutions.erase(firstCustom, m_resolutions.end());
+  }
+}
