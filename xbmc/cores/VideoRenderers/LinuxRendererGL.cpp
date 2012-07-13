@@ -262,6 +262,12 @@ bool CLinuxRendererGL::ValidateRenderTarget()
     else
       CLog::Log(LOGNOTICE,"Using GL_TEXTURE_2D");
 
+    // function pointer for texture might change in
+    // call to LoadShaders
+    glFinish();
+    for (int i = 0 ; i < m_NumYV12Buffers ; i++)
+      (this->*m_textureDelete)(i);
+
      // create the yuv textures
     LoadShaders();
 
