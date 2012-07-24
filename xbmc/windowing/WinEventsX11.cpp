@@ -26,6 +26,7 @@
 #include "WinEvents.h"
 #include "WinEventsX11.h"
 #include "Application.h"
+#include "ApplicationMessenger.h"
 #include <X11/Xlib.h>
 #include "X11/WinSystemX11GL.h"
 #include "X11/keysymdef.h"
@@ -397,7 +398,7 @@ bool CWinEventsX11::MessagePump()
       case ClientMessage:
       {
         if (xevent.xclient.data.l[0] == WinEvents->m_wmDeleteMessage)
-          if (!g_application.m_bStop) g_application.getApplicationMessenger().Quit();
+          if (!g_application.m_bStop) CApplicationMessenger::Get().Quit();
         break;
       }
 
