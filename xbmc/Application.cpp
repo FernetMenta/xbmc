@@ -2340,8 +2340,6 @@ void CApplication::Render()
 
   g_Windowing.EndRender();
 
-  g_TextureManager.FreeUnusedTextures();
-
   // reset our info cache - we do this at the end of Render so that it is
   // fresh for the next process(), or after a windowclose animation (where process()
   // isn't called)
@@ -2378,6 +2376,8 @@ void CApplication::Render()
     g_renderManager.NotifyDisplayFlip();
   }
   CTimeUtils::UpdateFrameTime(flip);
+
+  g_TextureManager.FreeUnusedTextures();
 
   g_renderManager.UpdateResolution();
   g_renderManager.ManageCaptures();
