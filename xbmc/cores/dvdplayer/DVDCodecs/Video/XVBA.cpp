@@ -729,6 +729,40 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
 
 void CDecoder::DestroySession()
 {
+  // wait for unfinished decoding jobs
+  XbmcThreads::EndTime timer;
+  if (m_xvbaConfig.xvbaSession)
+  {
+    for (unsigned int i = 0; i < m_videoSurfaces.size(); ++i)
+    {
+      xvba_render_state *render = m_videoSurfaces[i];
+      if (render->surface)
+      {
+        XVBA_Surface_Sync_Input syncInput;
+        XVBA_Surface_Sync_Output syncOutput;
+        syncInput.size = sizeof(syncInput);
+        syncInput.session = m_xvbaConfig.xvbaSession;
+        syncInput.surface = render->surface;
+        syncInput.query_status = XVBA_GET_SURFACE_STATUS;
+        syncOutput.size = sizeof(syncOutput);
+        timer.Set(1000);
+        while(!timer.IsTimePast())
+        {
+          if (Success != g_XVBA_vtable.SyncSurface(&syncInput, &syncOutput))
+          {
+            CLog::Log(LOGERROR,"XVBA::DestroySession - failed sync surface");
+            break;
+          }
+          if (!(syncOutput.status_flags & XVBA_STILL_PENDING))
+            break;
+          Sleep(10);
+        }
+        if (timer.IsTimePast())
+          CLog::Log(LOGERROR,"XVBA::DestroySession - unfinished decoding job");
+      }
+    }
+  }
+
   m_xvbaOutput.Dispose();
 
   XVBA_Destroy_Decode_Buffers_Input bufInput;
