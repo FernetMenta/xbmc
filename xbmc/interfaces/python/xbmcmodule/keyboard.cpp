@@ -92,6 +92,9 @@ namespace PYXBMC
 
     if (!PyArg_ParseTuple(args, (char*)"|i", &autoClose)) return NULL;
 
+    if (g_windowManager.IsWindowActive(WINDOW_DIALOG_PROGRESS))
+      g_windowManager.CloseDialogs();
+
     PyXBMCGUILock();
     pKeyboard->Initialize();
     pKeyboard->SetHeading(self->strHeading);

@@ -478,7 +478,7 @@ bool CPluginDirectory::WaitOnScriptResult(const CStdString &scriptPath, const CS
     }
 
     // check whether we should pop up the progress dialog
-    if (!progressBar && XbmcThreads::SystemClockMillis() - startTime > timeBeforeProgressBar)
+    if (!progressBar && XbmcThreads::SystemClockMillis() - startTime > timeBeforeProgressBar && !g_windowManager.HasModalDialog())
     { // loading takes more then 1.5 secs, show a progress dialog
       progressBar = (CGUIDialogProgress *)g_windowManager.GetWindow(WINDOW_DIALOG_PROGRESS);
 
