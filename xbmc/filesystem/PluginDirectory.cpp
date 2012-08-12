@@ -463,6 +463,7 @@ bool CPluginDirectory::WaitOnScriptResult(const CStdString &scriptPath, const CS
 
   unsigned int startTime = XbmcThreads::SystemClockMillis();
   CGUIDialogProgress *progressBar = NULL;
+  bool cancelled = false;
 
   CLog::Log(LOGDEBUG, "%s - waiting on the %s plugin...", __FUNCTION__, scriptName.c_str());
   while (true)
@@ -490,7 +491,7 @@ bool CPluginDirectory::WaitOnScriptResult(const CStdString &scriptPath, const CS
     }
 
     // check whether we should pop up the progress dialog
-    if (!progressBar && XbmcThreads::SystemClockMillis() - startTime > timeBeforeProgressBar)
+    if (!retrievingDir && !progressBar && XbmcThreads::SystemClockMillis() - startTime > timeBeforeProgressBar)
     { // loading takes more then 1.5 secs, show a progress dialog
       progressBar = (CGUIDialogProgress *)g_windowManager.GetWindow(WINDOW_DIALOG_PROGRESS);
 
@@ -530,12 +531,15 @@ bool CPluginDirectory::WaitOnScriptResult(const CStdString &scriptPath, const CS
       progressBar->Progress();
       if (progressBar->IsCanceled())
       { // user has cancelled our process - cancel our process
-        if (!m_cancelled)
+        m_cancelled = true;
+      }
+    }
+        if (!cancelled && m_cancelled)
         {
-          m_cancelled = true;
+          cancelled = true;
           startTime = XbmcThreads::SystemClockMillis();
         }
-        if (m_cancelled && XbmcThreads::SystemClockMillis() - startTime > timeToKillScript)
+        if (cancelled && XbmcThreads::SystemClockMillis() - startTime > timeToKillScript)
         { // cancel our script
 #ifdef HAS_PYTHON
           int id = g_pythonParser.getScriptId(scriptPath.c_str());
@@ -546,14 +550,13 @@ bool CPluginDirectory::WaitOnScriptResult(const CStdString &scriptPath, const CS
             break;
           }
 #endif
-        }
-      }
     }
   }
+
   if (progressBar)
     CApplicationMessenger::Get().Close(progressBar, false, false);
 
-  return !m_cancelled && m_success;
+  return !cancelled && m_success;
 }
 
 void CPluginDirectory::SetResolvedUrl(int handle, bool success, const CFileItem *resultItem)
@@ -624,4 +627,9 @@ void CPluginDirectory::SetProperty(int handle, const CStdString &strProperty, co
 
   CPluginDirectory *dir = globalHandles[handle];
   dir->m_listItems->SetProperty(strProperty, strValue);
+}
+
+void CPluginDirectory::CancelDirectory()
+{
+  m_cancelled = true;
 }
