@@ -366,7 +366,7 @@ bool CDecoder::Supports(EINTERLACEMETHOD method)
   || method == VS_INTERLACEMETHOD_AUTO)
     return true;
 
-  if (g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv"))
+  if (0) //g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv"))
   {
     if (method == VS_INTERLACEMETHOD_RENDER_BOB)
       return true;
@@ -1697,7 +1697,7 @@ void CMixer::SetColor()
     //vdp_st = vdp_generate_csc_matrix(&m_Procamp, VDP_COLOR_STANDARD_ITUR_BT_601, &m_CSCMatrix);
 
   VdpVideoMixerAttribute attributes[] = { VDP_VIDEO_MIXER_ATTRIBUTE_CSC_MATRIX };
-  if (g_guiSettings.GetBool("videoplayer.vdpaustudiolevel"))
+  if (0) //g_guiSettings.GetBool("videoplayer.vdpaustudiolevel"))
   {
     float studioCSC[3][4];
     GenerateStudioCSCMatrix(colorStandard, studioCSC);
@@ -1846,7 +1846,7 @@ void CMixer::SetDeinterlacing()
 
   SetDeintSkipChroma();
 
-  m_config.useInteropYuv = g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv");
+  m_config.useInteropYuv = false; //g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv");
 }
 
 void CMixer::SetDeintSkipChroma()
@@ -2038,7 +2038,7 @@ void CMixer::Init()
   m_vdpError = false;
 
   m_config.upscale = g_advancedSettings.m_videoVDPAUScaling;
-  m_config.useInteropYuv = g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv");
+  m_config.useInteropYuv = false; //g_guiSettings.GetBool("videoplayer.usevdpauinteropyuv");
 
   CreateVdpauMixer();
 }
@@ -3215,7 +3215,7 @@ bool COutput::GLInit()
   {
     m_config.usePixmaps = true;
     g_guiSettings.SetBool("videoplayer.usevdpauinterop",false);
-    g_guiSettings.SetBool("videoplayer.usevdpauinteropyuv",false);
+//    g_guiSettings.SetBool("videoplayer.usevdpauinteropyuv",false);
   }
   if (!glXBindTexImageEXT)
     glXBindTexImageEXT    = (PFNGLXBINDTEXIMAGEEXTPROC)glXGetProcAddress((GLubyte *) "glXBindTexImageEXT");
