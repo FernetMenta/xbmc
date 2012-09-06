@@ -564,6 +564,7 @@ void CWinSystemX11::NotifyAppFocusChange(bool bGaining)
   {
     m_bWasFullScreenBeforeMinimize = false;
     g_graphicsContext.ToggleFullScreenRoot();
+    m_minimized = false;
   }
   if (!bGaining)
     m_bIgnoreNextFocusMessage = false;
