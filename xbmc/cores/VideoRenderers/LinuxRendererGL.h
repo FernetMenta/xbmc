@@ -228,8 +228,8 @@ protected:
   void CalculateTextureSourceRects(int source, int num_planes);
 
   // renderers
-  void RenderMultiPass(int renderBuffer, int field);  // multi pass glsl renderer
-  void RenderToFBO(int renderBuffer, int field);
+  void RenderMultiPass(int renderBuffer, int field, DWORD flags);  // multi pass glsl renderer
+  void RenderToFBO(int renderBuffer, int field, bool weave);
   void RenderFromFBO();
   void RenderSinglePass(int renderBuffer, int field); // single pass glsl renderer
   void RenderSoftware(int renderBuffer, int field);   // single pass s/w yuv2rgb renderer
