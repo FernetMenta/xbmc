@@ -268,6 +268,9 @@ bool CLinuxRendererGL::ValidateRenderTarget()
     for (int i = 0 ; i < m_NumYV12Buffers ; i++)
       (this->*m_textureDelete)(i);
 
+    // trigger update of video filters
+    m_scalingMethodGui = (ESCALINGMETHOD)-1;
+
      // create the yuv textures
     LoadShaders();
 
@@ -605,6 +608,7 @@ void CLinuxRendererGL::Flush()
 
   glFinish();
   m_bValidated = false;
+  m_fbo.Cleanup();
   m_iYV12RenderBuffer = 0;
 }
 
