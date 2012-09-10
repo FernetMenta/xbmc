@@ -229,6 +229,8 @@ protected:
 
   // renderers
   void RenderMultiPass(int renderBuffer, int field);  // multi pass glsl renderer
+  void RenderToFBO(int renderBuffer, int field);
+  void RenderFromFBO();
   void RenderSinglePass(int renderBuffer, int field); // single pass glsl renderer
   void RenderSoftware(int renderBuffer, int field);   // single pass s/w yuv2rgb renderer
   void RenderVDPAU(int renderBuffer, int field);      // render using vdpau hardware
@@ -237,6 +239,7 @@ protected:
   void RenderXVBA(int renderBuffer, int field);      // render using xvba hardware
 
   CFrameBufferObject m_fbo;
+  float m_fboWidth, m_fboHeight;
 
   int m_iYV12RenderBuffer;
   int m_NumYV12Buffers;
