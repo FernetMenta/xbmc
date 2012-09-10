@@ -698,9 +698,9 @@ void CLinuxRendererGL::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
 
     glEnable(GL_POLYGON_STIPPLE);
     glPolygonStipple(stipple_weave);
-    Render((flags & ~RENDER_FLAG_FIELDMASK) | RENDER_FLAG_TOP, top_index);
+    Render((flags & ~RENDER_FLAG_FIELDMASK) | RENDER_FLAG_FIELD0 | RENDER_FLAG_TOP, top_index);
     glPolygonStipple(stipple_weave+4);
-    Render((flags & ~RENDER_FLAG_FIELDMASK) | RENDER_FLAG_BOT, bot_index);
+    Render((flags & ~RENDER_FLAG_FIELDMASK) | RENDER_FLAG_FIELD1 | RENDER_FLAG_BOT, bot_index);
     glDisable(GL_POLYGON_STIPPLE);
 
   }
@@ -1222,16 +1222,22 @@ void CLinuxRendererGL::Render(DWORD flags, int renderBuffer)
   if (m_renderMethod & RENDER_GLSL)
   {
     UpdateVideoFilter();
+
     switch(m_renderQuality)
     {
     case RQ_LOW:
     case RQ_SINGLEPASS:
-      RenderSinglePass(renderBuffer, m_currentField);
+      bool scaleUp;
+      scaleUp = (int)m_sourceHeight < g_graphicsContext.GetHeight() || (int)m_sourceWidth < g_graphicsContext.GetWidth();
+      if ((flags & RENDER_FLAG_WEAVE) && scaleUp && m_fbo.IsSupported())
+        RenderMultiPass(renderBuffer, m_currentField, flags);
+      else
+        RenderSinglePass(renderBuffer, m_currentField);
       VerifyGLState();
       break;
 
     case RQ_MULTIPASS:
-      RenderMultiPass(renderBuffer, m_currentField);
+      RenderMultiPass(renderBuffer, m_currentField, flags);
       VerifyGLState();
       break;
     }
@@ -1361,13 +1367,16 @@ void CLinuxRendererGL::RenderSinglePass(int index, int field)
   VerifyGLState();
 }
 
-void CLinuxRendererGL::RenderMultiPass(int index, int field)
+void CLinuxRendererGL::RenderMultiPass(int index, int field, DWORD flags)
 {
-  RenderToFBO(index, field);
-  RenderFromFBO();
+  bool weave = (flags & RENDER_FLAG_WEAVE) ? true : false;
+  RenderToFBO(index, field, weave);
+
+  if (!weave || (weave && (flags & RENDER_FLAG_FIELD1)))
+    RenderFromFBO();
 }
 
-void CLinuxRendererGL::RenderToFBO(int index, int field)
+void CLinuxRendererGL::RenderToFBO(int index, int field, bool weave)
 {
   YUVPLANES &planes = m_buffers[index].fields[field];
 
@@ -1469,6 +1478,8 @@ void CLinuxRendererGL::RenderToFBO(int index, int field)
   }
   m_fboWidth  *= planes[0].pixpertex_x;
   m_fboHeight *= planes[0].pixpertex_y;
+  if (weave)
+    m_fboHeight *= 2;
 
   // 1st Pass to video frame size
   glBegin(GL_QUADS);
@@ -1519,6 +1530,8 @@ void CLinuxRendererGL::RenderToFBO(int index, int field)
 
 void CLinuxRendererGL::RenderFromFBO()
 {
+  glDisable(GL_POLYGON_STIPPLE);
+
   glEnable(m_textureTarget);
   glActiveTextureARB(GL_TEXTURE0);
   VerifyGLState();
