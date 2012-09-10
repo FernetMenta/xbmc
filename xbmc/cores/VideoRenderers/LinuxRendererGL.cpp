@@ -1363,12 +1363,33 @@ void CLinuxRendererGL::RenderSinglePass(int index, int field)
 
 void CLinuxRendererGL::RenderMultiPass(int index, int field)
 {
+  RenderToFBO(index, field);
+  RenderFromFBO();
+}
+
+void CLinuxRendererGL::RenderToFBO(int index, int field)
+{
   YUVPLANES &planes = m_buffers[index].fields[field];
 
   if (m_reloadShaders)
   {
     m_reloadShaders = 0;
     LoadShaders(m_currentField);
+  }
+
+  if (!m_fbo.IsValid())
+  {
+    if (!m_fbo.Initialize())
+    {
+      CLog::Log(LOGERROR, "GL: Error initializing FBO");
+      return;
+    }
+
+    if (!m_fbo.CreateAndBindToTexture(GL_TEXTURE_2D, m_sourceWidth, m_sourceHeight, GL_RGBA))
+    {
+      CLog::Log(LOGERROR, "GL: Error creating texture and binding to FBO");
+      return;
+    }
   }
 
   glDisable(GL_DEPTH_TEST);
@@ -1439,15 +1460,15 @@ void CLinuxRendererGL::RenderMultiPass(int index, int field)
     CLog::Log(LOGERROR, "GL: Error enabling YUV shader");
   }
 
-  float imgwidth  = planes[0].rect.x2 - planes[0].rect.x1;
-  float imgheight = planes[0].rect.y2 - planes[0].rect.y1;
+  m_fboWidth  = planes[0].rect.x2 - planes[0].rect.x1;
+  m_fboHeight = planes[0].rect.y2 - planes[0].rect.y1;
   if (m_textureTarget == GL_TEXTURE_2D)
   {
-    imgwidth  *= planes[0].texwidth;
-    imgheight *= planes[0].texheight;
+    m_fboWidth  *= planes[0].texwidth;
+    m_fboHeight *= planes[0].texheight;
   }
-  imgwidth  *= planes[0].pixpertex_x;
-  imgheight *= planes[0].pixpertex_y;
+  m_fboWidth  *= planes[0].pixpertex_x;
+  m_fboHeight *= planes[0].pixpertex_y;
 
   // 1st Pass to video frame size
   glBegin(GL_QUADS);
@@ -1460,17 +1481,17 @@ void CLinuxRendererGL::RenderMultiPass(int index, int field)
   glMultiTexCoord2fARB(GL_TEXTURE0, planes[0].rect.x2, planes[0].rect.y1);
   glMultiTexCoord2fARB(GL_TEXTURE1, planes[1].rect.x2, planes[1].rect.y1);
   glMultiTexCoord2fARB(GL_TEXTURE2, planes[2].rect.x2, planes[2].rect.y1);
-  glVertex2f(imgwidth, 0.0f);
+  glVertex2f(m_fboWidth, 0.0f);
 
   glMultiTexCoord2fARB(GL_TEXTURE0, planes[0].rect.x2, planes[0].rect.y2);
   glMultiTexCoord2fARB(GL_TEXTURE1, planes[1].rect.x2, planes[1].rect.y2);
   glMultiTexCoord2fARB(GL_TEXTURE2, planes[2].rect.x2, planes[2].rect.y2);
-  glVertex2f(imgwidth, imgheight);
+  glVertex2f(m_fboWidth, m_fboHeight);
 
   glMultiTexCoord2fARB(GL_TEXTURE0, planes[0].rect.x1, planes[0].rect.y2);
   glMultiTexCoord2fARB(GL_TEXTURE1, planes[1].rect.x1, planes[1].rect.y2);
   glMultiTexCoord2fARB(GL_TEXTURE2, planes[2].rect.x1, planes[2].rect.y2);
-  glVertex2f(0.0f    , imgheight);
+  glVertex2f(0.0f    , m_fboHeight);
 
   glEnd();
   VerifyGLState();
@@ -1494,9 +1515,12 @@ void CLinuxRendererGL::RenderMultiPass(int index, int field)
   glDisable(m_textureTarget);
   glActiveTextureARB(GL_TEXTURE0);
   glDisable(m_textureTarget);
+}
 
-  glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, m_fbo.Texture());
+void CLinuxRendererGL::RenderFromFBO()
+{
+  glEnable(m_textureTarget);
+  glActiveTextureARB(GL_TEXTURE0);
   VerifyGLState();
 
   // Use regular normalized texture coordinates
@@ -1509,7 +1533,7 @@ void CLinuxRendererGL::RenderMultiPass(int index, int field)
     if (!m_pVideoFilterShader->GetTextureFilter(filter))
       filter = m_scalingMethod == VS_SCALINGMETHOD_NEAREST ? GL_NEAREST : GL_LINEAR;
 
-    m_fbo.SetFiltering(GL_TEXTURE_2D, filter);
+    m_fbo.SetFiltering(m_textureTarget, filter);
     m_pVideoFilterShader->SetSourceTexture(0);
     m_pVideoFilterShader->SetWidth(m_sourceWidth);
     m_pVideoFilterShader->SetHeight(m_sourceHeight);
@@ -1526,17 +1550,18 @@ void CLinuxRendererGL::RenderMultiPass(int index, int field)
   else
   {
     GLint filter = m_scalingMethod == VS_SCALINGMETHOD_NEAREST ? GL_NEAREST : GL_LINEAR;
-    m_fbo.SetFiltering(GL_TEXTURE_2D, filter);
+    m_fbo.SetFiltering(m_textureTarget, filter);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
   }
 
   VerifyGLState();
 
-  imgwidth  /= m_sourceWidth;
-  imgheight /= m_sourceHeight;
+  float imgwidth = m_fboWidth / m_sourceWidth;
+  float imgheight = m_fboHeight / m_sourceHeight;
 
   glBegin(GL_QUADS);
 
-  glMultiTexCoord2fARB(GL_TEXTURE0, 0.0f    , 0.0f);
+  glMultiTexCoord2fARB(GL_TEXTURE0, 0.0f, 0.0f);
   glVertex4f(m_rotatedDestCoords[0].x, m_rotatedDestCoords[0].y, 0, 1.0f );
 
   glMultiTexCoord2fARB(GL_TEXTURE0, imgwidth, 0.0f);
@@ -1545,7 +1570,7 @@ void CLinuxRendererGL::RenderMultiPass(int index, int field)
   glMultiTexCoord2fARB(GL_TEXTURE0, imgwidth, imgheight);
   glVertex4f(m_rotatedDestCoords[2].x, m_rotatedDestCoords[2].y, 0, 1.0f );
   
-  glMultiTexCoord2fARB(GL_TEXTURE0, 0.0f    , imgheight);
+  glMultiTexCoord2fARB(GL_TEXTURE0, 0.0f, imgheight);
   glVertex4f(m_rotatedDestCoords[3].x, m_rotatedDestCoords[3].y, 0, 1.0f );
 
   glEnd();
@@ -1557,6 +1582,7 @@ void CLinuxRendererGL::RenderMultiPass(int index, int field)
 
   VerifyGLState();
 
+  glBindTexture(m_textureTarget, 0);
   glDisable(m_textureTarget);
   VerifyGLState();
 }
