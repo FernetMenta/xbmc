@@ -472,15 +472,47 @@ uint8_t* CSoftAEStream::GetFrame()
   return ret;
 }
 
+double CSoftAEStream::GetBuffersDelay()
+{
+  if (m_delete)
+    return 0.0;
+
+  double delay = (double)(m_inputBuffer.Used() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
+  delay += (double)m_framesBuffered / (double)AE.GetSampleRate();
+
+  return delay;
+}
+
+double CSoftAEStream::GetBuffersCacheTime()
+{
+  if (m_delete)
+    return 0.0;
+
+  double time;
+  time  = (double)(m_inputBuffer.Used() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
+  time += (double)(m_waterLevel - m_framesBuffered) / (double)AE.GetSampleRate();
+
+  return time;
+}
+
+double CSoftAEStream::GetBuffersCacheTotal()
+{
+  if (m_delete)
+    return 0.0;
+
+  double total;
+  total  = (double)(m_inputBuffer.Size() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
+  total += (double)m_waterLevel / (double)AE.GetSampleRate();
+
+  return total;
+}
+
 double CSoftAEStream::GetDelay()
 {
   if (m_delete)
     return 0.0;
 
-  double delay = AE.GetDelay();
-  delay += (double)(m_inputBuffer.Used() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
-  delay += (double)m_framesBuffered                              / (double)AE.GetSampleRate();
-
+  double delay = AE.GetDelay(this);
   return delay;
 }
 
@@ -489,10 +521,7 @@ double CSoftAEStream::GetCacheTime()
   if (m_delete)
     return 0.0;
 
-  double time;
-  time  = (double)(m_inputBuffer.Used() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
-  time += (double)(m_waterLevel - m_framesBuffered)             / (double)AE.GetSampleRate();
-  time += AE.GetCacheTime();
+  double time = AE.GetCacheTime(this);
   return time;
 }
 
@@ -501,10 +530,7 @@ double CSoftAEStream::GetCacheTotal()
   if (m_delete)
     return 0.0;
 
-  double total;
-  total  = (double)(m_inputBuffer.Size() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
-  total += (double)m_waterLevel                                  / (double)AE.GetSampleRate();
-  total += AE.GetCacheTotal();
+  double total = AE.GetCacheTotal(this);
   return total;
 }
 

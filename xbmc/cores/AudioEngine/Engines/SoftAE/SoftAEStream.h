@@ -48,6 +48,10 @@ protected:
   bool IsValid    () { return m_valid;  }
   const bool IsRaw() const { return AE_IS_RAW(m_initDataFormat); }  
 
+  double GetBuffersDelay();
+  double GetBuffersCacheTime();
+  double GetBuffersCacheTotal();
+
 public:
   virtual unsigned int      GetSpace        ();
   virtual unsigned int      AddData         (void *data, unsigned int size);

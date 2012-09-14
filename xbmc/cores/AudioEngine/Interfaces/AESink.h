@@ -87,5 +87,10 @@ public:
     This method sets the volume control, volume ranges from 0.0 to 1.0.
   */
   virtual void  SetVolume(float volume) {};
+
+  /*
+    Wait until number of frames can be added. Returns true if AddPackets won't block
+   */
+  virtual bool WaitReady(unsigned int frames) {return false;};
 };
 

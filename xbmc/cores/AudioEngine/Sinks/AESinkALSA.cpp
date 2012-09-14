@@ -513,6 +513,31 @@ unsigned int CAESinkALSA::AddPackets(uint8_t *data, unsigned int frames, bool ha
   return ret;
 }
 
+bool CAESinkALSA::WaitReady(unsigned int frames)
+{
+  if (!m_pcm)
+    return false;
+
+  if (snd_pcm_state(m_pcm) == SND_PCM_STATE_PREPARED)
+    snd_pcm_start(m_pcm);
+
+  int ret;
+
+  ret = snd_pcm_avail(m_pcm);
+  if (ret < 0)
+  {
+    HandleError("snd_pcm_avail", ret);
+  }
+
+  if ((unsigned int)ret < frames)
+  {
+    ret = snd_pcm_wait(m_pcm, m_timeout);
+    if (ret < 0)
+      HandleError("snd_pcm_wait", ret);
+  }
+  return (ret < 0) ? false : true;
+}
+
 void CAESinkALSA::HandleError(const char* name, int err)
 {
   switch(err)
