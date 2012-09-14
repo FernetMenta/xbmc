@@ -550,7 +550,7 @@ long CDecoder::Release()
       }
     }
   }
-  IHardwareDecoder::Release();
+  return IHardwareDecoder::Release();
 }
 
 long CDecoder::ReleasePicReference()
@@ -1808,7 +1808,7 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
 void COutput::Process()
 {
   Message *msg;
-  Protocol *port;
+  Protocol *port = NULL;
   bool gotMsg;
 
   m_state = O_TOP_UNCONFIGURED;
@@ -2318,7 +2318,6 @@ void COutput::PreReleaseBufferPool()
 bool COutput::CreateGlxContext()
 {
   GLXContext   glContext;
-  Window       window;
 
   m_Display = g_Windowing.GetDisplay();
   glContext = g_Windowing.GetGlxContext();
