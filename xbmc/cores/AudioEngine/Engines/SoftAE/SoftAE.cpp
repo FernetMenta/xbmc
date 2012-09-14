@@ -846,6 +846,24 @@ double CSoftAE::GetDelay()
   return delay;
 }
 
+double CSoftAE::GetDelay(CSoftAEStream *stream)
+{
+  CSingleLock lock(m_bufferLock);
+
+  double delay = (double)m_buffer.Used() * m_sinkFormatFrameSizeMul *m_sinkFormatSampleRateMul;
+  CSharedLock sinkLock(m_sinkLock);
+  if (m_sink)
+    delay += m_sink->GetDelay();
+  sinkLock.Leave();
+
+  if (m_transcode && m_encoder && !m_rawPassthrough)
+    delay += m_encoder->GetDelay((double)m_encodedBuffer.Used() * m_encoderFrameSizeMul);
+
+  delay += stream->GetBuffersDelay();
+
+  return delay;
+}
+
 double CSoftAE::GetCacheTime()
 {
   double time = (double)m_buffer.Used() * m_sinkFormatFrameSizeMul * m_sinkFormatSampleRateMul;
@@ -934,12 +952,16 @@ void CSoftAE::Run()
   {
     bool restart = false;
 
-    if ((this->*m_outputStageFn)(hasAudio) > 0)
-      hasAudio = false; /* taken some audio - reset our silence flag */
+    { CSingleLock lock(m_bufferLock);
+      if ((this->*m_outputStageFn)(hasAudio) > 0)
+        hasAudio = false; /* taken some audio - reset our silence flag */
+    }
 
     /* if we have enough room in the buffer */
     if (m_buffer.Free() >= m_frameSize)
     {
+      CSingleLock lock(m_bufferLock);
+
       /* take some data for our use from the buffer */
       uint8_t *out = (uint8_t*)m_buffer.Take(m_frameSize);
       memset(out, 0, m_frameSize);
