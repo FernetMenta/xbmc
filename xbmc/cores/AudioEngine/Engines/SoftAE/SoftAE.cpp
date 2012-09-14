@@ -846,22 +846,54 @@ double CSoftAE::GetDelay()
   return delay;
 }
 
-double CSoftAE::GetCacheTime()
+double CSoftAE::GetDelay(CSoftAEStream *stream)
 {
+  CSingleLock lock(m_bufferLock);
+
+  double delay = (double)m_buffer.Used() * m_sinkFormatFrameSizeMul *m_sinkFormatSampleRateMul;
+  CSharedLock sinkLock(m_sinkLock);
+  if (m_sink)
+    delay += m_sink->GetDelay();
+  sinkLock.Leave();
+
+  if (m_transcode && m_encoder && !m_rawPassthrough)
+    delay += m_encoder->GetDelay((double)m_encodedBuffer.Used() * m_encoderFrameSizeMul);
+
+  delay += stream->GetBuffersDelay();
+
+  return delay;
+}
+
+double CSoftAE::GetCacheTime(CSoftAEStream *stream)
+{
+  CSingleLock lock(m_bufferLock);
+
   double time = (double)m_buffer.Used() * m_sinkFormatFrameSizeMul * m_sinkFormatSampleRateMul;
   CSharedLock sinkLock(m_sinkLock);
   if (m_sink)
     time += m_sink->GetCacheTime();
 
+  if (m_transcode && m_encoder && !m_rawPassthrough)
+    time += m_encoder->GetDelay((double)m_encodedBuffer.Used() * m_encoderFrameSizeMul);
+
+  time += stream->GetBuffersCacheTime();
+
   return time;
 }
 
-double CSoftAE::GetCacheTotal()
+double CSoftAE::GetCacheTotal(CSoftAEStream *stream)
 {
+  CSingleLock lock(m_bufferLock);
+
   double total = (double)m_buffer.Size() * m_sinkFormatFrameSizeMul * m_sinkFormatSampleRateMul;
   CSharedLock sinkLock(m_sinkLock);
   if (m_sink)
     total += m_sink->GetCacheTotal();
+
+  if (m_transcode && m_encoder && !m_rawPassthrough)
+    total += m_encoder->GetDelay((double)m_encodedBuffer.Size() * m_encoderFrameSizeMul);
+
+  total += stream->GetBuffersCacheTotal();
 
   return total;
 }
@@ -940,6 +972,8 @@ void CSoftAE::Run()
     /* if we have enough room in the buffer */
     if (m_buffer.Free() >= m_frameSize)
     {
+      CSingleLock lock(m_bufferLock);
+
       /* take some data for our use from the buffer */
       uint8_t *out = (uint8_t*)m_buffer.Take(m_frameSize);
       memset(out, 0, m_frameSize);
@@ -1116,9 +1150,16 @@ int CSoftAE::RunOutputStage(bool hasAudio)
     data = m_converted;
   }
 
+  CSingleLock lock(m_bufferLock);
+  lock.Leave();
+
   /* Output frames to sink */
   if (m_sink)
+  {
+    if (m_sink->WaitReady(m_sinkFormat.m_frames))
+      lock.Enter();
     wroteFrames = m_sink->AddPackets((uint8_t*)data, m_sinkFormat.m_frames, hasAudio);
+  }
 
   /* Return value of INT_MAX signals error in sink - restart */
   if (wroteFrames == INT_MAX)
@@ -1159,9 +1200,16 @@ int CSoftAE::RunRawOutputStage(bool hasAudio)
     data = m_converted;
   }
 
+  CSingleLock lock(m_bufferLock);
+  lock.Leave();
+
   int wroteFrames = 0;
   if (m_sink)
+  {
+    if (m_sink->WaitReady(m_sinkFormat.m_frames))
+      lock.Enter();
     wroteFrames = m_sink->AddPackets((uint8_t *)data, m_sinkFormat.m_frames, hasAudio);
+  }
 
   /* Return value of INT_MAX signals error in sink - restart */
   if (wroteFrames == INT_MAX)

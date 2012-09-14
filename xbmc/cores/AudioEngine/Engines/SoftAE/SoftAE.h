@@ -41,6 +41,7 @@
 /* forward declarations */
 class IAESink;
 class IAEEncoder;
+class CSoftAEStream;
 
 class CSoftAE : public IThreadedAE
 {
@@ -60,6 +61,7 @@ public:
   virtual bool   Resume();
   virtual bool   IsSuspended();
   virtual double GetDelay();
+  virtual double GetDelay(CSoftAEStream *stream);
 
   virtual float GetVolume();
   virtual void  SetVolume(const float volume);
@@ -95,8 +97,8 @@ public:
   unsigned int          GetSinkFrameSize  () {return m_sinkFormat.m_frameSize    ;}
 
   /* for streams so they can calc cachetimes correct */
-  double GetCacheTime();
-  double GetCacheTotal();
+  double GetCacheTime(CSoftAEStream *stream);
+  double GetCacheTotal(CSoftAEStream *stream);
 
   virtual void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   virtual std::string GetDefaultDevice(bool passthrough);
@@ -141,6 +143,7 @@ private:
   CCriticalSection m_soundLock;       /* m_sounds lock */
   CCriticalSection m_soundSampleLock; /* m_playing_sounds lock */
   CSharedSection   m_sinkLock;        /* lock for m_sink on re-open */
+  CCriticalSection m_bufferLock;
 
   /* the current configuration */
   float               m_volume;
