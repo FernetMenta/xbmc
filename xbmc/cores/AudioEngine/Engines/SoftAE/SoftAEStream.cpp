@@ -472,14 +472,23 @@ uint8_t* CSoftAEStream::GetFrame()
   return ret;
 }
 
+double CSoftAEStream::GetBuffersDelay()
+{
+  if (m_delete)
+    return 0.0;
+
+  double delay = (double)(m_inputBuffer.Used() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
+  delay += (double)m_framesBuffered / (double)AE.GetSampleRate();
+
+  return delay;
+}
+
 double CSoftAEStream::GetDelay()
 {
   if (m_delete)
     return 0.0;
 
-  double delay = AE.GetDelay();
-  delay += (double)(m_inputBuffer.Used() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
-  delay += (double)m_framesBuffered                              / (double)AE.GetSampleRate();
+  double delay = AE.GetDelay(this);
 
   return delay;
 }
