@@ -293,6 +293,7 @@ void CDecoder::OnLostDevice()
   CLog::Log(LOGNOTICE,"XVBA::OnLostDevice event");
 
   CSingleLock lock(m_decoderSection);
+  CSingleLock gLock(g_graphicsContext);
   DestroySession();
   if (m_xvbaConfig.context)
     m_xvbaConfig.context->Release();
