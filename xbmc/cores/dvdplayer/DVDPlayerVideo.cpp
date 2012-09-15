@@ -1702,7 +1702,7 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts)
 
   bNewFrame = iDecoderPts != m_droppingStats.m_lastDecoderPts;
 
-  if (interlaced)
+  if (interlaced || iSkippedDeint)
     iInterval = 2/m_fFrameRate*(double)DVD_TIME_BASE;
   else
     iInterval = 1/m_fFrameRate*(double)DVD_TIME_BASE;
