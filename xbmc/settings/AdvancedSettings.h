@@ -152,7 +152,7 @@ class CAdvancedSettings
     CStdString m_audioHost;
     bool m_audioApplyDrc;
 
-    bool  m_videoVDPAUScaling;
+    int   m_videoVDPAUScaling;
     float m_videoNonLinStretchRatio;
     bool  m_videoEnableHighQualityHwScalers;
     float m_videoAutoScaleMaxFps;
