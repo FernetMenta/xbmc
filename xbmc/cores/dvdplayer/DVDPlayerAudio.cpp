@@ -719,7 +719,7 @@ void CDVDPlayerAudio::HandleSyncError(double duration)
 
   //check if measured error for 1 second
   now = CurrentHostCounter();
-  if ((now - m_errortime) >= m_freq * 2)
+  if ((now - m_errortime) >= m_freq)
   {
     m_errortime = now;
     m_error = m_errorbuff / m_errorcount;
@@ -759,21 +759,9 @@ void CDVDPlayerAudio::HandleSyncError(double duration)
     {
       //check how many packets to skip/duplicate
       m_skipdupcount = (int)(m_error / duration);
-
-      if (m_skipdupcount == 0)
-      {
-        double delay;
-        if (m_error < 0)
-        {
-          m_skipdupcount -= 1;
-          delay = ((double)DVD_TIME_TO_MSEC(duration + m_error)) / 1000;
-        }
-        else
-        {
-          delay = ((double)DVD_TIME_TO_MSEC(m_error)) / 1000;
-        }
-        m_dvdAudio.AddSilence(delay);
-      }
+      //if less than one frame off, see if it's more than two thirds of a frame, so we can get better in sync
+      if (m_skipdupcount == 0 && fabs(m_error) > duration / 3 * 2)
+        m_skipdupcount = (int)(m_error / (duration / 3 * 2));
 
       if (m_skipdupcount > 0)
         CLog::Log(LOGDEBUG, "CDVDPlayerAudio:: Duplicating %i packet(s) of %.2f ms duration",
