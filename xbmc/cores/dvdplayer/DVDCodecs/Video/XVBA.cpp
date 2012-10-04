@@ -735,6 +735,7 @@ void CDecoder::DestroySession()
   XVBA_Destroy_Decode_Buffers_Input bufInput;
   bufInput.size = sizeof(bufInput);
   bufInput.num_of_buffers_in_list = 1;
+  bufInput.session = m_xvbaConfig.xvbaSession;
 
   for (unsigned int i=0; i<m_xvbaBufferPool.data_control_buffers.size() ; ++i)
   {
