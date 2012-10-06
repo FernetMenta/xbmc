@@ -517,37 +517,7 @@ long CDecoder::Release()
   {
     CSingleLock lock(m_decoderSection);
     CLog::Log(LOGNOTICE,"XVBA::Release pre-cleanup");
-
-    Message *reply;
-    if (m_xvbaOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::PRECLEANUP,
-                                                   &reply,
-                                                   2000))
-    {
-      bool success = reply->signal == COutputControlProtocol::ACC ? true : false;
-      reply->Release();
-      if (!success)
-      {
-        CLog::Log(LOGERROR, "XVBA::%s - pre-cleanup returned error", __FUNCTION__);
-        m_displayState = XVBA_ERROR;
-      }
-    }
-    else
-    {
-      CLog::Log(LOGERROR, "XVBA::%s - pre-cleanup timed out", __FUNCTION__);
-      m_displayState = XVBA_ERROR;
-    }
-
-    for(unsigned int i = 0; i < m_videoSurfaces.size(); ++i)
-    {
-      xvba_render_state *render = m_videoSurfaces[i];
-      if (render->surface && !(render->state & FF_XVBA_STATE_USED_FOR_RENDER))
-      {
-        g_XVBA_vtable.DestroySurface(render->surface);
-        render->surface = 0;
-        render->picture_descriptor = 0;
-        render->iq_matrix = 0;
-      }
-    }
+    DestroySession(true);
   }
   IHardwareDecoder::Release();
 }
@@ -726,7 +696,7 @@ bool CDecoder::CreateSession(AVCodecContext* avctx)
   return true;
 }
 
-void CDecoder::DestroySession()
+void CDecoder::DestroySession(bool precleanup /*= false*/)
 {
   // wait for unfinished decoding jobs
   XbmcThreads::EndTime timer;
@@ -762,7 +732,29 @@ void CDecoder::DestroySession()
     }
   }
 
-  m_xvbaOutput.Dispose();
+  if (precleanup)
+  {
+    Message *reply;
+    if (m_xvbaOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::PRECLEANUP,
+                                                   &reply,
+                                                   2000))
+    {
+      bool success = reply->signal == COutputControlProtocol::ACC ? true : false;
+      reply->Release();
+      if (!success)
+      {
+        CLog::Log(LOGERROR, "XVBA::%s - pre-cleanup returned error", __FUNCTION__);
+        m_displayState = XVBA_ERROR;
+      }
+    }
+    else
+    {
+      CLog::Log(LOGERROR, "XVBA::%s - pre-cleanup timed out", __FUNCTION__);
+      m_displayState = XVBA_ERROR;
+    }
+  }
+  else
+    m_xvbaOutput.Dispose();
 
   XVBA_Destroy_Decode_Buffers_Input bufInput;
   bufInput.size = sizeof(bufInput);
@@ -804,6 +796,7 @@ void CDecoder::DestroySession()
     {
       g_XVBA_vtable.DestroySurface(render->surface);
       render->surface = 0;
+      render->state = 0;
       render->picture_descriptor = 0;
       render->iq_matrix = 0;
     }
@@ -1431,14 +1424,6 @@ long CXvbaRenderPicture::Release()
   return refCount;
 }
 
-void CXvbaRenderPicture::Transfer()
-{
-  CSingleLock lock(*renderPicSection);
-
-  if (valid)
-    xvbaOutput->TransferSurface(sourceIdx);
-}
-
 void CXvbaRenderPicture::ReturnUnused()
 {
   { CSingleLock lock(*renderPicSection);
@@ -1617,9 +1602,10 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
           msg->Reply(COutputControlProtocol::ACC);
           return;
         case COutputControlProtocol::PRECLEANUP:
-          m_state = O_TOP_CONFIGURED_WAIT_RES1;
+          m_state = O_TOP_UNCONFIGURED;
+          m_extTimeout = 10000;
           Flush();
-          PreReleaseBufferPool();
+          ReleaseBufferPool(true);
           msg->Reply(COutputControlProtocol::ACC);
           return;
         default:
@@ -1885,6 +1871,7 @@ bool COutput::Init()
 
   m_xvbaError = false;
   m_processPicture.render = 0;
+  m_fence = None;
 
   return true;
 }
@@ -1972,32 +1959,6 @@ bool COutput::IsDecodingFinished()
   return false;
 }
 
-void COutput::TransferSurface(uint32_t source)
-{
-  XvbaBufferPool::GLVideoSurface *glSurface = &m_bufferPool.glSurfaces[source];
-
-  if (glSurface->transferred)
-    return;
-
-  glSurface->transferred = true;
-
-  // transfer surface
-  XVBA_Transfer_Surface_Input transInput;
-  transInput.size = sizeof(transInput);
-  transInput.session = m_config.xvbaSession;
-  transInput.src_surface = glSurface->render->surface;
-  transInput.target_surface = glSurface->glSurface;
-  transInput.flag = glSurface->field;
-  { CSingleLock lock(*(m_config.apiSec));
-    if (Success != g_XVBA_vtable.TransferSurface(&transInput))
-    {
-      CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
-      m_xvbaError = true;
-      return;
-    }
-  }
-}
-
 CXvbaRenderPicture* COutput::ProcessPicture()
 {
   CXvbaRenderPicture *retPic = 0;
@@ -2021,36 +1982,25 @@ CXvbaRenderPicture* COutput::ProcessPicture()
   int cmd = 0;
   m_config.stats->GetCmd(cmd);
 
-//  if (!(cmd & DVP_FLAG_SKIP_PROC))
-//  {
-    // transfer surface
-    XVBA_Transfer_Surface_Input transInput;
-    transInput.size = sizeof(transInput);
-    transInput.session = m_config.xvbaSession;
-    transInput.src_surface = m_processPicture.render->surface;
-    transInput.target_surface = glSurface->glSurface;
-    transInput.flag = m_field;
-    { CSingleLock lock(*(m_config.apiSec));
-      if (Success != g_XVBA_vtable.TransferSurface(&transInput))
-      {
-        CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
-        m_xvbaError = true;
-        return retPic;
-      }
-    }
+//  if (m_fence)
+//    glDeleteSync(m_fence);
+//  m_fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
-    // make sure that transfer is completed
-//    uint64_t maxTimeout = 1000000000LL;
-//    GLsync ReadyFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-//    glClientWaitSync(ReadyFence, GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeout);
-//    glDeleteSync(ReadyFence);
-//  glFinish();GL_SYNC_FLUSH_COMMANDS_BIT
-//  }
-//  else
-//  {
-//    CLog::Log(LOGDEBUG,"XVBA::ProcessPicture - skipped transfer surface");
-//    m_processPicture.DVDPic.iFlags |= DVP_FLAG_DROPPED;
-//  }
+  // transfer surface
+  XVBA_Transfer_Surface_Input transInput;
+  transInput.size = sizeof(transInput);
+  transInput.session = m_config.xvbaSession;
+  transInput.src_surface = m_processPicture.render->surface;
+  transInput.target_surface = glSurface->glSurface;
+  transInput.flag = m_field;
+  { CSingleLock lock(*(m_config.apiSec));
+    if (Success != g_XVBA_vtable.TransferSurface(&transInput))
+    {
+      CLog::Log(LOGERROR,"(XVBA) failed to transfer surface");
+      m_xvbaError = true;
+      return retPic;
+    }
+  }
 
   // prepare render pic
   retPic = m_bufferPool.freeRenderPics.front();
@@ -2096,36 +2046,34 @@ void COutput::ProcessReturnPicture(CXvbaRenderPicture *pic)
     return;
   }
 
-  if (m_config.useSharedSurfaces)
+  xvba_render_state *render = m_bufferPool.glSurfaces[pic->sourceIdx].render;
+  if (render)
   {
-    xvba_render_state *render = m_bufferPool.glSurfaces[pic->sourceIdx].render;
-    if (render)
+    // check if video surface is referenced by other glSurfaces
+    bool referenced(false);
+    for (unsigned int i=0; i<m_bufferPool.glSurfaces.size();++i)
     {
-      // check if video surface if referenced by other glSurfaces
-      bool referenced(false);
-      for (unsigned int i=0; i<m_bufferPool.glSurfaces.size();++i)
+      if (i == pic->sourceIdx)
+        continue;
+      if (m_bufferPool.glSurfaces[i].render == render)
       {
-        if (i == pic->sourceIdx)
-          continue;
-        if (m_bufferPool.glSurfaces[i].render == render)
-        {
-          referenced = true;
-          break;
-        }
-      }
-      if (m_processPicture.render == render)
         referenced = true;
-
-      // release video surface
-      if (!referenced)
-      {
-        CSingleLock lock(*m_config.videoSurfaceSec);
-        render->state &= ~(FF_XVBA_STATE_USED_FOR_RENDER | FF_XVBA_STATE_DECODED);
+        break;
       }
-
-      // unreference video surface
-      m_bufferPool.glSurfaces[pic->sourceIdx].render = 0;
     }
+    if (m_processPicture.render == render)
+      referenced = true;
+
+    // release video surface
+    if (!referenced)
+    {
+      CSingleLock lock(*m_config.videoSurfaceSec);
+      render->state &= ~(FF_XVBA_STATE_USED_FOR_RENDER | FF_XVBA_STATE_DECODED);
+    }
+
+    // unreference video surface
+    m_bufferPool.glSurfaces[pic->sourceIdx].render = 0;
+
     m_bufferPool.glSurfaces[pic->sourceIdx].used = false;
     return;
   }
@@ -2266,32 +2214,42 @@ bool COutput::EnsureBufferPool()
   return true;
 }
 
-void COutput::ReleaseBufferPool()
+void COutput::ReleaseBufferPool(bool precleanup /*= false*/)
 {
+//  if (m_fence)
+//  {
+//    uint64_t maxTimeout = 1000000000LL;
+//    glClientWaitSync(m_fence, GL_SYNC_FLUSH_COMMANDS_BIT, maxTimeout);
+//    glDeleteSync(m_fence);
+//    m_fence = None;
+//  }
+
   CSingleLock lock(m_bufferPool.renderPicSec);
 
-  if (m_config.useSharedSurfaces)
+  for (unsigned int i = 0; i < m_bufferPool.glSurfaces.size(); ++i)
   {
-    for (unsigned int i = 0; i < m_bufferPool.glSurfaces.size(); ++i)
+    if (m_bufferPool.glSurfaces[i].glSurface)
     {
-      if (!m_bufferPool.glSurfaces[i].glSurface)
-        continue;
       g_XVBA_vtable.DestroySurface(m_bufferPool.glSurfaces[i].glSurface);
-      glDeleteTextures(1, &m_bufferPool.glSurfaces[i].texture);
+      m_bufferPool.glSurfaces[i].glSurface = 0;
     }
-    m_bufferPool.glSurfaces.clear();
-  }
-  // invalidate all used render pictures
-  for (unsigned int i = 0; i < m_bufferPool.usedRenderPics.size(); ++i)
-  {
-    m_bufferPool.usedRenderPics[i]->valid = false;
-    unsigned int idx = m_bufferPool.usedRenderPics[i]->sourceIdx;
-    if (m_bufferPool.glSurfaces[idx].render)
+    if (m_bufferPool.glSurfaces[i].texture && !precleanup)
     {
-      { CSingleLock lock(*m_config.videoSurfaceSec);
-        m_bufferPool.glSurfaces[idx].render->state &= ~(FF_XVBA_STATE_USED_FOR_RENDER | FF_XVBA_STATE_DECODED);
-        m_bufferPool.glSurfaces[idx].render = 0;
-      }
+      glDeleteTextures(1, &m_bufferPool.glSurfaces[i].texture);
+      m_bufferPool.glSurfaces[i].texture = 0;
+    }
+    m_bufferPool.glSurfaces[i].render = 0;
+    m_bufferPool.glSurfaces[i].used = true;
+  }
+
+  if (!precleanup)
+  {
+    m_bufferPool.glSurfaces.clear();
+
+    // invalidate all used render pictures
+    for (unsigned int i = 0; i < m_bufferPool.usedRenderPics.size(); ++i)
+    {
+      m_bufferPool.usedRenderPics[i]->valid = false;
     }
   }
 }
