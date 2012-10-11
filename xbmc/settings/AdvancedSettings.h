@@ -163,6 +163,8 @@ class CAdvancedSettings : public ISettingCallback, public ISettingsHandler
     int m_videoPercentSeekBackwardBig;
     std::string m_videoPPFFmpegDeint;
     std::string m_videoPPFFmpegPostProc;
+    int m_videoVDPAUdeintHD;
+    int m_videoVDPAUdeintSD;
     bool m_videoVDPAUtelecine;
     bool m_videoVDPAUdeintSkipChromaHD;
     bool m_musicUseTimeSeeking;
