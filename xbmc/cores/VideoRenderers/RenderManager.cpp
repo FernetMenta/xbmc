@@ -1096,17 +1096,17 @@ void CXBMCRenderManager::NotifyDisplayFlip()
   if (!m_pRenderer)
     return;
 
-  if (m_iNumRenderBuffers < 3)
-    return;
-
-  int last = m_iDisplayedRenderBuffer;
-  m_iDisplayedRenderBuffer = (m_iCurrentRenderBuffer + m_iNumRenderBuffers - 1) % m_iNumRenderBuffers;
-
-  if (last != m_iDisplayedRenderBuffer
-      && m_iDisplayedRenderBuffer != m_iCurrentRenderBuffer)
+  if (m_iNumRenderBuffers >= 3)
   {
-    m_pRenderer->ReleaseBuffer(m_iDisplayedRenderBuffer);
-    m_overlays.ReleaseBuffer(m_iDisplayedRenderBuffer);
+    int last = m_iDisplayedRenderBuffer;
+    m_iDisplayedRenderBuffer = (m_iCurrentRenderBuffer + m_iNumRenderBuffers - 1) % m_iNumRenderBuffers;
+
+    if (last != m_iDisplayedRenderBuffer
+        && m_iDisplayedRenderBuffer != m_iCurrentRenderBuffer)
+    {
+      m_pRenderer->ReleaseBuffer(m_iDisplayedRenderBuffer);
+      m_overlays.ReleaseBuffer(m_iDisplayedRenderBuffer);
+    }
   }
 
   lock.Leave();
