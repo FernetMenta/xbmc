@@ -2052,6 +2052,8 @@ void CMixer::Uninit()
     m_outputSurfaces.pop();
   }
   m_config.vdpProcs.vdp_video_mixer_destroy(m_videoMixer);
+
+  delete [] m_BlackBar;
 }
 
 void CMixer::Flush()
