@@ -2924,16 +2924,14 @@ void CLinuxRendererGL::UploadXVBATexture(int index)
   YUVFIELDS &fields = m_buffers[index].fields;
   YUVPLANE &plane = fields[0][1];
 
-  if (!xvba)
+  if (!xvba || !xvba->valid)
   {
-    fields[0][1].id = fields[0][0].id;
     m_eventTexturesDone[index]->Set();
-    CLog::Log(LOGWARNING,"CLinuxRendererGL::UploadXVBATexture no xvba texture, index: %d", index);
+    m_skipRender = true;
     return;
   }
-//  xvba->Transfer();
 
-  fields[0][1].id = xvba->texture;
+  plane.id = xvba->texture;
 
   im.height = xvba->texHeight;
   im.width  = xvba->texWidth;
