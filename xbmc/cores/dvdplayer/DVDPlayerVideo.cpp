@@ -1302,13 +1302,13 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
 
   if( m_speed < 0 )
   {
-    double decoderPts = m_droppingStats.m_lastDecoderPts;
+    double inputPts = m_droppingStats.m_lastPts;
     double renderPts = m_droppingStats.m_lastRenderPts;
     if (pts > renderPts)
     {
-      if (decoderPts >= renderPts)
+      if (inputPts >= renderPts)
       {
-        Sleep(200);
+        Sleep(50);
       }
       return result | EOS_DROPPED;
     }
@@ -1605,7 +1605,7 @@ double CDVDPlayerVideo::GetCurrentPts()
 
   if( m_stalled )
     iRenderPts = DVD_NOPTS_VALUE;
-  else
+  else if ( m_speed == DVD_PLAYSPEED_NORMAL)
     iRenderPts = iRenderPts - max(0.0, iSleepTime);
 
   return iRenderPts;
@@ -1704,6 +1704,8 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts)
   bool   bNewFrame;
   int    iSkippedDeint = 0;
   int    iBufferLevel;
+
+  m_droppingStats.m_lastPts = pts;
 
   // get decoder stats
   if (!m_pVideoCodec->GetCodecStats(iDecoderPts, iSkippedDeint, interlaced))
