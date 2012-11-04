@@ -169,6 +169,11 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInfo &hint, unsigne
 #elif defined(_LINUX) && !defined(TARGET_DARWIN)
   hwSupport += "VAAPI:no ";
 #endif
+#if defined(HAVE_LIBXVBA) && defined(TARGET_LINUX)
+  hwSupport += "XVBA:yes ";
+#elif defined(TARGET_LINUX)
+  hwSupport += "XVBA:no ";
+#endif
 
   CLog::Log(LOGDEBUG, "CDVDFactoryCodec: compiled in hardware support: %s", hwSupport.c_str());
 

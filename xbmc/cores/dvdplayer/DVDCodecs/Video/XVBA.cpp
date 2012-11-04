@@ -335,6 +335,21 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
     return false;
   }
 
+  // Fixme: Revisit with new SDK
+  // Workaround for 0.74.01-AES-2 that does not signal if surfaces are too large
+  // it seems that xvba does not support anything > 2k
+  // return false, for files that are larger
+  // if you are unlucky, this would kill your decoder
+  // we limit to 2048x1536(+8) now - as this was tested working
+  int surfaceWidth = (avctx->coded_width+15) & ~15;
+  int surfaceHeight = (avctx->coded_height+15) & ~15;
+  if(surfaceHeight > 1544 || surfaceWidth > 2048)
+  {
+    CLog::Log(LOGERROR, "Surface too large, decoder skipped: surfaceWidth %u, surfaceHeight %u",
+                        surfaceWidth, surfaceHeight);
+    return false;
+  }
+
   if (!m_dllAvUtil.Load())
     return false;
 
