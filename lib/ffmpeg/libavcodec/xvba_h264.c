@@ -102,10 +102,16 @@ static int end_frame(AVCodecContext *avctx)
   pic_descriptor->avc_num_ref_frames                          = h->sps.ref_frame_count;
   pic_descriptor->avc_reserved_8bit                           = 0;
 
-  /* Set correct level */
-  if (pic_descriptor->level == 41) {
+  /* Set a level that can decode stuff in every case without a lookup table 
+     xvba seems to have problems only when the number of Reframes goes beyond
+     the max support number of Level4.1@High. So in praxis decoding a Level 3.0
+     file that in deed has level4.1@High specs does not matter. We use this fact
+     and check if the ref_frames stay in the range Level4.1@high can decode if
+     not, we set Level5.1 */
+  if (pic_descriptor->avc_num_ref_frames > 4) {
     const unsigned int mbw = pic_descriptor->width_in_mb;
     const unsigned int mbh = pic_descriptor->height_in_mb;
+    // this matches Level4.1@High stats to differ between <= 4.1 and 5.1
     const unsigned int max_ref_frames = 12288 * 1024 / (mbw * mbh * 384);
     const unsigned int num_ref_frames = pic_descriptor->avc_num_ref_frames;
     if (max_ref_frames < num_ref_frames)
