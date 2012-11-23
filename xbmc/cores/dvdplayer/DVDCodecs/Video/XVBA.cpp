@@ -1949,8 +1949,6 @@ void COutput::Flush()
 
 bool COutput::IsDecodingFinished()
 {
-  return true;
-
   // check for decoding to be finished
   CXvbaDecodedPicture decodedPic = m_decodedPics.front();
 
