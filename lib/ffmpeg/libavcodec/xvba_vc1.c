@@ -99,7 +99,7 @@ static int end_frame(AVCodecContext *avctx)
     pic_descriptor->sps_info.vc1.psf                        = v->psf;
     // what about if it is a frame (page 31)
     // looked at xvba-driver
-    pic_descriptor->sps_info.vc1.second_field               = !s->first_field;
+    pic_descriptor->sps_info.vc1.second_field               = v->second_field;
     pic_descriptor->sps_info.vc1.xvba_vc1_sps_reserved      = 0;
     
     // VC-1 explicit parameters see page 30 of sdk
@@ -127,19 +127,18 @@ static int end_frame(AVCodecContext *avctx)
     
     pic_descriptor->past_surface                            = 0;
     pic_descriptor->future_surface                          = 0;
-    switch (s->pict_type) {
-    case AV_PICTURE_TYPE_B:
+
+    if (s->pict_type == AV_PICTURE_TYPE_B && !v->bi_type) {
         next = (struct xvba_render_state *)s->next_picture.f.data[0];
         assert(next);
         if (next)
           pic_descriptor->past_surface = next->surface;
-        // fall-through
-    case AV_PICTURE_TYPE_P:
+    }
+    if (s->pict_type != AV_PICTURE_TYPE_I && !v->bi_type) {
         last = (struct xvba_render_state *)s->last_picture.f.data[0];
         assert(last);
         if (last)
           pic_descriptor->future_surface = last->surface;
-        break;
     }
 
     ff_draw_horiz_band(s, 0, s->avctx->height);
