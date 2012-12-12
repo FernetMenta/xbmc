@@ -5353,7 +5353,7 @@ msgid "Allow Vdpau OpenGL interop"
 msgstr ""
 
 msgctxt "#13436"
-msgid "Allow Vdpau OpenGL interop YUV"
+msgid "Prefer VDPAU Video Mixer"
 msgstr ""
 
 #empty strings from id 13437 to 13499
