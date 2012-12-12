@@ -4371,11 +4371,7 @@ msgctxt "#13121"
 msgid "VDPAU HQ Upscaling level"
 msgstr ""
 
-msgctxt "#13122"
-msgid "VDPAU Studio level color conversion"
-msgstr ""
-
-#empty strings from id 13123 to 13129
+#empty strings from id 13122 to 13129
 
 msgctxt "#13130"
 msgid "Blank other displays"
