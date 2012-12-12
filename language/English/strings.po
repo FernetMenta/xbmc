@@ -4625,12 +4625,7 @@ msgctxt "#13121"
 msgid "VDPAU HQ Upscaling level"
 msgstr ""
 
-#: xbmc/settings/GUISettings.cpp
-msgctxt "#13122"
-msgid "VDPAU Studio level color conversion"
-msgstr ""
-
-#empty strings from id 13123 to 13129
+#empty strings from id 13122 to 13129
 
 #: xbmc/settings/GUISettings.cpp
 msgctxt "#13130"
