@@ -58,15 +58,6 @@ CDecoder::Desc decoder_profiles[] = {
 };
 const size_t decoder_profile_count = sizeof(decoder_profiles)/sizeof(CDecoder::Desc);
 
-//static float studioCSC[3][4] =
-//{
-//    { 1.0f,        0.0f, 1.57480000f,-0.78740000f},
-//    { 1.0f,-0.18737736f,-0.46813736f, 0.32775736f},
-//    { 1.0f, 1.85556000f,        0.0f,-0.92780000f}
-//};
-static float studioCSCKCoeffs601[3] = {0.299, 0.587, 0.114};  //BT601 {Kr, Kg, Kb}
-static float studioCSCKCoeffs709[3] = {0.2126, 0.7152, 0.0722};  //BT709 {Kr, Kg, Kb}
-
 static struct SInterlaceMapping
 {
   const EINTERLACEMETHOD     method;
@@ -1636,74 +1627,6 @@ void CMixer::PostProcOff()
   DisableHQScaling();
 }
 
-
-bool CMixer::GenerateStudioCSCMatrix(VdpColorStandard colorStandard, VdpCSCMatrix &studioCSCMatrix)
-{
-   // instead use studioCSCKCoeffs601[3], studioCSCKCoeffs709[3] to generate float[3][4] matrix (float studioCSC[3][4])
-   // m00 = mRY = red: luma factor (contrast factor) (1.0)
-   // m10 = mGY = green: luma factor (contrast factor) (1.0)
-   // m20 = mBY = blue: luma factor (contrast factor) (1.0)
-   //
-   // m01 = mRB = red: blue color diff coeff (0.0)
-   // m11 = mGB = green: blue color diff coeff (-2Kb(1-Kb)/(Kg))
-   // m21 = mBB = blue: blue color diff coeff ((1-Kb)/0.5)
-   //
-   // m02 = mRR = red: red color diff coeff ((1-Kr)/0.5)
-   // m12 = mGR = green: red color diff coeff (-2Kr(1-Kr)/(Kg))
-   // m22 = mBR = blue: red color diff coeff (0.0)
-   //
-   // m03 = mRC = red: colour zero offset (brightness factor) (-(1-Kr)/0.5 * (128/255))
-   // m13 = mGC = green: colour zero offset (brightness factor) ((256/255) * (Kb(1-Kb) + Kr(1-Kr)) / Kg)
-   // m23 = mBC = blue: colour zero offset (brightness factor) (-(1-Kb)/0.5 * (128/255))
-
-   // columns
-   int Y = 0;
-   int Cb = 1;
-   int Cr = 2;
-   int C = 3;
-   // rows
-   int R = 0;
-   int G = 1;
-   int B = 2;
-   // colour standard coefficients for red, geen, blue
-   double Kr, Kg, Kb;
-   // colour diff zero position (use standard 8-bit coding precision)
-   double CDZ = 128; //256*0.5
-   // range excursion (use standard 8-bit coding precision)
-   double EXC = 255; //256-1
-
-   if (colorStandard == VDP_COLOR_STANDARD_ITUR_BT_601)
-   {
-      Kr = studioCSCKCoeffs601[0];
-      Kg = studioCSCKCoeffs601[1];
-      Kb = studioCSCKCoeffs601[2];
-   }
-   else // assume VDP_COLOR_STANDARD_ITUR_BT_709
-   {
-      Kr = studioCSCKCoeffs709[0];
-      Kg = studioCSCKCoeffs709[1];
-      Kb = studioCSCKCoeffs709[2];
-   }
-   // we keep luma unscaled to retain the levels present in source so that 16-235 luma is converted to RGB 16-235
-   studioCSCMatrix[R][Y] = 1.0;
-   studioCSCMatrix[G][Y] = 1.0;
-   studioCSCMatrix[B][Y] = 1.0;
-
-   studioCSCMatrix[R][Cb] = 0.0;
-   studioCSCMatrix[G][Cb] = (double)-2 * Kb * (1 - Kb) / Kg;
-   studioCSCMatrix[B][Cb] = (double)(1 - Kb) / 0.5;
-
-   studioCSCMatrix[R][Cr] = (double)(1 - Kr) / 0.5;
-   studioCSCMatrix[G][Cr] = (double)-2 * Kr * (1 - Kr) / Kg;
-   studioCSCMatrix[B][Cr] = 0.0;
-
-   studioCSCMatrix[R][C] = (double)-1 * studioCSCMatrix[R][Cr] * CDZ/EXC;
-   studioCSCMatrix[G][C] = (double)-1 * (studioCSCMatrix[G][Cb] + studioCSCMatrix[G][Cr]) * CDZ/EXC;
-   studioCSCMatrix[B][C] = (double)-1 * studioCSCMatrix[B][Cb] * CDZ/EXC;
-
-   return true;
-}
-
 void CMixer::SetColor()
 {
   VdpStatus vdp_st;
@@ -1723,19 +1646,10 @@ void CMixer::SetColor()
     //vdp_st = vdp_generate_csc_matrix(&m_Procamp, VDP_COLOR_STANDARD_ITUR_BT_601, &m_CSCMatrix);
 
   VdpVideoMixerAttribute attributes[] = { VDP_VIDEO_MIXER_ATTRIBUTE_CSC_MATRIX };
-  if (CSettings::Get().GetBool("videoscreen.limitedrange"))
-  {
-    float studioCSC[3][4];
-    GenerateStudioCSCMatrix(colorStandard, studioCSC);
-    void const * pm_CSCMatix[] = { &studioCSC };
-    vdp_st = m_config.vdpProcs.vdp_video_mixer_set_attribute_values(m_videoMixer, ARSIZE(attributes), attributes, pm_CSCMatix);
-  }
-  else
-  {
-    vdp_st = m_config.vdpProcs.vdp_generate_csc_matrix(&m_Procamp, colorStandard, &m_CSCMatrix);
-    void const * pm_CSCMatix[] = { &m_CSCMatrix };
-    vdp_st = m_config.vdpProcs.vdp_video_mixer_set_attribute_values(m_videoMixer, ARSIZE(attributes), attributes, pm_CSCMatix);
-  }
+  vdp_st = m_config.vdpProcs.vdp_generate_csc_matrix(&m_Procamp, colorStandard, &m_CSCMatrix);
+  void const * pm_CSCMatix[] = { &m_CSCMatrix };
+  vdp_st = m_config.vdpProcs.vdp_video_mixer_set_attribute_values(m_videoMixer, ARSIZE(attributes), attributes, pm_CSCMatix);
+
   CheckStatus(vdp_st, __LINE__);
 }
 
