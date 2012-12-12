@@ -5768,14 +5768,10 @@ msgid "Enable HQ Scalers for scalings above"
 msgstr ""
 
 msgctxt "#13436"
-msgid "Allow Vdpau OpenGL interop"
+msgid "Prefer VDPAU Video Mixer"
 msgstr ""
 
-msgctxt "#13437"
-msgid "Allow Vdpau OpenGL interop YUV"
-msgstr ""
-
-#empty strings from id 13438 to 13499
+#empty strings from id 13437 to 13499
 
 #: system/settings/settings.xml
 msgctxt "#13500"
