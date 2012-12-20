@@ -2453,7 +2453,7 @@ void CGUIWindowSettingsCategory::FillInMonitors(CStdString strSetting)
 {
   // we expect "videoscreen.monitor" but it might be hidden on some platforms,
   // so check that we actually have a visable control.
-  CBaseSettingControl *control = GetSetting(strSetting);
+  BaseSettingControlPtr control = GetSetting(strSetting);
   if (control)
   {
     control->SetDelayed();
