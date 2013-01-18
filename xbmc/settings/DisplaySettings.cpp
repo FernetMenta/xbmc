@@ -225,7 +225,10 @@ bool CDisplaySettings::OnSettingChanging(const CSetting *setting)
       if (save)
         m_ignoreSettingChanging.insert(make_pair("videoscreen.screenmode", true));
 
-      bool outputChanged = !g_Windowing.IsCurrentOutput(CSettings::Get().GetString("videoscreen.monitor"));
+      bool outputChanged = false;
+#if defined(HAS_GLX)
+      outputChanged = !g_Windowing.IsCurrentOutput(CSettings::Get().GetString("videoscreen.monitor"));
+#endif
       SetCurrentResolution(newRes, save);
       g_graphicsContext.SetVideoResolution(newRes, outputChanged);
 
@@ -597,6 +600,7 @@ void CDisplaySettings::SettingOptionsVerticalSyncsFiller(const CSetting *setting
 
 void CDisplaySettings::SettingOptionsMonitorsFiller(const CSetting *setting, std::vector< std::pair<std::string, std::string> > &list, std::string &current)
 {
+#if defined(HAS_GLX)
   std::vector<CStdString> monitors;
   g_Windowing.GetConnectedOutputs(&monitors);
   for (unsigned int i=0; i<monitors.size(); ++i)
@@ -607,6 +611,7 @@ void CDisplaySettings::SettingOptionsMonitorsFiller(const CSetting *setting, std
     }
     list.push_back(make_pair(monitors[i], monitors[i]));
   }
+#endif
 }
 
 void CDisplaySettings::ClearCustomResolutions()
