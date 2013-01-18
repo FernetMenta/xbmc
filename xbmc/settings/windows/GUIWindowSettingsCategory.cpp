@@ -529,12 +529,14 @@ void CGUIWindowSettingsCategory::CreateSettings()
       FillInRefreshRates(strSetting, CDisplaySettings::Get().GetDisplayResolution(), false);
       continue;
     }
+#if defined(HAS_GLX)
     else if (strSetting.Equals("videoscreen.monitor"))
     {
       AddSetting(pSetting, group->GetWidth(), iControlID);
       FillInMonitors(strSetting);
       continue;
     }
+#endif
     else if (strSetting.Equals("lookandfeel.skintheme"))
     {
       AddSetting(pSetting, group->GetWidth(), iControlID);
@@ -1431,6 +1433,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(BaseSettingControlPtr pSetting
     // Cascade
     FillInResolutions("videoscreen.resolution", mode, RES_DESKTOP, true);
   }
+#if defined(HAS_GLX)
   else if (strSetting.Equals("videoscreen.monitor"))
   {
     CSettingString *pSettingString = (CSettingString *)pSettingControl->GetSetting();
@@ -1445,6 +1448,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(BaseSettingControlPtr pSetting
       FillInResolutions("videoscreen.resolution", mode, RES_DESKTOP, true);
     }
   }
+#endif
   else if (strSetting.Equals("videoscreen.resolution"))
   {
     RESOLUTION nextRes = (RESOLUTION) g_guiSettings.GetInt("videoscreen.resolution");
@@ -2400,6 +2404,7 @@ DisplayMode CGUIWindowSettingsCategory::FillInScreens(CStdString strSetting, RES
 
 void CGUIWindowSettingsCategory::FillInMonitors(CStdString strSetting)
 {
+#if defined(HAS_GLX)
   // we expect "videoscreen.monitor" but it might be hidden on some platforms,
   // so check that we actually have a visable control.
   BaseSettingControlPtr control = GetSetting(strSetting);
@@ -2425,6 +2430,7 @@ void CGUIWindowSettingsCategory::FillInMonitors(CStdString strSetting)
     pControl->SetValue(currentMonitor);
     g_guiSettings.SetString("videoscreen.monitor", CDisplaySettings::Get().GetResolutionInfo(RES_DESKTOP).strOutput);
   }
+#endif
 }
 
 
@@ -2556,7 +2562,10 @@ void CGUIWindowSettingsCategory::OnRefreshRateChanged(RESOLUTION nextRes)
   RESOLUTION lastRes = g_graphicsContext.GetVideoResolution();
   bool cancelled = false;
 
-  bool outputChanged = !g_Windowing.IsCurrentOutput(g_guiSettings.GetString("videoscreen.monitor"));
+  bool outputChanged = true;
+#if defined(HAS_GLX)
+  outputChanged = !g_Windowing.IsCurrentOutput(g_guiSettings.GetString("videoscreen.monitor"));
+#endif
 
   CDisplaySettings::Get().SetCurrentResolution(nextRes, true);
   g_graphicsContext.SetVideoResolution(nextRes, outputChanged);
