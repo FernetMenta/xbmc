@@ -168,6 +168,7 @@ class CAdvancedSettings
     bool m_DXVAForceProcessorRenderer;
     bool m_DXVANoDeintProcForProgressive;
     int  m_videoFpsDetect;
+    bool m_videoDisableHi10pMultithreading;
 
     CStdString m_videoDefaultPlayer;
     CStdString m_videoDefaultDVDPlayer;
