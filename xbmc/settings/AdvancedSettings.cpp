@@ -165,7 +165,7 @@ void CAdvancedSettings::Initialize()
   m_videoNonLinStretchRatio = 0.5f;
   m_videoEnableHighQualityHwScalers = false;
   m_videoAutoScaleMaxFps = 30.0f;
-  m_videoAllowMpeg4VDPAU = false;
+  m_videoAllowMpeg4VDPAU = true;
   m_videoAllowMpeg4VAAPI = false;  
   m_videoDisableBackgroundDeinterlace = false;
   m_videoCaptureUseOcclusionQuery = -1; //-1 is auto detect
