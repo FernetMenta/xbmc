@@ -127,10 +127,9 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int 
     VdpDecoderProfile profile = 0;
     if(avctx->codec_id == CODEC_ID_H264)
       profile = VDP_DECODER_PROFILE_H264_HIGH;
-#ifdef VDP_DECODER_PROFILE_MPEG4_PART2_ASP
     else if(avctx->codec_id == CODEC_ID_MPEG4)
       profile = VDP_DECODER_PROFILE_MPEG4_PART2_ASP;
-#endif
+
     if(profile)
     {
       if (!CDVDCodecUtils::IsVP3CompatibleWidth(avctx->coded_width))
@@ -530,13 +529,10 @@ void CDecoder::ReadFormatOf( PixelFormat fmt
       vdp_decoder_profile = VDP_DECODER_PROFILE_VC1_ADVANCED;
       vdp_chroma_type     = VDP_CHROMA_TYPE_420;
       break;
-#if (defined PIX_FMT_VDPAU_MPEG4_IN_AVUTIL) && \
-    (defined VDP_DECODER_PROFILE_MP)
     case PIX_FMT_VDPAU_MPEG4:
-      vdp_decoder_profile = VDP_DECOPEG4_PART2_ASP;
+      vdp_decoder_profile = VDP_DECODER_PROFILE_MPEG4_PART2_ASP;
       vdp_chroma_type     = VDP_CHROMA_TYPE_420;
       break;
-#endif
     default:
       vdp_decoder_profile = 0;
       vdp_chroma_type     = 0;
