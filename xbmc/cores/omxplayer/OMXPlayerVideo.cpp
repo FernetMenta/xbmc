@@ -347,25 +347,19 @@ void OMXPlayerVideo::Output(int iGroupId, double pts, bool bDropPacket)
   m_dropbase = 0.0f;
 #endif
 
-  // DVDPlayer sleeps until m_iSleepEndTime here before calling FlipPage.
-  // Video playback in asynchronous in OMXPlayer, so we don't want to do that here, as it prevents the video fifo from being kept full.
-  // So, we keep track of when FlipPage would have been called on DVDPlayer and return early if it is not time.
-  // m_iSleepEndTime == DVD_NOPTS_VALUE means we are not waiting to call FlipPage, otherwise it is the time we want to call FlipPage
-  if (m_iSleepEndTime == DVD_NOPTS_VALUE) {
-    m_iSleepEndTime = iCurrentClock + iSleepTime;
-  }
-
-  if (!CThread::m_bStop && m_av_clock->GetAbsoluteClock(false) < m_iSleepEndTime + DVD_MSEC_TO_TIME(500))
+  int timeout = 50;
+  if (GetDecoderFreeSpace() > 0.2 * GetDecoderBufferSize())
+    timeout = 0;
+  int bufferlevel = g_renderManager.WaitForBuffer(m_bStop, timeout);
+  if (bufferlevel < 0)
     return;
 
-  double pts_media = m_av_clock->OMXMediaTime(false);
-  ProcessOverlays(iGroupId, pts_media);
+  double pts_overlay = m_av_clock->OMXMediaTime(false)
+                     + (bufferlevel+1)* iFrameDuration;
+  ProcessOverlays(iGroupId, pts_overlay);
 
-  g_renderManager.FlipPage(CThread::m_bStop, m_iSleepEndTime / DVD_TIME_BASE, -1, FS_NONE);
-
-  m_iSleepEndTime = DVD_NOPTS_VALUE;
-
-  //m_av_clock->WaitAbsoluteClock((iCurrentClock + iSleepTime));
+  double timestamp = (CDVDClock::GetAbsoluteClock(false) + (bufferlevel+1) * iFrameDuration) / DVD_TIME_BASE;
+  g_renderManager.FlipPage(CThread::m_bStop, timestamp, -1, FS_NONE);
 }
 
 void OMXPlayerVideo::Process()
@@ -809,7 +803,7 @@ void OMXPlayerVideo::ResolutionUpdateCallBack(uint32_t width, uint32_t height)
 
   if(!g_renderManager.Configure(width, height,
         iDisplayWidth, iDisplayHeight, m_fFrameRate, flags, format, 0,
-        m_hints.orientation))
+        m_hints.orientation, true))
   {
     CLog::Log(LOGERROR, "%s - failed to configure renderer", __FUNCTION__);
     return;
