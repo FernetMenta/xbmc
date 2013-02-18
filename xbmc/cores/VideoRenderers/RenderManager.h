@@ -103,11 +103,7 @@ public:
   void UnInit();
   bool Flush();
 
-  void AddOverlay(CDVDOverlay* o, double pts)
-  {
-    CSharedLock lock(m_sharedSection);
-    m_overlays.AddOverlay(o, pts, (m_iOutputRenderBuffer + 1) % m_iNumRenderBuffers);
-  }
+  void AddOverlay(CDVDOverlay* o, double pts);
 
   void AddCleanup(OVERLAY::COverlay* o)
   {
@@ -255,6 +251,7 @@ protected:
   bool m_bUseBuffering;
   bool m_bCodecSupportsBuffering;
   int m_speed;
+  bool m_bRenderBufferUsed;
   CEvent m_flipEvent;
 
   struct
