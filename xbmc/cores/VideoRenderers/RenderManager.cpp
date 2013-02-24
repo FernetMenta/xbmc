@@ -303,7 +303,7 @@ void CXBMCRenderManager::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
     if(m_presentstep == PRESENT_FLIP)
     {
       FlipRenderBuffer();
-      m_overlays.Flip();
+      m_overlays.Flip(m_presentsource);
       m_pRenderer->FlipPage(m_presentsource);
       m_presentstep = PRESENT_FRAME;
       m_presentevent.Set();
@@ -703,7 +703,7 @@ void CXBMCRenderManager::Present()
     if(m_presentstep == PRESENT_FLIP)
     {
       FlipRenderBuffer();
-      m_overlays.Flip();
+      m_overlays.Flip(m_presentsource);
       m_pRenderer->FlipPage(m_presentsource);
       m_presentstep = PRESENT_FRAME;
       m_presentevent.Set();
@@ -986,11 +986,12 @@ int CXBMCRenderManager::FlipFreeBuffer()
   // See "Render Buffer State Description" in header for information.
   if (HasFreeBuffer())
   {
-    if (!m_bRenderBufferUsed)
+    if (!m_bRenderBufferUsed && !m_bOverlayReleased)
     {
       return -1;
     }
     m_bRenderBufferUsed = false;
+    m_bOverlayReleased = false;
     m_bAllRenderBuffersDisplayed = false;
     m_iOutputRenderBuffer = (m_iOutputRenderBuffer + 1) % m_iNumRenderBuffers;
     return m_iOutputRenderBuffer;
@@ -1038,6 +1039,7 @@ void CXBMCRenderManager::ResetRenderBuffer()
   m_presentPts = DVD_NOPTS_VALUE;
   m_speed = 0;
   m_bRenderBufferUsed = false;
+  m_bOverlayReleased = false;
 }
 
 void CXBMCRenderManager::PrepareNextRender()
@@ -1116,7 +1118,8 @@ void CXBMCRenderManager::NotifyDisplayFlip()
         && m_iDisplayedRenderBuffer != m_iCurrentRenderBuffer)
     {
       m_pRenderer->ReleaseBuffer(m_iDisplayedRenderBuffer);
-      m_overlays.ReleaseBuffer(m_iDisplayedRenderBuffer);
+      if (m_overlays.ReleaseBuffer(m_iDisplayedRenderBuffer) > 0)
+        m_bOverlayReleased = true;
     }
   }
 
