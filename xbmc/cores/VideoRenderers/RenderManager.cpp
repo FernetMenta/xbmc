@@ -316,7 +316,7 @@ void CXBMCRenderManager::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
     if(m_presentstep == PRESENT_FLIP)
     {
       FlipRenderBuffer();
-      m_overlays.Flip();
+      m_overlays.Flip(m_presentsource);
       m_pRenderer->FlipPage(m_presentsource);
       m_presentstep = PRESENT_FRAME;
       m_presentevent.Set();
@@ -719,7 +719,7 @@ void CXBMCRenderManager::Present()
     if(m_presentstep == PRESENT_FLIP)
     {
       FlipRenderBuffer();
-      m_overlays.Flip();
+      m_overlays.Flip(m_presentsource);
       m_pRenderer->FlipPage(m_presentsource);
       m_presentstep = PRESENT_FRAME;
       m_presentevent.Set();
@@ -971,6 +971,8 @@ int CXBMCRenderManager::WaitForBuffer(volatile bool& bStop, int timeout)
   if (bStop)
     return -1;
 
+  // make sure overlay buffer is released, this won't happen on AddOverlay
+  m_overlays.ReleaseBuffer((m_iOutputRenderBuffer + 1) % m_iNumRenderBuffers);
   return 1;
 }
 
