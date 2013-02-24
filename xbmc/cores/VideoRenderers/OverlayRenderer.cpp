@@ -127,27 +127,32 @@ void CRenderer::AddCleanup(COverlay* o)
   m_cleanup.push_back(o->Acquire());
 }
 
-void CRenderer::Release(SElementV& list)
+long CRenderer::Release(SElementV& list)
 {
   SElementV l = list;
   list.clear();
 
+  long count = 0;
   for(SElementV::iterator it = l.begin(); it != l.end(); it++)
   {
     if(it->overlay)
-      it->overlay->Release();
+      count += it->overlay->Release();
     if(it->overlay_dvd)
-      it->overlay_dvd->Release();
+      count += it->overlay_dvd->Release();
   }
+  return count;
 }
 
-void CRenderer::Release(COverlayV& list)
+long CRenderer::Release(COverlayV& list)
 {
   COverlayV l = list;
   list.clear();
 
+  long count = 0;
   for(COverlayV::iterator it = l.begin(); it != l.end(); it++)
-    (*it)->Release();
+    count += (*it)->Release();
+
+  return count;
 }
 
 void CRenderer::Flush()
@@ -161,16 +166,19 @@ void CRenderer::Flush()
   Release(m_cleanup);
 }
 
-void CRenderer::Flip()
+void CRenderer::Flip(int source)
 {
   CSingleLock lock(m_section);
-  m_render = (m_render + 1) % m_iNumBuffers;
+  if( source >= 0 && source < m_iNumBuffers )
+    m_render = source;
+  else
+    m_render = (m_render + 1) % m_iNumBuffers;
 }
 
-void CRenderer::ReleaseBuffer(int idx)
+long CRenderer::ReleaseBuffer(int idx)
 {
   CSingleLock lock(m_section);
-  Release(m_buffers[idx]);
+  return Release(m_buffers[idx]);
 }
 
 void CRenderer::Render()

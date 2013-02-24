@@ -96,11 +96,11 @@ namespace OVERLAY {
     void AddOverlay(CDVDOverlay* o, double pts, int index);
     void AddOverlay(COverlay*    o, double pts, int index);
     void AddCleanup(COverlay*    o);
-    void Flip();
+    void Flip(int source);
     void Render();
     void Flush();
     void SetNumBuffers(int numBuffers) { m_iNumBuffers = numBuffers; }
-    void ReleaseBuffer(int idx);
+    long ReleaseBuffer(int idx);
 
   protected:
 
@@ -123,8 +123,8 @@ namespace OVERLAY {
     COverlay* Convert(CDVDOverlay* o, double pts);
     COverlay* Convert(CDVDOverlaySSA* o, double pts);
 
-    void      Release(COverlayV& list);
-    void      Release(SElementV& list);
+    long      Release(COverlayV& list);
+    long      Release(SElementV& list);
 
     CCriticalSection m_section;
     SElementV        m_buffers[NUM_BUFFERS];

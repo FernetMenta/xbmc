@@ -252,6 +252,7 @@ protected:
   bool m_bCodecSupportsBuffering;
   int m_speed;
   bool m_bRenderBufferUsed;
+  bool m_bOverlayReleased;
   CEvent m_flipEvent;
 
   struct
