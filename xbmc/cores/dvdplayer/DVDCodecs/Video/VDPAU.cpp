@@ -1170,6 +1170,11 @@ void CMixer::Dispose()
   m_dataPort.Purge();
 }
 
+bool CMixer::IsActive()
+{
+  return IsRunning();
+}
+
 void CMixer::OnStartup()
 {
   CLog::Log(LOGNOTICE, "CMixer::OnStartup: Output Thread created");
@@ -2559,6 +2564,7 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
           return;
         case COutputControlProtocol::PRECLEANUP:
           Flush();
+          PreCleanup();
           msg->Reply(COutputControlProtocol::ACC);
           return;
         default:
@@ -2765,15 +2771,18 @@ bool COutput::Uninit()
 
 void COutput::Flush()
 {
-  Message *reply;
-  if (m_mixer.m_controlPort.SendOutMessageSync(CMixerControlProtocol::FLUSH,
+  if (m_mixer.IsActive())
+  {
+    Message *reply;
+    if (m_mixer.m_controlPort.SendOutMessageSync(CMixerControlProtocol::FLUSH,
                                                  &reply,
                                                  2000))
-  {
-    reply->Release();
+    {
+      reply->Release();
+    }
+    else
+      CLog::Log(LOGERROR, "Coutput::%s - failed to flush mixer", __FUNCTION__);
   }
-  else
-    CLog::Log(LOGERROR, "Coutput::%s - failed to flush mixer", __FUNCTION__);
 
   Message *msg;
   while (m_mixer.m_dataPort.ReceiveInMessage(&msg))
@@ -3109,6 +3118,57 @@ void COutput::ReleaseBufferPool()
   {
     m_bufferPool.usedRenderPics[i]->valid = false;
   }
+}
+
+void COutput::PreCleanup()
+{
+
+  VdpStatus vdp_st;
+
+  m_mixer.Dispose();
+
+  CSingleLock lock(m_bufferPool.renderPicSec);
+  for (unsigned int i = 0; i < m_bufferPool.outputSurfaces.size(); ++i)
+  {
+    if (m_bufferPool.outputSurfaces[i] == VDP_INVALID_HANDLE)
+      continue;
+
+    // check if output surface is in use
+    bool used = false;
+    std::deque<CVdpauRenderPicture*>::iterator it;
+    for (it = m_bufferPool.usedRenderPics.begin(); it != m_bufferPool.usedRenderPics.end(); ++it)
+    {
+      if (((*it)->sourceIdx == m_bufferPool.outputSurfaces[i]) && (*it)->valid)
+      {
+        used = true;
+        break;
+      }
+    }
+    if (used)
+      continue;
+
+#ifdef GL_NV_vdpau_interop
+    // unmap surface
+    std::map<VdpOutputSurface, VdpauBufferPool::GLVideoSurface>::iterator it_map;
+    it_map = m_bufferPool.glOutputSurfaceMap.find(m_bufferPool.outputSurfaces[i]);
+    if (it_map == m_bufferPool.glOutputSurfaceMap.end())
+    {
+      CLog::Log(LOGERROR, "%s - could not find gl surface", __FUNCTION__);
+      continue;
+    }
+    glVDPAUUnregisterSurfaceNV(it_map->second.glVdpauSurface);
+    glDeleteTextures(1, it_map->second.texture);
+    m_bufferPool.glOutputSurfaceMap.erase(it_map);
+#endif
+
+    vdp_st = m_config.vdpProcs.vdp_output_surface_destroy(m_bufferPool.outputSurfaces[i]);
+    CheckStatus(vdp_st, __LINE__);
+
+    m_bufferPool.outputSurfaces[i] = VDP_INVALID_HANDLE;
+
+    CLog::Log(LOGDEBUG, "VDPAU::PreCleanup - released output surface");
+  }
+
 }
 
 void COutput::InitMixer()
