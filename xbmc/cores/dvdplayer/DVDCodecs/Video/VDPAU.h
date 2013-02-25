@@ -286,6 +286,7 @@ public:
   virtual ~CMixer();
   void Start();
   void Dispose();
+  bool IsActive();
   CMixerControlProtocol m_controlPort;
   CMixerDataProtocol m_dataPort;
 protected:
@@ -454,6 +455,7 @@ protected:
   bool DestroyGlxContext();
   bool EnsureBufferPool();
   void ReleaseBufferPool();
+  void PreCleanup();
   void InitMixer();
   bool GLInit();
   void GLMapSurfaces();
