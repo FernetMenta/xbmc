@@ -571,7 +571,6 @@ void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0L
   { CRetakeLock<CExclusiveLock> lock(m_sharedSection);
     if(!m_pRenderer) return;
 
-    double presenttime  = timestamp;
     EFIELDSYNC presentfield = sync;
     EPRESENTMETHOD presentmethod;
 
@@ -614,7 +613,7 @@ void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0L
 
     if (FlipFreeBuffer() >= 0)
     {
-      m_renderBuffers[m_iOutputRenderBuffer].pts = timestamp;
+      m_renderBuffers[m_iOutputRenderBuffer].timestamp = timestamp;
       m_renderBuffers[m_iOutputRenderBuffer].presentfield = presentfield;
       m_renderBuffers[m_iOutputRenderBuffer].presentmethod = presentmethod;
     }
@@ -1036,7 +1035,6 @@ void CXBMCRenderManager::ResetRenderBuffer()
   m_iDisplayedRenderBuffer = 0;
   m_bAllRenderBuffersDisplayed = true;
   m_sleeptime = 1.0;
-  m_presentPts = DVD_NOPTS_VALUE;
   m_speed = 0;
   m_bRenderBufferUsed = false;
   m_bOverlayReleased = false;
@@ -1053,19 +1051,8 @@ void CXBMCRenderManager::PrepareNextRender()
     return;
   }
 
-  double iClockSleep, iPlayingClock, iCurrentClock;
-  if (g_application.m_pPlayer)
-    iPlayingClock = g_application.m_pPlayer->GetClock(iCurrentClock, false);
-  else
-    iPlayingClock = iCurrentClock = 0;
-
-  iClockSleep = m_renderBuffers[idx].pts - iPlayingClock;
-
-  if (m_speed)
-    iClockSleep = iClockSleep * DVD_PLAYSPEED_NORMAL / m_speed;
-
-  double presenttime = (iCurrentClock + iClockSleep) / DVD_TIME_BASE;
-  double clocktime = iCurrentClock / DVD_TIME_BASE;
+  double presenttime = m_renderBuffers[idx].timestamp;
+  double clocktime = GetPresentTime();
   if(presenttime - clocktime > MAXPRESENTDELAY)
     presenttime = clocktime + MAXPRESENTDELAY;
 
@@ -1074,7 +1061,6 @@ void CXBMCRenderManager::PrepareNextRender()
 
   if (g_graphicsContext.IsFullScreenVideo() || presenttime <= clocktime + frametime)
   {
-    m_presentPts = m_renderBuffers[idx].pts;
     m_presenttime = presenttime;
     m_presentmethod = m_renderBuffers[idx].presentmethod;
     m_presentfield = m_renderBuffers[idx].presentfield;
