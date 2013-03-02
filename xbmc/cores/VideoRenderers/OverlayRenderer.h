@@ -123,8 +123,8 @@ namespace OVERLAY {
     COverlay* Convert(CDVDOverlay* o, double pts);
     COverlay* Convert(CDVDOverlaySSA* o, double pts);
 
-    long      Release(COverlayV& list);
-    long      Release(SElementV& list);
+    void      Release(COverlayV& list);
+    bool      Release(SElementV& list);
 
     CCriticalSection m_section;
     SElementV        m_buffers[NUM_BUFFERS];
