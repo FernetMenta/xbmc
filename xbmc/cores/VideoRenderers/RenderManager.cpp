@@ -1053,13 +1053,30 @@ void CXBMCRenderManager::PrepareNextRender()
     return;
   }
 
-  double presenttime = m_renderBuffers[idx].timestamp;
   double clocktime = GetPresentTime();
+  double frametime = 1 / g_graphicsContext.GetFPS();
+
+  // look ahead in the queue
+  // if the next frame is already late, skip the one we are about to render
+  while (idx != m_iOutputRenderBuffer)
+  {
+    int idx_next = (idx + 1) % m_iNumRenderBuffers;
+    if (m_renderBuffers[idx_next].timestamp <= clocktime)
+    {
+      FlipRenderBuffer();
+      idx = GetNextRenderBufferIndex();
+      CLog::Log(LOGDEBUG,"%s - skip frame at render buffer index: %d", __FUNCTION__, idx);
+    }
+    else
+      break;
+  }
+
+  double presenttime = m_renderBuffers[idx].timestamp;
+
   if(presenttime - clocktime > MAXPRESENTDELAY)
     presenttime = clocktime + MAXPRESENTDELAY;
 
   m_sleeptime = presenttime - clocktime;
-  double frametime = 1 / g_graphicsContext.GetFPS();
 
   if (g_graphicsContext.IsFullScreenVideo() || presenttime <= clocktime + frametime)
   {
