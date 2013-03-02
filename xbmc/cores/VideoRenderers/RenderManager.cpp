@@ -563,7 +563,7 @@ void CXBMCRenderManager::SetViewMode(int iViewMode)
     m_pRenderer->SetViewMode(iViewMode);
 }
 
-void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0LL*/, int source /*= -1*/, EFIELDSYNC sync /*= FS_NONE*/, int speed /*= 1000*/)
+void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0LL*/, int source /*= -1*/, EFIELDSYNC sync /*= FS_NONE*/)
 {
   if (!m_bUseBuffering)
   {
@@ -630,7 +630,6 @@ void CXBMCRenderManager::FlipPage(volatile bool& bStop, double timestamp /* = 0L
     m_renderBuffers[m_iOutputRenderBuffer].presentmethod = presentmethod;
     if (!m_bUseBuffering)
       PrepareNextRender();
-    m_speed = speed;
   }
 
   g_application.NewFrame();
@@ -1037,7 +1036,7 @@ void CXBMCRenderManager::ResetRenderBuffer()
   m_iDisplayedRenderBuffer = 0;
   m_bAllRenderBuffersDisplayed = true;
   m_sleeptime = 1.0;
-  m_speed = 0;
+  m_speed = DVD_PLAYSPEED_NORMAL;
 }
 
 void CXBMCRenderManager::PrepareNextRender()
@@ -1119,6 +1118,11 @@ void CXBMCRenderManager::DiscardBuffer()
 {
   CRetakeLock<CExclusiveLock> lock(m_sharedSection);
   m_iOutputRenderBuffer = m_iCurrentRenderBuffer;
+}
+
+void CXBMCRenderManager::SetSpeed(int speed)
+{
+  m_speed = speed;
 }
 
 void CXBMCRenderManager::NotifyDisplayFlip()
