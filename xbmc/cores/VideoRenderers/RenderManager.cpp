@@ -967,6 +967,8 @@ int CXBMCRenderManager::WaitForBuffer(volatile bool& bStop, int timeout)
   if (bStop)
     return -1;
 
+  // make sure overlay buffer is released, this won't happen on AddOverlay
+  m_overlays.ReleaseBuffer((m_iOutputRenderBuffer + 1) % m_iNumRenderBuffers);
   return 1;
 }
 
@@ -1131,7 +1133,7 @@ void CXBMCRenderManager::NotifyDisplayFlip()
         && m_iDisplayedRenderBuffer != m_iCurrentRenderBuffer)
     {
       m_pRenderer->ReleaseBuffer(m_iDisplayedRenderBuffer);
-      if (m_overlays.ReleaseBuffer(m_iDisplayedRenderBuffer) > 0)
+      if (m_overlays.ReleaseBuffer(m_iDisplayedRenderBuffer))
         m_bOverlayReleased = true;
     }
   }

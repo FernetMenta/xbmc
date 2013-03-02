@@ -127,32 +127,31 @@ void CRenderer::AddCleanup(COverlay* o)
   m_cleanup.push_back(o->Acquire());
 }
 
-long CRenderer::Release(SElementV& list)
+bool CRenderer::Release(SElementV& list)
 {
   SElementV l = list;
   list.clear();
 
-  long count = 0;
+  bool change = false;
   for(SElementV::iterator it = l.begin(); it != l.end(); it++)
   {
     if(it->overlay)
-      count += it->overlay->Release();
+      it->overlay->Release();
     if(it->overlay_dvd)
-      count += it->overlay_dvd->Release();
+      it->overlay_dvd->Release();
+
+    change = true;
   }
-  return count;
+  return change;
 }
 
-long CRenderer::Release(COverlayV& list)
+void CRenderer::Release(COverlayV& list)
 {
   COverlayV l = list;
   list.clear();
 
-  long count = 0;
   for(COverlayV::iterator it = l.begin(); it != l.end(); it++)
-    count += (*it)->Release();
-
-  return count;
+    (*it)->Release();
 }
 
 void CRenderer::Flush()
