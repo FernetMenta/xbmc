@@ -5345,19 +5345,24 @@ msgctxt "#13434"
 msgid "Play only this"
 msgstr ""
 
+#: xbmc/settings/GUISettings.cpp
 msgctxt "#13435"
-msgid "Allow Vdpau OpenGL interop"
+msgid "Enable HQ Scalers for scalings above %"
 msgstr ""
 
 msgctxt "#13436"
-msgid "Prefer VDPAU Video Mixer"
+msgid "Allow Vdpau OpenGL interop"
 msgstr ""
 
 msgctxt "#13437"
+msgid "Prefer VDPAU Video Mixer"
+msgstr ""
+
+msgctxt "#13438"
 msgid "Allow hardware acceleration (XVBA)"
 msgstr ""
 
-#empty strings from id 13438 to 13499
+#empty strings from id 13439 to 13499
 
 #: xbmc/settings/GUISettings.cpp
 msgctxt "#13500"

@@ -709,15 +709,17 @@ void CGUISettings::Initialize()
 #endif
   AddInt(vp, "videoplayer.rendermethod", 13415, RENDER_METHOD_AUTO, renderers, SPIN_CONTROL_TEXT);
 
+  AddInt(vp, "videoplayer.hqscalers", 13435, 0, 0, 10, 100, SPIN_CONTROL_INT);
+
 #ifdef HAVE_LIBVDPAU
   AddBool(vp, "videoplayer.usevdpau", 13425, true);
-  AddBool(vp, "videoplayer.usevdpaumixer", 13436, true);
+  AddBool(vp, "videoplayer.usevdpaumixer", 13437, true);
 #endif
 #ifdef HAVE_LIBVA
   AddBool(vp, "videoplayer.usevaapi", 13426, true);
 #endif
 #ifdef HAVE_LIBXVBA
-  AddBool(vp, "videoplayer.usexvba", 13437, true);
+  AddBool(vp, "videoplayer.usexvba", 13438, true);
 #endif
 #ifdef HAS_DX
   AddBool(g_sysinfo.IsVistaOrHigher() ? vp: NULL, "videoplayer.usedxva2", 13427, g_sysinfo.IsVistaOrHigher() ? true : false);
