@@ -627,6 +627,7 @@ void CLinuxRendererGL::Update(bool bPauseDrawing)
 {
   if (!m_bConfigured) return;
   ManageDisplay();
+  m_scalingMethodGui = (ESCALINGMETHOD)-1;
 }
 
 void CLinuxRendererGL::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
