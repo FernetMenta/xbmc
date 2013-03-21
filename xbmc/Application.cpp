@@ -2363,10 +2363,9 @@ void CApplication::Render()
   {
     g_graphicsContext.Flip(dirtyRegions);
     g_renderManager.NotifyDisplayFlip();
+    g_TextureManager.FreeUnusedTextures();
   }
   CTimeUtils::UpdateFrameTime(flip);
-
-  g_TextureManager.FreeUnusedTextures();
 
   g_renderManager.UpdateResolution();
   g_renderManager.ManageCaptures();
