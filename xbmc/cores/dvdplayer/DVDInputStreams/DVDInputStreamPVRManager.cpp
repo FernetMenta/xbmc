@@ -315,9 +315,14 @@ CDVDInputStream::ENextStream CDVDInputStreamPVRManager::NextStream()
 
   if(m_bReopened)
   {
-    m_bReopened = false;
-    m_eof       = false;
-    return NEXTSTREAM_RETRY;
+    if (IsEOF())
+      return NEXTSTREAM_NONE;
+    else
+    {
+      m_bReopened = false;
+      m_eof       = false;
+      return NEXTSTREAM_RETRY;
+    }
   }
 
   if (m_pOtherStream)
@@ -392,4 +397,11 @@ bool CDVDInputStreamPVRManager::SupportsChannelSwitch(void) const
   PVR_CLIENT client;
   return g_PVRClients->GetPlayingClient(client) &&
          client->HandlesInputStream();
+}
+
+bool CDVDInputStreamPVRManager::IsLiveStream()
+{
+  if (!m_pFile)
+    return false;
+  return m_pFile->SkipNext();
 }

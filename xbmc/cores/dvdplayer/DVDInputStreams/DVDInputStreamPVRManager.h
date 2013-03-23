@@ -86,6 +86,11 @@ public:
   CDVDInputStream* GetOtherStream();
 
   void ResetScanTimeout(unsigned int iTimeoutMs);
+
+  /**
+   * Check if input is a recording or live stream
+   */
+  bool IsLiveStream();
 protected:
   bool CloseAndOpen(const char* strFile);
   bool SupportsChannelSwitch(void) const;
