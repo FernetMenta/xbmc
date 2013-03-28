@@ -1243,13 +1243,13 @@ void COMXPlayer::Process()
     if (!IsValidStream(m_CurrentAudio)    && m_player_audio.IsStalled())    CloseAudioStream(true);
     if (!IsValidStream(m_CurrentVideo)    && m_player_video.IsStalled())    CloseVideoStream(true);
     if (!IsValidStream(m_CurrentSubtitle) && m_player_subtitle.IsStalled()) CloseSubtitleStream(true);
-    if (!IsValidStream(m_CurrentTeletext))                                  CloseTeletextStream(true);
+//    if (!IsValidStream(m_CurrentTeletext))                                  CloseTeletextStream(true);
 
     // see if we can find something better to play
     if (IsBetterStream(m_CurrentAudio,    pStream)) OpenAudioStream   (pStream->iId, pStream->source);
     if (IsBetterStream(m_CurrentVideo,    pStream)) OpenVideoStream   (pStream->iId, pStream->source);
     if (IsBetterStream(m_CurrentSubtitle, pStream)) OpenSubtitleStream(pStream->iId, pStream->source);
-    if (IsBetterStream(m_CurrentTeletext, pStream)) OpenTeletextStream(pStream->iId, pStream->source);
+//    if (IsBetterStream(m_CurrentTeletext, pStream)) OpenTeletextStream(pStream->iId, pStream->source);
 
     if(m_change_volume)
     {
@@ -2233,7 +2233,8 @@ void COMXPlayer::HandleMessages()
         // 1. disable audio
         // 2. skip frames and adjust their pts or the clock
         m_playSpeed = speed;
-        m_caching = CACHESTATE_DONE;
+        if (m_caching != CACHESTATE_PVR && m_playSpeed != DVD_PLAYSPEED_NORMAL)
+          SetCaching(CACHESTATE_DONE);
         m_av_clock.SetSpeed(speed);
         m_av_clock.OMXSetSpeed(speed);
         m_player_audio.SetSpeed(speed);
