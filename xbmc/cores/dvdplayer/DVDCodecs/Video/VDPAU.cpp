@@ -234,7 +234,7 @@ long CDecoder::Release()
       }
     }
   }
-  IHardwareDecoder::Release();
+  return IHardwareDecoder::Release();
 }
 
 long CDecoder::ReleasePicReference()
@@ -1403,8 +1403,8 @@ void CMixer::StateMachine(int signal, Protocol *port, Message *msg)
 
 void CMixer::Process()
 {
-  Message *msg;
-  Protocol *port;
+  Message *msg = NULL;
+  Protocol *port = NULL;
   bool gotMsg;
 
   m_state = M_TOP_UNCONFIGURED;
@@ -1509,7 +1509,6 @@ void CMixer::CreateVdpauMixer()
 
 void CMixer::InitCSCMatrix(int Width)
 {
-  VdpStatus vdp_st;
   m_Procamp.struct_version = VDP_PROCAMP_VERSION;
   m_Procamp.brightness     = 0.0;
   m_Procamp.contrast       = 1.0;
@@ -2640,8 +2639,8 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
 
 void COutput::Process()
 {
-  Message *msg;
-  Protocol *port;
+  Message *msg = NULL;
+  Protocol *port = NULL;
   bool gotMsg;
 
   m_state = O_TOP_UNCONFIGURED;
@@ -2852,7 +2851,6 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
       pixmap->DVDPic = pic.DVDPic;
       pixmap->id = i;
       m_bufferPool.notVisiblePixmaps.push_back(pixmap);
-      VdpStatus vdp_st;
       m_config.vdpProcs.vdp_presentation_queue_display(pixmap->vdp_flip_queue,
                                                        pixmap->surface,0,0,0);
     }
@@ -3010,7 +3008,7 @@ bool COutput::EnsureBufferPool()
   {
     // create pixmpas
     VdpauBufferPool::Pixmaps pixmap;
-    int numPixmaps = NUM_RENDER_PICS;
+    unsigned int numPixmaps = NUM_RENDER_PICS;
     for (unsigned int i = 0; i < numPixmaps; i++)
     {
       pixmap.pixmap = None;
@@ -3264,7 +3262,7 @@ void COutput::GLMapSurfaces()
     if (m_config.videoSurfaces->size() != m_bufferPool.glVideoSurfaceMap.size())
     {
       CSingleLock lock(*m_config.videoSurfaceSec);
-      for (int i = 0; i < m_config.videoSurfaces->size(); i++)
+      for (unsigned int i = 0; i < m_config.videoSurfaces->size(); i++)
       {
         if ((*m_config.videoSurfaces)[i]->surface == VDP_INVALID_HANDLE)
           continue;
@@ -3312,7 +3310,7 @@ void COutput::GLMapSurfaces()
     if (m_bufferPool.glOutputSurfaceMap.size() != m_bufferPool.numOutputSurfaces)
     {
       VdpauBufferPool::GLVideoSurface glSurface;
-      for (int i=m_bufferPool.glOutputSurfaceMap.size(); i<m_bufferPool.outputSurfaces.size(); i++)
+      for (unsigned int i = m_bufferPool.glOutputSurfaceMap.size(); i<m_bufferPool.outputSurfaces.size(); i++)
       {
         glSurface.sourceRgb = m_bufferPool.outputSurfaces[i];
         glGenTextures(1, glSurface.texture);
@@ -3436,7 +3434,6 @@ bool COutput::CheckStatus(VdpStatus vdp_st, int line)
 bool COutput::CreateGlxContext()
 {
   GLXContext   glContext;
-  Window       window;
 
   m_Display = g_Windowing.GetDisplay();
   glContext = g_Windowing.GetGlxContext();
