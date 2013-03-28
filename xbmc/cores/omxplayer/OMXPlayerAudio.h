@@ -76,6 +76,7 @@ protected:
 
   bool                      m_stalled;
   bool                      m_started;
+  bool                      m_output_stalled;
 
   BitstreamStats            m_audioStats;
 
