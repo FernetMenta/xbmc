@@ -1128,7 +1128,7 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
     }
 
     CStdString formatstr;
-    bool buffering;
+    bool buffering = false;
 
     switch(pPicture->format)
     {
