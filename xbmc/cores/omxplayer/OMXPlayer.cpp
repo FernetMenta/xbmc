@@ -2432,7 +2432,8 @@ void COMXPlayer::HandleMessages()
         // 1. disable audio
         // 2. skip frames and adjust their pts or the clock
         m_playSpeed = speed;
-        m_caching = CACHESTATE_DONE;
+        if (m_caching != CACHESTATE_PVR && m_playSpeed != DVD_PLAYSPEED_NORMAL)
+          m_caching = CACHESTATE_DONE;
         m_clock.SetSpeed(speed);
         m_av_clock.OMXSetSpeed(speed);
         m_omxPlayerAudio.SetSpeed(speed);
