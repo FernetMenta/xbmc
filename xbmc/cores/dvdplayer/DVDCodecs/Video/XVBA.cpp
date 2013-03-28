@@ -1809,8 +1809,8 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
 
 void COutput::Process()
 {
-  Message *msg;
-  Protocol *port;
+  Message *msg = NULL;
+  Protocol *port = NULL;
   bool gotMsg;
 
   m_state = O_TOP_UNCONFIGURED;
