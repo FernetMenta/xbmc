@@ -265,6 +265,7 @@ bool CXBMCRenderManager::Configure(unsigned int width, unsigned int height, unsi
     m_bReconfigured = true;
     m_presentstep = PRESENT_IDLE;
     m_presentevent.Set();
+    m_renderFormat = format;
     ResetRenderBuffer();
     EnableBuffering(buffering);
   }
@@ -1056,7 +1057,8 @@ void CXBMCRenderManager::PrepareNextRender()
   int idx = GetNextRenderBufferIndex();
   if (idx < 0)
   {
-    if (m_speed >= DVD_PLAYSPEED_NORMAL && g_graphicsContext.IsFullScreenVideo())
+    if ((m_renderFormat != RENDER_FMT_BYPASS) &&
+        m_speed >= DVD_PLAYSPEED_NORMAL && g_graphicsContext.IsFullScreenVideo())
       CLog::Log(LOGDEBUG,"%s no buffer, out: %d, current: %d, display: %d",
         __FUNCTION__, m_iOutputRenderBuffer, m_iCurrentRenderBuffer, m_iDisplayedRenderBuffer);
     return;

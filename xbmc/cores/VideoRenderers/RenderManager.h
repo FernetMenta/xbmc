@@ -288,6 +288,7 @@ protected:
   int        m_presentsource;
   CEvent     m_presentevent;
   CEvent     m_flushEvent;
+  ERenderFormat m_renderFormat;
 
 
   OVERLAY::CRenderer m_overlays;
