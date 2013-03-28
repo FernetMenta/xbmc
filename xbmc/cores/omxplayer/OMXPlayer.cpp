@@ -2463,7 +2463,8 @@ void COMXPlayer::HandleMessages()
           m_messenger.Put(new CDVDMsgPlayerSeek(DVD_TIME_TO_MSEC(m_clock.GetClock()), (speed < 0), true, false, false, true));
 
         m_playSpeed = speed;
-        m_caching = CACHESTATE_DONE;
+        if (m_caching != CACHESTATE_PVR && m_playSpeed != DVD_PLAYSPEED_NORMAL)
+          m_caching = CACHESTATE_DONE;
         m_clock.SetSpeed(speed);
         m_av_clock.OMXSetSpeed(speed);
         m_av_clock.OMXPause();
