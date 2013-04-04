@@ -941,6 +941,7 @@ int CXBMCRenderManager::WaitForBuffer(volatile bool& bStop, int timeout)
   if (!m_pRenderer)
     return -1;
 
+  int bufferlevel = 1;
   XbmcThreads::EndTime endtime(timeout);
   while(!HasFreeBuffer() && !bStop)
   {
@@ -954,6 +955,9 @@ int CXBMCRenderManager::WaitForBuffer(volatile bool& bStop, int timeout)
     }
     lock.Enter();
   }
+  if (m_iNumRenderBuffers >= 3)
+    bufferlevel = (m_iOutputRenderBuffer - m_iCurrentRenderBuffer + m_iNumRenderBuffers) % m_iNumRenderBuffers;
+
   lock.Leave();
 
   if (bStop)
@@ -961,7 +965,8 @@ int CXBMCRenderManager::WaitForBuffer(volatile bool& bStop, int timeout)
 
   // make sure overlay buffer is released, this won't happen on AddOverlay
   m_overlays.ReleaseBuffer((m_iOutputRenderBuffer + 1) % m_iNumRenderBuffers);
-  return 1;
+
+  return bufferlevel;
 }
 
 int CXBMCRenderManager::GetNextRenderBufferIndex()
