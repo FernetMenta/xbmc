@@ -2011,14 +2011,6 @@ bool CApplication::RenderNoPresent()
   // dont show GUI when playing full screen video
   if (g_graphicsContext.IsFullScreenVideo())
   {
-    if (m_bPresentFrame && IsPlaying() && !IsPaused())
-    {
-      ResetScreenSaver();
-      g_renderManager.Present();
-    }
-    else
-      g_renderManager.RenderUpdate(true);
-
     // close window overlays
     CGUIDialog *overlay = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_VIDEO_OVERLAY);
     if (overlay) overlay->Close(true);
@@ -2090,7 +2082,6 @@ void CApplication::Render()
       m_bPresentFrame = g_renderManager.HasFrame();
       if (!m_bPresentFrame && m_frameEvent.WaitMSec(100))
         m_bPresentFrame = g_renderManager.HasFrame();
-      hasRendered = true;
     }
     else
     {
@@ -2157,7 +2148,7 @@ void CApplication::Render()
     flip = true;
 
   //fps limiter, make sure each frame lasts at least singleFrameTime milliseconds
-  if (limitFrames || !flip)
+  if (limitFrames || !(flip || m_bPresentFrame))
   {
     if (!limitFrames)
       singleFrameTime = 40; //if not flipping, loop at 25 fps
@@ -2170,12 +2161,12 @@ void CApplication::Render()
   if (flip)
   {
     g_graphicsContext.Flip(dirtyRegions);
-    g_renderManager.NotifyDisplayFlip();
   }
 
   m_lastFrameTime = XbmcThreads::SystemClockMillis();
   CTimeUtils::UpdateFrameTime(flip);
 
+  g_renderManager.NotifyDisplayFlip();
   g_renderManager.UpdateResolution();
   g_renderManager.ManageCaptures();
 }
