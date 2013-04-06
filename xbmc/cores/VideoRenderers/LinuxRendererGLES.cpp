@@ -2000,5 +2000,13 @@ void CLinuxRendererGLES::AddProcessor(struct __CVBuffer *cvBufferRef, int index)
 }
 #endif
 
+bool CLinuxRendererGLES::HasFrame()
+{
+  if (m_format == RENDER_FMT_BYPASS)
+    return false;
+  else
+    return true;
+}
+
 #endif
 
