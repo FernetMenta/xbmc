@@ -40,6 +40,7 @@
 #include "DVDCodecs/DVDCodecs.h"
 #include "DVDCodecs/Overlay/DVDOverlayCodecCC.h"
 #include "DVDCodecs/Overlay/DVDOverlaySSA.h"
+#include "guilib/GraphicContext.h"
 #include <sstream>
 #include <iomanip>
 #include <numeric>
