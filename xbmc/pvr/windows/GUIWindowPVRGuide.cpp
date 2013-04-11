@@ -427,7 +427,8 @@ bool CGUIWindowPVRGuide::PlayEpgItem(CFileItem *item)
     return false;
 
   CLog::Log(LOGDEBUG, "play channel '%s'", channel->ChannelName().c_str());
-  bool bReturn = g_application.PlayFile(CFileItem(*channel));
+  CFileItem channelItem = CFileItem(*channel);
+  bool bReturn = PlayFile(&channelItem);
   if (!bReturn)
   {
     CStdString msg;
