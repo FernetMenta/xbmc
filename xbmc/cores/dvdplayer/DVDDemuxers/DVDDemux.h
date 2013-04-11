@@ -105,7 +105,10 @@ public:
     orig_type = 0;
   }
 
-  virtual ~CDemuxStream() {}
+  virtual ~CDemuxStream()
+  {
+    delete [] ExtraData;
+  }
 
   virtual void GetStreamInfo(std::string& strInfo)
   {
@@ -128,7 +131,7 @@ public:
 
   int iDuration; // in mseconds
   void* pPrivate; // private pointer for the demuxer
-  void* ExtraData; // extra data for codec to use
+  uint8_t*     ExtraData; // extra data for codec to use
   unsigned int ExtraSize; // size of extra data
 
   char language[4]; // ISO 639 3-letter language code (empty string if undefined)

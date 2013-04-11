@@ -122,8 +122,10 @@ protected:
 
   int ReadFrame(AVPacket *packet);
   void AddStream(int iId);
+  void AddStream(int iId, CDemuxStream* stream);
   void CreateStreams(unsigned int program = UINT_MAX);
   void DisposeStreams();
+  CDemuxStream* GetStreamInternal(int iStreamId);
 
   double ConvertTimestamp(int64_t pts, int den, int num);
   void UpdateCurrentPTS();
@@ -131,6 +133,7 @@ protected:
 
   CCriticalSection m_critSection;
   std::map<int, CDemuxStream*> m_streams;
+  std::vector<std::map<int, CDemuxStream*>::iterator> m_stream_index;
 
   AVIOContext* m_ioContext;
 
