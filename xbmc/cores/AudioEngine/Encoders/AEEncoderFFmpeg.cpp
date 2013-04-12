@@ -143,16 +143,47 @@ bool CAEEncoderFFmpeg::Initialize(AEAudioFormat &format)
     bool hasS32    = false;
     bool hasS16    = false;
     bool hasU8     = false;
+    m_IsPlanar     = false;
 
     for(int i = 0; codec->sample_fmts[i] != AV_SAMPLE_FMT_NONE; ++i)
     {
       switch (codec->sample_fmts[i])
       {
-        case AV_SAMPLE_FMT_FLT: hasFloat  = true; break;
-        case AV_SAMPLE_FMT_DBL: hasDouble = true; break;
-        case AV_SAMPLE_FMT_S32: hasS32    = true; break;
-        case AV_SAMPLE_FMT_S16: hasS16    = true; break;
-        case AV_SAMPLE_FMT_U8 : hasU8     = true; break;
+        case AV_SAMPLE_FMT_FLT:
+          hasFloat  = true;
+          break;
+        case AV_SAMPLE_FMT_FLTP:
+          hasFloat  = true;
+          m_IsPlanar = true;
+          break;
+        case AV_SAMPLE_FMT_DBL:
+          hasDouble = true;
+          break;
+        case AV_SAMPLE_FMT_DBLP:
+          hasDouble = true;
+          m_IsPlanar = true;
+          break;
+        case AV_SAMPLE_FMT_S32:
+          hasS32    = true;
+          break;
+        case AV_SAMPLE_FMT_S32P:
+          hasS32    = true;
+          m_IsPlanar = true;
+          break;
+        case AV_SAMPLE_FMT_S16:
+          hasS16    = true;
+          break;
+        case AV_SAMPLE_FMT_S16P:
+          hasS16    = true;
+          m_IsPlanar = true;
+          break;
+        case AV_SAMPLE_FMT_U8:
+          hasU8     = true;
+          break;
+        case AV_SAMPLE_FMT_U8P:
+          hasU8     = true;
+          m_IsPlanar = true;
+          break;
 
         default:
           return false;
@@ -161,27 +192,42 @@ bool CAEEncoderFFmpeg::Initialize(AEAudioFormat &format)
 
     if (hasFloat)
     {
-      m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_FLT;
+      if (m_IsPlanar)
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_FLTP;
+      else
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_FLT;
       format.m_dataFormat    = AE_FMT_FLOAT;
     }
     else if (hasDouble)
     {
-      m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_DBL;
+      if (m_IsPlanar)
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_DBLP;
+      else
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_DBL;
       format.m_dataFormat    = AE_FMT_DOUBLE;
     }
     else if (hasS32)
     {
-      m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_S32;
+      if (m_IsPlanar)
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_S32P;
+      else
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_S32;
       format.m_dataFormat    = AE_FMT_S32NE;
     }
     else if (hasS16)
     {
-      m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_S16;
+      if (m_IsPlanar)
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_S16P;
+      else
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_S16;
       format.m_dataFormat    = AE_FMT_S16NE;
     }
     else if (hasU8)
     {
-      m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_U8;
+      if (m_IsPlanar)
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_U8P;
+      else
+        m_CodecCtx->sample_fmt = AV_SAMPLE_FMT_U8;
       format.m_dataFormat    = AE_FMT_U8;
     }
     else
@@ -241,8 +287,25 @@ int CAEEncoderFFmpeg::Encode(float *data, unsigned int frames)
   if (!m_CodecCtx || frames < m_NeededFrames)
     return 0;
 
-  /* encode it */
-  int size = m_dllAvCodec.avcodec_encode_audio(m_CodecCtx, m_Buffer + IEC61937_DATA_OFFSET, FF_MIN_BUFFER_SIZE, (short*)data);
+  int size = 0;
+  // planar format
+  if (m_IsPlanar)
+  {
+    int src = 0;
+    int dst = 0;
+    for (int i = 0; i < 1536; i++)
+    {
+      for (int j = 0; j < 6; j++)
+      {
+        memcpy(m_PlanarBuffer+(j*1536*4+dst), (uint8_t*)data+src, 4);
+        src += 4;
+      }
+      dst += 4;
+    }
+    size = m_dllAvCodec.avcodec_encode_audio(m_CodecCtx, m_Buffer + IEC61937_DATA_OFFSET, FF_MIN_BUFFER_SIZE, (short*)m_PlanarBuffer);
+  }
+  else
+    size = m_dllAvCodec.avcodec_encode_audio(m_CodecCtx, m_Buffer + IEC61937_DATA_OFFSET, FF_MIN_BUFFER_SIZE, (short*)data);
 
   /* pack it into an IEC958 frame */
   m_BufferSize = m_PackFunc(NULL, size, m_Buffer);
