@@ -65,6 +65,8 @@ private:
   double            m_SampleRateMul;
 
   unsigned int      m_NeededFrames;
+  bool              m_IsPlanar;
+  uint8_t           m_PlanarBuffer[1536*6*4];
 
   unsigned int BuildChannelLayout(const int64_t ffmap, CAEChannelInfo& layout);
 };
