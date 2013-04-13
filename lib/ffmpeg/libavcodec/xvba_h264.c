@@ -160,7 +160,7 @@ static int end_frame(AVCodecContext *avctx)
       h->got_first_iframe = 1;
   }
 
-  ff_draw_horiz_band(h->avctx, &h->dsp, h->cur_pic_ptr, NULL, 0, h->avctx->height, h->picture_structure, h->first_field, 0, 0, 0, 0);
+  ff_h264_draw_horiz_band(h, 0, h->avctx->height);
 
   return 0;
 }

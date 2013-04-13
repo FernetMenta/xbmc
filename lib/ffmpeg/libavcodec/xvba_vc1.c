@@ -142,7 +142,7 @@ static int end_frame(AVCodecContext *avctx)
         break;
     }
 
-    ff_draw_horiz_band(s->avctx, &s->dsp, s->current_picture_ptr, s->last_picture_ptr, 0, s->avctx->height, s->picture_structure, s->first_field, (s->unrestricted_mv && !s->intra_only), s->low_delay, s->v_edge_pos, s->h_edge_pos);
+    ff_mpeg_draw_horiz_band(s, 0, s->avctx->height);
 
     return 0;
 }
