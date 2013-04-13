@@ -99,7 +99,7 @@ static int end_frame(AVCodecContext *avctx)
     pic_descriptor->sps_info.vc1.psf                        = v->psf;
     // what about if it is a frame (page 31)
     // looked at xvba-driver
-    pic_descriptor->sps_info.vc1.second_field               = !s->first_field;
+    pic_descriptor->sps_info.vc1.second_field               = v->second_field;
     pic_descriptor->sps_info.vc1.xvba_vc1_sps_reserved      = 0;
     
     // VC-1 explicit parameters see page 30 of sdk
