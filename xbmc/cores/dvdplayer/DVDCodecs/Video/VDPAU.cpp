@@ -176,6 +176,8 @@ void CDecoder::Close()
 {
   CLog::Log(LOGNOTICE, " (VDPAU) %s", __FUNCTION__);
 
+  g_Windowing.Unregister(this);
+
   CSingleLock lock(m_DecoderSection);
 
   FiniVDPAUOutput();
@@ -192,7 +194,6 @@ void CDecoder::Close()
     free(render);
   }
 
-  g_Windowing.Unregister(this);
   m_dllAvUtil.Unload();
 }
 
