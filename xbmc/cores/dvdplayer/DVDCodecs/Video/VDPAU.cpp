@@ -183,6 +183,8 @@ void CDecoder::Close()
 {
   CLog::Log(LOGNOTICE, " (VDPAU) %s", __FUNCTION__);
 
+  g_Windowing.Unregister(this);
+
   CSingleLock lock(m_DecoderSection);
 
   FiniVDPAUOutput();
@@ -198,13 +200,6 @@ void CDecoder::Close()
     render->bitstream_buffers_allocated = 0;
     free(render);
   }
-
-  if (m_hwContext.bitstream_buffers_allocated)
-  {
-    m_dllAvUtil.av_freep(&m_hwContext.bitstream_buffers);
-  }
-
-  g_Windowing.Unregister(this);
 
   if (m_hwContext.bitstream_buffers_allocated)
   {
