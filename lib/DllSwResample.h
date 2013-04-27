@@ -60,6 +60,8 @@ public:
   virtual int swr_init(struct SwrContext *s)=0;
   virtual void swr_free(struct SwrContext **s)=0;
   virtual int swr_convert(struct SwrContext *s, uint8_t **out, int out_count, const uint8_t **in , int in_count)=0;
+  virtual int64_t swr_get_delay(struct SwrContext *s, int64_t base) = 0;
+  virtual int swr_set_channel_mapping(struct SwrContext *s, const int *channel_map) = 0;
 };
 
 #if (defined USE_EXTERNAL_FFMPEG) || (defined TARGET_DARWIN) 
@@ -84,6 +86,8 @@ public:
   virtual int swr_init(struct SwrContext *s) { return ::swr_init(s); }
   virtual void swr_free(struct SwrContext **s){ return ::swr_free(s); }
   virtual int swr_convert(struct SwrContext *s, uint8_t **out, int out_count, const uint8_t **in , int in_count){ return ::swr_convert(s, out, out_count, in, in_count); }
+  virtual int64_t swr_get_delay(struct SwrContext *s, int64_t base) { return ::swr_get_delay(s, base); }
+  virtual int swr_set_channel_mapping (struct SwrContext *s, const int *channel_map) { return ::swr_set_channel_mapping(s, chanel_map); }
 };
 #else
 // Wrap the same API through libavresample.
@@ -114,6 +118,8 @@ public:
   virtual int swr_init(struct SwrContext *s) { return ::avresample_open(s); }
   virtual void swr_free(struct SwrContext **s){ ::avresample_close(*s); *s = NULL; }
   virtual int swr_convert(struct SwrContext *s, uint8_t **out, int out_count, const uint8_t **in , int in_count){ return ::avresample_convert(s, out, 0, out_count, (uint8_t**)in, 0,in_count); }
+  virtual int64_t swr_get_delay(struct SwrContext *s, int64_t base){return ::swr_get_delay(s, base);}
+  virtual int swr_set_channel_mapping (struct SwrContext *s, const int *channel_map){return ::swr_set_channel_mapping(s, chanel_map);}
 };
 #endif
 
@@ -129,12 +135,16 @@ class DllSwResample : public DllDynamic, DllSwResampleInterface
   DEFINE_METHOD1(int, swr_init, (struct SwrContext *p1))
   DEFINE_METHOD1(void, swr_free, (struct SwrContext **p1))
   DEFINE_METHOD5(int, swr_convert, (struct SwrContext *p1, uint8_t **p2, int p3, const uint8_t **p4, int p5))
+  DEFINE_METHOD2(int64_t, swr_get_delay, (struct SwrContext *p1, int64_t p2))
+  DEFINE_METHOD2(int, swr_set_channel_mapping, (struct SwrContext *p1, const int *p2))
 
   BEGIN_METHOD_RESOLVE()
     RESOLVE_METHOD(swr_alloc_set_opts)
     RESOLVE_METHOD(swr_init)
     RESOLVE_METHOD(swr_free)
     RESOLVE_METHOD(swr_convert)
+    RESOLVE_METHOD(swr_get_delay)
+    RESOLVE_METHOD(swr_set_channel_mapping)
   END_METHOD_RESOLVE()
 
   /* dependencies of libavformat */
