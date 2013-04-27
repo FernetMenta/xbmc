@@ -87,7 +87,9 @@ static int end_frame(AVCodecContext *avctx)
   pic_descriptor->level                                       = avctx->level;
   pic_descriptor->width_in_mb                                 = h->mb_width;
   pic_descriptor->height_in_mb                                = h->mb_height;
-  pic_descriptor->picture_structure                           = h->picture_structure;
+
+  pic_descriptor->picture_structure                           = ff_xvba_translate_picture_structure(h->picture_structure);
+
   pic_descriptor->chroma_format                               = h->chroma_format_idc ? h->chroma_format_idc : 1;
   pic_descriptor->avc_intra_flag                              = (h->slice_type == AV_PICTURE_TYPE_I) ? 1 : 0;
   pic_descriptor->avc_reference                               = (h->cur_pic_ptr->f.reference & 3) ? 1 : 0;
