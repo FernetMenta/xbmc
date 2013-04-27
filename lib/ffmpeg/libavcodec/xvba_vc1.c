@@ -78,7 +78,9 @@ static int end_frame(AVCodecContext *avctx)
       pic_descriptor->width_in_mb                           = s->mb_width;
       pic_descriptor->height_in_mb                          = s->mb_height;
     }
-    pic_descriptor->picture_structure                       = s->picture_structure;
+
+    pic_descriptor->picture_structure                       = ff_xvba_translate_picture_structure(s->picture_structure);
+
     // xvba-video set this to 1 only 4:2:0 supported
     // doc says: if not set, choose 1 - we try this
     pic_descriptor->chroma_format                           = 1;
