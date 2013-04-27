@@ -31,6 +31,7 @@
 #include "xvba.h"
 #include "xvba_internal.h"
 #include "avcodec.h"
+#include "mpegvideo.h"
 
 int ff_xvba_translate_profile(int profile) {
 
@@ -48,6 +49,16 @@ int ff_xvba_translate_profile(int profile) {
     return 6;
   else
     return -1;
+}
+
+// See page 25 of the documentation
+int ff_xvba_translate_picture_structure(int picture_structure) {
+  if(picture_structure == PICT_TOP_FIELD)
+    return 0;
+  else if (picture_structure == PICT_BOTTOM_FIELD)
+    return 1;
+  else //PICT_FRAME by default
+    return 3;
 }
 
 void ff_xvba_add_slice_data(struct xvba_render_state *render, const uint8_t *buffer, uint32_t size) {
