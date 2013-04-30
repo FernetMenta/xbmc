@@ -143,6 +143,7 @@ static int end_frame(AVCodecContext *avctx)
           pic_descriptor->future_surface = last->surface;
         break;
     }
+    render->psf = v->psf;
 
     ff_mpeg_draw_horiz_band(s, 0, s->avctx->height);
 
