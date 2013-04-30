@@ -1181,6 +1181,7 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic)
 
   render->state |= FF_XVBA_STATE_USED_FOR_REFERENCE;
   render->state &= ~FF_XVBA_STATE_DECODED;
+  render->psf = 0;
   pic->reordered_opaque= avctx->reordered_opaque;
 
   return 0;
@@ -1225,6 +1226,8 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
     memset(&pic.DVDPic, 0, sizeof(pic.DVDPic));
     ((CDVDVideoCodecFFmpeg*)avctx->opaque)->GetPictureCommon(&pic.DVDPic);
     pic.render = render;
+    if (render->psf)
+      pic.DVDPic.iFlags &= ~DVP_FLAG_INTERLACED;
     m_bufferStats.IncDecoded();
     m_xvbaOutput.m_dataPort.SendOutMessage(COutputDataProtocol::NEWFRAME, &pic, sizeof(pic));
 
