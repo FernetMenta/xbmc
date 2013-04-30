@@ -66,6 +66,7 @@ struct xvba_render_state {
   unsigned int num_slices;
   struct xvba_bitstream_buffers *buffers;
   uint32_t buffers_alllocated;
+  int psf;
 };
 
 #endif /* AVCODEC_XVBA_H */
