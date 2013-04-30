@@ -1000,6 +1000,9 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
     {
       startCodeSize = 4;
       uint8_t sdf = 0x0d;
+      if (render->picture_descriptor->sps_info.vc1.second_field)
+        sdf = 0x0c;
+
       memcpy((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+location,
           startCode, 3);
       memcpy((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+location+3,
