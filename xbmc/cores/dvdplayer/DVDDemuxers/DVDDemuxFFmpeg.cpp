@@ -778,7 +778,9 @@ DemuxPacket* CDVDDemuxFFmpeg::Read()
           }
         }
 
-        pPacket->iStreamId = m_pkt.pkt.stream_index; // XXX just for now
+        // store internal id until we know the continuous id presented to player
+        // the stream might not have been created yet
+        pPacket->iStreamId = m_pkt.pkt.stream_index;
       }
       m_pkt.result = -1;
       m_dllAvCodec.av_free_packet(&m_pkt.pkt);
@@ -799,7 +801,7 @@ DemuxPacket* CDVDDemuxFFmpeg::Read()
         stream->codec != m_pFormatContext->streams[pPacket->iStreamId]->codec->codec_id)
     {
       // content has changed, or stream did not yet exist
-      AddStream(pPacket->iStreamId);
+      stream = AddStream(pPacket->iStreamId);
     }
     // we already check for a valid m_streams[pPacket->iStreamId] above
     else if (stream->type == STREAM_AUDIO)
@@ -808,7 +810,7 @@ DemuxPacket* CDVDDemuxFFmpeg::Read()
           ((CDemuxStreamAudio*)stream)->iSampleRate != m_pFormatContext->streams[pPacket->iStreamId]->codec->sample_rate)
       {
         // content has changed
-        AddStream(pPacket->iStreamId);
+        stream = AddStream(pPacket->iStreamId);
       }
     }
     else if (stream->type == STREAM_VIDEO)
@@ -817,9 +819,17 @@ DemuxPacket* CDVDDemuxFFmpeg::Read()
           ((CDemuxStreamVideo*)stream)->iHeight != m_pFormatContext->streams[pPacket->iStreamId]->codec->height)
       {
         // content has changed
-        AddStream(pPacket->iStreamId);
+        stream = AddStream(pPacket->iStreamId);
       }
     }
+    if (!stream)
+    {
+      CLog::Log(LOGERROR, "CDVDDemuxFFmpeg::AddStream - internal error, stream is null");
+      CDVDDemuxUtils::FreeDemuxPacket(pPacket);
+      return NULL;
+    }
+    // set continuous stream id for player
+    pPacket->iStreamId = stream->iId;
   }
   return pPacket;
 }
@@ -1191,7 +1201,7 @@ void CDVDDemuxFFmpeg::DisposeStreams()
   m_stream_index.clear();
 }
 
-void CDVDDemuxFFmpeg::AddStream(int iId)
+CDemuxStream* CDVDDemuxFFmpeg::AddStream(int iId)
 {
   AVStream* pStream = m_pFormatContext->streams[iId];
   if (pStream)
@@ -1415,7 +1425,10 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
       stream->iPhysicalId = pStream->id;
 
     AddStream(iId, stream);
+    return stream;
   }
+  else
+    return NULL;
 }
 
 /**

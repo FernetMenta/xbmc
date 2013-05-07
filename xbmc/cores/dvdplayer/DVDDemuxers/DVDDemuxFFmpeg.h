@@ -122,7 +122,7 @@ protected:
   friend class CDemuxStreamSubtitleFFmpeg;
 
   int ReadFrame(AVPacket *packet);
-  void AddStream(int iId);
+  CDemuxStream* AddStream(int iId);
   void AddStream(int iId, CDemuxStream* stream);
   CDemuxStream* GetStreamInternal(int iStreamId);
   void CreateStreams(unsigned int program = UINT_MAX);
