@@ -35,6 +35,12 @@
 #include "cores/VideoRenderers/RenderManager.h"
 #include "utils/TimeUtils.h"
 #include "settings/Settings.h"
+
+#if defined(HAS_XRANDR)
+#include "settings/AdvancedSettings.h"
+#include "Application.h"
+#endif
+
 #include "windowing/WindowingFactory.h"
 #include <X11/Xatom.h>
 
@@ -255,7 +261,35 @@ void CWinSystemX11::UpdateResolutions()
     m_userOutput = CSettings::Get().GetString("videoscreen.monitor");
     // check if the monitor is connected
     XOutput *out = g_xrandr.GetOutput(m_userOutput);
+
+    int monitorWaitSec = g_advancedSettings.m_videoscreenMonitorWaitSec;
     if (!out)
+    {
+      long monitorWaitStart = XbmcThreads::SystemClockMillis();
+      while(true)
+      {
+        long monitorWaitFor = XbmcThreads::SystemClockMillis() - monitorWaitStart;
+        CLog::Log(LOGDEBUG, "Waited %lims for monitor '%s'", monitorWaitFor, m_userOutput.c_str());
+        if(monitorWaitSec > 0 && monitorWaitFor > (monitorWaitSec * 1000))
+        {
+          CLog::Log(LOGDEBUG, "Monitor '%s' still missing after %dsec", m_userOutput.c_str(), monitorWaitSec);
+          if(g_advancedSettings.m_videoscreenMonitorWaitExit)
+            g_application.Stop(1);
+          else
+            break;
+        }
+        g_xrandr.Query(true);
+        out = g_xrandr.GetOutput(m_userOutput);
+        if(out)
+        {
+          CLog::Log(LOGDEBUG, "Monitor '%s' found", m_userOutput.c_str());
+          break;
+        }
+        XbmcThreads::ThreadSleep(500);
+      }
+    }
+
+    if(!out)
     {
       // choose first output
       m_userOutput = g_xrandr.GetModes()[0].name;
