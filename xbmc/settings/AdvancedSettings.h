@@ -187,6 +187,9 @@ class CAdvancedSettings : public ISettingCallback, public ISettingsHandler
     CStdString m_videoDefaultDVDPlayer;
     float m_videoPlayCountMinimumPercent;
 
+    int m_videoscreenMonitorWaitSec;
+    bool m_videoscreenMonitorWaitExit;
+
     float m_slideshowBlackBarCompensation;
     float m_slideshowZoomAmount;
     float m_slideshowPanAmount;

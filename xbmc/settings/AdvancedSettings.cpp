@@ -173,6 +173,9 @@ void CAdvancedSettings::Initialize()
   m_videoDefaultLatency = 0.0;
   m_videoDisableHi10pMultithreading = false;
 
+  m_videoscreenMonitorWaitSec = 1;
+  m_videoscreenMonitorWaitExit = false;
+
   m_musicUseTimeSeeking = true;
   m_musicTimeSeekForward = 10;
   m_musicTimeSeekBackward = -10;
@@ -709,6 +712,13 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
       // Get default global display latency
       XMLUtils::GetFloat(pVideoLatency, "delay", m_videoDefaultLatency, -600.0f, 600.0f);
     }
+  }
+
+  pElement = pRootElement->FirstChildElement("videoscreen");
+  if (pElement)
+  {
+    XMLUtils::GetInt(pElement, "monitorwaitsec", m_videoscreenMonitorWaitSec, 0, 60);
+    XMLUtils::GetBoolean(pElement, "monitorwaitexit", m_videoscreenMonitorWaitExit);
   }
 
   pElement = pRootElement->FirstChildElement("musiclibrary");
