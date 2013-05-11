@@ -253,8 +253,21 @@ void CWinSystemX11::UpdateResolutions()
   if(g_xrandr.Query(true))
   {
     m_userOutput = CSettings::Get().GetString("videoscreen.monitor");
+
     // check if the monitor is connected
-    XOutput *out = g_xrandr.GetOutput(m_userOutput);
+    // might take a while when connected to a receiver
+    XbmcThreads::EndTime timeout(3000);
+    XOutput *out = NULL;
+    while (!timeout.IsTimePast())
+    {
+      out = g_xrandr.GetOutput(m_userOutput);
+      if (out)
+        break;
+
+      Sleep(500);
+      if (!g_xrandr.Query(true))
+        break;
+    }
     if (!out)
     {
       // choose first output
@@ -667,14 +680,26 @@ void CWinSystemX11::CheckDisplayEvents()
 #endif
 }
 
-void CWinSystemX11::NotifyXRREvent()
+void CWinSystemX11::NotifyXRREvent(bool poll)
 {
-  CLog::Log(LOGDEBUG, "%s - notify display reset event", __FUNCTION__);
+  // we may not get an event if desired monitor becomes available
+  // hence we need to poll
+  if (poll)
+  {
+    CStdString output = CSettings::Get().GetString("videoscreen.monitor");
+    if (output.Equals(m_currentOutput))
+      return;
+    g_xrandr.Query(true);
+    if (!g_xrandr.IsOutputConnected(output))
+      return;
+  }
+
+  CLog::Log(LOGDEBUG, "%s - notify display reset event, poll: %d", __FUNCTION__, poll);
   m_windowDirty = true;
 
   CSingleLock lock(g_graphicsContext);
 
-  if (!g_xrandr.Query(true))
+  if (!g_xrandr.Query(!poll))
   {
     CLog::Log(LOGERROR, "WinSystemX11::RefreshWindow - failed to query xrandr");
     return;
