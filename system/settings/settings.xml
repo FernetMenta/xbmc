@@ -2251,13 +2251,18 @@
     <category id="videoscreen" label="21373" help="36603">
       <group id="1">
         <setting id="videoscreen.monitor" type="string" label="246" help="">
-          <visible>HAS_GLX</visible>
+          <requirement>HAS_GLX</requirement>
           <level>0</level>
           <default>Default</default>
           <constraints>
             <options>monitors</options>
           </constraints>
           <control type="spinner" format="string" delayed="true" />
+        </setting>
+        <setting id="videoscreen.monitorsingle" type="boolean" label="14102" help="">
+          <requirement>HAS_GLX</requirement>
+          <level>0</level>
+          <default>false</default>
         </setting>
         <setting id="videoscreen.screen" type="integer" label="240" help="36351">
           <level>0</level>
@@ -2311,6 +2316,7 @@
           <control type="toggle" />
         </setting>
         <setting id="videoscreen.blankdisplays" type="boolean" parent="videoscreen.screen" label="13130" help="36355">
+          <requirement>!HAS_GLX</requirement>
           <level>1</level>
           <default>false</default>
           <dependencies>
