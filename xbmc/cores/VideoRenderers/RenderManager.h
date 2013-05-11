@@ -272,6 +272,7 @@ protected:
   bool m_bCodecSupportsBuffering;
   int m_speed;
   CEvent m_flipEvent;
+  bool m_bHasPrepared;
 
   struct
   {
