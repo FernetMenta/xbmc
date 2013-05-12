@@ -250,6 +250,7 @@ void CWinSystemX11::UpdateResolutions()
 #if defined(HAS_XRANDR)
   int numScreens = XScreenCount(m_dpy);
   g_xrandr.SetNumScreens(numScreens);
+
   if(g_xrandr.Query(true))
   {
     m_userOutput = CSettings::Get().GetString("videoscreen.monitor");
@@ -274,6 +275,22 @@ void CWinSystemX11::UpdateResolutions()
       m_userOutput = g_xrandr.GetModes()[0].name;
       out = g_xrandr.GetOutput(m_userOutput);
     }
+
+    // switch on output
+    g_xrandr.TurnOnOutput(m_userOutput);
+
+    // switch off other outputs if desired
+    if (CSettings::Get().GetBool("videoscreen.monitorsingle"))
+    {
+      std::vector<XOutput> outputs = g_xrandr.GetModes();
+      for (int i=0; i<outputs.size(); i++)
+      {
+        if (outputs[i].name.Equals(m_userOutput))
+          continue;
+        g_xrandr.TurnOffOutput(outputs[i].name);
+      }
+    }
+
     XMode mode = g_xrandr.GetCurrentMode(m_userOutput);
     m_bIsRotated = out->isRotated;
     if (!m_bIsRotated)

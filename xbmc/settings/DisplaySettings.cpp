@@ -258,6 +258,10 @@ bool CDisplaySettings::OnSettingChanging(const CSetting *setting)
     else
       m_ignoreSettingChanging.erase(make_pair(settingId, true));
   }
+  else if (settingId == "videoscreen.monitorsingle")
+  {
+    g_Windowing.UpdateResolutions();
+  }
 
   return true;
 }
