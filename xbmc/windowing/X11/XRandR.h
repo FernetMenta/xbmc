@@ -104,6 +104,8 @@ public:
   void SaveState();
   void SetNumScreens(unsigned int num);
   bool IsOutputConnected(CStdString name);
+  bool TurnOffOutput(CStdString name);
+  bool TurnOnOutput(CStdString name);
   //bool Has1080i();
   //bool Has1080p();
   //bool Has720p();
