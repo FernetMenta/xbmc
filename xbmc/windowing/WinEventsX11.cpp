@@ -319,7 +319,7 @@ bool CWinEventsX11::MessagePump()
     memset(&xevent, 0, sizeof (XEvent));
     XNextEvent(WinEvents->m_display, &xevent);
 
-    if (XFilterEvent(&xevent, None))
+    if (XFilterEvent(&xevent, WinEvents->m_window))
       continue;
 
     switch (xevent.type)
@@ -520,6 +520,8 @@ bool CWinEventsX11::MessagePump()
 
       case MotionNotify:
       {
+        if (xevent.xmotion.window != WinEvents->m_window)
+          break;
         XBMC_Event newEvent;
         memset(&newEvent, 0, sizeof(newEvent));
         newEvent.type = XBMC_MOUSEMOTION;
