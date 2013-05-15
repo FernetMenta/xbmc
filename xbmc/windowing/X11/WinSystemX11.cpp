@@ -706,6 +706,8 @@ void CWinSystemX11::NotifyXRREvent(bool poll)
     CStdString output = CSettings::Get().GetString("videoscreen.monitor");
     if (output.Equals(m_currentOutput))
       return;
+    int numScreens = XScreenCount(m_dpy);
+    g_xrandr.SetNumScreens(numScreens);
     g_xrandr.Query(true);
     if (!g_xrandr.IsOutputConnected(output))
       return;
