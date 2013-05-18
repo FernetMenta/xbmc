@@ -29,6 +29,7 @@
 #include "threads/Thread.h"
 #include "settings/VideoSettings.h"
 #include "OverlayRenderer.h"
+#include <deque>
 
 class CRenderCapture;
 
@@ -107,7 +108,8 @@ public:
   void AddOverlay(CDVDOverlay* o, double pts)
   {
     CSharedLock lock(m_sharedSection);
-    m_overlays.AddOverlay(o, pts, (m_QueueOutput + 1) % m_QueueSize);
+    RenderBuffer *buf = m_freeBuffers.front();
+    m_overlays.AddOverlay(o, pts, buf->index);
   }
 
   void AddCleanup(OVERLAY::COverlay* o)
@@ -184,10 +186,6 @@ protected:
   void PresentFields(bool clear, DWORD flags, DWORD alpha);
   void PresentBlend(bool clear, DWORD flags, DWORD alpha);
 
-  int  GetNextRender();
-  int  GetNextDecode();
-  void PrepareNextRender();
-
   EINTERLACEMETHOD AutoInterlaceMethodInternal(EINTERLACEMETHOD mInt);
 
   bool m_bIsStarted;
@@ -218,25 +216,25 @@ protected:
   double m_displayLatency;
   void UpdateDisplayLatency();
 
-  // Render Buffer State Description:
-  //
-  // Output:      is the buffer about to or having its texture prepared for render (ie from output thread).
-  //              Cannot go past the "Displayed" buffer (otherwise we will probably overwrite buffers not yet
-  //              displayed or even rendered).
-  // Render:      is the current buffer being or having been submitted for render to back buffer.
-  //              Cannot go past "Output" buffer (else it would be rendering old output).
-
-  int m_QueueRender;
-  int m_QueueOutput;
   int m_QueueSize;
   int m_QueueSkip;
 
-  struct
+  struct RenderBuffer
   {
+    int index;
     double         timestamp;
     EFIELDSYNC     presentfield;
     EPRESENTMETHOD presentmethod;
-  } m_Queue[NUM_BUFFERS];
+  } m_allRenderBuffers[NUM_BUFFERS];
+
+  std::deque<RenderBuffer*> m_freeBuffers;
+  std::deque<RenderBuffer*> m_queuedBuffers;
+  std::deque<RenderBuffer*> m_renderedBuffers;
+  RenderBuffer* m_presentBuffer;
+
+  RenderBuffer* GetNextRender();
+  RenderBuffer* GetNextDecode();
+  void PrepareNextRender();
 
   double     m_presenttime;
   double     m_presentcorr;
@@ -246,7 +244,6 @@ protected:
   EFIELDSYNC m_presentfield;
   EPRESENTMETHOD m_presentmethod;
   EPRESENTSTEP     m_presentstep;
-  int        m_presentsource;
   XbmcThreads::ConditionVariable  m_presentevent;
   CCriticalSection m_presentlock;
   CEvent     m_flushEvent;
