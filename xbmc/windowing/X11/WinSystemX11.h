@@ -98,6 +98,7 @@ protected:
   bool                         m_windowDirty;
   bool                         m_bIsInternalXrr;
   bool                         m_newGlContext;
+  bool                         m_ignoreOutputSetToOff;
 
 private:
   bool IsSuitableVisual(XVisualInfo *vInfo);

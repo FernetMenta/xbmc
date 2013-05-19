@@ -60,6 +60,7 @@ CWinSystemX11::CWinSystemX11() : CWinSystemBase()
   m_dpyLostTime = 0;
   m_invisibleCursor = 0;
   m_bIsInternalXrr = false;
+  m_ignoreOutputSetToOff = false;
 
   XSetErrorHandler(XErrorHandler);
 }
@@ -263,7 +264,16 @@ void CWinSystemX11::UpdateResolutions()
     {
       out = g_xrandr.GetOutput(m_userOutput);
       if (out)
-        break;
+      {
+        XMode mode = g_xrandr.GetCurrentMode(m_userOutput);
+        if (mode.isCurrent || !m_ignoreOutputSetToOff)
+          break;
+        else
+        {
+          out = NULL;
+          break;
+        }
+      }
 
       Sleep(500);
       if (!g_xrandr.Query(true))
@@ -277,7 +287,8 @@ void CWinSystemX11::UpdateResolutions()
     }
 
     // switch on output
-    g_xrandr.TurnOnOutput(m_userOutput);
+    if(!m_ignoreOutputSetToOff)
+      g_xrandr.TurnOnOutput(m_userOutput);
 
     // switch off other outputs if desired
     if (CSettings::Get().GetBool("videoscreen.monitorsingle"))
@@ -292,6 +303,8 @@ void CWinSystemX11::UpdateResolutions()
     }
 
     XMode mode = g_xrandr.GetCurrentMode(m_userOutput);
+    if (mode.id.empty())
+      mode = g_xrandr.GetPreferredMode(m_userOutput);
     m_bIsRotated = out->isRotated;
     if (!m_bIsRotated)
       UpdateDesktopResolution(CDisplaySettings::Get().GetResolutionInfo(RES_DESKTOP), 0, mode.w, mode.h, mode.hz);
@@ -410,6 +423,7 @@ bool CWinSystemX11::HasCalibration(const RESOLUTION_INFO &resInfo)
 void CWinSystemX11::GetConnectedOutputs(std::vector<CStdString> *outputs)
 {
   vector<XOutput> outs;
+  g_xrandr.Query(true);
   outs = g_xrandr.GetModes();
   for(unsigned int i=0; i<outs.size(); ++i)
   {
@@ -711,6 +725,11 @@ void CWinSystemX11::NotifyXRREvent(bool poll)
     g_xrandr.Query(true);
     if (!g_xrandr.IsOutputConnected(output))
       return;
+
+    // if output is turned off by user, respect it
+    XMode mode = g_xrandr.GetCurrentMode(output);
+    if (!mode.isCurrent)
+      return;
   }
 
   CLog::Log(LOGDEBUG, "%s - notify display reset event, poll: %d", __FUNCTION__, poll);
@@ -727,7 +746,9 @@ void CWinSystemX11::NotifyXRREvent(bool poll)
   // if external event update resolutions
   if (!m_bIsInternalXrr)
   {
+    m_ignoreOutputSetToOff = true;
     UpdateResolutions();
+    m_ignoreOutputSetToOff = false;
   }
   m_bIsInternalXrr = false;
 
@@ -745,7 +766,8 @@ void CWinSystemX11::NotifyXRREvent(bool poll)
   bool found(false);
   for (i = RES_DESKTOP; i < CDisplaySettings::Get().ResolutionInfoSize(); ++i)
   {
-    if (CDisplaySettings::Get().GetResolutionInfo(i).strId == mode.id)
+    res = CDisplaySettings::Get().GetResolutionInfo(i);
+    if (CDisplaySettings::Get().GetResolutionInfo(i).strId.Equals(mode.id))
     {
       found = true;
       break;
