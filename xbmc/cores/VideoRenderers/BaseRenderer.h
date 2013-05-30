@@ -92,6 +92,7 @@ public:
   virtual unsigned int GetMaxBufferSize() { return 0; }
   virtual void         SetBufferSize(int numBuffers) { }
   virtual void         ReleaseBuffer(int idx) { }
+  virtual bool         IsProcessed(int idx) { return true; }
 
   virtual bool Supports(ERENDERFEATURE feature) { return false; }
 

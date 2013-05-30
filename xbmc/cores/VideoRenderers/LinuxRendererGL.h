@@ -140,6 +140,7 @@ public:
   virtual void         SetBufferSize(int numBuffers) { m_NumYV12Buffers = numBuffers; }
   virtual unsigned int GetMaxBufferSize() { return NUM_BUFFERS; }
   virtual unsigned int GetProcessorSize();
+  virtual bool         IsProcessed(int idx);
 
 #ifdef HAVE_LIBVDPAU
   virtual void         AddProcessor(VDPAU::CVdpauRenderPicture* vdpau, int index);
@@ -281,6 +282,7 @@ protected:
     YV12Image image;
     unsigned  flipindex; /* used to decide if this has been uploaded */
     GLuint    pbo[MAX_PLANES];
+    GLsync    fence;
 
 #ifdef HAVE_LIBVDPAU
     VDPAU::CVdpauRenderPicture *vdpau;
