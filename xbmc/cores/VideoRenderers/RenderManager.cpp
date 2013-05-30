@@ -374,11 +374,16 @@ void CXBMCRenderManager::FrameMove()
     /* release all previous */
     for(std::deque<int>::iterator it = m_discard.begin(); it != m_discard.end(); )
     {
-      // TODO check for fence
+      if (!m_pRenderer->IsProcessed(*it))
+      {
+        ++it;
+        continue;
+      }
       m_pRenderer->ReleaseBuffer(*it);
       m_overlays.Release(*it);
       m_free.push_back(*it);
       it = m_discard.erase(it);
+      m_presentevent.notifyAll();
     }
   }
 }
