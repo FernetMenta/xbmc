@@ -367,20 +367,25 @@ void CXBMCRenderManager::FrameMove()
 
     if(m_presentstep == PRESENT_FLIP)
     {
-      /* release all previous */
-      std::deque<RenderBuffer*>::iterator iter = m_renderedBuffers.begin();
-      while(iter != m_renderedBuffers.end())
-      {
-        // TODO check for fence
-        RenderBuffer *buf = *iter;
-        iter = m_renderedBuffers.erase(iter);
-        m_freeBuffers.push_back(buf);
-        m_pRenderer->ReleaseBuffer(buf->index);
-        m_overlays.Release(buf->index);
-      }
-
       m_pRenderer->FlipPage(m_presentBuffer->index);
       m_presentstep = PRESENT_FRAME;
+      m_presentevent.notifyAll();
+    }
+
+    /* release all previous */
+    std::deque<RenderBuffer*>::iterator iter = m_renderedBuffers.begin();
+    while(iter != m_renderedBuffers.end())
+    {
+      RenderBuffer *buf = *iter;
+      if (!m_pRenderer->IsProcessed(buf->index))
+      {
+        ++iter;
+        continue;
+      }
+      iter = m_renderedBuffers.erase(iter);
+      m_freeBuffers.push_back(buf);
+      m_pRenderer->ReleaseBuffer(buf->index);
+      m_overlays.Release(buf->index);
       m_presentevent.notifyAll();
     }
   }
