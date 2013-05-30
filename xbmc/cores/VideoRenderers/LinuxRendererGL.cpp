@@ -128,6 +128,7 @@ CLinuxRendererGL::YUVBUFFER::YUVBUFFER()
   memset(&image , 0, sizeof(image));
   memset(&pbo   , 0, sizeof(pbo));
   flipindex = 0;
+  fence = None;
 #ifdef HAVE_LIBVDPAU
   vdpau = NULL;
 #endif
@@ -138,6 +139,8 @@ CLinuxRendererGL::YUVBUFFER::YUVBUFFER()
 
 CLinuxRendererGL::YUVBUFFER::~YUVBUFFER()
 {
+  if(fence)
+    glDeleteSync(fence);
 #ifdef HAVE_LIBVA
   delete &vaapi;
 #endif
@@ -1207,6 +1210,15 @@ void CLinuxRendererGL::Render(DWORD flags, int renderBuffer)
     RenderSoftware(renderBuffer, m_currentField);
     VerifyGLState();
   }
+
+  // set fence in order to determine when buffer is ready for reuse
+  // this is the case when the gl has finished processing
+  if(m_buffers[renderBuffer].fence)
+  {
+    glDeleteSync(m_buffers[renderBuffer].fence);
+    m_buffers[renderBuffer].fence = None;
+  }
+  m_buffers[renderBuffer].fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 }
 
 void CLinuxRendererGL::RenderSinglePass(int index, int field)
@@ -3395,6 +3407,26 @@ unsigned int CLinuxRendererGL::GetProcessorSize()
     return 1;
   else
     return 0;
+}
+
+bool CLinuxRendererGL::IsProcessed(int idx)
+{
+  YUVBUFFER &buf = m_buffers[idx];
+  if(buf.fence)
+  {
+    GLint state;
+    GLsizei length;
+    glGetSynciv(buf.fence, GL_SYNC_STATUS, 1, &length, &state);
+    if(state == GL_SIGNALED)
+    {
+      glDeleteSync(buf.fence);
+      buf.fence = None;
+      return true;
+    }
+    else
+      return false;
+  }
+  return true;
 }
 
 #ifdef HAVE_LIBVDPAU
