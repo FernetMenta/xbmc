@@ -90,6 +90,7 @@ CDecoder::CDecoder() : m_vdpauOutput(&m_inMsgEvent)
   m_vdpauConfig.videoSurfaceSec = &m_videoSurfaceSec;
 
   m_vdpauConfigured = false;
+  m_hwContext.bitstream_buffers_allocated = 0;
   m_DisplayState = VDPAU_OPEN;
 }
 
