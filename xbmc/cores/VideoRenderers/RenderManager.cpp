@@ -1088,7 +1088,7 @@ void CXBMCRenderManager::PrepareNextRender()
   if(g_graphicsContext.IsFullScreenVideo())
     next = (nxt->timestamp <= clocktime + MAXPRESENTDELAY);
   else
-    next = (nxt->timestamp <= clocktime);
+    next = (nxt->timestamp <= clocktime + frametime);
 
   m_sleeptime = nxt->timestamp - clocktime;
 
