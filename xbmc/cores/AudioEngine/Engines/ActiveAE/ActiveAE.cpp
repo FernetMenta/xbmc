@@ -109,7 +109,7 @@ CActiveAE::CActiveAE() :
   m_dataPort("OutputDataPort", &m_inMsgEvent, &m_outMsgEvent),
   m_sink(&m_outMsgEvent)
 {
-  m_sink.GetSinkList();
+  m_sink.EnumerateSinkList();
   m_sinkBuffers = NULL;
   m_silenceBuffers = NULL;
   m_volume = 1.0;
