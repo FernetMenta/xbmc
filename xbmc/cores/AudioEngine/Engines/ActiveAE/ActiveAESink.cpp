@@ -308,7 +308,7 @@ void CActiveAESink::Process()
   }
 }
 
-void CActiveAESink::GetSinkList()
+void CActiveAESink::EnumerateSinkList()
 {
   unsigned int c_retry = 5;
   CAESinkFactory::EnumerateEx(m_sinkInfoList);
