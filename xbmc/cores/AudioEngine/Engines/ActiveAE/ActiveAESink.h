@@ -76,7 +76,7 @@ class CActiveAESink : private CThread
 {
 public:
   CActiveAESink(CEvent *inMsgEvent);
-  void GetSinkList();
+  void EnumerateSinkList();
   void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   std::string GetDefaultDevice(bool passthrough);
   void Start();

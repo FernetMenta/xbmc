@@ -28,8 +28,8 @@ using namespace ActiveAE;
 #include "settings/Settings.h"
 #include "settings/AdvancedSettings.h"
 
-#define MAX_CACHE_LEVEL 0.5   // total cache time of stream
-#define MAX_WATER_LEVEL 0.25  // buffered time after stream stages
+#define MAX_CACHE_LEVEL 0.5   // total cache time of stream in seconds
+#define MAX_WATER_LEVEL 0.25  // buffered time after stream stages in seconds
 
 void CEngineStats::Reset(unsigned int sampleRate)
 {
@@ -109,9 +109,12 @@ CActiveAE::CActiveAE() :
   m_dataPort("OutputDataPort", &m_inMsgEvent, &m_outMsgEvent),
   m_sink(&m_outMsgEvent)
 {
-  m_sink.GetSinkList();
+  m_sink.EnumerateSinkList();
   m_sinkBuffers = NULL;
   m_silenceBuffers = NULL;
+  m_volume = 1.0;
+  m_drain = false;
+  m_mode = MODE_PCM;
 }
 
 CActiveAE::~CActiveAE()
@@ -1399,7 +1402,7 @@ IAEStream *CActiveAE::MakeStream(enum AEDataFormat dataFormat, unsigned int samp
 
 IAEStream *CActiveAE::FreeStream(IAEStream *stream)
 {
-
+  return NULL;
 }
 
 
