@@ -162,9 +162,9 @@ protected:
   uint8_t **AllocSoundSample(SampleConfig &config, int &samples, int &bytes_per_sample, int &planes, int &linesize);
   void FreeSoundSample(uint8_t **data);
   bool IsDraining() { return m_drain; }
-  float GetDelay(CActiveAEStream *stream) { m_stats.GetDelay(stream); }
-  float GetCacheTime(CActiveAEStream *stream) { m_stats.GetCacheTime(stream); }
-  float GetCacheTotal(CActiveAEStream *stream) { m_stats.GetCacheTotal(stream); }
+  float GetDelay(CActiveAEStream *stream) { return m_stats.GetDelay(stream); }
+  float GetCacheTime(CActiveAEStream *stream) { return m_stats.GetCacheTime(stream); }
+  float GetCacheTotal(CActiveAEStream *stream) { return m_stats.GetCacheTotal(stream); }
 
 protected:
   void Process();
