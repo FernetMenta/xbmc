@@ -46,7 +46,7 @@ public:
   CSoundPacket *GetSound(bool orig);
 
   bool IsConverted() { return m_isConverted; }
-  bool SetConverted(bool state) { m_isConverted = state; }
+  bool SetConverted(bool state) { m_isConverted = state; return true; }
 
 protected:
   std::string m_filename;
