@@ -64,6 +64,7 @@ bool CActiveAEResample::Init(uint64_t dst_chan_layout, int dst_channels, int dst
     CLog::Log(LOGERROR, "CActiveAEResample::Init - create context failed");
     return false;
   }
+  return true;
 }
 
 int CActiveAEResample::Resample(uint8_t **dst_buffer, int dst_samples, uint8_t **src_buffer, int src_samples)
@@ -95,12 +96,12 @@ int CActiveAEResample::CalcDstSampleCount(int src_samples, int dst_rate, int src
 
 int CActiveAEResample::GetSrcBufferSize(int samples)
 {
-  m_dllAvUtil.av_samples_get_buffer_size(NULL, m_src_channels, samples, m_src_fmt, 1);
+  return m_dllAvUtil.av_samples_get_buffer_size(NULL, m_src_channels, samples, m_src_fmt, 1);
 }
 
 int CActiveAEResample::GetDstBufferSize(int samples)
 {
-  m_dllAvUtil.av_samples_get_buffer_size(NULL, m_dst_channels, samples, m_dst_fmt, 1);
+  return m_dllAvUtil.av_samples_get_buffer_size(NULL, m_dst_channels, samples, m_dst_fmt, 1);
 }
 
 uint64_t CActiveAEResample::GetAVChannelLayout(CAEChannelInfo &info)
