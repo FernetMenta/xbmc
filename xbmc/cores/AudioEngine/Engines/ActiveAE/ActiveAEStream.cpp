@@ -84,6 +84,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
     if (!m_inMsgEvent.WaitMSec(200))
       return 0;
   }
+  return 0;
 }
 
 double CActiveAEStream::GetDelay()
