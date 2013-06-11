@@ -398,6 +398,8 @@ void CXBMCRenderManager::FrameFinish()
   if(g_graphicsContext.IsFullScreenVideo())
     WaitPresentTime(m.timestamp);
 
+  m_clock_framefinish = GetPresentTime();
+
   { CSingleLock lock(m_presentlock);
 
     if(m_presentstep == PRESENT_FRAME)
@@ -1050,6 +1052,12 @@ void CXBMCRenderManager::PrepareNextRender()
 
   double clocktime = GetPresentTime();
   double frametime = 1.0 / GetMaximumFPS();
+  double correction = 0.0;
+  int fps = g_VideoReferenceClock.GetRefreshRate();
+  if((fps > 0) && g_graphicsContext.IsFullScreenVideo() && (clocktime != m_clock_framefinish))
+  {
+    correction = frametime;
+  }
 
   /* see if any future queued frames are already due */
   std::deque<int>::reverse_iterator curr, prev;
@@ -1058,8 +1066,8 @@ void CXBMCRenderManager::PrepareNextRender()
   ++prev;
   while (prev != m_queued.rend())
   {
-    if(clocktime > m_Queue[*prev].timestamp                 /* previous frame is late */
-    && clocktime > m_Queue[*curr].timestamp - frametime)    /* selected frame is close to it's display time */
+    if(clocktime > m_Queue[*prev].timestamp + correction                 /* previous frame is late */
+    && clocktime > m_Queue[*curr].timestamp - frametime + correction)    /* selected frame is close to it's display time */
       break;
     ++curr;
     ++prev;
