@@ -2350,6 +2350,21 @@ void CMixer::ProcessPicture()
                                 NULL);
   CheckStatus(vdp_st, __LINE__);
 
+  // sync mixer, read blocks until output surface is written
+  {
+    uint32_t data[16];
+    VdpRect rect;
+    rect.x0 = rect.y0 = 0;
+    rect.x1 = rect.y1 = 1;
+    uint32_t *pdata[] = {data};
+    uint32_t pitches[] = {4};
+
+    vdp_st = m_config.vdpProcs.vdp_output_surface_get_bits_native(m_processPicture.outputSurface,
+                                                             &rect,
+                                                             (void**)pdata,
+                                                             pitches);
+  }
+
   if (m_mixerfield != VDP_VIDEO_MIXER_PICTURE_STRUCTURE_FRAME)
   {
     // in order to clip top and bottom lines when de-interlacing
