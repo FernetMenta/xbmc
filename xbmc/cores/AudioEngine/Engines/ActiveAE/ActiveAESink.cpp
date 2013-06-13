@@ -187,8 +187,16 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           samples = *((CSampleBuffer**)msg->data);
           OutputSamples(samples);
           msg->Reply(CSinkDataProtocol::RETURNSAMPLE, &samples, sizeof(CSampleBuffer*));
-          m_state = S_TOP_CONFIGURED_PLAY;
-          m_extTimeout = 0;
+          if (m_extError)
+          {
+            m_state = S_TOP_UNCONFIGURED;
+            m_extTimeout = 0;
+          }
+          else
+          {
+            m_state = S_TOP_CONFIGURED_PLAY;
+            m_extTimeout = 0;
+          }
           return;
         default:
           break;
@@ -206,6 +214,8 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         {
         case CSinkControlProtocol::TIMEOUT:
           OutputSamples(&m_sampleOfSilence);
+          if (m_extError)
+            m_state = S_TOP_UNCONFIGURED;
           m_extTimeout = 0;
           return;
         default:
@@ -486,16 +496,24 @@ void CActiveAESink::OpenSink()
 void CActiveAESink::OutputSamples(CSampleBuffer* samples)
 {
   uint8_t *buffer = samples->pkt->data[0];
-  int frames = samples->pkt->nb_samples;
+  unsigned int frames = samples->pkt->nb_samples;
+  unsigned int maxFrames;
+  int retry = 0;
   int written = 0;
   double sinkDelay;
   while(frames > 0)
   {
-    written = m_sink->AddPackets(buffer, frames, true);
-    if (written < 0)
+    maxFrames = std::min(frames, m_sinkFormat.m_frames);
+    written = m_sink->AddPackets(buffer, maxFrames, true);
+    if (written == 0)
     {
-      m_extError = true;
-      return;
+      Sleep(500*m_sinkFormat.m_frames/m_sinkFormat.m_sampleRate);
+      retry++;
+      if (retry > 4)
+      {
+        m_extError = true;
+        return;
+      }
     }
     frames -= written;
     buffer += written*m_sinkFormat.m_frameSize;
