@@ -623,6 +623,8 @@ bool CActiveAE::NeedReconfigureSink()
   ApplySettingsToFormat(newFormat, m_settings);
 
   std::string device = AE_IS_RAW(newFormat.m_dataFormat) ? m_settings.passthoughdevice : m_settings.device;
+  std::string driver;
+  CAESinkFactory::ParseDevice(device, driver);
   if (!m_sink.IsCompatible(newFormat, device))
     return true;
 
