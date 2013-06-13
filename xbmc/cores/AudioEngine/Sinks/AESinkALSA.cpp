@@ -574,6 +574,7 @@ void CAESinkALSA::Drain()
 
   snd_pcm_nonblock(m_pcm, 0);
   snd_pcm_drain(m_pcm);
+  snd_pcm_prepare(m_pcm);
   snd_pcm_nonblock(m_pcm, 1);
 }
 
