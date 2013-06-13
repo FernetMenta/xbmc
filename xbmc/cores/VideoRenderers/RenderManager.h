@@ -185,8 +185,6 @@ protected:
   void PresentFields(bool clear, DWORD flags, DWORD alpha);
   void PresentBlend(bool clear, DWORD flags, DWORD alpha);
 
-  int  GetNextRender();
-  int  GetNextDecode();
   void PrepareNextRender();
 
   EINTERLACEMETHOD AutoInterlaceMethodInternal(EINTERLACEMETHOD mInt);
@@ -213,7 +211,6 @@ protected:
     PRESENT_METHOD_BLEND,
     PRESENT_METHOD_WEAVE,
     PRESENT_METHOD_BOB,
-    PRESENT_METHOD_BYPASS,
   };
 
   double m_displayLatency;
@@ -222,7 +219,7 @@ protected:
   int m_QueueSize;
   int m_QueueSkip;
 
-  struct
+  struct SPresent
   {
     double         timestamp;
     EFIELDSYNC     presentfield;
@@ -233,13 +230,12 @@ protected:
   std::deque<int> m_queued;
   std::deque<int> m_discard;
 
-  double     m_presenttime;
+  ERenderFormat   m_format;
+
   double     m_presentcorr;
   double     m_presenterr;
   double     m_errorbuff[ERRORBUFFSIZE];
   int        m_errorindex;
-  EFIELDSYNC m_presentfield;
-  EPRESENTMETHOD m_presentmethod;
   EPRESENTSTEP     m_presentstep;
   int        m_presentsource;
   XbmcThreads::ConditionVariable  m_presentevent;
