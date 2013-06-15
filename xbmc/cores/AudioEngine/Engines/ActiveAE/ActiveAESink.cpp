@@ -440,7 +440,7 @@ void CActiveAESink::OpenSink()
 
   if (!m_sink || sinkName != driver || !m_sink->IsCompatible(m_requestedFormat, device))
   {
-    CLog::Log(LOGINFO, "CActiveAE::InternalOpenSink - sink incompatible, re-starting");
+    CLog::Log(LOGINFO, "CActiveAE::OpenSink - sink incompatible, re-starting");
 
     if (m_sink)
     {
