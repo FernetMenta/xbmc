@@ -437,6 +437,8 @@ void CActiveAE::Configure()
   m_sinkRequestFormat = inputFormat;
   ApplySettingsToFormat(m_sinkRequestFormat, m_settings);
   std::string device = AE_IS_RAW(m_sinkRequestFormat.m_dataFormat) ? m_settings.passthoughdevice : m_settings.device;
+  std::string driver;
+  CAESinkFactory::ParseDevice(device, driver);
   if (!m_sink.IsCompatible(m_sinkRequestFormat, device))
   {
     InitSink();
@@ -445,7 +447,10 @@ void CActiveAE::Configure()
   }
 
   if (m_silenceBuffers)
+  {
     delete m_silenceBuffers;
+    m_silenceBuffers = NULL;
+  }
 
   // buffers for driving gui sounds if no streams are active
   if (m_streams.empty())
@@ -514,7 +519,7 @@ void CActiveAE::Configure()
   }
 
   // resample buffers for sink
-  if (m_sinkBuffers && !m_sink.IsCompatible(m_sinkBuffers->m_format, m_settings.device))
+  if (m_sinkBuffers && !m_sink.IsCompatible(m_sinkBuffers->m_format, device))
   {
     delete m_sinkBuffers;
     m_sinkBuffers = NULL;
@@ -731,7 +736,7 @@ bool CActiveAE::RunStages()
       busy = (*it)->m_resampleBuffers->ResampleBuffers();
 
     // provide buffers to stream
-    float time = MAX_CACHE_LEVEL - m_stats.GetCacheTime((*it));
+    float time = m_stats.GetCacheTime((*it));
     CSampleBuffer *buffer;
     while (time < MAX_CACHE_LEVEL && !(*it)->m_imputBuffers->m_freeSamples.empty())
     {
@@ -1374,7 +1379,7 @@ bool CActiveAE::ResampleSound(CActiveAESound *sound)
 
 IAEStream *CActiveAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, unsigned int encodedSampleRate, CAEChannelInfo channelLayout, unsigned int options)
 {
-  //TODO: pass number of samples in audiuo packet
+  //TODO: pass number of samples in audio packet
 
   AEAudioFormat format;
   format.m_dataFormat = dataFormat;
@@ -1382,6 +1387,8 @@ IAEStream *CActiveAE::MakeStream(enum AEDataFormat dataFormat, unsigned int samp
   format.m_encodedRate = encodedSampleRate;
   format.m_channelLayout = channelLayout;
   format.m_frames = format.m_sampleRate / 10;
+  format.m_frameSize = format.m_channelLayout.Count() *
+                       (CAEUtil::DataFormatToBits(format.m_dataFormat) >> 3);
 
   Message *reply;
   if (m_dataPort.SendOutMessageSync(CActiveAEDataProtocol::NEWSTREAM,
