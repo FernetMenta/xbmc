@@ -103,6 +103,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
             m_stats = data->stats;
           }
           m_extError = false;
+          ReturnBuffers();
           OpenSink();
 
           if (!m_extError)
@@ -467,7 +468,7 @@ void CActiveAESink::OpenSink()
       return;
     }
 
-    CLog::Log(LOGDEBUG, "CActiveAE::InternalOpenSink - %s Initialized:", m_sink->GetName());
+    CLog::Log(LOGDEBUG, "CActiveAE::OpenSink - %s Initialized:", m_sink->GetName());
     CLog::Log(LOGDEBUG, "  Output Device : %s", m_deviceFriendlyName.c_str());
     CLog::Log(LOGDEBUG, "  Sample Rate   : %d", m_sinkFormat.m_sampleRate);
     CLog::Log(LOGDEBUG, "  Sample Format : %s", CAEUtil::DataFormatToStr(m_sinkFormat.m_dataFormat));
@@ -478,7 +479,7 @@ void CActiveAESink::OpenSink()
     CLog::Log(LOGDEBUG, "  Frame Size    : %d", m_sinkFormat.m_frameSize);
   }
   else
-    CLog::Log(LOGINFO, "CActiveAE::InternalOpenSink - keeping old sink with : %s, %s, %dhz",
+    CLog::Log(LOGINFO, "CActiveAE::OpenSink - keeping old sink with : %s, %s, %dhz",
                           CAEUtil::DataFormatToStr(m_sinkFormat.m_dataFormat),
                           ((std::string)m_sinkFormat.m_channelLayout).c_str(),
                           m_sinkFormat.m_sampleRate);
@@ -489,8 +490,24 @@ void CActiveAESink::OpenSink()
   config.channel_layout = CActiveAEResample::GetAVChannelLayout(m_sinkFormat.m_channelLayout);
   config.channels = m_sinkFormat.m_channelLayout.Count();
   config.sample_rate = m_sinkFormat.m_sampleRate;
+  if (m_sampleOfSilence.pkt)
+    delete m_sampleOfSilence.pkt;
   m_sampleOfSilence.pkt = new CSoundPacket(config, m_sinkFormat.m_frames);
   m_sampleOfSilence.pkt->nb_samples = m_sampleOfSilence.pkt->max_nb_samples;
+}
+
+void CActiveAESink::ReturnBuffers()
+{
+  Message *msg = NULL;
+  CSampleBuffer *samples;
+  while (m_dataPort.ReceiveOutMessage(&msg))
+  {
+    if (msg->signal == CSinkDataProtocol::SAMPLE)
+    {
+      samples = *((CSampleBuffer**)msg->data);
+      msg->Reply(CSinkDataProtocol::RETURNSAMPLE, &samples, sizeof(CSampleBuffer*));
+    }
+  }
 }
 
 void CActiveAESink::OutputSamples(CSampleBuffer* samples)
