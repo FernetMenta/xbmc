@@ -83,6 +83,7 @@ public:
     NEWSOUND = 0,
     PLAYSOUND,
     NEWSTREAM,
+    FREESTREAM,
     STREAMSAMPLE,
   };
   enum InSignal
@@ -105,6 +106,7 @@ public:
   void Reset(unsigned int sampleRate);
   void UpdateSinkDelay(double delay, int samples);
   void AddSamples(int samples, std::list<CActiveAEStream*> &streams);
+  float GetDelay();
   float GetDelay(CActiveAEStream *stream);
   float GetCacheTime(CActiveAEStream *stream);
   float GetCacheTotal(CActiveAEStream *stream);
@@ -161,7 +163,6 @@ protected:
   void PlaySound(CActiveAESound *sound);
   uint8_t **AllocSoundSample(SampleConfig &config, int &samples, int &bytes_per_sample, int &planes, int &linesize);
   void FreeSoundSample(uint8_t **data);
-  bool IsDraining() { return m_drain; }
   float GetDelay(CActiveAEStream *stream) { return m_stats.GetDelay(stream); }
   float GetCacheTime(CActiveAEStream *stream) { return m_stats.GetCacheTime(stream); }
   float GetCacheTotal(CActiveAEStream *stream) { return m_stats.GetCacheTotal(stream); }
@@ -179,6 +180,8 @@ protected:
   void ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings);
   void Configure();
   CActiveAEStream* CreateStream(AEAudioFormat *format);
+  void DiscardStream(CActiveAEStream *stream);
+  void ClearDiscardedBuffers();
 
   bool RunStages();
   bool HasWork();
@@ -196,6 +199,8 @@ protected:
   bool m_bStateMachineSelfTrigger;
   int m_extTimeout;
   bool m_extError;
+  bool m_extDrain;
+  XbmcThreads::EndTime m_extDrainTimer;
 
   enum
   {
@@ -216,6 +221,7 @@ protected:
 
   // streams
   std::list<CActiveAEStream*> m_streams;
+  std::list<CActiveAEBufferPool*> m_discardBufferPools;
 
   // gui sounds
   struct SoundState
@@ -227,7 +233,6 @@ protected:
   std::vector<CActiveAESound*> m_sounds;
 
   float m_volume;
-  bool m_drain;
 
   // ffmpeg
   DllAvFormat m_dllAvFormat;

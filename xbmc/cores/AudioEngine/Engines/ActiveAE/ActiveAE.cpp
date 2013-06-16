@@ -73,6 +73,16 @@ void CEngineStats::AddSamples(int samples, std::list<CActiveAEStream*> &streams)
   }
 }
 
+float CEngineStats::GetDelay()
+{
+  CSingleLock lock(m_lock);
+  unsigned int now = XbmcThreads::SystemClockMillis();
+  float delay = m_sinkDelay - (double)(now-m_sinkUpdate) / 1000;
+  delay += (float)m_bufferedSamples / m_sinkSampleRate;
+
+  return delay;
+}
+
 float CEngineStats::GetDelay(CActiveAEStream *stream)
 {
   CSingleLock lock(m_lock);
@@ -113,7 +123,6 @@ CActiveAE::CActiveAE() :
   m_sinkBuffers = NULL;
   m_silenceBuffers = NULL;
   m_volume = 1.0;
-  m_drain = false;
   m_mode = MODE_PCM;
 }
 
@@ -181,6 +190,11 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             m_sounds.push_back(sound);
             ResampleSounds();
           }
+          return;
+        case CActiveAEDataProtocol::FREESTREAM:
+          CActiveAEStream *stream;
+          stream = *(CActiveAEStream**)msg->data;
+          DiscardStream(stream);
           return;
         default:
           break;
@@ -336,6 +350,17 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           m_extTimeout = 0;
           m_state = AE_TOP_CONFIGURED_PLAY;
           return;
+        case CActiveAEDataProtocol::FREESTREAM:
+          stream = *(CActiveAEStream**)msg->data;
+          DiscardStream(stream);
+          if (m_streams.empty())
+          {
+            m_extDrainTimer.Set(m_stats.GetDelay() * 1000);
+            m_extDrain = true;
+          }
+          m_extTimeout = 0;
+          m_state = AE_TOP_CONFIGURED_PLAY;
+          return;
         default:
           break;
         }
@@ -367,7 +392,15 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
         {
         case CActiveAEControlProtocol::TIMEOUT:
           ResampleSounds();
-          m_extTimeout = 5000;
+          ClearDiscardedBuffers();
+          if (m_extDrain)
+          {
+            if (m_extDrainTimer.IsTimePast())
+              Configure();
+            m_extTimeout = m_extDrainTimer.MillisLeft();
+          }
+          else
+            m_extTimeout = 5000;
           return;
         default:
           break;
@@ -388,6 +421,8 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           }
           if (HasWork())
           {
+            ResampleSounds();
+            ClearDiscardedBuffers();
             m_extTimeout = 100;
             return;
           }
@@ -405,6 +440,98 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
       return;
     }
   } // for
+}
+
+void CActiveAE::Process()
+{
+  Message *msg = NULL;
+  Protocol *port = NULL;
+  bool gotMsg;
+
+  m_state = AE_TOP_UNCONFIGURED;
+  m_extTimeout = 1000;
+  m_bStateMachineSelfTrigger = false;
+  m_extDrain = false;
+
+  while (!m_bStop)
+  {
+    gotMsg = false;
+
+    if (m_bStateMachineSelfTrigger)
+    {
+      m_bStateMachineSelfTrigger = false;
+      // self trigger state machine
+      StateMachine(msg->signal, port, msg);
+      if (!m_bStateMachineSelfTrigger)
+      {
+        msg->Release();
+        msg = NULL;
+      }
+      continue;
+    }
+    // check control port
+    else if (m_controlPort.ReceiveOutMessage(&msg))
+    {
+      gotMsg = true;
+      port = &m_controlPort;
+    }
+    // check data port
+    else if (m_dataPort.ReceiveOutMessage(&msg))
+    {
+      gotMsg = true;
+      port = &m_dataPort;
+    }
+    // check sink data port
+    else if (m_sink.m_dataPort.ReceiveInMessage(&msg))
+    {
+      gotMsg = true;
+      port = &m_sink.m_dataPort;
+    }
+    // stream data ports
+    else
+    {
+      std::list<CActiveAEStream*>::iterator it;
+      for(it=m_streams.begin(); it!=m_streams.end(); ++it)
+      {
+        if((*it)->m_streamPort->ReceiveOutMessage(&msg))
+        {
+          gotMsg = true;
+          port = &m_dataPort;
+        }
+      }
+    }
+
+    if (gotMsg)
+    {
+      StateMachine(msg->signal, port, msg);
+      if (!m_bStateMachineSelfTrigger)
+      {
+        msg->Release();
+        msg = NULL;
+      }
+      continue;
+    }
+
+    // wait for message
+    else if (m_outMsgEvent.WaitMSec(m_extTimeout))
+    {
+      continue;
+    }
+    // time out
+    else
+    {
+      msg = m_controlPort.GetMessage();
+      msg->signal = CSinkControlProtocol::TIMEOUT;
+      port = 0;
+      // signal timeout to state machine
+      StateMachine(msg->signal, port, msg);
+      if (!m_bStateMachineSelfTrigger)
+      {
+        msg->Release();
+        msg = NULL;
+      }
+    }
+  }
 }
 
 void CActiveAE::Configure()
@@ -506,7 +633,7 @@ void CActiveAE::Configure()
     {
       if (initSink && (*it)->m_resampleBuffers)
       {
-        delete (*it)->m_resampleBuffers;
+        m_discardBufferPools.push_back((*it)->m_resampleBuffers);
         (*it)->m_resampleBuffers = NULL;
       }
       if (!(*it)->m_resampleBuffers)
@@ -521,7 +648,7 @@ void CActiveAE::Configure()
   // resample buffers for sink
   if (m_sinkBuffers && !m_sink.IsCompatible(m_sinkBuffers->m_format, device))
   {
-    delete m_sinkBuffers;
+    m_discardBufferPools.push_back(m_sinkBuffers);
     m_sinkBuffers = NULL;
   }
   if (!m_sinkBuffers)
@@ -537,7 +664,7 @@ void CActiveAE::Configure()
     it->sound->SetConverted(false);
   }
 
-  m_drain = false;
+  m_extDrain = false;
 }
 
 CActiveAEStream* CActiveAE::CreateStream(AEAudioFormat *format)
@@ -563,6 +690,72 @@ CActiveAEStream* CActiveAE::CreateStream(AEAudioFormat *format)
   m_streams.push_back(stream);
 
   return stream;
+}
+
+void CActiveAE::DiscardStream(CActiveAEStream *stream)
+{
+  std::list<CActiveAEStream*>::iterator it;
+  for (it=m_streams.begin(); it!=m_streams.end(); ++it)
+  {
+    if (stream == (*it))
+    {
+      Message *msg;
+      while ((*it)->m_streamPort->ReceiveInMessage(&msg))
+      {
+        if (msg->signal == CActiveAEDataProtocol::STREAMBUFFER)
+        {
+          CSampleBuffer *samples;
+          samples = *((CSampleBuffer**)msg->data);
+          samples->Return();
+        }
+        msg->Release();
+      }
+      m_discardBufferPools.push_back((*it)->m_imputBuffers);
+      m_discardBufferPools.push_back((*it)->m_resampleBuffers);
+      CLog::Log(LOGDEBUG, "CActiveAE::DiscardStream - audio stream deleted");
+      delete (*it)->m_streamPort;
+      delete (*it);
+      m_streams.erase(it);
+      return;
+    }
+  }
+}
+
+void CActiveAE::ClearDiscardedBuffers()
+{
+  std::list<CActiveAEBufferPool*>::iterator it;
+  for (it=m_discardBufferPools.begin(); it!=m_discardBufferPools.end(); ++it)
+  {
+    CActiveAEBufferPoolResample *rbuf = dynamic_cast<CActiveAEBufferPoolResample*>(*it);
+    if (rbuf)
+    {
+      if (rbuf->m_procSample)
+      {
+        rbuf->m_procSample->Return();
+        rbuf->m_procSample = NULL;
+      }
+      while (!rbuf->m_inputSamples.empty())
+      {
+        rbuf->m_inputSamples.front()->Return();
+        rbuf->m_inputSamples.pop_front();
+      }
+      while (!rbuf->m_outputSamples.empty())
+      {
+        rbuf->m_outputSamples.front()->Return();
+        rbuf->m_outputSamples.pop_front();
+      }
+    }
+    // if all buffers have returned, we can delete the buffer pool
+    int all = (*it)->m_allSamples.size();
+    int free = (*it)->m_freeSamples.size();
+    if ((*it)->m_allSamples.size() == (*it)->m_freeSamples.size())
+    {
+      delete (*it);
+      CLog::Log(LOGDEBUG, "CActiveAE::ClearDiscardedBuffers - buffer pool deleted");
+      m_discardBufferPools.erase(it);
+      return;
+    }
+  }
 }
 
 void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings)
@@ -865,97 +1058,6 @@ bool CActiveAE::HasWork()
   }
 
   return false;
-}
-
-void CActiveAE::Process()
-{
-  Message *msg = NULL;
-  Protocol *port = NULL;
-  bool gotMsg;
-
-  m_state = AE_TOP_UNCONFIGURED;
-  m_extTimeout = 1000;
-  m_bStateMachineSelfTrigger = false;
-
-  while (!m_bStop)
-  {
-    gotMsg = false;
-
-    if (m_bStateMachineSelfTrigger)
-    {
-      m_bStateMachineSelfTrigger = false;
-      // self trigger state machine
-      StateMachine(msg->signal, port, msg);
-      if (!m_bStateMachineSelfTrigger)
-      {
-        msg->Release();
-        msg = NULL;
-      }
-      continue;
-    }
-    // check control port
-    else if (m_controlPort.ReceiveOutMessage(&msg))
-    {
-      gotMsg = true;
-      port = &m_controlPort;
-    }
-    // check data port
-    else if (m_dataPort.ReceiveOutMessage(&msg))
-    {
-      gotMsg = true;
-      port = &m_dataPort;
-    }
-    // check sink data port
-    else if (m_sink.m_dataPort.ReceiveInMessage(&msg))
-    {
-      gotMsg = true;
-      port = &m_sink.m_dataPort;
-    }
-    // stream data ports
-    else
-    {
-      std::list<CActiveAEStream*>::iterator it;
-      for(it=m_streams.begin(); it!=m_streams.end(); ++it)
-      {
-        if((*it)->m_streamPort->ReceiveOutMessage(&msg))
-        {
-          gotMsg = true;
-          port = &m_dataPort;
-        }
-      }
-    }
-
-    if (gotMsg)
-    {
-      StateMachine(msg->signal, port, msg);
-      if (!m_bStateMachineSelfTrigger)
-      {
-        msg->Release();
-        msg = NULL;
-      }
-      continue;
-    }
-
-    // wait for message
-    else if (m_outMsgEvent.WaitMSec(m_extTimeout))
-    {
-      continue;
-    }
-    // time out
-    else
-    {
-      msg = m_controlPort.GetMessage();
-      msg->signal = CSinkControlProtocol::TIMEOUT;
-      port = 0;
-      // signal timeout to state machine
-      StateMachine(msg->signal, port, msg);
-      if (!m_bStateMachineSelfTrigger)
-      {
-        msg->Release();
-        msg = NULL;
-      }
-    }
-  }
 }
 
 void CActiveAE::MixSounds(CSoundPacket &dstSample)
@@ -1411,6 +1513,7 @@ IAEStream *CActiveAE::MakeStream(enum AEDataFormat dataFormat, unsigned int samp
 
 IAEStream *CActiveAE::FreeStream(IAEStream *stream)
 {
+  m_dataPort.SendOutMessage(CActiveAEDataProtocol::FREESTREAM, &stream, sizeof(IAEStream*));
   return NULL;
 }
 
