@@ -113,6 +113,7 @@ CActiveAEBufferPoolResample::CActiveAEBufferPoolResample(AEAudioFormat inputForm
     m_inputFormat.m_dataFormat = AE_FMT_S16NE;
   m_resampler = NULL;
   m_fillPackets = false;
+  m_drain = false;
   m_procSample = NULL;
 }
 
@@ -170,10 +171,9 @@ bool CActiveAEBufferPoolResample::ResampleBuffers()
     if (out_samples > (m_procSample->pkt->max_nb_samples - m_procSample->pkt->nb_samples) * 2)
       skipInput = true;
 
-    bool drain = AE.IsDraining();
     bool hasInput = !m_inputSamples.empty();
 
-    if (hasInput || skipInput || drain)
+    if (hasInput || skipInput || m_drain)
     {
       if (hasInput && !skipInput)
       {
@@ -206,7 +206,7 @@ bool CActiveAEBufferPoolResample::ResampleBuffers()
         m_outputSamples.push_back(m_procSample);
         m_procSample = NULL;
       }
-      else if (drain && m_resampler->GetBufferedSamples() == 0)
+      else if (m_drain && m_resampler->GetBufferedSamples() == 0)
       {
         if (m_fillPackets)
         {

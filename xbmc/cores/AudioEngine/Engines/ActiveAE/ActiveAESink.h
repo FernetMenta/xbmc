@@ -91,6 +91,7 @@ protected:
   void PrintSinks();
   void GetDeviceFriendlyName(std::string &device);
   void OpenSink();
+  void ReturnBuffers();
 
   void OutputSamples(CSampleBuffer* samples);
 
