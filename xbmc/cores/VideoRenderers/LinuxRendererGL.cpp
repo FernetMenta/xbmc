@@ -1254,14 +1254,17 @@ void CLinuxRendererGL::Render(DWORD flags, int renderBuffer)
     VerifyGLState();
   }
 
-  // set fence in order to determine when buffer is ready for reuse
-  // this is the case when the gl has finished processing
-  if(m_buffers[renderBuffer].fence)
+  if (m_format == RENDER_FMT_VDPAU || m_format == RENDER_FMT_VDPAU_420)
   {
-    glDeleteSync(m_buffers[renderBuffer].fence);
-    m_buffers[renderBuffer].fence = None;
+    // set fence in order to determine when buffer is ready for reuse
+    // this is the case when the gl has finished processing
+    if(m_buffers[renderBuffer].fence)
+    {
+      glDeleteSync(m_buffers[renderBuffer].fence);
+      m_buffers[renderBuffer].fence = None;
+    }
+    m_buffers[renderBuffer].fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
   }
-  m_buffers[renderBuffer].fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 }
 
 void CLinuxRendererGL::RenderSinglePass(int index, int field)
