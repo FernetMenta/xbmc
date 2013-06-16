@@ -1166,7 +1166,12 @@ void CLinuxRendererGL::UnInit()
 
   // YV12 textures
   for (int i = 0; i < NUM_BUFFERS; ++i)
+  {
     (this->*m_textureDelete)(i);
+    if (m_buffers[i].fence)
+      glDeleteSync(m_buffers[i].fence);
+    m_buffers[i].fence = None;
+  }
 
   // cleanup framebuffer object if it was in use
   m_fbo.fbo.Cleanup();
