@@ -80,6 +80,7 @@ protected:
   CActiveAEBufferPool *m_imputBuffers;
   CActiveAEBufferPoolResample *m_resampleBuffers;
   std::deque<CSampleBuffer*> m_processingSamples;
+  CSampleBuffer *m_currentBuffer;
   CActiveAEDataProtocol *m_streamPort;
   CEvent m_inMsgEvent;
   CCriticalSection *m_statsLock;

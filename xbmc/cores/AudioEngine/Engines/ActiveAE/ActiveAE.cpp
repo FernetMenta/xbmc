@@ -639,6 +639,7 @@ void CActiveAE::Configure()
       if (!(*it)->m_resampleBuffers)
       {
         (*it)->m_resampleBuffers = new CActiveAEBufferPoolResample((*it)->m_imputBuffers->m_format, outputFormat);
+        (*it)->m_resampleBuffers->Create();
         if (m_mode == MODE_TRANSCODE || m_streams.size() > 1)
           (*it)->m_resampleBuffers->m_fillPackets = true;
       }
@@ -699,16 +700,10 @@ void CActiveAE::DiscardStream(CActiveAEStream *stream)
   {
     if (stream == (*it))
     {
-      Message *msg;
-      while ((*it)->m_streamPort->ReceiveInMessage(&msg))
+      while (!(*it)->m_processingSamples.empty())
       {
-        if (msg->signal == CActiveAEDataProtocol::STREAMBUFFER)
-        {
-          CSampleBuffer *samples;
-          samples = *((CSampleBuffer**)msg->data);
-          samples->Return();
-        }
-        msg->Release();
+        (*it)->m_processingSamples.front()->Return();
+        (*it)->m_processingSamples.pop_front();
       }
       m_discardBufferPools.push_back((*it)->m_imputBuffers);
       m_discardBufferPools.push_back((*it)->m_resampleBuffers);
@@ -1421,6 +1416,9 @@ void CActiveAE::PlaySound(CActiveAESound *sound)
  */
 void CActiveAE::ResampleSounds()
 {
+  if (m_mode == MODE_RAW)
+    return;
+
   std::vector<CActiveAESound*>::iterator it;
   for (it = m_sounds.begin(); it != m_sounds.end(); ++it)
   {
@@ -1439,10 +1437,18 @@ bool CActiveAE::ResampleSound(CActiveAESound *sound)
 
   orig_config = sound->GetSound(true)->config;
 
-  dst_config.channel_layout = CActiveAEResample::GetAVChannelLayout(m_silenceBuffers->m_format.m_channelLayout);
-  dst_config.channels = m_silenceBuffers->m_format.m_channelLayout.Count();
-  dst_config.sample_rate = m_silenceBuffers->m_format.m_sampleRate;
-  dst_config.fmt = CActiveAEResample::GetAVSampleFormat(m_silenceBuffers->m_format.m_dataFormat);
+  AEAudioFormat dstFormat;
+  if (m_silenceBuffers)
+    dstFormat = m_silenceBuffers->m_format;
+  else if (!m_streams.empty() && m_streams.front()->m_resampleBuffers)
+    dstFormat = m_streams.front()->m_resampleBuffers->m_format;
+  else
+    return false;
+
+  dst_config.channel_layout = CActiveAEResample::GetAVChannelLayout(dstFormat.m_channelLayout);
+  dst_config.channels = dstFormat.m_channelLayout.Count();
+  dst_config.sample_rate = dstFormat.m_sampleRate;
+  dst_config.fmt = CActiveAEResample::GetAVSampleFormat(dstFormat.m_dataFormat);
 
   CActiveAEResample *resampler = new CActiveAEResample();
   resampler->Init(dst_config.channel_layout,
@@ -1455,7 +1461,7 @@ bool CActiveAE::ResampleSound(CActiveAESound *sound)
                   orig_config.fmt);
 
   dst_samples = resampler->CalcDstSampleCount(sound->GetSound(true)->nb_samples,
-                                              m_silenceBuffers->m_format.m_sampleRate,
+                                              dstFormat.m_sampleRate,
                                               orig_config.sample_rate);
 
   dst_buffer = sound->InitSound(false, dst_config, dst_samples);
