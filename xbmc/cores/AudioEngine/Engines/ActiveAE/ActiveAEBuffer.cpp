@@ -246,10 +246,13 @@ float CActiveAEBufferPoolResample::GetDelay()
 
   for(itBuf=m_outputSamples.begin(); itBuf!=m_outputSamples.end(); ++itBuf)
   {
-    unsigned int samples = (*itBuf)->pkt->nb_samples;
-    if (m_resampler)
-      samples += m_resampler->GetBufferedSamples();
-    delay += (float)samples / (*itBuf)->pkt->config.sample_rate;
+    delay += (float)(*itBuf)->pkt->nb_samples / (*itBuf)->pkt->config.sample_rate;
+  }
+
+  if (m_resampler)
+  {
+    int samples = m_resampler->GetBufferedSamples();
+    delay += (float)samples / m_format.m_sampleRate;
   }
 
   return delay;
