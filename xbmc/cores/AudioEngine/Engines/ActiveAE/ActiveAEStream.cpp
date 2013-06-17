@@ -39,6 +39,7 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
 {
   m_format = *format;
   m_bufferedTime = 0;
+  m_currentBuffer = NULL;
 }
 
 CActiveAEStream::~CActiveAEStream()
@@ -54,25 +55,36 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
   Message *msg;
   while(true)
   {
-    if (m_streamPort->ReceiveInMessage(&msg))
+    if (m_currentBuffer)
+    {
+      int start = m_currentBuffer->pkt->nb_samples *
+                  m_currentBuffer->pkt->bytes_per_sample *
+                  m_currentBuffer->pkt->config.channels /
+                  m_currentBuffer->pkt->planes;
+      int samples = size / m_currentBuffer->pkt->bytes_per_sample / m_currentBuffer->pkt->config.channels;
+      //TODO: handle planar formats
+      memcpy(m_currentBuffer->pkt->data[0] + start, (uint8_t*)data, size);
+      {
+        CSingleLock lock(*m_statsLock);
+        m_currentBuffer->pkt->nb_samples += samples;
+        m_bufferedTime += (double)samples / m_currentBuffer->pkt->config.sample_rate;
+      }
+      if (m_currentBuffer->pkt->nb_samples > m_currentBuffer->pkt->max_nb_samples / 10)
+      {
+        MsgStreamSample msgData;
+        msgData.buffer = m_currentBuffer;
+        msgData.stream = this;
+        m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
+        m_currentBuffer = NULL;
+      }
+      return size;
+    }
+    else if (m_streamPort->ReceiveInMessage(&msg))
     {
       if (msg->signal == CActiveAEDataProtocol::STREAMBUFFER)
       {
-        CSampleBuffer *samples;
-        samples = *((CSampleBuffer**)msg->data);
-
-        //TODO: handle planar formats
-        memcpy(samples->pkt->data[0], (uint8_t*)data, size);
-        {
-          CSingleLock lock(*m_statsLock);
-          samples->pkt->nb_samples = size / samples->pkt->bytes_per_sample / samples->pkt->config.channels;
-          m_bufferedTime += (double)samples->pkt->nb_samples / samples->pkt->config.sample_rate;
-        }
-        MsgStreamSample msgData;
-        msgData.buffer = samples;
-        msgData.stream = this;
-        msg->Reply(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
-        return size;
+        m_currentBuffer = *((CSampleBuffer**)msg->data);
+        continue;
       }
       else
       {
