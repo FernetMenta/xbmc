@@ -122,9 +122,9 @@ uint64_t CActiveAEResample::GetAVChannelLayout(CAEChannelInfo &info)
   if (info.HasChannel(AE_CH_TFL))  channelLayout |= AV_CH_TOP_FRONT_LEFT;
   if (info.HasChannel(AE_CH_TFC))  channelLayout |= AV_CH_TOP_FRONT_CENTER;
   if (info.HasChannel(AE_CH_TFR))  channelLayout |= AV_CH_TOP_FRONT_RIGHT;
-  if (info.HasChannel(AE_CH_BL))   channelLayout |= AV_CH_TOP_BACK_LEFT;
-  if (info.HasChannel(AE_CH_BC))   channelLayout |= AV_CH_TOP_BACK_CENTER;
-  if (info.HasChannel(AE_CH_BR))   channelLayout |= AV_CH_TOP_BACK_RIGHT;
+  if (info.HasChannel(AE_CH_TBL))   channelLayout |= AV_CH_TOP_BACK_LEFT;
+  if (info.HasChannel(AE_CH_TBC))   channelLayout |= AV_CH_TOP_BACK_CENTER;
+  if (info.HasChannel(AE_CH_TBR))   channelLayout |= AV_CH_TOP_BACK_RIGHT;
 
   return channelLayout;
 }
