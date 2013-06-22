@@ -123,7 +123,7 @@ CActiveAEBufferPoolResample::~CActiveAEBufferPoolResample()
     delete m_resampler;
 }
 
-bool CActiveAEBufferPoolResample::Create()
+bool CActiveAEBufferPoolResample::Create(bool remap)
 {
   CActiveAEBufferPool::Create();
 
@@ -139,7 +139,8 @@ bool CActiveAEBufferPoolResample::Create()
                                 CActiveAEResample::GetAVChannelLayout(m_inputFormat.m_channelLayout),
                                 m_inputFormat.m_channelLayout.Count(),
                                 m_inputFormat.m_sampleRate,
-                                CActiveAEResample::GetAVSampleFormat(m_inputFormat.m_dataFormat));
+                                CActiveAEResample::GetAVSampleFormat(m_inputFormat.m_dataFormat),
+                                remap ? &m_format.m_channelLayout : NULL);
   }
   return true;
 }
