@@ -84,7 +84,7 @@ class CActiveAEBufferPoolResample : public CActiveAEBufferPool
 public:
   CActiveAEBufferPoolResample(AEAudioFormat inputFormat, AEAudioFormat outputFormat);
   virtual ~CActiveAEBufferPoolResample();
-  virtual bool Create();
+  virtual bool Create(bool remap = false);
   bool ResampleBuffers();
   float GetDelay();
   AEAudioFormat m_inputFormat;
