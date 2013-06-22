@@ -655,7 +655,7 @@ void CActiveAE::Configure()
   if (!m_sinkBuffers)
   {
     m_sinkBuffers = new CActiveAEBufferPoolResample(sinkInputFormat, m_sinkFormat);
-    m_sinkBuffers->Create();
+    m_sinkBuffers->Create(true);
   }
 
   // reset gui sounds
