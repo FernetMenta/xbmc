@@ -575,7 +575,7 @@ void CActiveAE::Configure()
 
   if (m_silenceBuffers)
   {
-    delete m_silenceBuffers;
+    m_discardBufferPools.push_back(m_silenceBuffers);
     m_silenceBuffers = NULL;
   }
 
@@ -586,7 +586,7 @@ void CActiveAE::Configure()
     inputFormat.m_dataFormat = AE_FMT_FLOAT;
     inputFormat.m_frameSize = inputFormat.m_channelLayout.Count() *
                               (CAEUtil::DataFormatToBits(inputFormat.m_dataFormat) >> 3);
-    m_silenceBuffers = new CActiveAEBufferPoolResample(inputFormat, inputFormat);
+    m_silenceBuffers = new CActiveAEBufferPool(inputFormat);
     m_silenceBuffers->Create();
     sinkInputFormat = inputFormat;
   }
@@ -741,8 +741,6 @@ void CActiveAE::ClearDiscardedBuffers()
       }
     }
     // if all buffers have returned, we can delete the buffer pool
-    int all = (*it)->m_allSamples.size();
-    int free = (*it)->m_freeSamples.size();
     if ((*it)->m_allSamples.size() == (*it)->m_freeSamples.size())
     {
       delete (*it);
@@ -899,23 +897,6 @@ bool CActiveAE::RunStages()
 {
   bool busy = false;
 
-  if (!m_sounds_playing.empty() && m_streams.empty())
-  {
-    if (!m_silenceBuffers->m_freeSamples.empty())
-    {
-      CSampleBuffer *buf = m_silenceBuffers->m_freeSamples.front();
-      m_silenceBuffers->m_freeSamples.pop_front();
-      for (int i=0; i<buf->pkt->planes; i++)
-      {
-        memset(buf->pkt->data[i], 0, buf->pkt->linesize);
-      }
-      buf->pkt->nb_samples = buf->pkt->max_nb_samples;
-      m_silenceBuffers->m_inputSamples.push_back(buf);
-      m_silenceBuffers->ResampleBuffers();
-      busy = true;
-    }
-  }
-
   // serve input streams
   std::list<CActiveAEStream*>::iterator it;
   for (it = m_streams.begin(); it != m_streams.end(); ++it)
@@ -942,10 +923,18 @@ bool CActiveAE::RunStages()
     if (m_mode != MODE_RAW)
     {
       CSampleBuffer *out = NULL;
-      if (m_silenceBuffers && !m_silenceBuffers->m_outputSamples.empty())
+      if (!m_sounds_playing.empty() && m_streams.empty())
       {
-        out = m_silenceBuffers->m_outputSamples.front();
-        m_silenceBuffers->m_outputSamples.pop_front();
+        if (m_silenceBuffers && !m_silenceBuffers->m_freeSamples.empty())
+        {
+          out = m_silenceBuffers->m_freeSamples.front();
+          m_silenceBuffers->m_freeSamples.pop_front();
+          for (int i=0; i<out->pkt->planes; i++)
+          {
+            memset(out->pkt->data[i], 0, out->pkt->linesize);
+          }
+          out->pkt->nb_samples = out->pkt->max_nb_samples;
+        }
       }
 
       // mix streams
@@ -1031,10 +1020,6 @@ bool CActiveAE::RunStages()
 bool CActiveAE::HasWork()
 {
   if (!m_sounds_playing.empty())
-    return true;
-  if (m_silenceBuffers && !m_silenceBuffers->m_inputSamples.empty())
-    return true;
-  if (m_silenceBuffers && !m_silenceBuffers->m_outputSamples.empty())
     return true;
   if (!m_sinkBuffers->m_inputSamples.empty())
     return true;
