@@ -774,7 +774,7 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
   }
   else
   {
-    if (settings.stereoupmix)
+    if ((format.m_channelLayout.Count() > 2) || settings.stereoupmix)
     {
       switch (settings.channels)
       {
@@ -1458,7 +1458,8 @@ bool CActiveAE::ResampleSound(CActiveAESound *sound)
                   orig_config.channel_layout,
                   orig_config.channels,
                   orig_config.sample_rate,
-                  orig_config.fmt);
+                  orig_config.fmt,
+                  NULL);
 
   dst_samples = resampler->CalcDstSampleCount(sound->GetSound(true)->nb_samples,
                                               dstFormat.m_sampleRate,
