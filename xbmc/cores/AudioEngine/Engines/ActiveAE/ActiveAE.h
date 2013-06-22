@@ -217,7 +217,7 @@ protected:
 
   // buffers
   CActiveAEBufferPoolResample *m_sinkBuffers;
-  CActiveAEBufferPoolResample *m_silenceBuffers;  // needed to drive gui sounds if we have no streams
+  CActiveAEBufferPool *m_silenceBuffers;  // needed to drive gui sounds if we have no streams
 
   // streams
   std::list<CActiveAEStream*> m_streams;

@@ -41,7 +41,7 @@ public:
   int GetSrcBufferSize(int samples);
   int GetDstBufferSize(int samples);
   static uint64_t GetAVChannelLayout(CAEChannelInfo &info);
-  static CAEChannelInfo GetAEChannelLayout(uint64_t layout);
+//  static CAEChannelInfo GetAEChannelLayout(uint64_t layout);
   static AVSampleFormat GetAVSampleFormat(AEDataFormat format);
   static uint64_t GetAVChannel(enum AEChannel aechannel);
   int GetAVChannelIndex(enum AEChannel aechannel, uint64_t layout);
@@ -54,6 +54,7 @@ protected:
   int m_src_channels, m_dst_channels;
   AVSampleFormat m_src_fmt, m_dst_fmt;
   SwrContext *m_pContext;
+  int m_channelMap[AE_CH_MAX];
 };
 
 }
