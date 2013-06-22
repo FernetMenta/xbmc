@@ -66,13 +66,12 @@ bool CActiveAEResample::Init(uint64_t dst_chan_layout, int dst_channels, int dst
   }
   if (remapLayout)
   {
-    int channelMap[AE_CH_MAX];
-    for (int i=0; i<remapLayout->Count(); i++)
+    for (unsigned int i=0; i<remapLayout->Count(); i++)
     {
-      channelMap[i] = GetAVChannelIndex((*remapLayout)[i], m_dst_chan_layout);
+      m_channelMap[i] = GetAVChannelIndex((*remapLayout)[i], m_dst_chan_layout);
     }
 
-    if (m_dllSwResample.swr_set_channel_mapping(m_pContext, channelMap) < 0)
+    if (m_dllSwResample.swr_set_channel_mapping(m_pContext, m_channelMap) < 0)
     {
       CLog::Log(LOGERROR, "CActiveAEResample::Init - setting channel map failed");
       return false;
@@ -148,32 +147,32 @@ uint64_t CActiveAEResample::GetAVChannelLayout(CAEChannelInfo &info)
   return channelLayout;
 }
 
-CAEChannelInfo CActiveAEResample::GetAEChannelLayout(uint64_t layout)
-{
-  CAEChannelInfo channelLayout;
-  channelLayout.Reset();
-
-  if (layout & AV_CH_FRONT_LEFT           ) channelLayout += AE_CH_FL  ;
-  if (layout & AV_CH_FRONT_RIGHT          ) channelLayout += AE_CH_FR  ;
-  if (layout & AV_CH_FRONT_CENTER         ) channelLayout += AE_CH_FC  ;
-  if (layout & AV_CH_LOW_FREQUENCY        ) channelLayout += AE_CH_LFE ;
-  if (layout & AV_CH_BACK_LEFT            ) channelLayout += AE_CH_BL  ;
-  if (layout & AV_CH_BACK_RIGHT           ) channelLayout += AE_CH_BR  ;
-  if (layout & AV_CH_FRONT_LEFT_OF_CENTER ) channelLayout += AE_CH_FLOC;
-  if (layout & AV_CH_FRONT_RIGHT_OF_CENTER) channelLayout += AE_CH_FROC;
-  if (layout & AV_CH_BACK_CENTER          ) channelLayout += AE_CH_BC  ;
-  if (layout & AV_CH_SIDE_LEFT            ) channelLayout += AE_CH_SL  ;
-  if (layout & AV_CH_SIDE_RIGHT           ) channelLayout += AE_CH_SR  ;
-  if (layout & AV_CH_TOP_CENTER           ) channelLayout += AE_CH_TC  ;
-  if (layout & AV_CH_TOP_FRONT_LEFT       ) channelLayout += AE_CH_TFL ;
-  if (layout & AV_CH_TOP_FRONT_CENTER     ) channelLayout += AE_CH_TFC ;
-  if (layout & AV_CH_TOP_FRONT_RIGHT      ) channelLayout += AE_CH_TFR ;
-  if (layout & AV_CH_TOP_BACK_LEFT        ) channelLayout += AE_CH_BL  ;
-  if (layout & AV_CH_TOP_BACK_CENTER      ) channelLayout += AE_CH_BC  ;
-  if (layout & AV_CH_TOP_BACK_RIGHT       ) channelLayout += AE_CH_BR  ;
-
-  return channelLayout;
-}
+//CAEChannelInfo CActiveAEResample::GetAEChannelLayout(uint64_t layout)
+//{
+//  CAEChannelInfo channelLayout;
+//  channelLayout.Reset();
+//
+//  if (layout & AV_CH_FRONT_LEFT           ) channelLayout += AE_CH_FL  ;
+//  if (layout & AV_CH_FRONT_RIGHT          ) channelLayout += AE_CH_FR  ;
+//  if (layout & AV_CH_FRONT_CENTER         ) channelLayout += AE_CH_FC  ;
+//  if (layout & AV_CH_LOW_FREQUENCY        ) channelLayout += AE_CH_LFE ;
+//  if (layout & AV_CH_BACK_LEFT            ) channelLayout += AE_CH_BL  ;
+//  if (layout & AV_CH_BACK_RIGHT           ) channelLayout += AE_CH_BR  ;
+//  if (layout & AV_CH_FRONT_LEFT_OF_CENTER ) channelLayout += AE_CH_FLOC;
+//  if (layout & AV_CH_FRONT_RIGHT_OF_CENTER) channelLayout += AE_CH_FROC;
+//  if (layout & AV_CH_BACK_CENTER          ) channelLayout += AE_CH_BC  ;
+//  if (layout & AV_CH_SIDE_LEFT            ) channelLayout += AE_CH_SL  ;
+//  if (layout & AV_CH_SIDE_RIGHT           ) channelLayout += AE_CH_SR  ;
+//  if (layout & AV_CH_TOP_CENTER           ) channelLayout += AE_CH_TC  ;
+//  if (layout & AV_CH_TOP_FRONT_LEFT       ) channelLayout += AE_CH_TFL ;
+//  if (layout & AV_CH_TOP_FRONT_CENTER     ) channelLayout += AE_CH_TFC ;
+//  if (layout & AV_CH_TOP_FRONT_RIGHT      ) channelLayout += AE_CH_TFR ;
+//  if (layout & AV_CH_TOP_BACK_LEFT        ) channelLayout += AE_CH_BL  ;
+//  if (layout & AV_CH_TOP_BACK_CENTER      ) channelLayout += AE_CH_BC  ;
+//  if (layout & AV_CH_TOP_BACK_RIGHT       ) channelLayout += AE_CH_BR  ;
+//
+//  return channelLayout;
+//}
 
 AVSampleFormat CActiveAEResample::GetAVSampleFormat(AEDataFormat format)
 {
