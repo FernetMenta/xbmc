@@ -1156,6 +1156,10 @@ bool CAESinkALSA::SoftResume()
     {
       if (!snd_config)
         snd_config_update();
+
+    // Initialize what we had before again, SoftAE might keep it
+    // but ignore ret value to give the chance to do reopening
+    Initialize(m_initFormat, m_initDevice);
     }
    // make sure that OpenInternalSink is done again
    return false;
