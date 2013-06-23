@@ -85,12 +85,14 @@ public:
     NEWSTREAM,
     FREESTREAM,
     STREAMSAMPLE,
+    DRAINSTREAM,
   };
   enum InSignal
   {
     ACC,
     ERROR,
     STREAMBUFFER,
+    STREAMDRAINED,
   };
 };
 

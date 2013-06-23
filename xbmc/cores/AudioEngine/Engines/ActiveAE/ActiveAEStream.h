@@ -84,6 +84,7 @@ protected:
   CActiveAEDataProtocol *m_streamPort;
   CEvent m_inMsgEvent;
   CCriticalSection *m_statsLock;
+  bool m_drain;
 };
 }
 
