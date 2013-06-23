@@ -40,6 +40,7 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_format = *format;
   m_bufferedTime = 0;
   m_currentBuffer = NULL;
+  m_drain = false;
 }
 
 CActiveAEStream::~CActiveAEStream()
@@ -84,6 +85,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
       if (msg->signal == CActiveAEDataProtocol::STREAMBUFFER)
       {
         m_currentBuffer = *((CSampleBuffer**)msg->data);
+        msg->Release();
         continue;
       }
       else
@@ -130,6 +132,41 @@ void CActiveAEStream::Resume()
 
 void CActiveAEStream::Drain()
 {
+  Message *msg;
+  XbmcThreads::EndTime timer(2000);
+
+  CActiveAEStream *stream = this;
+  if (m_currentBuffer)
+  {
+    MsgStreamSample msgData;
+    msgData.buffer = m_currentBuffer;
+    msgData.stream = this;
+    m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
+    m_currentBuffer = NULL;
+  }
+  m_streamPort->SendOutMessage(CActiveAEDataProtocol::DRAINSTREAM, &stream, sizeof(CActiveAEStream*));
+
+  while (!timer.IsTimePast())
+  {
+    if (m_streamPort->ReceiveInMessage(&msg))
+    {
+      if (msg->signal == CActiveAEDataProtocol::STREAMBUFFER)
+      {
+        MsgStreamSample msgData;
+        msgData.stream = this;
+        msgData.buffer = *((CSampleBuffer**)msg->data);
+        msg->Reply(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
+        continue;
+      }
+      else if (msg->signal == CActiveAEDataProtocol::STREAMDRAINED)
+      {
+        msg->Release();
+        return;
+      }
+    }
+    m_inMsgEvent.WaitMSec(timer.MillisLeft());
+  }
+  CLog::Log(LOGERROR, "CActiveAEStream::Drain - timeout out");
 }
 
 bool CActiveAEStream::IsDraining()

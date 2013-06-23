@@ -346,7 +346,10 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           msgData->stream->m_processingSamples.pop_front();
           if (samples != msgData->buffer)
             CLog::Log(LOGERROR, "CActiveAE - inconsistency in stream sample message");
-          msgData->stream->m_resampleBuffers->m_inputSamples.push_back(msgData->buffer);
+          if (msgData->buffer->pkt->nb_samples == 0)
+            msgData->buffer->Return();
+          else
+            msgData->stream->m_resampleBuffers->m_inputSamples.push_back(msgData->buffer);
           m_extTimeout = 0;
           m_state = AE_TOP_CONFIGURED_PLAY;
           return;
@@ -358,6 +361,12 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             m_extDrainTimer.Set(m_stats.GetDelay() * 1000);
             m_extDrain = true;
           }
+          m_extTimeout = 0;
+          m_state = AE_TOP_CONFIGURED_PLAY;
+          return;
+        case CActiveAEDataProtocol::DRAINSTREAM:
+          stream = *(CActiveAEStream**)msg->data;
+          stream->m_drain = true;
           m_extTimeout = 0;
           m_state = AE_TOP_CONFIGURED_PLAY;
           return;
@@ -907,13 +916,24 @@ bool CActiveAE::RunStages()
     // provide buffers to stream
     float time = m_stats.GetCacheTime((*it));
     CSampleBuffer *buffer;
-    while (time < MAX_CACHE_LEVEL && !(*it)->m_imputBuffers->m_freeSamples.empty())
+    if (!(*it)->m_drain)
     {
-      buffer = (*it)->m_imputBuffers->m_freeSamples.front();
-      (*it)->m_imputBuffers->m_freeSamples.pop_front();
-      (*it)->m_processingSamples.push_back(buffer);
-      (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMBUFFER, &buffer, sizeof(CSampleBuffer*));
-      time += (float)buffer->pkt->max_nb_samples / buffer->pkt->config.sample_rate;
+      while (time < MAX_CACHE_LEVEL && !(*it)->m_imputBuffers->m_freeSamples.empty())
+      {
+        buffer = (*it)->m_imputBuffers->m_freeSamples.front();
+        (*it)->m_imputBuffers->m_freeSamples.pop_front();
+        (*it)->m_processingSamples.push_back(buffer);
+        (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMBUFFER, &buffer, sizeof(CSampleBuffer*));
+        time += (float)buffer->pkt->max_nb_samples / buffer->pkt->config.sample_rate;
+      }
+    }
+    else
+    {
+      if ((*it)->m_imputBuffers->m_allSamples.size() == (*it)->m_imputBuffers->m_freeSamples.size())
+      {
+        (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMDRAINED);
+        (*it)->m_drain = false;
+      }
     }
   }
 
