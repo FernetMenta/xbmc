@@ -71,6 +71,7 @@ enum SINK_STATES
   S_TOP_CONFIGURED_SUSPEND,       // 3
   S_TOP_CONFIGURED_IDLE,          // 4
   S_TOP_CONFIGURED_PLAY,          // 5
+  S_TOP_CONFIGURED_SILENCE,       // 6
 };
 
 int SINK_parentStates[] = {
@@ -81,6 +82,7 @@ int SINK_parentStates[] = {
     2, //TOP_CONFIGURED_SUSPEND
     2, //TOP_CONFIGURED_IDLE
     2, //TOP_CONFIGURED_PLAY
+    2, //TOP_CONFIGURED_SILENCE
 };
 
 void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
@@ -103,6 +105,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
             m_stats = data->stats;
           }
           m_extError = false;
+          m_extSilence = false;
           ReturnBuffers();
           OpenSink();
 
@@ -175,6 +178,9 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           m_state = S_TOP_UNCONFIGURED;
           m_extTimeout = 0;
           return;
+        case CSinkControlProtocol::SILENCEMODE:
+          m_extSilence = *(bool*)msg->data;
+          return;
         default:
           break;
         }
@@ -209,15 +215,26 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
       break;
 
     case S_TOP_CONFIGURED_IDLE:
-      if (port == NULL) // timeout
+      if (port == &m_dataPort)
+      {
+        switch (signal)
+        {
+        case CSinkDataProtocol::SAMPLE:
+          OutputSamples(&m_sampleOfSilence);
+          m_state = S_TOP_CONFIGURED_PLAY;
+          m_extTimeout = 0;
+          m_bStateMachineSelfTrigger = true;
+          return;
+        default:
+          break;
+        }
+      }
+      else if (port == NULL) // timeout
       {
         switch (signal)
         {
         case CSinkControlProtocol::TIMEOUT:
-          OutputSamples(&m_sampleOfSilence);
-          if (m_extError)
-            m_state = S_TOP_UNCONFIGURED;
-          m_extTimeout = 0;
+          m_extTimeout = 10000;
           return;
         default:
           break;
@@ -231,7 +248,33 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         switch (signal)
         {
         case CSinkControlProtocol::TIMEOUT:
-          m_state = S_TOP_CONFIGURED_IDLE;
+          if (m_extSilence)
+          {
+            m_state = S_TOP_CONFIGURED_SILENCE;
+            m_extTimeout = 0;
+          }
+          else
+          {
+            m_sink->Drain();
+            m_state = S_TOP_CONFIGURED_IDLE;
+            m_extTimeout = 0;
+          }
+          return;
+        default:
+          break;
+        }
+      }
+      break;
+
+    case S_TOP_CONFIGURED_SILENCE:
+      if (port == NULL) // timeout
+      {
+        switch (signal)
+        {
+        case CSinkControlProtocol::TIMEOUT:
+          OutputSamples(&m_sampleOfSilence);
+          if (m_extError)
+            m_state = S_TOP_UNCONFIGURED;
           m_extTimeout = 0;
           return;
         default:
