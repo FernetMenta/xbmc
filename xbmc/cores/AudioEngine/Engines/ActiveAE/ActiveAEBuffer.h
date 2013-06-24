@@ -87,6 +87,7 @@ public:
   virtual bool Create(bool remap = false);
   bool ResampleBuffers();
   float GetDelay();
+  void Flush();
   AEAudioFormat m_inputFormat;
   std::deque<CSampleBuffer*> m_inputSamples;
   std::deque<CSampleBuffer*> m_outputSamples;
