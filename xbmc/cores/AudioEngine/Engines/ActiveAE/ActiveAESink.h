@@ -36,7 +36,6 @@ class CEngineStats;
 struct SinkConfig
 {
   AEAudioFormat format;
-  bool passthrough;
   CEngineStats *stats;
 };
 
@@ -48,6 +47,7 @@ public:
   {
     CONFIGURE,
     DRAIN,
+    SILENCEMODE,
     TIMEOUT,
   };
   enum InSignal
@@ -101,6 +101,7 @@ protected:
   bool m_bStateMachineSelfTrigger;
   int m_extTimeout;
   bool m_extError;
+  bool m_extSilence;
 
   CSampleBuffer m_sampleOfSilence;
 

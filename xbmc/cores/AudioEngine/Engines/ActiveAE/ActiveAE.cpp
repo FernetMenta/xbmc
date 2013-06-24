@@ -613,10 +613,16 @@ void CActiveAE::Configure()
     m_silenceBuffers = new CActiveAEBufferPool(inputFormat);
     m_silenceBuffers->Create();
     sinkInputFormat = inputFormat;
+
+    bool silence = false;
+    m_sink.m_controlPort.SendOutMessage(CSinkControlProtocol::SILENCEMODE, &silence, sizeof(bool));
   }
   // resample buffers for streams
   else
   {
+    bool silence = true;
+    m_sink.m_controlPort.SendOutMessage(CSinkControlProtocol::SILENCEMODE, &silence, sizeof(bool));
+
     AEAudioFormat outputFormat;
     if (AE_IS_RAW(inputFormat.m_dataFormat))
     {
@@ -846,7 +852,6 @@ void CActiveAE::InitSink()
 {
   SinkConfig config;
   config.format = m_sinkRequestFormat;
-  config.passthrough = false;
   config.stats = &m_stats;
 
   // start sink
