@@ -62,8 +62,11 @@ public:
   CActiveAEControlProtocol(std::string name, CEvent* inEvent, CEvent *outEvent) : Protocol(name, inEvent, outEvent) {};
   enum OutSignal
   {
-    INIT,
+    INIT = 0,
     RECONFIGURE,
+    FLUSHSTREAM,
+    PAUSESTREAM,
+    RESUMESTREAM,
     TIMEOUT,
   };
   enum InSignal
@@ -168,6 +171,8 @@ protected:
   float GetDelay(CActiveAEStream *stream) { return m_stats.GetDelay(stream); }
   float GetCacheTime(CActiveAEStream *stream) { return m_stats.GetCacheTime(stream); }
   float GetCacheTotal(CActiveAEStream *stream) { return m_stats.GetCacheTotal(stream); }
+  void FlushStream(CActiveAEStream *stream);
+  void PauseStream(CActiveAEStream *stream, bool pause);
 
 protected:
   void Process();
@@ -183,6 +188,7 @@ protected:
   void Configure();
   CActiveAEStream* CreateStream(AEAudioFormat *format);
   void DiscardStream(CActiveAEStream *stream);
+  void SFlushStream(CActiveAEStream *stream);
   void ClearDiscardedBuffers();
 
   bool RunStages();

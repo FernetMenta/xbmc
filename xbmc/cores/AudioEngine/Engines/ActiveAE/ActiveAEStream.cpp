@@ -41,6 +41,7 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_bufferedTime = 0;
   m_currentBuffer = NULL;
   m_drain = false;
+  m_paused = false;
 }
 
 CActiveAEStream::~CActiveAEStream()
@@ -124,10 +125,12 @@ double CActiveAEStream::GetCacheTotal()
 
 void CActiveAEStream::Pause()
 {
+  AE.PauseStream(this, true);
 }
 
 void CActiveAEStream::Resume()
 {
+  AE.PauseStream(this, false);
 }
 
 void CActiveAEStream::Drain()
@@ -171,14 +174,17 @@ void CActiveAEStream::Drain()
 
 bool CActiveAEStream::IsDraining()
 {
+  return false;
 }
 
 bool CActiveAEStream::IsDrained()
 {
+  return true;
 }
 
 void CActiveAEStream::Flush()
 {
+  AE.FlushStream(this);
 }
 
 float CActiveAEStream::GetAmplification()

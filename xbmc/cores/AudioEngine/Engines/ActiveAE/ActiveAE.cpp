@@ -218,7 +218,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
       }
       {
         std::string portName = port == NULL ? "timer" : port->portName;
-        CLog::Log(LOGWARNING, "CActive::%s - signal: %d form port: %s not handled for state: %d", __FUNCTION__, signal, portName.c_str(), m_state);
+        CLog::Log(LOGWARNING, "CActiveAE::%s - signal: %d form port: %s not handled for state: %d", __FUNCTION__, signal, portName.c_str(), m_state);
       }
       return;
 
@@ -304,6 +304,20 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           // don't accept any data until we are reconfigured
           m_dataPort.DeferOut(true);
           return;
+        case CActiveAEControlProtocol::FLUSHSTREAM:
+          CActiveAEStream *stream;
+          stream = *(CActiveAEStream**)msg->data;
+          FlushStream(stream);
+          msg->Reply(CActiveAEControlProtocol::ACC);
+          return;
+        case CActiveAEControlProtocol::PAUSESTREAM:
+          stream = *(CActiveAEStream**)msg->data;
+          stream->m_paused = true;
+          return;
+        case CActiveAEControlProtocol::RESUMESTREAM:
+          stream = *(CActiveAEStream**)msg->data;
+          stream->m_paused = false;
+          return;
         default:
           break;
         }
@@ -367,6 +381,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
         case CActiveAEDataProtocol::DRAINSTREAM:
           stream = *(CActiveAEStream**)msg->data;
           stream->m_drain = true;
+          stream->m_resampleBuffers->m_drain = true;
           m_extTimeout = 0;
           m_state = AE_TOP_CONFIGURED_PLAY;
           return;
@@ -530,7 +545,7 @@ void CActiveAE::Process()
     else
     {
       msg = m_controlPort.GetMessage();
-      msg->signal = CSinkControlProtocol::TIMEOUT;
+      msg->signal = CActiveAEControlProtocol::TIMEOUT;
       port = 0;
       // signal timeout to state machine
       StateMachine(msg->signal, port, msg);
@@ -725,6 +740,16 @@ void CActiveAE::DiscardStream(CActiveAEStream *stream)
   }
 }
 
+void CActiveAE::SFlushStream(CActiveAEStream *stream)
+{
+  while (!stream->m_processingSamples.empty())
+  {
+    stream->m_processingSamples.front()->Return();
+    stream->m_processingSamples.pop_front();
+  }
+  stream->m_resampleBuffers->Flush();
+}
+
 void CActiveAE::ClearDiscardedBuffers()
 {
   std::list<CActiveAEBufferPool*>::iterator it;
@@ -733,21 +758,7 @@ void CActiveAE::ClearDiscardedBuffers()
     CActiveAEBufferPoolResample *rbuf = dynamic_cast<CActiveAEBufferPoolResample*>(*it);
     if (rbuf)
     {
-      if (rbuf->m_procSample)
-      {
-        rbuf->m_procSample->Return();
-        rbuf->m_procSample = NULL;
-      }
-      while (!rbuf->m_inputSamples.empty())
-      {
-        rbuf->m_inputSamples.front()->Return();
-        rbuf->m_inputSamples.pop_front();
-      }
-      while (!rbuf->m_outputSamples.empty())
-      {
-        rbuf->m_outputSamples.front()->Return();
-        rbuf->m_outputSamples.pop_front();
-      }
+      rbuf->Flush();
     }
     // if all buffers have returned, we can delete the buffer pool
     if ((*it)->m_allSamples.size() == (*it)->m_freeSamples.size())
@@ -910,6 +921,9 @@ bool CActiveAE::RunStages()
   std::list<CActiveAEStream*>::iterator it;
   for (it = m_streams.begin(); it != m_streams.end(); ++it)
   {
+    if ((*it)->m_paused)
+      continue;
+
     if ((*it)->m_resampleBuffers)
       busy = (*it)->m_resampleBuffers->ResampleBuffers();
 
@@ -933,6 +947,7 @@ bool CActiveAE::RunStages()
       {
         (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMDRAINED);
         (*it)->m_drain = false;
+        (*it)->m_resampleBuffers->m_drain = false;
       }
     }
   }
@@ -1529,7 +1544,29 @@ IAEStream *CActiveAE::FreeStream(IAEStream *stream)
   return NULL;
 }
 
+void CActiveAE::FlushStream(CActiveAEStream *stream)
+{
+  Message *reply;
+  if (m_controlPort.SendOutMessageSync(CActiveAEControlProtocol::FLUSHSTREAM,
+                                       &reply,1000,
+                                       &stream, sizeof(CActiveAEStream*)))
+  {
+    bool success = reply->signal == CActiveAEControlProtocol::ACC ? true : false;
+    reply->Release();
+    if (!success)
+    {
+      CLog::Log(LOGERROR, "CActiveAE::FlushStream - failed");
+    }
+  }
+}
 
-
-
-
+void CActiveAE::PauseStream(CActiveAEStream *stream, bool pause)
+{
+  // TODO pause sink, needs api change
+  if (pause)
+    m_controlPort.SendOutMessage(CActiveAEControlProtocol::PAUSESTREAM,
+                                   &stream, sizeof(CActiveAEStream*));
+  else
+    m_controlPort.SendOutMessage(CActiveAEControlProtocol::RESUMESTREAM,
+                                   &stream, sizeof(CActiveAEStream*));
+}
