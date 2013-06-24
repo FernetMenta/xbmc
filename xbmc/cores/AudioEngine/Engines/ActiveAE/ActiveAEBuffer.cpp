@@ -258,3 +258,22 @@ float CActiveAEBufferPoolResample::GetDelay()
 
   return delay;
 }
+
+void CActiveAEBufferPoolResample::Flush()
+{
+  if (m_procSample)
+  {
+    m_procSample->Return();
+    m_procSample = NULL;
+  }
+  while (!m_inputSamples.empty())
+  {
+    m_inputSamples.front()->Return();
+    m_inputSamples.pop_front();
+  }
+  while (!m_outputSamples.empty())
+  {
+    m_outputSamples.front()->Return();
+    m_outputSamples.pop_front();
+  }
+}
