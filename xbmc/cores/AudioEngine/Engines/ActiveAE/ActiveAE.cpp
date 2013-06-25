@@ -119,7 +119,7 @@ CActiveAE::CActiveAE() :
   m_dataPort("OutputDataPort", &m_inMsgEvent, &m_outMsgEvent),
   m_sink(&m_outMsgEvent)
 {
-  m_sink.EnumerateSinkList();
+//  m_sink.EnumerateSinkList();
   m_sinkBuffers = NULL;
   m_silenceBuffers = NULL;
   m_volume = 1.0;
@@ -201,6 +201,12 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           sound = *(CActiveAESound**)msg->data;
           DiscardSound(sound);
           return;
+        case CActiveAEDataProtocol::DRAINSTREAM:
+          stream = *(CActiveAEStream**)msg->data;
+          stream->m_drain = true;
+          stream->m_resampleBuffers->m_drain = true;
+          msg->Reply(CActiveAEDataProtocol::STREAMDRAINED);
+          return;
         default:
           break;
         }
@@ -236,9 +242,11 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
         switch (signal)
         {
         case CActiveAEControlProtocol::INIT:
+          m_extError = false;
+          UnconfigureSink();
+          m_sink.EnumerateSinkList();
           LoadSettings();
           Configure();
-
           msg->Reply(CActiveAEControlProtocol::ACC);
           if (!m_extError)
           {
@@ -308,6 +316,10 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           m_extTimeout = 0;
           // don't accept any data until we are reconfigured
           m_dataPort.DeferOut(true);
+          return;
+        case CActiveAEControlProtocol::SUSPEND:
+          UnconfigureSink();
+          m_state = AE_TOP_UNCONFIGURED;
           return;
         case CActiveAEControlProtocol::FLUSHSTREAM:
           CActiveAEStream *stream;
@@ -486,6 +498,9 @@ void CActiveAE::Process()
   m_extTimeout = 1000;
   m_bStateMachineSelfTrigger = false;
   m_extDrain = false;
+
+  // start sink
+  m_sink.Start();
 
   while (!m_bStop)
   {
@@ -892,9 +907,6 @@ void CActiveAE::InitSink()
   config.format = m_sinkRequestFormat;
   config.stats = &m_stats;
 
-  // start sink
-  m_sink.Start();
-
   // send message to sink
   Message *reply;
   if (m_sink.m_controlPort.SendOutMessageSync(CSinkControlProtocol::CONFIGURE,
@@ -955,6 +967,32 @@ void CActiveAE::DrainSink()
     return;
   }
 }
+
+void CActiveAE::UnconfigureSink()
+{
+  // send message to sink
+  Message *reply;
+  if (m_sink.m_controlPort.SendOutMessageSync(CSinkControlProtocol::UNCONFIGURE,
+                                                 &reply,
+                                                 2000))
+  {
+    bool success = reply->signal == CSinkControlProtocol::ACC ? true : false;
+    if (!success)
+    {
+      CLog::Log(LOGERROR, "ActiveAE::%s - returned error", __FUNCTION__);
+      m_extError = true;
+    }
+    reply->Release();
+  }
+  else
+  {
+    CLog::Log(LOGERROR, "ActiveAE::%s - failed to unconfigure", __FUNCTION__);
+    m_extError = true;
+  }
+
+  m_inMsgEvent.Reset();
+}
+
 
 bool CActiveAE::RunStages()
 {
@@ -1283,12 +1321,32 @@ void CActiveAE::Shutdown()
 
 bool CActiveAE::Suspend()
 {
-
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::SUSPEND);
 }
 
 bool CActiveAE::Resume()
 {
+  Message *reply;
+  if (m_controlPort.SendOutMessageSync(CActiveAEControlProtocol::INIT,
+                                                 &reply,
+                                                 5000))
+  {
+    bool success = reply->signal == CActiveAEControlProtocol::ACC ? true : false;
+    reply->Release();
+    if (!success)
+    {
+      CLog::Log(LOGERROR, "ActiveAE::%s - returned error", __FUNCTION__);
+      return false;
+    }
+  }
+  else
+  {
+    CLog::Log(LOGERROR, "ActiveAE::%s - failed to init", __FUNCTION__);
+    return false;
+  }
 
+  m_inMsgEvent.Reset();
+  return true;
 }
 
 bool CActiveAE::IsSuspended()
