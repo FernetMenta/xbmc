@@ -67,6 +67,7 @@ public:
     FLUSHSTREAM,
     PAUSESTREAM,
     RESUMESTREAM,
+    STOPSOUND,
     TIMEOUT,
   };
   enum InSignal
@@ -85,6 +86,7 @@ public:
   {
     NEWSOUND = 0,
     PLAYSOUND,
+    FREESOUND,
     NEWSTREAM,
     FREESTREAM,
     STREAMSAMPLE,
@@ -173,6 +175,7 @@ protected:
   float GetCacheTotal(CActiveAEStream *stream) { return m_stats.GetCacheTotal(stream); }
   void FlushStream(CActiveAEStream *stream);
   void PauseStream(CActiveAEStream *stream, bool pause);
+  void StopSound(CActiveAESound *sound);
 
 protected:
   void Process();
@@ -190,6 +193,8 @@ protected:
   void DiscardStream(CActiveAEStream *stream);
   void SFlushStream(CActiveAEStream *stream);
   void ClearDiscardedBuffers();
+  void SStopSound(CActiveAESound *sound);
+  void DiscardSound(CActiveAESound *sound);
 
   bool RunStages();
   bool HasWork();
