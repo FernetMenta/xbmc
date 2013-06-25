@@ -324,7 +324,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
         case CActiveAEControlProtocol::FLUSHSTREAM:
           CActiveAEStream *stream;
           stream = *(CActiveAEStream**)msg->data;
-          FlushStream(stream);
+          SFlushStream(stream);
           msg->Reply(CActiveAEControlProtocol::ACC);
           return;
         case CActiveAEControlProtocol::PAUSESTREAM:
@@ -598,12 +598,6 @@ void CActiveAE::Configure()
     inputFormat.m_frames        = 0;
     inputFormat.m_frameSamples  = 0;
     inputFormat.m_frameSize     = 0;
-
-    if (g_advancedSettings.m_audioResample)
-    {
-      inputFormat.m_sampleRate = g_advancedSettings.m_audioResample;
-      CLog::Log(LOGINFO, "CActiveAE::Configure - Forcing samplerate to %d", inputFormat.m_sampleRate);
-    }
   }
   else
   {
@@ -636,7 +630,7 @@ void CActiveAE::Configure()
     inputFormat.m_frameSize = inputFormat.m_channelLayout.Count() *
                               (CAEUtil::DataFormatToBits(inputFormat.m_dataFormat) >> 3);
     m_silenceBuffers = new CActiveAEBufferPool(inputFormat);
-    m_silenceBuffers->Create();
+    m_silenceBuffers->Create(MAX_WATER_LEVEL*1000);
     sinkInputFormat = inputFormat;
 
     bool silence = false;
@@ -694,7 +688,7 @@ void CActiveAE::Configure()
       if (!(*it)->m_resampleBuffers)
       {
         (*it)->m_resampleBuffers = new CActiveAEBufferPoolResample((*it)->m_imputBuffers->m_format, outputFormat);
-        (*it)->m_resampleBuffers->Create();
+        (*it)->m_resampleBuffers->Create(MAX_CACHE_LEVEL*1000, false);
         if (m_mode == MODE_TRANSCODE || m_streams.size() > 1)
           (*it)->m_resampleBuffers->m_fillPackets = true;
       }
@@ -710,7 +704,7 @@ void CActiveAE::Configure()
   if (!m_sinkBuffers)
   {
     m_sinkBuffers = new CActiveAEBufferPoolResample(sinkInputFormat, m_sinkFormat);
-    m_sinkBuffers->Create(true);
+    m_sinkBuffers->Create(MAX_WATER_LEVEL*1000, true);
   }
 
   // reset gui sounds
@@ -739,7 +733,7 @@ CActiveAEStream* CActiveAE::CreateStream(AEAudioFormat *format)
 
   // create buffer pool
   stream->m_imputBuffers = new CActiveAEBufferPool(*format);
-  stream->m_imputBuffers->Create();
+  stream->m_imputBuffers->Create(MAX_CACHE_LEVEL*1000);
   stream->m_resampleBuffers = NULL; // create in Configure when we know the sink format
   stream->m_statsLock = m_stats.GetLock();
 
@@ -869,6 +863,13 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
         case 10: format.m_channelLayout = AE_CH_LAYOUT_7_1; break;
       }
     }
+
+    if (g_advancedSettings.m_audioResample)
+    {
+      format.m_sampleRate = g_advancedSettings.m_audioResample;
+      CLog::Log(LOGINFO, "CActiveAE::ApplySettings - Forcing samplerate to %d", format.m_sampleRate);
+    }
+
     CAEChannelInfo stdLayout = format.m_channelLayout;
     format.m_channelLayout.ResolveChannels(stdLayout);
   }

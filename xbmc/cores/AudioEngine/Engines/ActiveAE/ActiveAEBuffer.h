@@ -70,7 +70,7 @@ class CActiveAEBufferPool
 public:
   CActiveAEBufferPool(AEAudioFormat format);
   virtual ~CActiveAEBufferPool();
-  virtual bool Create();
+  virtual bool Create(unsigned int totaltime);
   void ReturnBuffer(CSampleBuffer *buffer);
   AEAudioFormat m_format;
   std::deque<CSampleBuffer*> m_allSamples;
@@ -84,7 +84,7 @@ class CActiveAEBufferPoolResample : public CActiveAEBufferPool
 public:
   CActiveAEBufferPoolResample(AEAudioFormat inputFormat, AEAudioFormat outputFormat);
   virtual ~CActiveAEBufferPoolResample();
-  virtual bool Create(bool remap = false);
+  virtual bool Create(unsigned int totaltime, bool remap);
   bool ResampleBuffers();
   float GetDelay();
   void Flush();

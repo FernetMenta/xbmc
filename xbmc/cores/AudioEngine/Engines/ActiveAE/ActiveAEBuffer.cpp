@@ -81,7 +81,7 @@ void CActiveAEBufferPool::ReturnBuffer(CSampleBuffer *buffer)
   m_freeSamples.push_back(buffer);
 }
 
-bool CActiveAEBufferPool::Create()
+bool CActiveAEBufferPool::Create(unsigned int totaltime)
 {
   CSampleBuffer *buffer;
   SampleConfig config;
@@ -90,7 +90,10 @@ bool CActiveAEBufferPool::Create()
   config.sample_rate = m_format.m_sampleRate;
   config.channel_layout = CActiveAEResample::GetAVChannelLayout(m_format.m_channelLayout);
 
-  for(int i=0; i<5; i++)
+  unsigned int time = 0;
+  unsigned int buffertime = (m_format.m_frames*1000) / m_format.m_sampleRate;
+  unsigned int n = 0;
+  while (time < buffertime && n < 5)
   {
     buffer = new CSampleBuffer();
     buffer->pool = this;
@@ -98,6 +101,8 @@ bool CActiveAEBufferPool::Create()
 
     m_allSamples.push_back(buffer);
     m_freeSamples.push_back(buffer);
+    time += buffertime;
+    n++;
   }
 
   return true;
@@ -123,9 +128,9 @@ CActiveAEBufferPoolResample::~CActiveAEBufferPoolResample()
     delete m_resampler;
 }
 
-bool CActiveAEBufferPoolResample::Create(bool remap)
+bool CActiveAEBufferPoolResample::Create(unsigned int totaltime, bool remap)
 {
-  CActiveAEBufferPool::Create();
+  CActiveAEBufferPool::Create(totaltime);
 
   if (m_inputFormat.m_channelLayout != m_format.m_channelLayout ||
       m_inputFormat.m_sampleRate != m_format.m_sampleRate ||
