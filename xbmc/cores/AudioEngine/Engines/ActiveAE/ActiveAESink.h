@@ -46,6 +46,7 @@ public:
   enum OutSignal
   {
     CONFIGURE,
+    UNCONFIGURE,
     SILENCEMODE,
     TIMEOUT,
   };

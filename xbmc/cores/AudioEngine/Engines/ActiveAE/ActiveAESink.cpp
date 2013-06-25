@@ -134,6 +134,20 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           }
           return;
 
+        case CSinkControlProtocol::UNCONFIGURE:
+          ReturnBuffers();
+          if (m_sink)
+          {
+            m_sink->Deinitialize();
+            delete m_sink;
+            m_sink = NULL;
+          }
+          m_state = S_TOP_UNCONFIGURED;
+          msg->Reply(CSinkControlProtocol::ACC);
+          return;
+
+        default:
+          break;
         }
       }
       else if (port == &m_dataPort)
@@ -415,6 +429,7 @@ void CActiveAESink::Process()
 void CActiveAESink::EnumerateSinkList()
 {
   unsigned int c_retry = 5;
+  m_sinkInfoList.clear();
   CAESinkFactory::EnumerateEx(m_sinkInfoList);
   while(m_sinkInfoList.size() == 0 && c_retry > 0)
   {

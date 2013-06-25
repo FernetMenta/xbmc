@@ -64,6 +64,7 @@ public:
   {
     INIT = 0,
     RECONFIGURE,
+    SUSPEND,
     FLUSHSTREAM,
     PAUSESTREAM,
     RESUMESTREAM,
@@ -182,6 +183,7 @@ protected:
   void StateMachine(int signal, Protocol *port, Message *msg);
   void InitSink();
   void DrainSink();
+  void UnconfigureSink();
   void Start();
   void Dispose();
   void LoadSettings();
