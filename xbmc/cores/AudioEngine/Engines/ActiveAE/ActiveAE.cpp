@@ -196,6 +196,10 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           stream = *(CActiveAEStream**)msg->data;
           DiscardStream(stream);
           return;
+        case CActiveAEDataProtocol::FREESOUND:
+          sound = *(CActiveAESound**)msg->data;
+          DiscardSound(sound);
+          return;
         default:
           break;
         }
@@ -317,6 +321,11 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
         case CActiveAEControlProtocol::RESUMESTREAM:
           stream = *(CActiveAEStream**)msg->data;
           stream->m_paused = false;
+          return;
+        case CActiveAEControlProtocol::STOPSOUND:
+          CActiveAESound *sound;
+          sound = *(CActiveAESound**)msg->data;
+          SStopSound(sound);
           return;
         default:
           break;
@@ -772,6 +781,34 @@ void CActiveAE::ClearDiscardedBuffers()
       delete (*it);
       CLog::Log(LOGDEBUG, "CActiveAE::ClearDiscardedBuffers - buffer pool deleted");
       m_discardBufferPools.erase(it);
+      return;
+    }
+  }
+}
+
+void CActiveAE::SStopSound(CActiveAESound *sound)
+{
+  std::list<SoundState>::iterator it;
+  for (it=m_sounds_playing.begin(); it!=m_sounds_playing.end(); ++it)
+  {
+    if (it->sound == sound)
+    {
+      m_sounds_playing.erase(it);
+      return;
+    }
+  }
+}
+
+void CActiveAE::DiscardSound(CActiveAESound *sound)
+{
+  SStopSound(sound);
+
+  std::vector<CActiveAESound*>::iterator it;
+  for (it=m_sounds.begin(); it!=m_sounds.end(); ++it)
+  {
+    if ((*it) == sound)
+    {
+      m_sounds.erase(it);
       return;
     }
   }
@@ -1426,12 +1463,17 @@ IAESound *CActiveAE::MakeSound(const std::string& file)
 
 void CActiveAE::FreeSound(IAESound *sound)
 {
-
+  m_dataPort.SendOutMessage(CActiveAEDataProtocol::FREESOUND, &sound, sizeof(CActiveAESound*));
 }
 
 void CActiveAE::PlaySound(CActiveAESound *sound)
 {
   m_dataPort.SendOutMessage(CActiveAEDataProtocol::PLAYSOUND, &sound, sizeof(CActiveAESound*));
+}
+
+void CActiveAE::StopSound(CActiveAESound *sound)
+{
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::STOPSOUND, &sound, sizeof(CActiveAESound*));
 }
 
 /**
