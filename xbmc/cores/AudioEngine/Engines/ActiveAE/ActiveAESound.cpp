@@ -58,10 +58,13 @@ void CActiveAESound::Play()
 
 void CActiveAESound::Stop()
 {
+  AE.StopSound(this);
 }
 
 bool CActiveAESound::IsPlaying()
 {
+  // TODO
+  return false;
 }
 
 uint8_t** CActiveAESound::InitSound(bool orig, SampleConfig config, int nb_samples)
