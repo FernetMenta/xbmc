@@ -138,6 +138,7 @@ void CActiveAE::Dispose()
   StopThread();
   m_controlPort.Purge();
   m_dataPort.Purge();
+  m_sink.Dispose();
 
   m_dllAvFormat.Unload();
   m_dllAvCodec.Unload();
@@ -933,11 +934,11 @@ void CActiveAE::DrainSink()
 {
   // send message to sink
   Message *reply;
-  if (m_sink.m_controlPort.SendOutMessageSync(CSinkControlProtocol::DRAIN,
+  if (m_sink.m_dataPort.SendOutMessageSync(CSinkDataProtocol::DRAIN,
                                                  &reply,
                                                  2000))
   {
-    bool success = reply->signal == CSinkControlProtocol::ACC ? true : false;
+    bool success = reply->signal == CSinkDataProtocol::ACC ? true : false;
     if (!success)
     {
       reply->Release();
@@ -1277,7 +1278,7 @@ bool CActiveAE::SupportsRaw()
 
 void CActiveAE::Shutdown()
 {
-
+  Dispose();
 }
 
 bool CActiveAE::Suspend()
