@@ -46,7 +46,6 @@ public:
   enum OutSignal
   {
     CONFIGURE,
-    DRAIN,
     SILENCEMODE,
     TIMEOUT,
   };
@@ -65,10 +64,12 @@ public:
   enum OutSignal
   {
     SAMPLE = 0,
+    DRAIN,
   };
   enum InSignal
   {
     RETURNSAMPLE,
+    ACC,
   };
 };
 
@@ -93,7 +94,7 @@ protected:
   void OpenSink();
   void ReturnBuffers();
 
-  void OutputSamples(CSampleBuffer* samples);
+  unsigned OutputSamples(CSampleBuffer* samples);
 
   CEvent m_outMsgEvent;
   CEvent *m_inMsgEvent;
