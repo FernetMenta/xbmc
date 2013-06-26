@@ -138,6 +138,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           ReturnBuffers();
           if (m_sink)
           {
+            m_sink->Drain();
             m_sink->Deinitialize();
             delete m_sink;
             m_sink = NULL;
