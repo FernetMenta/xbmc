@@ -33,11 +33,12 @@
 #include "DllAvCodec.h"
 #include "DllAvUtil.h"
 
+class IAESink;
+class IAEEncoder;
+
 namespace ActiveAE
 {
 
-class IAESink;
-class IAEEncoder;
 class CActiveAESound;
 class CActiveAEStream;
 
@@ -227,12 +228,15 @@ protected:
   CActiveAESink m_sink;
   AEAudioFormat m_sinkFormat;
   AEAudioFormat m_sinkRequestFormat;
+  AEAudioFormat m_encoderFormat;
   AudioSettings m_settings;
   CEngineStats m_stats;
+  IAEEncoder *m_encoder;
 
   // buffers
   CActiveAEBufferPoolResample *m_sinkBuffers;
   CActiveAEBufferPool *m_silenceBuffers;  // needed to drive gui sounds if we have no streams
+  CActiveAEBufferPool *m_encoderBuffers;
 
   // streams
   std::list<CActiveAEStream*> m_streams;
