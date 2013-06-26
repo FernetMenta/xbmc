@@ -601,7 +601,7 @@ void CActiveAE::Configure()
   }
   else
   {
-    inputFormat = m_streams.front()->m_imputBuffers->m_format;
+    inputFormat = m_streams.front()->m_format;
   }
 
   m_sinkRequestFormat = inputFormat;
