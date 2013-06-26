@@ -24,6 +24,7 @@ using namespace ActiveAE;
 #include "ActiveAESound.h"
 #include "ActiveAEStream.h"
 #include "Utils/AEUtil.h"
+#include "Encoders/AEEncoderFFmpeg.h"
 
 #include "settings/Settings.h"
 #include "settings/AdvancedSettings.h"
@@ -119,11 +120,12 @@ CActiveAE::CActiveAE() :
   m_dataPort("OutputDataPort", &m_inMsgEvent, &m_outMsgEvent),
   m_sink(&m_outMsgEvent)
 {
-//  m_sink.EnumerateSinkList();
   m_sinkBuffers = NULL;
   m_silenceBuffers = NULL;
+  m_encoderBuffers = NULL;
   m_volume = 1.0;
   m_mode = MODE_PCM;
+  m_encoder = NULL;
 }
 
 CActiveAE::~CActiveAE()
@@ -635,6 +637,17 @@ void CActiveAE::Configure()
 
     bool silence = false;
     m_sink.m_controlPort.SendOutMessage(CSinkControlProtocol::SILENCEMODE, &silence, sizeof(bool));
+
+    if (m_encoder)
+    {
+      delete m_encoder;
+      m_encoder = NULL;
+    }
+    if (m_encoderBuffers)
+    {
+      m_discardBufferPools.push_back(m_encoderBuffers);
+      m_encoderBuffers = NULL;
+    }
   }
   // resample buffers for streams
   else
@@ -653,14 +666,38 @@ void CActiveAE::Configure()
     else if (m_settings.ac3passthrough && !m_settings.multichannellpcm)
     {
       outputFormat = inputFormat;
-      outputFormat.m_dataFormat = AE_FMT_FLOAT;
-      outputFormat.m_channelLayout = AE_CH_LAYOUT_5_1;
-      outputFormat.m_frames = 1536;
+      outputFormat.m_dataFormat = AE_FMT_FLOATP;
 
       if (g_advancedSettings.m_audioResample)
       {
         outputFormat.m_sampleRate = g_advancedSettings.m_audioResample;
         CLog::Log(LOGINFO, "CActiveAE::Configure - Forcing samplerate to %d", inputFormat.m_sampleRate);
+      }
+
+      // setup encoder
+      if (!m_encoder)
+      {
+        m_encoder = new CAEEncoderFFmpeg();
+        m_encoder->Initialize(outputFormat, true);
+        m_encoderFormat = outputFormat;
+      }
+
+      outputFormat.m_channelLayout = m_encoderFormat.m_channelLayout;
+      outputFormat.m_frames = m_encoderFormat.m_frames;
+
+      // encoder buffer
+      if (m_encoder->GetCodecID() == CODEC_ID_AC3)
+      {
+        AEAudioFormat format;
+        format.m_channelLayout = AE_CH_LAYOUT_2_0;
+        format.m_dataFormat = AE_FMT_S16NE;
+        format.m_frameSize = 2* (CAEUtil::DataFormatToBits(format.m_dataFormat) >> 3);
+        format.m_frames = AC3_FRAME_SIZE;
+        format.m_sampleRate = 48000;
+        if (m_encoderBuffers)
+          m_discardBufferPools.push_back(m_encoderBuffers);
+        m_encoderBuffers = new CActiveAEBufferPool(format);
+        m_encoderBuffers->Create(MAX_WATER_LEVEL*1000);
       }
 
       m_mode = MODE_TRANSCODE;
@@ -870,6 +907,12 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
       CLog::Log(LOGINFO, "CActiveAE::ApplySettings - Forcing samplerate to %d", format.m_sampleRate);
     }
 
+    // for IEC958 and analog limit to 2 channels
+    if (m_settings.mode != AUDIO_HDMI)
+    {
+      format.m_channelLayout = AE_CH_LAYOUT_2_0;
+    }
+
     CAEChannelInfo stdLayout = format.m_channelLayout;
     format.m_channelLayout.ResolveChannels(stdLayout);
   }
@@ -1034,7 +1077,8 @@ bool CActiveAE::RunStages()
     }
   }
 
-  if (m_stats.GetWaterLevel() < MAX_WATER_LEVEL)
+  if (m_stats.GetWaterLevel() < MAX_WATER_LEVEL &&
+      (m_mode != MODE_TRANSCODE || !m_encoderBuffers->m_freeSamples.empty()))
   {
     // mix streams and sounds sounds
     if (m_mode != MODE_RAW)
@@ -1094,10 +1138,22 @@ bool CActiveAE::RunStages()
       {
         MixSounds(*(out->pkt));
         Deamplify(*(out->pkt));
+
+        // encode
+        if (m_mode == MODE_TRANSCODE && m_encoder)
+        {
+          CSampleBuffer *buf = m_encoderBuffers->m_freeSamples.front();
+          m_encoderBuffers->m_freeSamples.pop_front();
+          int ret = m_encoder->Encode(out->pkt->data[0], out->pkt->planes*out->pkt->linesize,
+                            buf->pkt->data[0], buf->pkt->planes*buf->pkt->linesize);
+          buf->pkt->nb_samples = buf->pkt->max_nb_samples;
+          out->Return();
+          out = buf;
+        }
+
         m_stats.AddSamples(out->pkt->nb_samples, m_streams);
         m_sinkBuffers->m_inputSamples.push_back(out);
 
-        // TODO: encoder
         busy = true;
       }
     }
