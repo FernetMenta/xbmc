@@ -208,6 +208,11 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         {
         case CSinkControlProtocol::SILENCEMODE:
           m_extSilence = *(bool*)msg->data;
+          if (m_extSilence)
+          {
+            m_state = S_TOP_CONFIGURED_SILENCE;
+            m_extTimeout = 0;
+          }
           return;
         default:
           break;
