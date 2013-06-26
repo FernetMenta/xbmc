@@ -907,8 +907,8 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
       CLog::Log(LOGINFO, "CActiveAE::ApplySettings - Forcing samplerate to %d", format.m_sampleRate);
     }
 
-    // for IEC958 and analog limit to 2 channels
-    if (m_settings.mode != AUDIO_HDMI)
+    // for IEC958 limit to 2 channels
+    if (m_settings.mode == AUDIO_IEC958)
     {
       format.m_channelLayout = AE_CH_LAYOUT_2_0;
     }
