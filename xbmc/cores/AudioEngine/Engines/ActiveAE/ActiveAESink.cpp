@@ -257,6 +257,9 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           m_extTimeout = 0;
           m_bStateMachineSelfTrigger = true;
           return;
+        case CSinkDataProtocol::DRAIN:
+          msg->Reply(CSinkDataProtocol::ACC);
+          return;
         default:
           break;
         }
