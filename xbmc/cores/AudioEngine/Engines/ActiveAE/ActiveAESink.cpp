@@ -25,6 +25,7 @@
 #include "ActiveAE.h"
 
 #include "settings/Settings.h"
+#include "settings/AdvancedSettings.h"
 
 using namespace ActiveAE;
 
@@ -125,6 +126,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           {
             m_state = S_TOP_CONFIGURED_IDLE;
             m_extTimeout = 10000;
+            m_kickstartTimer.Set(0);
             msg->Reply(CSinkControlProtocol::ACC, &m_sinkFormat, sizeof(AEAudioFormat));
           }
           else
@@ -208,6 +210,8 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         {
         case CSinkControlProtocol::SILENCEMODE:
           m_extSilence = *(bool*)msg->data;
+          if (g_advancedSettings.m_streamSilence)
+            m_extSilence = true;
           if (m_extSilence)
           {
             m_state = S_TOP_CONFIGURED_SILENCE;
@@ -236,7 +240,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           msg->Reply(CSinkDataProtocol::RETURNSAMPLE, &samples, sizeof(CSampleBuffer*));
           if (m_extError)
           {
-            m_state = S_TOP_UNCONFIGURED;
+            m_state = S_TOP_CONFIGURED_IDLE;
             m_extTimeout = 0;
           }
           else
@@ -257,6 +261,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         switch (signal)
         {
         case CSinkDataProtocol::SAMPLE:
+          m_extError = false;
           OpenSink();
           OutputSamples(&m_sampleOfSilence);
           m_state = S_TOP_CONFIGURED_PLAY;
@@ -321,7 +326,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         switch (signal)
         {
         case CSinkControlProtocol::TIMEOUT:
-          if (m_extSilence)
+          if (m_extSilence || !m_kickstartTimer.IsTimePast())
           {
             m_state = S_TOP_CONFIGURED_SILENCE;
             m_extTimeout = 0;
@@ -345,10 +350,17 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         switch (signal)
         {
         case CSinkControlProtocol::TIMEOUT:
-          OutputSamples(&m_sampleOfSilence);
+          unsigned int delay;
+          delay = OutputSamples(&m_sampleOfSilence);
           if (m_extError)
-            m_state = S_TOP_UNCONFIGURED;
-          m_extTimeout = 0;
+            m_state = S_TOP_CONFIGURED_SUSPEND;
+          if (!m_extSilence && m_kickstartTimer.IsTimePast())
+          {
+            m_state = S_TOP_CONFIGURED_PLAY;
+            m_extTimeout = delay / 2;
+          }
+          else
+            m_extTimeout = 0;
           return;
         default:
           break;
