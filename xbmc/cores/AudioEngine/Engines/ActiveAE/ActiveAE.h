@@ -27,6 +27,7 @@
 #include "Interfaces/AEStream.h"
 #include "Interfaces/AESound.h"
 #include "AEFactory.h"
+#include "guilib/DispResource.h"
 
 // ffmpeg
 #include "DllAvFormat.h"
@@ -70,6 +71,9 @@ public:
     PAUSESTREAM,
     RESUMESTREAM,
     STOPSOUND,
+    GETSTATE,
+    DISPLAYLOST,
+    DISPLAYRESET,
     TIMEOUT,
   };
   enum InSignal
@@ -120,16 +124,19 @@ public:
   float GetCacheTime(CActiveAEStream *stream);
   float GetCacheTotal(CActiveAEStream *stream);
   float GetWaterLevel();
+  void SetSuspended(bool state);
+  bool IsSuspended();
   CCriticalSection *GetLock() { return &m_lock; }
 protected:
   float m_sinkDelay;
   int m_bufferedSamples;
   unsigned int m_sinkSampleRate;
   unsigned int m_sinkUpdate;
+  bool m_suspended;
   CCriticalSection m_lock;
 };
 
-class CActiveAE : public IAE, private CThread
+class CActiveAE : public IAE, public IDispResource, private CThread
 {
 protected:
   friend class ::CAEFactory;
@@ -167,6 +174,9 @@ public:
   virtual void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   virtual std::string GetDefaultDevice(bool passthrough);
   virtual bool SupportsRaw();
+
+  virtual void OnLostDevice();
+  virtual void OnResetDevice();
 
 protected:
   void PlaySound(CActiveAESound *sound);

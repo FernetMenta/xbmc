@@ -28,6 +28,7 @@ using namespace ActiveAE;
 
 #include "settings/Settings.h"
 #include "settings/AdvancedSettings.h"
+#include "windowing/WindowingFactory.h"
 
 #define MAX_CACHE_LEVEL 0.5   // total cache time of stream in seconds
 #define MAX_WATER_LEVEL 0.25  // buffered time after stream stages in seconds
@@ -39,6 +40,7 @@ void CEngineStats::Reset(unsigned int sampleRate)
   m_sinkDelay = 0;
   m_sinkSampleRate = sampleRate;
   m_bufferedSamples = 0;
+  m_suspended = false;
 }
 
 void CEngineStats::UpdateSinkDelay(double delay, int samples)
@@ -114,6 +116,18 @@ float CEngineStats::GetWaterLevel()
   return (float)m_bufferedSamples / m_sinkSampleRate;
 }
 
+void CEngineStats::SetSuspended(bool state)
+{
+  CSingleLock lock(m_lock);
+  m_suspended = state;
+}
+
+bool CEngineStats::IsSuspended()
+{
+  CSingleLock lock(m_lock);
+  return m_suspended;
+}
+
 CActiveAE::CActiveAE() :
   CThread("ActiveAE"),
   m_controlPort("OutputControlPort", &m_inMsgEvent, &m_outMsgEvent),
@@ -135,6 +149,8 @@ CActiveAE::~CActiveAE()
 
 void CActiveAE::Dispose()
 {
+  g_Windowing.Unregister(this);
+
   m_bStop = true;
   m_outMsgEvent.Set();
   StopThread();
@@ -181,7 +197,18 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
     switch (state)
     {
     case AE_TOP: // TOP
-      if (port == &m_dataPort)
+      if (port == &m_controlPort)
+      {
+        switch (signal)
+        {
+        case CActiveAEControlProtocol::GETSTATE:
+          msg->Reply(CActiveAEControlProtocol::ACC, &m_state, sizeof(m_state));
+          return;
+        default:
+          break;
+        }
+      }
+      else if (port == &m_dataPort)
       {
         switch (signal)
         {
@@ -231,7 +258,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
       }
       {
         std::string portName = port == NULL ? "timer" : port->portName;
-        CLog::Log(LOGWARNING, "CActiveAE::%s - signal: %d form port: %s not handled for state: %d", __FUNCTION__, signal, portName.c_str(), m_state);
+        CLog::Log(LOGWARNING, "CActiveAE::%s - signal: %d from port: %s not handled for state: %d", __FUNCTION__, signal, portName.c_str(), m_state);
       }
       return;
 
@@ -245,7 +272,6 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
         {
         case CActiveAEControlProtocol::INIT:
           m_extError = false;
-          UnconfigureSink();
           m_sink.EnumerateSinkList();
           LoadSettings();
           Configure();
@@ -289,7 +315,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           Configure();
           if (!m_extError)
           {
-            m_state = AE_TOP_CONFIGURED_IDLE;
+            m_state = AE_TOP_CONFIGURED_PLAY;
             m_extTimeout = 0;
           }
           else
@@ -321,7 +347,16 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           return;
         case CActiveAEControlProtocol::SUSPEND:
           UnconfigureSink();
-          m_state = AE_TOP_UNCONFIGURED;
+          m_stats.SetSuspended(true);
+          m_state = AE_TOP_CONFIGURED_SUSPEND;
+          return;
+        case CActiveAEControlProtocol::DISPLAYLOST:
+          if (m_settings.mode == AUDIO_HDMI)
+          {
+            UnconfigureSink();
+            m_stats.SetSuspended(true);
+            m_state = AE_TOP_CONFIGURED_SUSPEND;
+          }
           return;
         case CActiveAEControlProtocol::FLUSHSTREAM:
           CActiveAEStream *stream;
@@ -433,6 +468,41 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
       }
       break;
 
+    case AE_TOP_CONFIGURED_SUSPEND:
+      if (port == &m_controlPort)
+      {
+        bool displayReset = false;
+        switch (signal)
+        {
+        case CActiveAEControlProtocol::DISPLAYRESET:
+          displayReset = true;
+        case CActiveAEControlProtocol::INIT:
+          m_extError = false;
+          if (!displayReset)
+          {
+            m_sink.EnumerateSinkList();
+            LoadSettings();
+          }
+          Configure();
+          if (!displayReset)
+            msg->Reply(CActiveAEControlProtocol::ACC);
+          if (!m_extError)
+          {
+            m_stats.SetSuspended(false);
+            m_state = AE_TOP_CONFIGURED_PLAY;
+            m_extTimeout = 0;
+          }
+          else
+          {
+            m_state = AE_TOP_ERROR;
+          }
+          return;
+        default:
+          break;
+        }
+      }
+      break;
+
     case AE_TOP_CONFIGURED_IDLE:
       if (port == NULL) // timeout
       {
@@ -495,6 +565,7 @@ void CActiveAE::Process()
   Message *msg = NULL;
   Protocol *port = NULL;
   bool gotMsg;
+  bool deferData;
 
   m_state = AE_TOP_UNCONFIGURED;
   m_extTimeout = 1000;
@@ -507,6 +578,7 @@ void CActiveAE::Process()
   while (!m_bStop)
   {
     gotMsg = false;
+    deferData = (m_state == AE_TOP_CONFIGURED_SUSPEND);
 
     if (m_bStateMachineSelfTrigger)
     {
@@ -526,28 +598,31 @@ void CActiveAE::Process()
       gotMsg = true;
       port = &m_controlPort;
     }
-    // check data port
-    else if (m_dataPort.ReceiveOutMessage(&msg))
+    else if (!deferData)
     {
-      gotMsg = true;
-      port = &m_dataPort;
-    }
-    // check sink data port
-    else if (m_sink.m_dataPort.ReceiveInMessage(&msg))
-    {
-      gotMsg = true;
-      port = &m_sink.m_dataPort;
-    }
-    // stream data ports
-    else
-    {
-      std::list<CActiveAEStream*>::iterator it;
-      for(it=m_streams.begin(); it!=m_streams.end(); ++it)
+      // check data port
+      if (m_dataPort.ReceiveOutMessage(&msg))
       {
-        if((*it)->m_streamPort->ReceiveOutMessage(&msg))
+        gotMsg = true;
+        port = &m_dataPort;
+      }
+      // check sink data port
+      else if (m_sink.m_dataPort.ReceiveInMessage(&msg))
+      {
+        gotMsg = true;
+        port = &m_sink.m_dataPort;
+      }
+      // stream data ports
+      else
+      {
+        std::list<CActiveAEStream*>::iterator it;
+        for(it=m_streams.begin(); it!=m_streams.end(); ++it)
         {
-          gotMsg = true;
-          port = &m_dataPort;
+          if((*it)->m_streamPort->ReceiveOutMessage(&msg))
+          {
+            gotMsg = true;
+            port = &m_dataPort;
+          }
         }
       }
     }
@@ -681,6 +756,8 @@ void CActiveAE::Configure()
         m_encoder->Initialize(outputFormat, true);
         m_encoderFormat = outputFormat;
       }
+      else
+        outputFormat = m_encoderFormat;
 
       outputFormat.m_channelLayout = m_encoderFormat.m_channelLayout;
       outputFormat.m_frames = m_encoderFormat.m_frames;
@@ -694,10 +771,16 @@ void CActiveAE::Configure()
         format.m_frameSize = 2* (CAEUtil::DataFormatToBits(format.m_dataFormat) >> 3);
         format.m_frames = AC3_FRAME_SIZE;
         format.m_sampleRate = 48000;
-        if (m_encoderBuffers)
+        if (m_encoderBuffers && initSink)
+        {
           m_discardBufferPools.push_back(m_encoderBuffers);
-        m_encoderBuffers = new CActiveAEBufferPool(format);
-        m_encoderBuffers->Create(MAX_WATER_LEVEL*1000);
+          m_encoderBuffers = NULL;
+        }
+        if (!m_encoderBuffers)
+        {
+          m_encoderBuffers = new CActiveAEBufferPool(format);
+          m_encoderBuffers->Create(MAX_WATER_LEVEL*1000);
+        }
       }
 
       m_mode = MODE_TRANSCODE;
@@ -751,6 +834,7 @@ void CActiveAE::Configure()
     it->sound->SetConverted(false);
   }
 
+  ClearDiscardedBuffers();
   m_extDrain = false;
 }
 
@@ -800,6 +884,7 @@ void CActiveAE::DiscardStream(CActiveAEStream *stream)
       return;
     }
   }
+  ClearDiscardedBuffers();
 }
 
 void CActiveAE::SFlushStream(CActiveAEStream *stream)
@@ -955,7 +1040,7 @@ void CActiveAE::InitSink()
   Message *reply;
   if (m_sink.m_controlPort.SendOutMessageSync(CSinkControlProtocol::CONFIGURE,
                                                  &reply,
-                                                 2000,
+                                                 5000,
                                                  &config, sizeof(config)))
   {
     bool success = reply->signal == CSinkControlProtocol::ACC ? true : false;
@@ -963,7 +1048,6 @@ void CActiveAE::InitSink()
     {
       reply->Release();
       CLog::Log(LOGERROR, "ActiveAE::%s - returned error", __FUNCTION__);
-      Dispose();
       m_extError = true;
       return;
     }
@@ -978,7 +1062,6 @@ void CActiveAE::InitSink()
   else
   {
     CLog::Log(LOGERROR, "ActiveAE::%s - failed to init", __FUNCTION__);
-    Dispose();
     m_extError = true;
     return;
   }
@@ -1334,6 +1417,9 @@ bool CActiveAE::Initialize()
     return false;
   }
 
+  // hook into windowing for receiving display reset events
+  g_Windowing.Register(this);
+
   m_inMsgEvent.Reset();
   return true;
 }
@@ -1408,7 +1494,7 @@ bool CActiveAE::Resume()
 
 bool CActiveAE::IsSuspended()
 {
-  return false;
+  return m_stats.IsSuspended();
 }
 
 float CActiveAE::GetVolume()
@@ -1434,6 +1520,17 @@ bool CActiveAE::IsMuted()
 void CActiveAE::SetSoundMode(const int mode)
 {
 
+}
+
+
+void CActiveAE::OnLostDevice()
+{
+//  m_controlPort.SendOutMessage(CActiveAEControlProtocol::DISPLAYLOST);
+}
+
+void CActiveAE::OnResetDevice()
+{
+//  m_controlPort.SendOutMessage(CActiveAEControlProtocol::DISPLAYRESET);
 }
 
 //-----------------------------------------------------------------------------
