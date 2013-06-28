@@ -1142,8 +1142,7 @@ bool CActiveAE::RunStages()
     {
       while (time < MAX_CACHE_LEVEL && !(*it)->m_imputBuffers->m_freeSamples.empty())
       {
-        buffer = (*it)->m_imputBuffers->m_freeSamples.front();
-        (*it)->m_imputBuffers->m_freeSamples.pop_front();
+        buffer = (*it)->m_imputBuffers->GetFreeBuffer();
         (*it)->m_processingSamples.push_back(buffer);
         (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMBUFFER, &buffer, sizeof(CSampleBuffer*));
         time += (float)buffer->pkt->max_nb_samples / buffer->pkt->config.sample_rate;
@@ -1171,8 +1170,7 @@ bool CActiveAE::RunStages()
       {
         if (m_silenceBuffers && !m_silenceBuffers->m_freeSamples.empty())
         {
-          out = m_silenceBuffers->m_freeSamples.front();
-          m_silenceBuffers->m_freeSamples.pop_front();
+          out = m_silenceBuffers->GetFreeBuffer();
           for (int i=0; i<out->pkt->planes; i++)
           {
             memset(out->pkt->data[i], 0, out->pkt->linesize);
@@ -1216,17 +1214,17 @@ bool CActiveAE::RunStages()
         }
       }
 
-      // mix gui sounds
+      // process output buffer, gui sounds, encode, viz
       if (out)
       {
+        // mix gui sounds
         MixSounds(*(out->pkt));
         Deamplify(*(out->pkt));
 
         // encode
         if (m_mode == MODE_TRANSCODE && m_encoder)
         {
-          CSampleBuffer *buf = m_encoderBuffers->m_freeSamples.front();
-          m_encoderBuffers->m_freeSamples.pop_front();
+          CSampleBuffer *buf = m_encoderBuffers->GetFreeBuffer();
           int ret = m_encoder->Encode(out->pkt->data[0], out->pkt->planes*out->pkt->linesize,
                             buf->pkt->data[0], buf->pkt->planes*buf->pkt->linesize);
           buf->pkt->nb_samples = buf->pkt->max_nb_samples;

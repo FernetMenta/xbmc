@@ -60,9 +60,11 @@ class CSampleBuffer
 public:
   CSampleBuffer();
   ~CSampleBuffer();
+  CSampleBuffer *Acquire();
   void Return();
   CSoundPacket *pkt;
   CActiveAEBufferPool *pool;
+  int refCount;
 };
 
 class CActiveAEBufferPool
@@ -71,6 +73,7 @@ public:
   CActiveAEBufferPool(AEAudioFormat format);
   virtual ~CActiveAEBufferPool();
   virtual bool Create(unsigned int totaltime);
+  CSampleBuffer *GetFreeBuffer();
   void ReturnBuffer(CSampleBuffer *buffer);
   AEAudioFormat m_format;
   std::deque<CSampleBuffer*> m_allSamples;

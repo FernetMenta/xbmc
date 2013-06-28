@@ -42,7 +42,7 @@ CSoundPacket::~CSoundPacket()
 
 CSampleBuffer::CSampleBuffer() : pkt(NULL), pool(NULL)
 {
-
+  refCount = 0;
 }
 
 CSampleBuffer::~CSampleBuffer()
@@ -51,9 +51,16 @@ CSampleBuffer::~CSampleBuffer()
     delete pkt;
 }
 
+CSampleBuffer* CSampleBuffer::Acquire()
+{
+  refCount++;
+  return this;
+}
+
 void CSampleBuffer::Return()
 {
-  if (pool)
+  refCount--;
+  if (pool && refCount <= 0)
     pool->ReturnBuffer(this);
 }
 
@@ -73,6 +80,19 @@ CActiveAEBufferPool::~CActiveAEBufferPool()
     m_allSamples.pop_front();
     delete buffer;
   }
+}
+
+CSampleBuffer* CActiveAEBufferPool::GetFreeBuffer()
+{
+  CSampleBuffer* buf = NULL;
+
+  if (!m_freeSamples.empty())
+  {
+    buf = m_freeSamples.front();
+    m_freeSamples.pop_front();
+    buf->Acquire();
+  }
+  return buf;
 }
 
 void CActiveAEBufferPool::ReturnBuffer(CSampleBuffer *buffer)
@@ -168,8 +188,7 @@ bool CActiveAEBufferPoolResample::ResampleBuffers()
   {
     if (!m_procSample)
     {
-      m_procSample = m_freeSamples.front();
-      m_freeSamples.pop_front();
+      m_procSample = GetFreeBuffer();
     }
 
     int out_samples = m_resampler->GetBufferedSamples();
