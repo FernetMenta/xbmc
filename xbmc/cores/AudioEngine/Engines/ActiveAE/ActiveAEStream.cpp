@@ -184,6 +184,15 @@ bool CActiveAEStream::IsDrained()
 
 void CActiveAEStream::Flush()
 {
+  if (m_currentBuffer)
+  {
+    MsgStreamSample msgData;
+    m_currentBuffer->pkt->nb_samples = 0;
+    msgData.buffer = m_currentBuffer;
+    msgData.stream = this;
+    m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
+    m_currentBuffer = NULL;
+  }
   AE.FlushStream(this);
 }
 

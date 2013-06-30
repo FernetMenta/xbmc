@@ -67,7 +67,6 @@ public:
     INIT = 0,
     RECONFIGURE,
     SUSPEND,
-    FLUSHSTREAM,
     PAUSESTREAM,
     RESUMESTREAM,
     STOPSOUND,
@@ -97,6 +96,7 @@ public:
     FREESTREAM,
     STREAMSAMPLE,
     DRAINSTREAM,
+    FLUSHSTREAM,
   };
   enum InSignal
   {
