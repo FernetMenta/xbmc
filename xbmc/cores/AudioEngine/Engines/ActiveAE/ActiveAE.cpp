@@ -361,19 +361,16 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             m_state = AE_TOP_CONFIGURED_SUSPEND;
           }
           return;
-        case CActiveAEControlProtocol::FLUSHSTREAM:
-          CActiveAEStream *stream;
-          stream = *(CActiveAEStream**)msg->data;
-          SFlushStream(stream);
-          msg->Reply(CActiveAEControlProtocol::ACC);
-          return;
         case CActiveAEControlProtocol::PAUSESTREAM:
+          CActiveAEStream *stream;
           stream = *(CActiveAEStream**)msg->data;
           stream->m_paused = true;
           return;
         case CActiveAEControlProtocol::RESUMESTREAM:
           stream = *(CActiveAEStream**)msg->data;
           stream->m_paused = false;
+          m_state = AE_TOP_CONFIGURED_PLAY;
+          m_extTimeout = 0;
           return;
         case CActiveAEControlProtocol::STOPSOUND:
           CActiveAESound *sound;
@@ -446,6 +443,11 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           stream->m_resampleBuffers->m_drain = true;
           m_extTimeout = 0;
           m_state = AE_TOP_CONFIGURED_PLAY;
+          return;
+        case CActiveAEDataProtocol::FLUSHSTREAM:
+          stream = *(CActiveAEStream**)msg->data;
+          SFlushStream(stream);
+          msg->Reply(CActiveAEDataProtocol::ACC);
           return;
         default:
           break;
@@ -928,6 +930,9 @@ void CActiveAE::SFlushStream(CActiveAEStream *stream)
     stream->m_processingSamples.pop_front();
   }
   stream->m_resampleBuffers->Flush();
+  stream->m_streamPort->Purge();
+  stream->m_bufferedTime = 0.0;
+  stream->m_paused = true;
 }
 
 void CActiveAE::ClearDiscardedBuffers()
@@ -1876,11 +1881,11 @@ IAEStream *CActiveAE::FreeStream(IAEStream *stream)
 void CActiveAE::FlushStream(CActiveAEStream *stream)
 {
   Message *reply;
-  if (m_controlPort.SendOutMessageSync(CActiveAEControlProtocol::FLUSHSTREAM,
+  if (m_dataPort.SendOutMessageSync(CActiveAEDataProtocol::FLUSHSTREAM,
                                        &reply,1000,
                                        &stream, sizeof(CActiveAEStream*)))
   {
-    bool success = reply->signal == CActiveAEControlProtocol::ACC ? true : false;
+    bool success = reply->signal == CActiveAEDataProtocol::ACC ? true : false;
     reply->Release();
     if (!success)
     {
