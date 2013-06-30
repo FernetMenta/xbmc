@@ -188,6 +188,8 @@ protected:
   void FlushStream(CActiveAEStream *stream);
   void PauseStream(CActiveAEStream *stream, bool pause);
   void StopSound(CActiveAESound *sound);
+  void RegisterAudioCallback(IAudioCallback* pCallback);
+  void UnRegisterAudioCallback();
 
 protected:
   void Process();
@@ -239,12 +241,14 @@ protected:
   AEAudioFormat m_sinkFormat;
   AEAudioFormat m_sinkRequestFormat;
   AEAudioFormat m_encoderFormat;
+  AEAudioFormat m_internalFormat;
   AudioSettings m_settings;
   CEngineStats m_stats;
   IAEEncoder *m_encoder;
 
   // buffers
   CActiveAEBufferPoolResample *m_sinkBuffers;
+  CActiveAEBufferPoolResample *m_vizBuffers;
   CActiveAEBufferPool *m_silenceBuffers;  // needed to drive gui sounds if we have no streams
   CActiveAEBufferPool *m_encoderBuffers;
 
@@ -262,6 +266,11 @@ protected:
   std::vector<CActiveAESound*> m_sounds;
 
   float m_volume;
+
+  // viz
+  IAudioCallback *m_audioCallback;
+  bool m_vizInitialized;
+  CCriticalSection m_vizLock;
 
   // ffmpeg
   DllAvFormat m_dllAvFormat;

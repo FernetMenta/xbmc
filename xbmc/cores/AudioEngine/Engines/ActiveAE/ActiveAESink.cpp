@@ -126,7 +126,6 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           {
             m_state = S_TOP_CONFIGURED_IDLE;
             m_extTimeout = 10000;
-            m_kickstartTimer.Set(0);
             msg->Reply(CSinkControlProtocol::ACC, &m_sinkFormat, sizeof(AEAudioFormat));
           }
           else
@@ -326,7 +325,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         switch (signal)
         {
         case CSinkControlProtocol::TIMEOUT:
-          if (m_extSilence || !m_kickstartTimer.IsTimePast())
+          if (m_extSilence)
           {
             m_state = S_TOP_CONFIGURED_SILENCE;
             m_extTimeout = 0;
@@ -354,13 +353,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           delay = OutputSamples(&m_sampleOfSilence);
           if (m_extError)
             m_state = S_TOP_CONFIGURED_SUSPEND;
-          if (!m_extSilence && m_kickstartTimer.IsTimePast())
-          {
-            m_state = S_TOP_CONFIGURED_PLAY;
-            m_extTimeout = delay / 2;
-          }
-          else
-            m_extTimeout = 0;
+          m_extTimeout = 0;
           return;
         default:
           break;
