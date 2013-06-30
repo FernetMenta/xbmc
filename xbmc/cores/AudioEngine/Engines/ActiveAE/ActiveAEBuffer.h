@@ -64,6 +64,7 @@ public:
   void Return();
   CSoundPacket *pkt;
   CActiveAEBufferPool *pool;
+  unsigned int timestamp;
   int refCount;
 };
 
@@ -88,7 +89,7 @@ public:
   CActiveAEBufferPoolResample(AEAudioFormat inputFormat, AEAudioFormat outputFormat);
   virtual ~CActiveAEBufferPoolResample();
   virtual bool Create(unsigned int totaltime, bool remap);
-  bool ResampleBuffers();
+  bool ResampleBuffers(unsigned int timestamp = 0);
   float GetDelay();
   void Flush();
   AEAudioFormat m_inputFormat;

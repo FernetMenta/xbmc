@@ -232,10 +232,12 @@ bool CActiveAEStream::SetResampleRatio(double ratio)
 
 void CActiveAEStream::RegisterAudioCallback(IAudioCallback* pCallback)
 {
+  AE.RegisterAudioCallback(pCallback);
 }
 
 void CActiveAEStream::UnRegisterAudioCallback()
 {
+  AE.UnRegisterAudioCallback();
 }
 
 void CActiveAEStream::FadeVolume(float from, float target, unsigned int time)
