@@ -42,6 +42,10 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_currentBuffer = NULL;
   m_drain = false;
   m_paused = false;
+  m_resampleRatio = 1.0;
+  m_rgain = 1.0;
+  m_volume = 1.0;
+  m_space = m_format.m_frameSize * m_format.m_frames * m_format.m_channelLayout.Count();
 }
 
 CActiveAEStream::~CActiveAEStream()
@@ -50,6 +54,7 @@ CActiveAEStream::~CActiveAEStream()
 
 unsigned int CActiveAEStream::GetSpace()
 {
+  return m_space;
 }
 
 unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
@@ -198,12 +203,46 @@ void CActiveAEStream::Flush()
 
 float CActiveAEStream::GetAmplification()
 {
-
+  return m_streamAmplify;
 }
 
 void CActiveAEStream::SetAmplification(float amplify)
 {
+  m_streamAmplify = amplify;
+  AE.SetStreamAmplification(this, m_streamAmplify);
+}
 
+float CActiveAEStream::GetReplayGain()
+{
+  return m_streamRgain;
+}
+
+void CActiveAEStream::SetReplayGain(float factor)
+{
+  m_streamRgain = std::max( 0.0f, factor);
+  AE.SetStreamReplaygain(this, m_streamRgain);
+}
+
+float CActiveAEStream::GetVolume()
+{
+  return m_streamVolume;
+}
+
+void CActiveAEStream::SetVolume(float volume)
+{
+  m_streamVolume = std::max( 0.0f, std::min(1.0f, volume));
+  AE.SetStreamVolume(this, m_streamVolume);
+}
+
+double CActiveAEStream::GetResampleRatio()
+{
+  return m_streamResampleRatio;
+}
+
+bool CActiveAEStream::SetResampleRatio(double ratio)
+{
+  m_streamResampleRatio = ratio;
+  AE.SetStreamResampleRatio(this, m_streamResampleRatio);
 }
 
 const unsigned int CActiveAEStream::GetFrameSize() const
@@ -229,14 +268,6 @@ const unsigned int CActiveAEStream::GetEncodedSampleRate() const
 const enum AEDataFormat CActiveAEStream::GetDataFormat() const
 {
   return m_format.m_dataFormat;
-}
-
-double CActiveAEStream::GetResampleRatio()
-{
-}
-
-bool CActiveAEStream::SetResampleRatio(double ratio)
-{
 }
 
 void CActiveAEStream::RegisterAudioCallback(IAudioCallback* pCallback)

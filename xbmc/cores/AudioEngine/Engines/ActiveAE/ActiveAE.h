@@ -69,6 +69,10 @@ public:
     SUSPEND,
     PAUSESTREAM,
     RESUMESTREAM,
+    STREAMRGAIN,
+    STREAMVOLUME,
+    STREAMAMP,
+    STREAMRESAMPLERATIO,
     STOPSOUND,
     GETSTATE,
     DISPLAYLOST,
@@ -111,6 +115,16 @@ struct MsgStreamSample
 {
   CSampleBuffer *buffer;
   CActiveAEStream *stream;
+};
+
+struct MsgStreamParameter
+{
+  CActiveAEStream *stream;
+  union
+  {
+    float float_par;
+    double double_par;
+  } parameter;
 };
 
 class CEngineStats
@@ -188,6 +202,10 @@ protected:
   void FlushStream(CActiveAEStream *stream);
   void PauseStream(CActiveAEStream *stream, bool pause);
   void StopSound(CActiveAESound *sound);
+  void SetStreamAmplification(CActiveAEStream *stream, float amplify);
+  void SetStreamReplaygain(CActiveAEStream *stream, float rgain);
+  void SetStreamVolume(CActiveAEStream *stream, float volume);
+  void SetStreamResampleRatio(CActiveAEStream *stream, double ratio);
   void RegisterAudioCallback(IAudioCallback* pCallback);
   void UnRegisterAudioCallback();
 
@@ -210,6 +228,7 @@ protected:
   void ClearDiscardedBuffers();
   void SStopSound(CActiveAESound *sound);
   void DiscardSound(CActiveAESound *sound);
+  float CalcStreamAmplification(CActiveAEStream *stream, CSampleBuffer *buf);
 
   bool RunStages();
   bool HasWork();
