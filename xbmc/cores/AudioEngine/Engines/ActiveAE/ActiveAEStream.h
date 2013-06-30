@@ -21,6 +21,7 @@
 
 #include "AEAudioFormat.h"
 #include "Interfaces/AEStream.h"
+#include "Utils/AELimiter.h"
 
 namespace ActiveAE
 {
@@ -48,11 +49,11 @@ public:
   virtual bool IsDrained();
   virtual void Flush();
 
-  virtual float GetVolume() { return m_volume; }
-  virtual float GetReplayGain() { return m_rgain ; }
+  virtual float GetVolume();
+  virtual float GetReplayGain();
   virtual float GetAmplification();
-  virtual void SetVolume       (float volume) { m_volume = std::max( 0.0f, std::min(1.0f, volume)); }
-  virtual void SetReplayGain   (float factor) { m_rgain  = std::max( 0.0f, factor); }
+  virtual void SetVolume(float volume);
+  virtual void SetReplayGain(float factor);
   virtual void SetAmplification(float amplify);
 
   virtual const unsigned int GetFrameSize() const;
@@ -73,10 +74,13 @@ public:
 protected:
 
   AEAudioFormat m_format;
-  float m_bufferedTime;
-  float m_volume;
-  float m_rgain;
+  float m_streamVolume;
+  float m_streamRgain;
+  float m_streamAmplify;
+  double m_streamResampleRatio;
+  unsigned int m_space;
 
+  // only accessed by engine
   CActiveAEBufferPool *m_imputBuffers;
   CActiveAEBufferPoolResample *m_resampleBuffers;
   std::deque<CSampleBuffer*> m_processingSamples;
@@ -86,6 +90,11 @@ protected:
   CCriticalSection *m_statsLock;
   bool m_drain;
   bool m_paused;
+  CAELimiter m_limiter;
+  float m_volume;
+  float m_rgain;
+  float m_bufferedTime;
+  double m_resampleRatio;
 };
 }
 

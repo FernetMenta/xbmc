@@ -372,6 +372,23 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           m_state = AE_TOP_CONFIGURED_PLAY;
           m_extTimeout = 0;
           return;
+        case CActiveAEControlProtocol::STREAMAMP:
+          MsgStreamParameter *par;
+          par = (MsgStreamParameter*)msg->data;
+          par->stream->m_limiter.SetAmplification(par->parameter.float_par);
+          return;
+        case CActiveAEControlProtocol::STREAMVOLUME:
+          par = (MsgStreamParameter*)msg->data;
+          par->stream->m_volume = par->parameter.float_par;
+          return;
+        case CActiveAEControlProtocol::STREAMRGAIN:
+          par = (MsgStreamParameter*)msg->data;
+          par->stream->m_rgain = par->parameter.float_par;
+          return;
+        case CActiveAEControlProtocol::STREAMRESAMPLERATIO:
+          par = (MsgStreamParameter*)msg->data;
+          par->stream->m_resampleRatio = par->parameter.double_par;
+          return;
         case CActiveAEControlProtocol::STOPSOUND:
           CActiveAESound *sound;
           sound = *(CActiveAESound**)msg->data;
@@ -859,10 +876,10 @@ void CActiveAE::Configure()
   }
 
   // reset gui sounds
-  std::list<SoundState>::iterator it;
-  for (it = m_sounds_playing.begin(); it != m_sounds_playing.end(); ++it)
+  std::vector<CActiveAESound*>::iterator it;
+  for (it = m_sounds.begin(); it != m_sounds.end(); ++it)
   {
-    it->sound->SetConverted(false);
+    (*it)->SetConverted(false);
   }
 
   ClearDiscardedBuffers();
@@ -982,6 +999,17 @@ void CActiveAE::DiscardSound(CActiveAESound *sound)
       return;
     }
   }
+}
+
+float CActiveAE::CalcStreamAmplification(CActiveAEStream *stream, CSampleBuffer *buf)
+{
+  float amp;
+  for(int i=0; i<buf->pkt->planes; i++)
+  {
+    int nb_floats = buf->pkt->nb_samples / buf->pkt->planes;
+    amp = stream->m_limiter.Run((float*)buf->pkt->data[i], nb_floats);
+  }
+  return amp;
 }
 
 void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings)
@@ -1227,6 +1255,19 @@ bool CActiveAE::RunStages()
           {
             out = (*it)->m_resampleBuffers->m_outputSamples.front();
             (*it)->m_resampleBuffers->m_outputSamples.pop_front();
+
+            // volume for stream
+            float volume = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), out);
+            for(int j=0; j<out->pkt->planes; j++)
+            {
+              int nb_floats = out->pkt->nb_samples / out->pkt->planes;
+#ifdef __SSE__
+              CAEUtil::SSEMulArray((float*)out->pkt->data[j], volume, nb_floats);
+#else
+              for (int k = 0; k < nb_floats; ++k)
+                *dst++ *= volume;
+#endif
+            }
           }
           else
           {
@@ -1235,7 +1276,7 @@ bool CActiveAE::RunStages()
             (*it)->m_resampleBuffers->m_outputSamples.pop_front();
             for(int j=0; j<out->pkt->planes; j++)
             {
-              float volume = 1.0; //TODO
+              float volume = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), out);
               float *dst = (float*)out->pkt->data[j];
               float *src = (float*)mix->pkt->data[j];
               int nb_floats = out->pkt->nb_samples / out->pkt->planes;
@@ -1903,6 +1944,42 @@ void CActiveAE::PauseStream(CActiveAEStream *stream, bool pause)
   else
     m_controlPort.SendOutMessage(CActiveAEControlProtocol::RESUMESTREAM,
                                    &stream, sizeof(CActiveAEStream*));
+}
+
+void CActiveAE::SetStreamAmplification(CActiveAEStream *stream, float amplify)
+{
+  MsgStreamParameter msg;
+  msg.stream = stream;
+  msg.parameter.float_par = amplify;
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::STREAMAMP,
+                                     &msg, sizeof(MsgStreamParameter));
+}
+
+void CActiveAE::SetStreamReplaygain(CActiveAEStream *stream, float rgain)
+{
+  MsgStreamParameter msg;
+  msg.stream = stream;
+  msg.parameter.float_par = rgain;
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::STREAMRGAIN,
+                                     &msg, sizeof(MsgStreamParameter));
+}
+
+void CActiveAE::SetStreamVolume(CActiveAEStream *stream, float volume)
+{
+  MsgStreamParameter msg;
+  msg.stream = stream;
+  msg.parameter.float_par = volume;
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::STREAMVOLUME,
+                                     &msg, sizeof(MsgStreamParameter));
+}
+
+void CActiveAE::SetStreamResampleRatio(CActiveAEStream *stream, double ratio)
+{
+  MsgStreamParameter msg;
+  msg.stream = stream;
+  msg.parameter.double_par = ratio;
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::STREAMRESAMPLERATIO,
+                                     &msg, sizeof(MsgStreamParameter));
 }
 
 void CActiveAE::RegisterAudioCallback(IAudioCallback* pCallback)
