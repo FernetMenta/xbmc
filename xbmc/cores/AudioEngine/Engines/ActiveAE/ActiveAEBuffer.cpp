@@ -90,7 +90,7 @@ CSampleBuffer* CActiveAEBufferPool::GetFreeBuffer()
   {
     buf = m_freeSamples.front();
     m_freeSamples.pop_front();
-    buf->Acquire();
+    buf->refCount = 1;
   }
   return buf;
 }
@@ -113,7 +113,7 @@ bool CActiveAEBufferPool::Create(unsigned int totaltime)
   unsigned int time = 0;
   unsigned int buffertime = (m_format.m_frames*1000) / m_format.m_sampleRate;
   unsigned int n = 0;
-  while (time < buffertime && n < 5)
+  while (time < totaltime || n < 5)
   {
     buffer = new CSampleBuffer();
     buffer->pool = this;
@@ -170,7 +170,7 @@ bool CActiveAEBufferPoolResample::Create(unsigned int totaltime, bool remap)
   return true;
 }
 
-bool CActiveAEBufferPoolResample::ResampleBuffers()
+bool CActiveAEBufferPoolResample::ResampleBuffers(unsigned int timestamp)
 {
   bool busy = false;
   CSampleBuffer *in;
@@ -228,6 +228,7 @@ bool CActiveAEBufferPoolResample::ResampleBuffers()
       // some methods like encode require completely filled packets
       if (!m_fillPackets || (m_procSample->pkt->nb_samples == m_procSample->pkt->max_nb_samples))
       {
+        m_procSample->timestamp = timestamp;
         m_outputSamples.push_back(m_procSample);
         m_procSample = NULL;
       }
@@ -245,6 +246,7 @@ bool CActiveAEBufferPoolResample::ResampleBuffers()
             memset(m_procSample->pkt->data[i]+start, 0, m_procSample->pkt->linesize-start);
           }
         }
+        m_procSample->timestamp = timestamp;
         m_outputSamples.push_back(m_procSample);
         m_procSample = NULL;
       }

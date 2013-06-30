@@ -106,7 +106,6 @@ protected:
   bool m_extSilence;
 
   CSampleBuffer m_sampleOfSilence;
-  XbmcThreads::EndTime m_kickstartTimer;
 
   std::string m_deviceFriendlyName;
   AESinkInfoList m_sinkInfoList;
