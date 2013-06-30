@@ -1586,7 +1586,7 @@ void CActiveAE::Shutdown()
 
 bool CActiveAE::Suspend()
 {
-  m_controlPort.SendOutMessage(CActiveAEControlProtocol::SUSPEND);
+  return m_controlPort.SendOutMessage(CActiveAEControlProtocol::SUSPEND);
 }
 
 bool CActiveAE::Resume()
