@@ -1263,9 +1263,15 @@ bool CActiveAE::RunStages()
 
             // volume for stream
             float volume = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), out);
+            if(volume < 0.0 || volume > 1.0)
+            {
+              CLog::Log(LOGERROR, "ActiveAE::%s - wrong value for volume, bailing out", __FUNCTION__);
+              m_extError = true;
+              return false;
+            }
+            int nb_floats = out->pkt->nb_samples / out->pkt->planes;
             for(int j=0; j<out->pkt->planes; j++)
             {
-              int nb_floats = out->pkt->nb_samples / out->pkt->planes;
 #ifdef __SSE__
               CAEUtil::SSEMulArray((float*)out->pkt->data[j], volume, nb_floats);
 #else
