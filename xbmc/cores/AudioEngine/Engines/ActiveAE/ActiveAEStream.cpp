@@ -138,7 +138,7 @@ void CActiveAEStream::Resume()
   AE.PauseStream(this, false);
 }
 
-void CActiveAEStream::Drain()
+void CActiveAEStream::Drain(bool wait)
 {
   Message *msg;
   XbmcThreads::EndTime timer(2000);
