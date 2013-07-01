@@ -536,8 +536,13 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           if (m_extDrain)
           {
             if (m_extDrainTimer.IsTimePast())
+            {
               Configure();
-            m_extTimeout = m_extDrainTimer.MillisLeft();
+              m_state = AE_TOP_CONFIGURED_PLAY;
+              m_extTimeout = 0;
+            }
+            else
+              m_extTimeout = m_extDrainTimer.MillisLeft();
           }
           else
             m_extTimeout = 5000;
@@ -559,7 +564,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             m_extTimeout = 0;
             return;
           }
-          if (HasWork())
+          if (!m_extDrain && HasWork())
           {
             ResampleSounds();
             ClearDiscardedBuffers();
@@ -1004,9 +1009,9 @@ void CActiveAE::DiscardSound(CActiveAESound *sound)
 float CActiveAE::CalcStreamAmplification(CActiveAEStream *stream, CSampleBuffer *buf)
 {
   float amp;
+  int nb_floats = buf->pkt->nb_samples / buf->pkt->planes;
   for(int i=0; i<buf->pkt->planes; i++)
   {
-    int nb_floats = buf->pkt->nb_samples / buf->pkt->planes;
     amp = stream->m_limiter.Run((float*)buf->pkt->data[i], nb_floats);
   }
   return amp;
