@@ -33,6 +33,7 @@ protected:
   friend class CEngineStats;
   CActiveAEStream(AEAudioFormat *format);
   virtual ~CActiveAEStream();
+  void FadingFinished();
 
 public:
   virtual unsigned int GetSpace();
@@ -78,7 +79,12 @@ protected:
   float m_streamRgain;
   float m_streamAmplify;
   double m_streamResampleRatio;
-  unsigned int m_space;
+  unsigned int m_streamSpace;
+  bool m_streamDraining;
+  bool m_streamDrained;
+  bool m_streamFading;
+  IAEStream *m_streamSlave;
+  CCriticalSection m_streamLock;
 
   // only accessed by engine
   CActiveAEBufferPool *m_imputBuffers;
@@ -95,6 +101,10 @@ protected:
   float m_rgain;
   float m_bufferedTime;
   double m_resampleRatio;
+  int m_fadingSamples;
+  float m_fadingBase;
+  float m_fadingTarget;
+  int m_fadingTime;
 };
 }
 

@@ -73,6 +73,7 @@ public:
     STREAMVOLUME,
     STREAMAMP,
     STREAMRESAMPLERATIO,
+    STREAMFADE,
     STOPSOUND,
     GETSTATE,
     DISPLAYLOST,
@@ -125,6 +126,14 @@ struct MsgStreamParameter
     float float_par;
     double double_par;
   } parameter;
+};
+
+struct MsgStreamFade
+{
+  CActiveAEStream *stream;
+  float from;
+  float target;
+  unsigned int millis;
 };
 
 class CEngineStats
@@ -206,6 +215,7 @@ protected:
   void SetStreamReplaygain(CActiveAEStream *stream, float rgain);
   void SetStreamVolume(CActiveAEStream *stream, float volume);
   void SetStreamResampleRatio(CActiveAEStream *stream, double ratio);
+  void SetStreamFade(CActiveAEStream *stream, float from, float target, unsigned int millis);
   void RegisterAudioCallback(IAudioCallback* pCallback);
   void UnRegisterAudioCallback();
 
