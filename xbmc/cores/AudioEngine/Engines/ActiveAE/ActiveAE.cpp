@@ -389,6 +389,14 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           par = (MsgStreamParameter*)msg->data;
           par->stream->m_resampleRatio = par->parameter.double_par;
           return;
+        case CActiveAEControlProtocol::STREAMFADE:
+          MsgStreamFade *fade;
+          fade = (MsgStreamFade*)msg->data;
+          fade->stream->m_fadingBase = fade->from;
+          fade->stream->m_fadingTarget = fade->target;
+          fade->stream->m_fadingTime = fade->millis;
+          fade->stream->m_fadingSamples = -1;
+          return;
         case CActiveAEControlProtocol::STOPSOUND:
           CActiveAESound *sound;
           sound = *(CActiveAESound**)msg->data;
@@ -910,6 +918,7 @@ CActiveAEStream* CActiveAE::CreateStream(AEAudioFormat *format)
   stream->m_imputBuffers->Create(MAX_CACHE_LEVEL*1000);
   stream->m_resampleBuffers = NULL; // create in Configure when we know the sink format
   stream->m_statsLock = m_stats.GetLock();
+  stream->m_fadingSamples = 0;
 
   m_streams.push_back(stream);
 
@@ -1009,7 +1018,7 @@ void CActiveAE::DiscardSound(CActiveAESound *sound)
 float CActiveAE::CalcStreamAmplification(CActiveAEStream *stream, CSampleBuffer *buf)
 {
   float amp;
-  int nb_floats = buf->pkt->nb_samples / buf->pkt->planes;
+  int nb_floats = buf->pkt->nb_samples * buf->pkt->config.channels / buf->pkt->planes;
   for(int i=0; i<buf->pkt->planes; i++)
   {
     amp = stream->m_limiter.Run((float*)buf->pkt->data[i], nb_floats);
@@ -1226,6 +1235,11 @@ bool CActiveAE::RunStages()
         (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMDRAINED);
         (*it)->m_drain = false;
         (*it)->m_resampleBuffers->m_drain = false;
+
+        // set variables being polled via stream interface
+        CSingleLock lock((*it)->m_streamLock);
+        (*it)->m_streamDrained = true;
+        (*it)->m_streamDraining = false;
       }
     }
   }
@@ -1269,15 +1283,48 @@ bool CActiveAE::RunStages()
               m_extError = true;
               return false;
             }
-            int nb_floats = out->pkt->nb_samples / out->pkt->planes;
-            for(int j=0; j<out->pkt->planes; j++)
+            int nb_floats = out->pkt->nb_samples * out->pkt->config.channels / out->pkt->planes;
+            int nb_loops = 1;
+            float fadingVolume, fadingStep;
+
+            // fading
+            if ((*it)->m_fadingSamples == -1)
             {
+              (*it)->m_fadingSamples = m_internalFormat.m_sampleRate * (float)(*it)->m_fadingTime / 1000.0f;
+            }
+            if ((*it)->m_fadingSamples > 0)
+            {
+              nb_floats = out->pkt->config.channels / out->pkt->planes;
+              nb_loops = out->pkt->nb_samples;
+              float delta = (*it)->m_fadingTarget - (*it)->m_fadingBase;
+              int samples = m_internalFormat.m_sampleRate * (float)(*it)->m_fadingTime / 1000.0f;
+              fadingStep = delta / samples;
+              fadingVolume = (*it)->m_fadingBase * (samples - (*it)->m_fadingSamples) * fadingStep;
+            }
+            for(int i=0; i<nb_loops; i++)
+            {
+              if ((*it)->m_fadingSamples > 0)
+              {
+                volume *= fadingVolume;
+                fadingVolume += fadingStep;
+                (*it)->m_fadingSamples--;
+
+                if ((*it)->m_fadingSamples == 0)
+                {
+                  // set variables being polled via stream interface
+                  CSingleLock lock((*it)->m_streamLock);
+                  (*it)->m_streamFading = false;
+                }
+              }
+              for(int j=0; j<out->pkt->planes; j++)
+              {
 #ifdef __SSE__
-              CAEUtil::SSEMulArray((float*)out->pkt->data[j], volume, nb_floats);
+                CAEUtil::SSEMulArray((float*)out->pkt->data[j], volume, nb_floats);
 #else
-              for (int k = 0; k < nb_floats; ++k)
-                *dst++ *= volume;
+                for (int k = 0; k < nb_floats; ++k)
+                  *dst++ *= volume;
 #endif
+              }
             }
           }
           else
@@ -1290,7 +1337,7 @@ bool CActiveAE::RunStages()
               float volume = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), out);
               float *dst = (float*)out->pkt->data[j];
               float *src = (float*)mix->pkt->data[j];
-              int nb_floats = out->pkt->nb_samples / out->pkt->planes;
+              int nb_floats = out->pkt->nb_samples * out->pkt->config.channels / out->pkt->planes;
 #ifdef __SSE__
               CAEUtil::SSEMulAddArray(dst, src, volume, nb_floats);
 #else
@@ -1991,6 +2038,17 @@ void CActiveAE::SetStreamResampleRatio(CActiveAEStream *stream, double ratio)
   msg.parameter.double_par = ratio;
   m_controlPort.SendOutMessage(CActiveAEControlProtocol::STREAMRESAMPLERATIO,
                                      &msg, sizeof(MsgStreamParameter));
+}
+
+void CActiveAE::SetStreamFade(CActiveAEStream *stream, float from, float target, unsigned int millis)
+{
+  MsgStreamFade msg;
+  msg.stream = stream;
+  msg.from = from;
+  msg.target = target;
+  msg.millis = millis;
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::STREAMFADE,
+                                     &msg, sizeof(MsgStreamFade));
 }
 
 void CActiveAE::RegisterAudioCallback(IAudioCallback* pCallback)
