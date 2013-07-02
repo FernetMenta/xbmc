@@ -112,6 +112,12 @@ public:
   };
 };
 
+struct MsgStreamNew
+{
+  AEAudioFormat format;
+  unsigned int options;
+};
+
 struct MsgStreamSample
 {
   CSampleBuffer *buffer;
@@ -232,7 +238,7 @@ protected:
   bool NeedReconfigureSink();
   void ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings);
   void Configure();
-  CActiveAEStream* CreateStream(AEAudioFormat *format);
+  CActiveAEStream* CreateStream(MsgStreamNew *streamMsg);
   void DiscardStream(CActiveAEStream *stream);
   void SFlushStream(CActiveAEStream *stream);
   void ClearDiscardedBuffers();
