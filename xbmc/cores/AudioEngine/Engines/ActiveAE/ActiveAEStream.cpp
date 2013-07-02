@@ -49,6 +49,7 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_streamDraining = false;
   m_streamDrained = false;
   m_streamFading = false;
+  m_streamSlave = NULL;
 }
 
 CActiveAEStream::~CActiveAEStream()

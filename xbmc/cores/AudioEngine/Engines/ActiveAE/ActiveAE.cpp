@@ -422,10 +422,10 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           }
           return;
         case CActiveAEDataProtocol::NEWSTREAM:
-          AEAudioFormat *format;
+          MsgStreamNew *streamMsg;
           CActiveAEStream *stream;
-          format = (AEAudioFormat*)msg->data;
-          stream = CreateStream(format);
+          streamMsg = (MsgStreamNew*)msg->data;
+          stream = CreateStream(streamMsg);
           if(stream)
           {
             msg->Reply(CActiveAEDataProtocol::ACC, &stream, sizeof(CActiveAEStream*));
@@ -899,26 +899,29 @@ void CActiveAE::Configure()
   m_extDrain = false;
 }
 
-CActiveAEStream* CActiveAE::CreateStream(AEAudioFormat *format)
+CActiveAEStream* CActiveAE::CreateStream(MsgStreamNew *streamMsg)
 {
   // we only can handle a single pass through stream
-  if(m_mode == MODE_RAW || (!m_streams.empty() && AE_IS_RAW(format->m_dataFormat)))
+  if(m_mode == MODE_RAW || (!m_streams.empty() && AE_IS_RAW(streamMsg->format.m_dataFormat)))
   {
     return NULL;
   }
 
   // create the stream
   CActiveAEStream *stream;
-  stream = new CActiveAEStream(format);
+  stream = new CActiveAEStream(&streamMsg->format);
   stream->m_streamPort = new CActiveAEDataProtocol("stream",
                              &stream->m_inMsgEvent, &m_outMsgEvent);
 
   // create buffer pool
-  stream->m_imputBuffers = new CActiveAEBufferPool(*format);
+  stream->m_imputBuffers = new CActiveAEBufferPool(streamMsg->format);
   stream->m_imputBuffers->Create(MAX_CACHE_LEVEL*1000);
   stream->m_resampleBuffers = NULL; // create in Configure when we know the sink format
   stream->m_statsLock = m_stats.GetLock();
   stream->m_fadingSamples = 0;
+
+  if (streamMsg->options & AESTREAM_PAUSED)
+    stream->m_paused = true;
 
   m_streams.push_back(stream);
 
@@ -928,7 +931,7 @@ CActiveAEStream* CActiveAE::CreateStream(AEAudioFormat *format)
 void CActiveAE::DiscardStream(CActiveAEStream *stream)
 {
   std::list<CActiveAEStream*>::iterator it;
-  for (it=m_streams.begin(); it!=m_streams.end(); ++it)
+  for (it=m_streams.begin(); it!=m_streams.end(); )
   {
     if (stream == (*it))
     {
@@ -942,9 +945,10 @@ void CActiveAE::DiscardStream(CActiveAEStream *stream)
       CLog::Log(LOGDEBUG, "CActiveAE::DiscardStream - audio stream deleted");
       delete (*it)->m_streamPort;
       delete (*it);
-      m_streams.erase(it);
-      return;
+      it = m_streams.erase(it);
     }
+    else
+      ++it;
   }
 
   if (m_streams.empty())
@@ -1209,9 +1213,6 @@ bool CActiveAE::RunStages()
   std::list<CActiveAEStream*>::iterator it;
   for (it = m_streams.begin(); it != m_streams.end(); ++it)
   {
-    if ((*it)->m_paused)
-      continue;
-
     if ((*it)->m_resampleBuffers)
       busy = (*it)->m_resampleBuffers->ResampleBuffers();
 
@@ -1238,6 +1239,11 @@ bool CActiveAE::RunStages()
 
         // set variables being polled via stream interface
         CSingleLock lock((*it)->m_streamLock);
+        if ((*it)->m_streamSlave)
+        {
+          ((CActiveAEStream*)(*it)->m_streamSlave)->m_paused = false;;
+          (*it)->m_streamSlave = NULL;
+        }
         (*it)->m_streamDrained = true;
         (*it)->m_streamDraining = false;
       }
@@ -1268,6 +1274,9 @@ bool CActiveAE::RunStages()
       std::list<CActiveAEStream*>::iterator it;
       for (it = m_streams.begin(); it != m_streams.end(); ++it)
       {
+        if ((*it)->m_paused)
+          continue;
+
         if ((*it)->m_resampleBuffers && !(*it)->m_resampleBuffers->m_outputSamples.empty())
         {
           if (!out)
@@ -1952,10 +1961,14 @@ IAEStream *CActiveAE::MakeStream(enum AEDataFormat dataFormat, unsigned int samp
   format.m_frameSize = format.m_channelLayout.Count() *
                        (CAEUtil::DataFormatToBits(format.m_dataFormat) >> 3);
 
+  MsgStreamNew msg;
+  msg.format = format;
+  msg.options = options;
+
   Message *reply;
   if (m_dataPort.SendOutMessageSync(CActiveAEDataProtocol::NEWSTREAM,
                                     &reply,1000,
-                                    &format, sizeof(AEAudioFormat)))
+                                    &msg, sizeof(MsgStreamNew)))
   {
     bool success = reply->signal == CActiveAEControlProtocol::ACC ? true : false;
     if (success)
