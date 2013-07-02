@@ -45,7 +45,10 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_resampleRatio = 1.0;
   m_rgain = 1.0;
   m_volume = 1.0;
-  m_space = m_format.m_frameSize * m_format.m_frames * m_format.m_channelLayout.Count();
+  m_streamSpace = m_format.m_frameSize * m_format.m_frames * m_format.m_channelLayout.Count();
+  m_streamDraining = false;
+  m_streamDrained = false;
+  m_streamFading = false;
 }
 
 CActiveAEStream::~CActiveAEStream()
@@ -54,7 +57,7 @@ CActiveAEStream::~CActiveAEStream()
 
 unsigned int CActiveAEStream::GetSpace()
 {
-  return m_space;
+  return m_streamSpace;
 }
 
 unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
@@ -143,6 +146,9 @@ void CActiveAEStream::Drain(bool wait)
   Message *msg;
   XbmcThreads::EndTime timer(2000);
 
+  m_streamDraining = true;
+  m_streamDrained = false;
+
   CActiveAEStream *stream = this;
   if (m_currentBuffer)
   {
@@ -153,6 +159,9 @@ void CActiveAEStream::Drain(bool wait)
     m_currentBuffer = NULL;
   }
   m_streamPort->SendOutMessage(CActiveAEDataProtocol::DRAINSTREAM, &stream, sizeof(CActiveAEStream*));
+
+  if (!wait)
+    return;
 
   while (!timer.IsTimePast())
   {
@@ -179,12 +188,14 @@ void CActiveAEStream::Drain(bool wait)
 
 bool CActiveAEStream::IsDraining()
 {
-  return false;
+  CSingleLock lock(m_streamLock);
+  return m_streamDraining;
 }
 
 bool CActiveAEStream::IsDrained()
 {
-  return true;
+  CSingleLock lock(m_streamLock);
+  return m_streamDrained;
 }
 
 void CActiveAEStream::Flush()
@@ -245,6 +256,21 @@ bool CActiveAEStream::SetResampleRatio(double ratio)
   AE.SetStreamResampleRatio(this, m_streamResampleRatio);
 }
 
+void CActiveAEStream::FadeVolume(float from, float target, unsigned int time)
+{
+  if (time == 0)
+    return;
+
+  m_streamFading = true;
+  AE.SetStreamFade(this, from, target, time);
+}
+
+bool CActiveAEStream::IsFading()
+{
+  CSingleLock lock(m_streamLock);
+  return m_streamFading;
+}
+
 const unsigned int CActiveAEStream::GetFrameSize() const
 {
   return m_format.m_frameSize;
@@ -280,15 +306,9 @@ void CActiveAEStream::UnRegisterAudioCallback()
   AE.UnRegisterAudioCallback();
 }
 
-void CActiveAEStream::FadeVolume(float from, float target, unsigned int time)
-{
-}
-
-bool CActiveAEStream::IsFading()
-{
-}
-
 void CActiveAEStream::RegisterSlave(IAEStream *slave)
 {
+  CSingleLock lock(m_streamLock);
+  m_streamSlave = slave;
 }
 
