@@ -387,7 +387,11 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           return;
         case CActiveAEControlProtocol::STREAMRESAMPLERATIO:
           par = (MsgStreamParameter*)msg->data;
-          par->stream->m_resampleRatio = par->parameter.double_par;
+          if (par->stream->m_resampleBuffers)
+          {
+            par->stream->m_resampleBuffers->m_resampleRatio = par->parameter.double_par;
+            par->stream->m_resampleBuffers->m_changeRatio = true;
+          }
           return;
         case CActiveAEControlProtocol::STREAMFADE:
           MsgStreamFade *fade;

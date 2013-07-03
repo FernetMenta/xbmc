@@ -89,6 +89,7 @@ public:
   CActiveAEBufferPoolResample(AEAudioFormat inputFormat, AEAudioFormat outputFormat);
   virtual ~CActiveAEBufferPoolResample();
   virtual bool Create(unsigned int totaltime, bool remap);
+  void ChangeRatio();
   bool ResampleBuffers(unsigned int timestamp = 0);
   float GetDelay();
   void Flush();
@@ -100,6 +101,9 @@ public:
   uint8_t *m_planes[16];
   bool m_fillPackets;
   bool m_drain;
+  bool m_changeRatio;
+  double m_resampleRatio;
+  unsigned int m_outSampleRate;
 };
 
 }
