@@ -325,7 +325,7 @@ float CActiveAEBufferPoolResample::GetDelay()
   if (m_resampler)
   {
     int samples = m_resampler->GetBufferedSamples();
-    delay += (float)samples / m_format.m_sampleRate;
+    delay += (float)samples / m_outSampleRate;
   }
 
   return delay;
