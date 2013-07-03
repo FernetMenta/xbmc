@@ -100,7 +100,6 @@ protected:
   float m_volume;
   float m_rgain;
   float m_bufferedTime;
-  double m_resampleRatio;
   int m_fadingSamples;
   float m_fadingBase;
   float m_fadingTarget;
