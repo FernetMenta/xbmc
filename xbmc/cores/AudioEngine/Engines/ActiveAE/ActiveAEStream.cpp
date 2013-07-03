@@ -42,7 +42,6 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_currentBuffer = NULL;
   m_drain = false;
   m_paused = false;
-  m_resampleRatio = 1.0;
   m_rgain = 1.0;
   m_volume = 1.0;
   m_streamSpace = m_format.m_frameSize * m_format.m_frames * m_format.m_channelLayout.Count();
