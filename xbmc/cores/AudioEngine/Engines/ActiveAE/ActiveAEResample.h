@@ -54,7 +54,7 @@ protected:
   int m_src_channels, m_dst_channels;
   AVSampleFormat m_src_fmt, m_dst_fmt;
   SwrContext *m_pContext;
-  int m_channelMap[AE_CH_MAX];
+  double m_rematrix[AE_CH_MAX][AE_CH_MAX];
 };
 
 }
