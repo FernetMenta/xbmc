@@ -389,7 +389,7 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
   }
 
   int match = -1;
-  if (avctx->codec_id == CODEC_ID_H264)
+  if (avctx->codec_id == AV_CODEC_ID_H264)
   {
     // search for profile high
     for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
@@ -406,7 +406,7 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
       CLog::Log(LOGNOTICE, "(XVBA::Open) - profile XVBA_H264_HIGH not found");
     }
   }
-  else if (avctx->codec_id == CODEC_ID_VC1)
+  else if (avctx->codec_id == AV_CODEC_ID_VC1)
   {
     // search for profile advanced
     for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
@@ -423,7 +423,7 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
       CLog::Log(LOGNOTICE, "(XVBA::Open) - profile XVBA_VC1_ADVANCED not found");
     }
   }
-  else if (avctx->codec_id == CODEC_ID_MPEG2VIDEO)
+  else if (avctx->codec_id == AV_CODEC_ID_MPEG2VIDEO)
   {
     // search for profile high
     for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
@@ -440,7 +440,7 @@ bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned 
       CLog::Log(LOGNOTICE, "(XVBA::Open) - profile XVBA_MPEG2_VLD not found");
     }
   }
-  else if (avctx->codec_id == CODEC_ID_WMV3)
+  else if (avctx->codec_id == AV_CODEC_ID_WMV3)
   {
     // search for profile high
     for (unsigned int i = 0; i < capOutput->num_of_decodecaps; ++i)
@@ -967,7 +967,7 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   picInput.buffer_list = list;
   list[0] = xvba->m_xvbaBufferPool.picture_descriptor_buffer;
   picInput.num_of_buffers_in_list = 1;
-  if (avctx->codec_id == CODEC_ID_H264)
+  if (avctx->codec_id == AV_CODEC_ID_H264)
   {
     list[1] = xvba->m_xvbaBufferPool.iq_matrix_buffer;
     picInput.num_of_buffers_in_list = 2;
@@ -991,13 +991,13 @@ void CDecoder::FFDrawSlice(struct AVCodecContext *avctx,
   {
     int startCodeSize = 0;
     uint8_t startCode[] = {0x00,0x00,0x01};
-    if (avctx->codec_id == CODEC_ID_H264)
+    if (avctx->codec_id == AV_CODEC_ID_H264)
     {
       startCodeSize = 3;
       memcpy((uint8_t*)xvba->m_xvbaBufferPool.data_buffer->bufferXVBA+location,
           startCode, 3);
     }
-    else if (avctx->codec_id == CODEC_ID_VC1 &&
+    else if (avctx->codec_id == AV_CODEC_ID_VC1 &&
         (memcmp(render->buffers[j].buffer, startCode, 3) != 0))
     {
       startCodeSize = 4;
