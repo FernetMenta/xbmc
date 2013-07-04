@@ -66,14 +66,22 @@ bool CActiveAEResample::Init(uint64_t dst_chan_layout, int dst_channels, int dst
   }
   if (remapLayout)
   {
-    for (unsigned int i=0; i<remapLayout->Count(); i++)
+    // one-to-one mapping of channels
+    // remapLayout is the layout of the sink, if the channel is in our src layout
+    // the channel is mapped by setting coef 1.0
+    memset(m_rematrix, 0, sizeof(m_rematrix));
+    for (unsigned int out=0; out<remapLayout->Count(); out++)
     {
-      m_channelMap[i] = GetAVChannelIndex((*remapLayout)[i], m_dst_chan_layout);
+      int idx = GetAVChannelIndex((*remapLayout)[out], m_src_chan_layout);
+      if (idx >= 0)
+      {
+        m_rematrix[out][idx] = 1.0;
+      }
     }
 
-    if (m_dllSwResample.swr_set_channel_mapping(m_pContext, m_channelMap) < 0)
+    if (m_dllSwResample.swr_set_matrix(m_pContext, (const double*)m_rematrix, AE_CH_MAX) < 0)
     {
-      CLog::Log(LOGERROR, "CActiveAEResample::Init - setting channel map failed");
+      CLog::Log(LOGERROR, "CActiveAEResample::Init - setting channel matrix failed");
       return false;
     }
   }
