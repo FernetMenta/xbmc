@@ -834,7 +834,7 @@ void CActiveAE::Configure()
     else
     {
       outputFormat = m_sinkFormat;
-      outputFormat.m_channelLayout = inputFormat.m_channelLayout;
+      outputFormat.m_channelLayout = m_sinkRequestFormat.m_channelLayout;
       outputFormat.m_channelLayout.ResolveChannels(m_sinkFormat.m_channelLayout);
       outputFormat.m_dataFormat = AE_FMT_FLOAT;
       outputFormat.m_frameSize = outputFormat.m_channelLayout.Count() *
