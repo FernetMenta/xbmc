@@ -840,7 +840,7 @@ void CActiveAE::Configure()
       outputFormat.m_frameSize = outputFormat.m_channelLayout.Count() *
                                  (CAEUtil::DataFormatToBits(outputFormat.m_dataFormat) >> 3);
       // TODO: adjust to decoder
-      outputFormat.m_frames = outputFormat.m_sampleRate / 10;
+//      outputFormat.m_frames = outputFormat.m_sampleRate / 10;
       sinkInputFormat = outputFormat;
     }
     m_internalFormat = outputFormat;

@@ -653,6 +653,8 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
         m_extError = true;
         return 0;
       }
+      else
+        continue;
     }
     frames -= written;
     buffer += written*m_sinkFormat.m_frameSize;
