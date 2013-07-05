@@ -908,9 +908,10 @@ void CActiveAE::Configure()
 CActiveAEStream* CActiveAE::CreateStream(MsgStreamNew *streamMsg)
 {
   // we only can handle a single pass through stream
-  if(m_mode == MODE_RAW || (!m_streams.empty() && AE_IS_RAW(streamMsg->format.m_dataFormat)))
+  if (!m_streams.empty())
   {
-    return NULL;
+    if (AE_IS_RAW(m_streams.front()->m_format.m_dataFormat) != AE_IS_RAW(streamMsg->format.m_dataFormat))
+      return NULL;
   }
 
   // create the stream
