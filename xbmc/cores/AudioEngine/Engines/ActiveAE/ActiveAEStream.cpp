@@ -79,7 +79,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
       int bytes = std::min(bytesToCopy, space);
       int samples = bytes / m_currentBuffer->pkt->bytes_per_sample / m_currentBuffer->pkt->config.channels;
       //TODO: handle planar formats
-      memcpy(m_currentBuffer->pkt->data[0] + start, (uint8_t*)data, bytes);
+      memcpy(m_currentBuffer->pkt->data[0] + start, (uint8_t*)data+copied, bytes);
       {
         CSingleLock lock(*m_statsLock);
         m_currentBuffer->pkt->nb_samples += samples;
