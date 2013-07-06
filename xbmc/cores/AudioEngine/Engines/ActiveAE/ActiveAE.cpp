@@ -207,6 +207,9 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
         case CActiveAEControlProtocol::GETSTATE:
           msg->Reply(CActiveAEControlProtocol::ACC, &m_state, sizeof(m_state));
           return;
+        case CActiveAEControlProtocol::SOUNDMODE:
+          m_soundMode = *(int*)msg->data;
+          return;
         default:
           break;
         }
@@ -417,6 +420,9 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
         case CActiveAEDataProtocol::PLAYSOUND:
           CActiveAESound *sound;
           sound = *(CActiveAESound**)msg->data;
+          if (m_soundMode == AE_SOUND_OFF ||
+             (m_soundMode == AE_SOUND_IDLE && !m_streams.empty()))
+            return;
           if (sound)
           {
             SoundState st = {sound, 0};
@@ -1715,7 +1721,8 @@ bool CActiveAE::IsMuted()
 
 void CActiveAE::SetSoundMode(const int mode)
 {
-
+  int soundmode = mode;
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::SOUNDMODE, &soundmode, sizeof(int));
 }
 
 
