@@ -144,12 +144,24 @@ void CActiveAEStream::Resume()
 void CActiveAEStream::Drain(bool wait)
 {
   Message *msg;
-  XbmcThreads::EndTime timer(2000);
+  CActiveAEStream *stream = this;
 
   m_streamDraining = true;
   m_streamDrained = false;
 
-  CActiveAEStream *stream = this;
+  Message *reply;
+  if (m_streamPort->SendOutMessageSync(CActiveAEDataProtocol::DRAINSTREAM,
+                                       &reply,2000,
+                                       &stream, sizeof(CActiveAEStream*)))
+  {
+    bool success = reply->signal == CActiveAEDataProtocol::ACC ? true : false;
+    reply->Release();
+    if (!success)
+    {
+      CLog::Log(LOGERROR, "CActiveAEStream::Drain - no acc");
+    }
+  }
+
   if (m_currentBuffer)
   {
     MsgStreamSample msgData;
@@ -158,11 +170,8 @@ void CActiveAEStream::Drain(bool wait)
     m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
     m_currentBuffer = NULL;
   }
-  m_streamPort->SendOutMessage(CActiveAEDataProtocol::DRAINSTREAM, &stream, sizeof(CActiveAEStream*));
 
-  if (!wait)
-    return;
-
+  XbmcThreads::EndTime timer(2000);
   while (!timer.IsTimePast())
   {
     if (m_streamPort->ReceiveInMessage(&msg))
@@ -181,6 +190,9 @@ void CActiveAEStream::Drain(bool wait)
         return;
       }
     }
+    else if (!wait)
+      return;
+
     m_inMsgEvent.WaitMSec(timer.MillisLeft());
   }
   CLog::Log(LOGERROR, "CActiveAEStream::Drain - timeout out");
