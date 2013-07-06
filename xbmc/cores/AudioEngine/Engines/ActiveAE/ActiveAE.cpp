@@ -849,7 +849,6 @@ void CActiveAE::Configure()
       outputFormat.m_frameSize = outputFormat.m_channelLayout.Count() *
                                  (CAEUtil::DataFormatToBits(outputFormat.m_dataFormat) >> 3);
       // TODO: adjust to decoder
-//      outputFormat.m_frames = outputFormat.m_sampleRate / 10;
       sinkInputFormat = outputFormat;
     }
     m_internalFormat = outputFormat;
@@ -857,6 +856,15 @@ void CActiveAE::Configure()
     std::list<CActiveAEStream*>::iterator it;
     for(it=m_streams.begin(); it!=m_streams.end(); ++it)
     {
+      if (!(*it)->m_imputBuffers)
+      {
+        // align input buffers with period of sink
+        (*it)->m_format.m_frames = m_sinkFormat.m_frames;
+
+        // create buffer pool
+        (*it)->m_imputBuffers = new CActiveAEBufferPool((*it)->m_format);
+        (*it)->m_imputBuffers->Create(MAX_CACHE_LEVEL*1000);
+      }
       if (initSink && (*it)->m_resampleBuffers)
       {
         m_discardBufferPools.push_back((*it)->m_resampleBuffers);
@@ -930,8 +938,7 @@ CActiveAEStream* CActiveAE::CreateStream(MsgStreamNew *streamMsg)
                              &stream->m_inMsgEvent, &m_outMsgEvent);
 
   // create buffer pool
-  stream->m_imputBuffers = new CActiveAEBufferPool(streamMsg->format);
-  stream->m_imputBuffers->Create(MAX_CACHE_LEVEL*1000);
+  stream->m_imputBuffers = NULL; // create in Configure when we know the sink format
   stream->m_resampleBuffers = NULL; // create in Configure when we know the sink format
   stream->m_statsLock = m_stats.GetLock();
   stream->m_fadingSamples = 0;

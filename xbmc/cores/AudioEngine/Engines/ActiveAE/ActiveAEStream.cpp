@@ -44,7 +44,7 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_paused = false;
   m_rgain = 1.0;
   m_volume = 1.0;
-  m_streamSpace = m_format.m_frameSize * m_format.m_frames * m_format.m_channelLayout.Count();
+  m_streamSpace = m_format.m_frameSize * m_format.m_frames;
   m_streamDraining = false;
   m_streamDrained = false;
   m_streamFading = false;
@@ -63,7 +63,9 @@ unsigned int CActiveAEStream::GetSpace()
 unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
 {
   Message *msg;
-  while(true)
+  int copied = 0;
+  int bytesToCopy = size;
+  while(copied < size)
   {
     if (m_currentBuffer)
     {
@@ -71,15 +73,21 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
                   m_currentBuffer->pkt->bytes_per_sample *
                   m_currentBuffer->pkt->config.channels /
                   m_currentBuffer->pkt->planes;
-      int samples = size / m_currentBuffer->pkt->bytes_per_sample / m_currentBuffer->pkt->config.channels;
+
+      int freeSamples = m_currentBuffer->pkt->max_nb_samples - m_currentBuffer->pkt->nb_samples;
+      int space =  freeSamples * m_format.m_frameSize;
+      int bytes = std::min(bytesToCopy, space);
+      int samples = bytes / m_currentBuffer->pkt->bytes_per_sample / m_currentBuffer->pkt->config.channels;
       //TODO: handle planar formats
-      memcpy(m_currentBuffer->pkt->data[0] + start, (uint8_t*)data, size);
+      memcpy(m_currentBuffer->pkt->data[0] + start, (uint8_t*)data, bytes);
       {
         CSingleLock lock(*m_statsLock);
         m_currentBuffer->pkt->nb_samples += samples;
         m_bufferedTime += (double)samples / m_currentBuffer->pkt->config.sample_rate;
       }
-      if (m_currentBuffer->pkt->nb_samples > m_currentBuffer->pkt->max_nb_samples / 10)
+      copied += bytes;
+      bytesToCopy -= bytes;
+      if (m_currentBuffer->pkt->nb_samples == m_currentBuffer->pkt->max_nb_samples)
       {
         MsgStreamSample msgData;
         msgData.buffer = m_currentBuffer;
@@ -87,7 +95,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
         m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
         m_currentBuffer = NULL;
       }
-      return size;
+      continue;
     }
     else if (m_streamPort->ReceiveInMessage(&msg))
     {
@@ -101,13 +109,13 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
       {
         CLog::Log(LOGERROR, "CActiveAEStream::AddData - unknown signal");
         msg->Release();
-        return 0;
+        break;
       }
     }
     if (!m_inMsgEvent.WaitMSec(200))
-      return 0;
+      break;
   }
-  return 0;
+  return copied;
 }
 
 double CActiveAEStream::GetDelay()
