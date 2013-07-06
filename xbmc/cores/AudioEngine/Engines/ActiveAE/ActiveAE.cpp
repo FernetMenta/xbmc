@@ -859,7 +859,7 @@ void CActiveAE::Configure()
       if (!(*it)->m_imputBuffers)
       {
         // align input buffers with period of sink
-        (*it)->m_format.m_frames = m_sinkFormat.m_frames;
+        (*it)->m_format.m_frames = m_sinkFormat.m_frames * ((float)(*it)->m_format.m_sampleRate / m_sinkFormat.m_sampleRate);
 
         // create buffer pool
         (*it)->m_imputBuffers = new CActiveAEBufferPool((*it)->m_format);
