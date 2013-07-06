@@ -1353,8 +1353,9 @@ bool CActiveAE::RunStages()
 #ifdef __SSE__
                 CAEUtil::SSEMulArray((float*)out->pkt->data[j], volume, nb_floats);
 #else
+                float* fbuffer = (float*) out->pkt->data[j];
                 for (int k = 0; k < nb_floats; ++k)
-                  *dst++ *= volume;
+                  *fbuffer++ *= volume;
 #endif
               }
             }
@@ -1570,7 +1571,7 @@ void CActiveAE::Deamplify(CSoundPacket &dstSample)
       CAEUtil::SSEMulArray(buffer, m_volume, nb_floats);
 #else
       float *fbuffer = buffer;
-      for (unsigned int i = 0; i < samples; i++)
+      for (unsigned int i = 0; i < nb_floats; i++)
         *fbuffer++ *= m_volume;
 #endif
     }
