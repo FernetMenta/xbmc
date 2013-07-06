@@ -240,7 +240,8 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           stream = *(CActiveAEStream**)msg->data;
           stream->m_drain = true;
           stream->m_resampleBuffers->m_drain = true;
-          msg->Reply(CActiveAEDataProtocol::STREAMDRAINED);
+          msg->Reply(CActiveAEDataProtocol::ACC);
+          stream->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMDRAINED);
           return;
         default:
           break;
@@ -478,6 +479,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           stream->m_resampleBuffers->m_drain = true;
           m_extTimeout = 0;
           m_state = AE_TOP_CONFIGURED_PLAY;
+          msg->Reply(CActiveAEDataProtocol::ACC);
           return;
         case CActiveAEDataProtocol::FLUSHSTREAM:
           stream = *(CActiveAEStream**)msg->data;
@@ -667,6 +669,7 @@ void CActiveAE::Process()
           {
             gotMsg = true;
             port = &m_dataPort;
+            break;
           }
         }
       }
@@ -1287,10 +1290,10 @@ bool CActiveAE::RunStages()
       std::list<CActiveAEStream*>::iterator it;
       for (it = m_streams.begin(); it != m_streams.end(); ++it)
       {
-        if ((*it)->m_paused)
+        if ((*it)->m_paused || !(*it)->m_resampleBuffers)
           continue;
 
-        if ((*it)->m_resampleBuffers && !(*it)->m_resampleBuffers->m_outputSamples.empty())
+        if (!(*it)->m_resampleBuffers->m_outputSamples.empty())
         {
           if (!out)
           {
