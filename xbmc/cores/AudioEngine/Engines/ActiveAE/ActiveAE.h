@@ -75,6 +75,7 @@ public:
     STREAMRESAMPLERATIO,
     STREAMFADE,
     STOPSOUND,
+    SOUNDMODE,
     GETSTATE,
     DISPLAYLOST,
     DISPLAYRESET,
@@ -299,6 +300,7 @@ protected:
   };
   std::list<SoundState> m_sounds_playing;
   std::vector<CActiveAESound*> m_sounds;
+  int m_soundMode;
 
   float m_volume;
 
