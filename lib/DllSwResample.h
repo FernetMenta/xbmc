@@ -88,7 +88,7 @@ public:
   virtual void swr_free(struct SwrContext **s){ return ::swr_free(s); }
   virtual int swr_convert(struct SwrContext *s, uint8_t **out, int out_count, const uint8_t **in , int in_count){ return ::swr_convert(s, out, out_count, in, in_count); }
   virtual int64_t swr_get_delay(struct SwrContext *s, int64_t base) { return ::swr_get_delay(s, base); }
-  virtual int swr_set_channel_mapping (struct SwrContext *s, const int *channel_map) { return ::swr_set_channel_mapping(s, chanel_map); }
+  virtual int swr_set_channel_mapping (struct SwrContext *s, const int *channel_map) { return ::swr_set_channel_mapping(s, channel_map); }
   virtual int swr_set_matrix(struct SwrContext *s, const double *matrix, int stride) { return ::swr_set_matrix(s, matrix, stride); }
 };
 #else
@@ -121,7 +121,7 @@ public:
   virtual void swr_free(struct SwrContext **s){ ::avresample_close(*s); *s = NULL; }
   virtual int swr_convert(struct SwrContext *s, uint8_t **out, int out_count, const uint8_t **in , int in_count){ return ::avresample_convert(s, out, 0, out_count, (uint8_t**)in, 0,in_count); }
   virtual int64_t swr_get_delay(struct SwrContext *s, int64_t base){return ::swr_get_delay(s, base);}
-  virtual int swr_set_channel_mapping (struct SwrContext *s, const int *channel_map){return ::swr_set_channel_mapping(s, chanel_map);}
+  virtual int swr_set_channel_mapping (struct SwrContext *s, const int *channel_map){return ::swr_set_channel_mapping(s, channel_map);}
   virtual int swr_set_matrix(struct SwrContext *s, const double *matrix, int stride) { return ::swr_set_matrix(s, matrix, stride);}
 };
 #endif
