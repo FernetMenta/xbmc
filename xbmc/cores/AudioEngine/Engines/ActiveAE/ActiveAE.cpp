@@ -1355,7 +1355,7 @@ bool CActiveAE::RunStages()
 #ifdef __SSE__
                 CAEUtil::SSEMulArray((float*)out->pkt->data[j]+i*nb_floats, volume, nb_floats);
 #else
-                float* fbuffer = (float*) out->pkt->data[j];
+                float* fbuffer = (float*) out->pkt->data[j]+i*nb_floats;
                 for (int k = 0; k < nb_floats; ++k)
                   *fbuffer++ *= volume;
 #endif
