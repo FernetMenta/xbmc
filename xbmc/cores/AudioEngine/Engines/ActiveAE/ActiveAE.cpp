@@ -142,6 +142,7 @@ CActiveAE::CActiveAE() :
   m_mode = MODE_PCM;
   m_encoder = NULL;
   m_audioCallback = NULL;
+  m_cbrefCount = 0;
   m_vizInitialized = false;
 }
 
@@ -975,7 +976,7 @@ void CActiveAE::DiscardStream(CActiveAEStream *stream)
   }
 
   if (m_streams.empty())
-    UnRegisterAudioCallback();
+    UnRegisterAudioCallback(true);
 
   ClearDiscardedBuffers();
 }
@@ -1309,7 +1310,7 @@ bool CActiveAE::RunStages()
             (*it)->m_resampleBuffers->m_outputSamples.pop_front();
 
             // volume for stream
-            float volume = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), out);
+            float volume = (*it)->m_rgain * CalcStreamAmplification((*it), out);
             if(volume < 0.0 || volume > 1.0)
             {
               CLog::Log(LOGERROR, "ActiveAE::%s - wrong value for volume, bailing out", __FUNCTION__);
@@ -1318,7 +1319,7 @@ bool CActiveAE::RunStages()
             }
             int nb_floats = out->pkt->nb_samples * out->pkt->config.channels / out->pkt->planes;
             int nb_loops = 1;
-            float fadingVolume, fadingStep;
+            float fadingStep;
 
             // fading
             if ((*it)->m_fadingSamples == -1)
@@ -1332,14 +1333,13 @@ bool CActiveAE::RunStages()
               float delta = (*it)->m_fadingTarget - (*it)->m_fadingBase;
               int samples = m_internalFormat.m_sampleRate * (float)(*it)->m_fadingTime / 1000.0f;
               fadingStep = delta / samples;
-              fadingVolume = (*it)->m_fadingBase * (samples - (*it)->m_fadingSamples) * fadingStep;
+              (*it)->m_volume = (*it)->m_fadingBase + (samples - (*it)->m_fadingSamples) * fadingStep;
             }
             for(int i=0; i<nb_loops; i++)
             {
               if ((*it)->m_fadingSamples > 0)
               {
-                volume *= fadingVolume;
-                fadingVolume += fadingStep;
+                (*it)->m_volume += fadingStep;
                 (*it)->m_fadingSamples--;
 
                 if ((*it)->m_fadingSamples == 0)
@@ -1349,10 +1349,11 @@ bool CActiveAE::RunStages()
                   (*it)->m_streamFading = false;
                 }
               }
+              volume *= (*it)->m_volume;
               for(int j=0; j<out->pkt->planes; j++)
               {
 #ifdef __SSE__
-                CAEUtil::SSEMulArray((float*)out->pkt->data[j], volume, nb_floats);
+                CAEUtil::SSEMulArray((float*)out->pkt->data[j]+i*nb_floats, volume, nb_floats);
 #else
                 float* fbuffer = (float*) out->pkt->data[j];
                 for (int k = 0; k < nb_floats; ++k)
@@ -1366,18 +1367,59 @@ bool CActiveAE::RunStages()
             CSampleBuffer *mix = NULL;
             mix = (*it)->m_resampleBuffers->m_outputSamples.front();
             (*it)->m_resampleBuffers->m_outputSamples.pop_front();
-            for(int j=0; j<out->pkt->planes; j++)
+
+            // volume for stream
+            float volume = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), out);
+            if(volume < 0.0 || volume > 1.0)
             {
-              float volume = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), out);
-              float *dst = (float*)out->pkt->data[j];
-              float *src = (float*)mix->pkt->data[j];
-              int nb_floats = out->pkt->nb_samples * out->pkt->config.channels / out->pkt->planes;
+              CLog::Log(LOGERROR, "ActiveAE::%s - wrong value for volume, bailing out", __FUNCTION__);
+              m_extError = true;
+              return false;
+            }
+            int nb_floats = out->pkt->nb_samples * out->pkt->config.channels / out->pkt->planes;
+            int nb_loops = 1;
+            float fadingStep;
+
+            // fading
+            if ((*it)->m_fadingSamples == -1)
+            {
+              (*it)->m_fadingSamples = m_internalFormat.m_sampleRate * (float)(*it)->m_fadingTime / 1000.0f;
+            }
+            if ((*it)->m_fadingSamples > 0)
+            {
+              nb_floats = out->pkt->config.channels / out->pkt->planes;
+              nb_loops = out->pkt->nb_samples;
+              float delta = (*it)->m_fadingTarget - (*it)->m_fadingBase;
+              int samples = m_internalFormat.m_sampleRate * (float)(*it)->m_fadingTime / 1000.0f;
+              fadingStep = delta / samples;
+              (*it)->m_volume = (*it)->m_fadingBase + (samples - (*it)->m_fadingSamples) * fadingStep;
+            }
+            for(int i=0; i<nb_loops; i++)
+            {
+              if ((*it)->m_fadingSamples > 0)
+              {
+                (*it)->m_volume += fadingStep;
+                (*it)->m_fadingSamples--;
+
+                if ((*it)->m_fadingSamples == 0)
+                {
+                  // set variables being polled via stream interface
+                  CSingleLock lock((*it)->m_streamLock);
+                  (*it)->m_streamFading = false;
+                }
+                volume *= (*it)->m_volume;
+              }
+              for(int j=0; j<out->pkt->planes; j++)
+              {
+                float *dst = (float*)out->pkt->data[j]+i*nb_floats;
+                float *src = (float*)mix->pkt->data[j]+i*nb_floats;
 #ifdef __SSE__
-              CAEUtil::SSEMulAddArray(dst, src, volume, nb_floats);
+                CAEUtil::SSEMulAddArray(dst, src, volume, nb_floats);
 #else
-              for (int k = 0; k < nb_floats; ++k)
-                *dst++ += *src++ * volume;
+                for (int k = 0; k < nb_floats; ++k)
+                  *dst++ += *src++ * volume;
 #endif
+              }
             }
             mix->Return();
           }
@@ -2090,15 +2132,25 @@ void CActiveAE::SetStreamFade(CActiveAEStream *stream, float from, float target,
                                      &msg, sizeof(MsgStreamFade));
 }
 
+// TODO
+// audio callback should be registered on the engine, not on the stream
 void CActiveAE::RegisterAudioCallback(IAudioCallback* pCallback)
 {
+  if (!pCallback)
+    return;
   CSingleLock lock(m_vizLock);
   m_audioCallback = pCallback;
   m_vizInitialized = false;
+  m_cbrefCount++;
 }
 
-void CActiveAE::UnRegisterAudioCallback()
+void CActiveAE::UnRegisterAudioCallback(bool force)
 {
   CSingleLock lock(m_vizLock);
-  m_audioCallback = NULL;
+  m_cbrefCount--;
+  if (m_cbrefCount <= 0 || force)
+  {
+    m_audioCallback = NULL;
+    m_cbrefCount = 0;
+  }
 }
