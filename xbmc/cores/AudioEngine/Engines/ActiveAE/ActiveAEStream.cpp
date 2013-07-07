@@ -50,10 +50,13 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_streamFading = false;
   m_streamFreeBuffers = 0;
   m_streamSlave = NULL;
+  m_pCallback = NULL;
 }
 
 CActiveAEStream::~CActiveAEStream()
 {
+  if (m_pCallback)
+    UnRegisterAudioCallback();
 }
 
 void CActiveAEStream::IncFreeBuffers()
@@ -113,7 +116,6 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
         msgData.buffer = m_currentBuffer;
         msgData.stream = this;
         m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
-        DecFreeBuffers();
         m_currentBuffer = NULL;
       }
       continue;
@@ -124,6 +126,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
       {
         m_currentBuffer = *((CSampleBuffer**)msg->data);
         msg->Release();
+        DecFreeBuffers();
         continue;
       }
       else
@@ -197,7 +200,6 @@ void CActiveAEStream::Drain(bool wait)
     msgData.buffer = m_currentBuffer;
     msgData.stream = this;
     m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
-    DecFreeBuffers();
     m_currentBuffer = NULL;
   }
 
@@ -342,12 +344,16 @@ const enum AEDataFormat CActiveAEStream::GetDataFormat() const
 
 void CActiveAEStream::RegisterAudioCallback(IAudioCallback* pCallback)
 {
-  AE.RegisterAudioCallback(pCallback);
+  if (!m_pCallback)
+    AE.RegisterAudioCallback(pCallback);
+  m_pCallback = pCallback;
 }
 
 void CActiveAEStream::UnRegisterAudioCallback()
 {
-  AE.UnRegisterAudioCallback();
+  if (m_pCallback)
+    AE.UnRegisterAudioCallback();
+  m_pCallback = NULL;
 }
 
 void CActiveAEStream::RegisterSlave(IAEStream *slave)

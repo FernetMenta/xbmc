@@ -89,6 +89,7 @@ protected:
   int m_streamFreeBuffers;
   IAEStream *m_streamSlave;
   CCriticalSection m_streamLock;
+  IAudioCallback* m_pCallback;
 
   // only accessed by engine
   CActiveAEBufferPool *m_imputBuffers;

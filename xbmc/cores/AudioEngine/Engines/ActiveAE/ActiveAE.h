@@ -224,7 +224,7 @@ protected:
   void SetStreamResampleRatio(CActiveAEStream *stream, double ratio);
   void SetStreamFade(CActiveAEStream *stream, float from, float target, unsigned int millis);
   void RegisterAudioCallback(IAudioCallback* pCallback);
-  void UnRegisterAudioCallback();
+  void UnRegisterAudioCallback(bool force = false);
 
 protected:
   void Process();
@@ -307,6 +307,7 @@ protected:
   // viz
   IAudioCallback *m_audioCallback;
   bool m_vizInitialized;
+  int m_cbrefCount;
   CCriticalSection m_vizLock;
 
   // ffmpeg
