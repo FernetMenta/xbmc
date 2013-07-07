@@ -48,6 +48,7 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_streamDraining = false;
   m_streamDrained = false;
   m_streamFading = false;
+  m_streamFreeBuffers = 0;
   m_streamSlave = NULL;
 }
 
@@ -55,9 +56,28 @@ CActiveAEStream::~CActiveAEStream()
 {
 }
 
+void CActiveAEStream::IncFreeBuffers()
+{
+  CSingleLock lock(m_streamLock);
+  m_streamFreeBuffers++;
+}
+
+void CActiveAEStream::DecFreeBuffers()
+{
+  CSingleLock lock(m_streamLock);
+  m_streamFreeBuffers--;
+}
+
+void CActiveAEStream::ResetFreeBuffers()
+{
+  CSingleLock lock(m_streamLock);
+  m_streamFreeBuffers = 0;
+}
+
 unsigned int CActiveAEStream::GetSpace()
 {
-  return m_streamSpace;
+  CSingleLock lock(m_streamLock);
+  return m_streamFreeBuffers * m_streamSpace;
 }
 
 unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
@@ -93,6 +113,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
         msgData.buffer = m_currentBuffer;
         msgData.stream = this;
         m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
+        DecFreeBuffers();
         m_currentBuffer = NULL;
       }
       continue;
@@ -176,6 +197,7 @@ void CActiveAEStream::Drain(bool wait)
     msgData.buffer = m_currentBuffer;
     msgData.stream = this;
     m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
+    DecFreeBuffers();
     m_currentBuffer = NULL;
   }
 
@@ -190,6 +212,7 @@ void CActiveAEStream::Drain(bool wait)
         msgData.stream = this;
         msgData.buffer = *((CSampleBuffer**)msg->data);
         msg->Reply(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
+        DecFreeBuffers();
         continue;
       }
       else if (msg->signal == CActiveAEDataProtocol::STREAMDRAINED)
@@ -230,6 +253,7 @@ void CActiveAEStream::Flush()
     m_currentBuffer = NULL;
   }
   AE.FlushStream(this);
+  ResetFreeBuffers();
 }
 
 float CActiveAEStream::GetAmplification()
