@@ -89,7 +89,6 @@ protected:
   int m_streamFreeBuffers;
   IAEStream *m_streamSlave;
   CCriticalSection m_streamLock;
-  IAudioCallback* m_pCallback;
 
   // only accessed by engine
   CActiveAEBufferPool *m_imputBuffers;
@@ -101,6 +100,7 @@ protected:
   CCriticalSection *m_statsLock;
   bool m_drain;
   bool m_paused;
+  bool m_started;
   CAELimiter m_limiter;
   float m_volume;
   float m_rgain;
