@@ -1377,7 +1377,7 @@ bool CActiveAE::RunStages()
               m_extError = true;
               return false;
             }
-            int nb_floats = out->pkt->nb_samples * out->pkt->config.channels / out->pkt->planes;
+            int nb_floats = mix->pkt->nb_samples * mix->pkt->config.channels / mix->pkt->planes;
             int nb_loops = 1;
             float fadingStep;
 
@@ -1388,8 +1388,8 @@ bool CActiveAE::RunStages()
             }
             if ((*it)->m_fadingSamples > 0)
             {
-              nb_floats = out->pkt->config.channels / out->pkt->planes;
-              nb_loops = out->pkt->nb_samples;
+              nb_floats = mix->pkt->config.channels / mix->pkt->planes;
+              nb_loops = mix->pkt->nb_samples;
               float delta = (*it)->m_fadingTarget - (*it)->m_fadingBase;
               int samples = m_internalFormat.m_sampleRate * (float)(*it)->m_fadingTime / 1000.0f;
               fadingStep = delta / samples;
@@ -1410,7 +1410,7 @@ bool CActiveAE::RunStages()
                 }
               }
               float volume = (*it)->m_volume * amp;
-              for(int j=0; j<out->pkt->planes; j++)
+              for(int j=0; j<out->pkt->planes && j<mix->pkt->planes; j++)
               {
                 float *dst = (float*)out->pkt->data[j]+i*nb_floats;
                 float *src = (float*)mix->pkt->data[j]+i*nb_floats;
