@@ -759,6 +759,7 @@ void PAPlayer::OnExit()
 void PAPlayer::RegisterAudioCallback(IAudioCallback* pCallback)
 {
   CSharedLock lock(m_streamsLock);
+  CAEFactory::RegisterAudioCallback(pCallback);
   m_audioCallback = pCallback;
   if (m_currentStream && m_currentStream->m_stream)
     m_currentStream->m_stream->RegisterAudioCallback(pCallback);
@@ -767,6 +768,7 @@ void PAPlayer::RegisterAudioCallback(IAudioCallback* pCallback)
 void PAPlayer::UnRegisterAudioCallback()
 {
   CSharedLock lock(m_streamsLock);
+  CAEFactory::UnregisterAudioCallback();
   /* only one stream should have the callback, but we do it to all just incase */
   for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end(); ++itt)
     if ((*itt)->m_stream)
