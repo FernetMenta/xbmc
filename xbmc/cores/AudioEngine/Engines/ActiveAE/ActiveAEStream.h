@@ -34,6 +34,9 @@ protected:
   CActiveAEStream(AEAudioFormat *format);
   virtual ~CActiveAEStream();
   void FadingFinished();
+  void IncFreeBuffers();
+  void DecFreeBuffers();
+  void ResetFreeBuffers();
 
 public:
   virtual unsigned int GetSpace();
@@ -83,6 +86,7 @@ protected:
   bool m_streamDraining;
   bool m_streamDrained;
   bool m_streamFading;
+  int m_streamFreeBuffers;
   IAEStream *m_streamSlave;
   CCriticalSection m_streamLock;
 

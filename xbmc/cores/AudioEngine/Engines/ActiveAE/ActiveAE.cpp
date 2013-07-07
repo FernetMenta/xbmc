@@ -1236,7 +1236,7 @@ bool CActiveAE::RunStages()
   std::list<CActiveAEStream*>::iterator it;
   for (it = m_streams.begin(); it != m_streams.end(); ++it)
   {
-    if ((*it)->m_resampleBuffers)
+    if ((*it)->m_resampleBuffers && !(*it)->m_paused)
       busy = (*it)->m_resampleBuffers->ResampleBuffers();
 
     // provide buffers to stream
@@ -1249,6 +1249,7 @@ bool CActiveAE::RunStages()
         buffer = (*it)->m_imputBuffers->GetFreeBuffer();
         (*it)->m_processingSamples.push_back(buffer);
         (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMBUFFER, &buffer, sizeof(CSampleBuffer*));
+        (*it)->IncFreeBuffers();
         time += (float)buffer->pkt->max_nb_samples / buffer->pkt->config.sample_rate;
       }
     }
