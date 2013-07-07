@@ -228,20 +228,26 @@ bool CActiveAEBufferPoolResample::ResampleBuffers(unsigned int timestamp)
   }
   else if (m_procSample || !m_freeSamples.empty())
   {
-    if (!m_procSample)
-    {
-      m_procSample = GetFreeBuffer();
-    }
-
     int out_samples = m_resampler->GetBufferedSamples();
+    int free_samples;
+    if (m_procSample)
+      free_samples = m_procSample->pkt->max_nb_samples - m_procSample->pkt->nb_samples;
+    else
+      free_samples = m_format.m_frames;
+
     bool skipInput = false;
-    if (out_samples > (m_procSample->pkt->max_nb_samples - m_procSample->pkt->nb_samples) * 2)
+    if (out_samples > free_samples * 2)
       skipInput = true;
 
     bool hasInput = !m_inputSamples.empty();
 
     if (hasInput || skipInput || m_drain || m_changeRatio)
     {
+      if (!m_procSample)
+      {
+        m_procSample = GetFreeBuffer();
+      }
+
       if (hasInput && !skipInput && !m_changeRatio)
       {
         in = m_inputSamples.front();
@@ -267,11 +273,9 @@ bool CActiveAEBufferPoolResample::ResampleBuffers(unsigned int timestamp)
       m_procSample->pkt->nb_samples += out_samples;
       busy = true;
 
-      unsigned int buffered = m_resampler->GetBufferedSamples();
-
       if ((m_drain || m_changeRatio) && out_samples == 0)
       {
-        if (m_fillPackets)
+        if (m_fillPackets && m_procSample->pkt->nb_samples != 0)
         {
           // pad with zero
           start = m_procSample->pkt->nb_samples *
@@ -284,7 +288,16 @@ bool CActiveAEBufferPoolResample::ResampleBuffers(unsigned int timestamp)
           }
         }
         m_procSample->timestamp = timestamp;
-        m_outputSamples.push_back(m_procSample);
+
+        // check if draining is finished
+        if (m_drain && m_procSample->pkt->nb_samples == 0)
+        {
+          m_procSample->Return();
+          busy = false;
+        }
+        else
+          m_outputSamples.push_back(m_procSample);
+
         m_procSample = NULL;
         if (m_changeRatio)
           ChangeRatio();
