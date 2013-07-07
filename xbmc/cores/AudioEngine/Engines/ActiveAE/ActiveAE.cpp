@@ -1310,8 +1310,8 @@ bool CActiveAE::RunStages()
             (*it)->m_resampleBuffers->m_outputSamples.pop_front();
 
             // volume for stream
-            float volume = (*it)->m_rgain * CalcStreamAmplification((*it), out);
-            if(volume < 0.0 || volume > 1.0)
+            float amp = (*it)->m_rgain * CalcStreamAmplification((*it), out);
+            if(amp < 0.0 || amp > 1.0)
             {
               CLog::Log(LOGERROR, "ActiveAE::%s - wrong value for volume, bailing out", __FUNCTION__);
               m_extError = true;
@@ -1349,7 +1349,8 @@ bool CActiveAE::RunStages()
                   (*it)->m_streamFading = false;
                 }
               }
-              volume *= (*it)->m_volume;
+              float volume = (*it)->m_volume * amp;
+
               for(int j=0; j<out->pkt->planes; j++)
               {
 #ifdef __SSE__
@@ -1369,8 +1370,8 @@ bool CActiveAE::RunStages()
             (*it)->m_resampleBuffers->m_outputSamples.pop_front();
 
             // volume for stream
-            float volume = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), out);
-            if(volume < 0.0 || volume > 1.0)
+            float amp = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), out);
+            if(amp < 0.0 || amp > 1.0)
             {
               CLog::Log(LOGERROR, "ActiveAE::%s - wrong value for volume, bailing out", __FUNCTION__);
               m_extError = true;
@@ -1407,8 +1408,8 @@ bool CActiveAE::RunStages()
                   CSingleLock lock((*it)->m_streamLock);
                   (*it)->m_streamFading = false;
                 }
-                volume *= (*it)->m_volume;
               }
+              float volume = (*it)->m_volume * amp;
               for(int j=0; j<out->pkt->planes; j++)
               {
                 float *dst = (float*)out->pkt->data[j]+i*nb_floats;
