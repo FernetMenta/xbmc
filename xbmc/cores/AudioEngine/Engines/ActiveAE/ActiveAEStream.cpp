@@ -50,13 +50,10 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_streamFading = false;
   m_streamFreeBuffers = 0;
   m_streamSlave = NULL;
-  m_pCallback = NULL;
 }
 
 CActiveAEStream::~CActiveAEStream()
 {
-  if (m_pCallback)
-    UnRegisterAudioCallback();
 }
 
 void CActiveAEStream::IncFreeBuffers()
@@ -344,16 +341,10 @@ const enum AEDataFormat CActiveAEStream::GetDataFormat() const
 
 void CActiveAEStream::RegisterAudioCallback(IAudioCallback* pCallback)
 {
-  if (!m_pCallback)
-    AE.RegisterAudioCallback(pCallback);
-  m_pCallback = pCallback;
 }
 
 void CActiveAEStream::UnRegisterAudioCallback()
 {
-  if (m_pCallback)
-    AE.UnRegisterAudioCallback();
-  m_pCallback = NULL;
 }
 
 void CActiveAEStream::RegisterSlave(IAEStream *slave)
