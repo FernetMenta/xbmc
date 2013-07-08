@@ -1777,7 +1777,7 @@ float CActiveAE::GetVolume()
 
 void CActiveAE::SetVolume(const float volume)
 {
-  m_aeVolume = volume;
+  m_aeVolume = std::max( 0.0f, std::min(1.0f, volume));
   m_controlPort.SendOutMessage(CActiveAEControlProtocol::VOLUME, &m_aeVolume, sizeof(float));
 }
 
