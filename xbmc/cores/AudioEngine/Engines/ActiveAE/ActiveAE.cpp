@@ -1051,11 +1051,13 @@ void CActiveAE::DiscardSound(CActiveAESound *sound)
 
 float CActiveAE::CalcStreamAmplification(CActiveAEStream *stream, CSampleBuffer *buf)
 {
-  float amp;
+  float amp = 1.0f;
   int nb_floats = buf->pkt->nb_samples * buf->pkt->config.channels / buf->pkt->planes;
+  float tamp;
   for(int i=0; i<buf->pkt->planes; i++)
   {
-    amp = stream->m_limiter.Run((float*)buf->pkt->data[i], nb_floats);
+    tamp = stream->m_limiter.Run((float*)buf->pkt->data[i], nb_floats);
+    amp = std::min(amp, tamp);
   }
   return amp;
 }
@@ -1332,7 +1334,6 @@ bool CActiveAE::RunStages()
 
             // volume for stream
             float amp = (*it)->m_rgain * CalcStreamAmplification((*it), out);
-            amp = std::max( 0.0f, std::min(1.0f, amp));
 
             int nb_floats = out->pkt->nb_samples * out->pkt->config.channels / out->pkt->planes;
             int nb_loops = 1;
@@ -1366,7 +1367,7 @@ bool CActiveAE::RunStages()
                   (*it)->m_streamFading = false;
                 }
               }
-              float volume = std::max( 0.0f, std::min(1.0f, (*it)->m_volume * amp));
+              float volume = (*it)->m_volume * amp;
 
               for(int j=0; j<out->pkt->planes; j++)
               {
@@ -1388,7 +1389,6 @@ bool CActiveAE::RunStages()
 
             // volume for stream
             float amp = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), mix);
-            amp = std::max( 0.0f, std::min(1.0f, amp));
 
             int nb_floats = mix->pkt->nb_samples * mix->pkt->config.channels / mix->pkt->planes;
             int nb_loops = 1;
@@ -1422,7 +1422,7 @@ bool CActiveAE::RunStages()
                   (*it)->m_streamFading = false;
                 }
               }
-              float volume = std::max( 0.0f, std::min(1.0f, (*it)->m_volume * amp));
+              float volume = (*it)->m_volume * amp;
 
               for(int j=0; j<out->pkt->planes && j<mix->pkt->planes; j++)
               {
