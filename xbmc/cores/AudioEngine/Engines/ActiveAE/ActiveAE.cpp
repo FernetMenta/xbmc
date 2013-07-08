@@ -139,6 +139,9 @@ CActiveAE::CActiveAE() :
   m_encoderBuffers = NULL;
   m_vizBuffers = NULL;
   m_volume = 1.0;
+  m_aeVolume = 1.0;
+  m_muted = false;
+  m_aeMuted = false;
   m_mode = MODE_PCM;
   m_encoder = NULL;
   m_audioCallback = NULL;
@@ -209,6 +212,12 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           return;
         case CActiveAEControlProtocol::SOUNDMODE:
           m_soundMode = *(int*)msg->data;
+          return;
+        case CActiveAEControlProtocol::VOLUME:
+          m_volume = *(float*)msg->data;
+          return;
+        case CActiveAEControlProtocol::MUTE:
+          m_muted = *(bool*)msg->data;
           return;
         default:
           break;
@@ -1362,11 +1371,11 @@ bool CActiveAE::RunStages()
               for(int j=0; j<out->pkt->planes; j++)
               {
 #ifdef __SSE__
-                CAEUtil::SSEMulArray((float*)out->pkt->data[j]+i*nb_floats, volume, nb_floats);
+                CAEUtil::SSEMulArray((float*)out->pkt->data[j]+i*nb_floats, m_muted ? 0.0 : volume, nb_floats);
 #else
                 float* fbuffer = (float*) out->pkt->data[j]+i*nb_floats;
                 for (int k = 0; k < nb_floats; ++k)
-                  *fbuffer++ *= volume;
+                  *fbuffer++ *= m_muted ? 0.0 : volume;
 #endif
               }
             }
@@ -1420,10 +1429,10 @@ bool CActiveAE::RunStages()
                 float *dst = (float*)out->pkt->data[j]+i*nb_floats;
                 float *src = (float*)mix->pkt->data[j]+i*nb_floats;
 #ifdef __SSE__
-                CAEUtil::SSEMulAddArray(dst, src, volume, nb_floats);
+                CAEUtil::SSEMulAddArray(dst, src, m_muted ? 0.0 : volume, nb_floats);
 #else
                 for (int k = 0; k < nb_floats; ++k)
-                  *dst++ += *src++ * volume;
+                  *dst++ += *src++ * m_muted ? 0.0 : volume;
 #endif
               }
             }
@@ -1619,7 +1628,7 @@ void CActiveAE::Deamplify(CSoundPacket &dstSample)
     {
       buffer = (float*)dstSample.data[j];
 #ifdef __SSE__
-      CAEUtil::SSEMulArray(buffer, m_volume, nb_floats);
+      CAEUtil::SSEMulArray(buffer, m_muted ? 0.0 : m_volume, nb_floats);
 #else
       float *fbuffer = buffer;
       for (unsigned int i = 0; i < nb_floats; i++)
@@ -1763,22 +1772,24 @@ bool CActiveAE::IsSuspended()
 
 float CActiveAE::GetVolume()
 {
-  return m_volume;
+  return m_aeVolume;
 }
 
 void CActiveAE::SetVolume(const float volume)
 {
-  m_volume = volume;
+  m_aeVolume = volume;
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::MUTE, &m_aeVolume, sizeof(float));
 }
 
 void CActiveAE::SetMute(const bool enabled)
 {
-
+  m_aeMuted = enabled;
+  m_controlPort.SendOutMessage(CActiveAEControlProtocol::MUTE, &m_aeMuted, sizeof(bool));
 }
 
 bool CActiveAE::IsMuted()
 {
-  return false;
+  return m_aeMuted;
 }
 
 void CActiveAE::SetSoundMode(const int mode)
