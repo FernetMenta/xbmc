@@ -67,6 +67,8 @@ public:
     INIT = 0,
     RECONFIGURE,
     SUSPEND,
+    MUTE,
+    VOLUME,
     PAUSESTREAM,
     RESUMESTREAM,
     STREAMRGAIN,
@@ -304,6 +306,7 @@ protected:
   int m_soundMode;
 
   float m_volume;
+  bool m_muted;
 
   // viz
   IAudioCallback *m_audioCallback;
@@ -314,5 +317,9 @@ protected:
   DllAvFormat m_dllAvFormat;
   DllAvCodec  m_dllAvCodec;
   DllAvUtil   m_dllAvUtil;
+
+  // polled via the interface
+  float m_aeVolume;
+  bool m_aeMuted;
 };
 };
