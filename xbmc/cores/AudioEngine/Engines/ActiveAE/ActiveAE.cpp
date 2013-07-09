@@ -1269,6 +1269,7 @@ bool CActiveAE::RunStages()
         (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMDRAINED);
         (*it)->m_drain = false;
         (*it)->m_resampleBuffers->m_drain = false;
+        (*it)->m_started = false;
 
         // set variables being polled via stream interface
         CSingleLock lock((*it)->m_streamLock);
