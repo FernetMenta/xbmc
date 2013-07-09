@@ -236,8 +236,14 @@ bool CActiveAEBufferPoolResample::ResampleBuffers(unsigned int timestamp)
       free_samples = m_format.m_frames;
 
     bool skipInput = false;
+    // avoid that buffer grows too large
     if (out_samples > free_samples * 2)
+    {
       skipInput = true;
+      // make sure everything is coming out
+      if(m_procSample && out_samples <= m_procSample->pkt->max_nb_samples)
+        skipInput = false;
+    }
 
     bool hasInput = !m_inputSamples.empty();
 
