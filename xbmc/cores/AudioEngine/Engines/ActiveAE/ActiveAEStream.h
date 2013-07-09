@@ -91,7 +91,7 @@ protected:
   CCriticalSection m_streamLock;
 
   // only accessed by engine
-  CActiveAEBufferPool *m_imputBuffers;
+  CActiveAEBufferPool *m_inputBuffers;
   CActiveAEBufferPoolResample *m_resampleBuffers;
   std::deque<CSampleBuffer*> m_processingSamples;
   CSampleBuffer *m_currentBuffer;
