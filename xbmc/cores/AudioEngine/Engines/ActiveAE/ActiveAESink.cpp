@@ -239,7 +239,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           msg->Reply(CSinkDataProtocol::RETURNSAMPLE, &samples, sizeof(CSampleBuffer*));
           if (m_extError)
           {
-            m_state = S_TOP_CONFIGURED_IDLE;
+            m_state = S_TOP_CONFIGURED_SUSPEND;
             m_extTimeout = 0;
           }
           else
