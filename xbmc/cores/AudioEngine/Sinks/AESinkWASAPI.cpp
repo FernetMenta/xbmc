@@ -488,10 +488,11 @@ unsigned int CAESinkWASAPI::AddPackets(uint8_t *data, unsigned int frames, bool 
 #endif
 
   /* Wait for Audio Driver to tell us it's got a buffer available */
+  DWORD eventAudioCallback;
   if(!blocking)
-    DWORD eventAudioCallback = WaitForSingleObject(m_needDataEvent, 0);
+    eventAudioCallback = WaitForSingleObject(m_needDataEvent, 0);
   else
-    DWORD eventAudioCallback = WaitForSingleObject(m_needDataEvent, 1100);
+    eventAudioCallback = WaitForSingleObject(m_needDataEvent, 1100);
 
   if (!blocking)
   {
