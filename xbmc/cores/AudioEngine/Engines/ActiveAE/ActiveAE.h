@@ -168,7 +168,11 @@ protected:
   CCriticalSection m_lock;
 };
 
+#if defined(HAS_GLX) || defined(TARGET_DARWIN_OSX)
 class CActiveAE : public IAE, public IDispResource, private CThread
+#else
+class CActiveAE : public IAE, private CThread
+#endif
 {
 protected:
   friend class ::CAEFactory;
