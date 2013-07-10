@@ -139,6 +139,7 @@ CActiveAEBufferPoolResample::CActiveAEBufferPoolResample(AEAudioFormat inputForm
   m_resampler = NULL;
   m_fillPackets = false;
   m_drain = false;
+  m_empty = true;
   m_procSample = NULL;
   m_resampleRatio = 1.0;
   m_changeRatio = false;
@@ -228,6 +229,7 @@ bool CActiveAEBufferPoolResample::ResampleBuffers(unsigned int timestamp)
   }
   else if (m_procSample || !m_freeSamples.empty())
   {
+    // GetBufferedSamples is not accurate because of rounding errors
     int out_samples = m_resampler->GetBufferedSamples();
     int free_samples;
     if (m_procSample)
@@ -236,14 +238,9 @@ bool CActiveAEBufferPoolResample::ResampleBuffers(unsigned int timestamp)
       free_samples = m_format.m_frames;
 
     bool skipInput = false;
-    // avoid that buffer grows too large
-    if (out_samples > free_samples * 2)
-    {
+    // avoid that ffmpeg resample buffer grows too large
+    if (out_samples > free_samples * 2 && !m_empty)
       skipInput = true;
-      // make sure everything is coming out
-      if(m_procSample && out_samples <= m_procSample->pkt->max_nb_samples)
-        skipInput = false;
-    }
 
     bool hasInput = !m_inputSamples.empty();
 
@@ -278,8 +275,9 @@ bool CActiveAEBufferPoolResample::ResampleBuffers(unsigned int timestamp)
                                           in ? in->pkt->nb_samples : 0);
       m_procSample->pkt->nb_samples += out_samples;
       busy = true;
+      m_empty = (out_samples == 0);
 
-      if ((m_drain || m_changeRatio) && out_samples == 0)
+      if ((m_drain || m_changeRatio) && m_empty)
       {
         if (m_fillPackets && m_procSample->pkt->nb_samples != 0)
         {
