@@ -865,14 +865,14 @@ void CActiveAE::Configure()
     std::list<CActiveAEStream*>::iterator it;
     for(it=m_streams.begin(); it!=m_streams.end(); ++it)
     {
-      if (!(*it)->m_imputBuffers)
+      if (!(*it)->m_inputBuffers)
       {
         // align input buffers with period of sink
         (*it)->m_format.m_frames = m_sinkFormat.m_frames * ((float)(*it)->m_format.m_sampleRate / m_sinkFormat.m_sampleRate);
 
         // create buffer pool
-        (*it)->m_imputBuffers = new CActiveAEBufferPool((*it)->m_format);
-        (*it)->m_imputBuffers->Create(MAX_CACHE_LEVEL*1000);
+        (*it)->m_inputBuffers = new CActiveAEBufferPool((*it)->m_format);
+        (*it)->m_inputBuffers->Create(MAX_CACHE_LEVEL*1000);
       }
       if (initSink && (*it)->m_resampleBuffers)
       {
@@ -881,7 +881,7 @@ void CActiveAE::Configure()
       }
       if (!(*it)->m_resampleBuffers)
       {
-        (*it)->m_resampleBuffers = new CActiveAEBufferPoolResample((*it)->m_imputBuffers->m_format, outputFormat);
+        (*it)->m_resampleBuffers = new CActiveAEBufferPoolResample((*it)->m_inputBuffers->m_format, outputFormat);
         (*it)->m_resampleBuffers->Create(MAX_CACHE_LEVEL*1000, false);
       }
       if (m_mode == MODE_TRANSCODE || m_streams.size() > 1)
@@ -947,7 +947,7 @@ CActiveAEStream* CActiveAE::CreateStream(MsgStreamNew *streamMsg)
                              &stream->m_inMsgEvent, &m_outMsgEvent);
 
   // create buffer pool
-  stream->m_imputBuffers = NULL; // create in Configure when we know the sink format
+  stream->m_inputBuffers = NULL; // create in Configure when we know the sink format
   stream->m_resampleBuffers = NULL; // create in Configure when we know the sink format
   stream->m_statsLock = m_stats.GetLock();
   stream->m_fadingSamples = 0;
@@ -973,7 +973,7 @@ void CActiveAE::DiscardStream(CActiveAEStream *stream)
         (*it)->m_processingSamples.front()->Return();
         (*it)->m_processingSamples.pop_front();
       }
-      m_discardBufferPools.push_back((*it)->m_imputBuffers);
+      m_discardBufferPools.push_back((*it)->m_inputBuffers);
       m_discardBufferPools.push_back((*it)->m_resampleBuffers);
       CLog::Log(LOGDEBUG, "CActiveAE::DiscardStream - audio stream deleted");
       delete (*it)->m_streamPort;
@@ -1253,9 +1253,9 @@ bool CActiveAE::RunStages()
     CSampleBuffer *buffer;
     if (!(*it)->m_drain)
     {
-      while (time < MAX_CACHE_LEVEL && !(*it)->m_imputBuffers->m_freeSamples.empty())
+      while (time < MAX_CACHE_LEVEL && !(*it)->m_inputBuffers->m_freeSamples.empty())
       {
-        buffer = (*it)->m_imputBuffers->GetFreeBuffer();
+        buffer = (*it)->m_inputBuffers->GetFreeBuffer();
         (*it)->m_processingSamples.push_back(buffer);
         (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMBUFFER, &buffer, sizeof(CSampleBuffer*));
         (*it)->IncFreeBuffers();
@@ -1264,7 +1264,7 @@ bool CActiveAE::RunStages()
     }
     else
     {
-      if ((*it)->m_imputBuffers->m_allSamples.size() == (*it)->m_imputBuffers->m_freeSamples.size())
+      if ((*it)->m_inputBuffers->m_allSamples.size() == (*it)->m_inputBuffers->m_freeSamples.size())
       {
         (*it)->m_streamPort->SendInMessage(CActiveAEDataProtocol::STREAMDRAINED);
         (*it)->m_drain = false;
