@@ -49,6 +49,7 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_streamDrained = false;
   m_streamFading = false;
   m_streamFreeBuffers = 0;
+  m_streamIsBuffering = true;
   m_streamSlave = NULL;
 }
 
@@ -146,8 +147,8 @@ double CActiveAEStream::GetDelay()
 
 bool CActiveAEStream::IsBuffering()
 {
-  // buffers are filled progressively
-  return false;
+  CSingleLock lock(m_streamLock);
+  return m_streamIsBuffering;
 }
 
 double CActiveAEStream::GetCacheTime()

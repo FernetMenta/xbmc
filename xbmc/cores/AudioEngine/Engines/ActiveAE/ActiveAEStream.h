@@ -87,6 +87,7 @@ protected:
   bool m_streamDrained;
   bool m_streamFading;
   int m_streamFreeBuffers;
+  bool m_streamIsBuffering;
   IAEStream *m_streamSlave;
   CCriticalSection m_streamLock;
 
