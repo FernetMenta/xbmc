@@ -1254,6 +1254,11 @@ bool CActiveAE::RunStages()
   {
     if ((*it)->m_resampleBuffers && !(*it)->m_paused)
       busy = (*it)->m_resampleBuffers->ResampleBuffers();
+    else if ((*it)->m_resampleBuffers && !(*it)->m_resampleBuffers->m_inputSamples.empty())
+    {
+      CSingleLock lock((*it)->m_streamLock);
+      (*it)->m_streamIsBuffering = false;
+    }
 
     // provide buffers to stream
     float time = m_stats.GetCacheTime((*it));
