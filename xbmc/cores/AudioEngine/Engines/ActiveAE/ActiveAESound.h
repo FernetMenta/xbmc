@@ -22,6 +22,7 @@
 #include "utils/StdString.h"
 #include "Interfaces/AESound.h"
 #include "ActiveAEResample.h"
+#include "filesystem/File.h"
 
 class DllAvUtil;
 
@@ -48,8 +49,20 @@ public:
   bool IsConverted() { return m_isConverted; }
   void SetConverted(bool state) { m_isConverted = state; }
 
+  bool Prepare();
+  void Finish();
+  int GetChunkSize();
+  int GetFileSize() { return m_fileSize; }
+  bool IsSeekPosible() { return m_isSeekPosible; }
+
+  static int Read(void *h, uint8_t* buf, int size);
+  static offset_t Seek(void *h, offset_t pos, int whence);
+
 protected:
   std::string m_filename;
+  XFILE::CFile *m_pFile;
+  bool m_isSeekPosible;
+  int m_fileSize;
   float m_volume;
 
   CSoundPacket *m_orig_sound;
