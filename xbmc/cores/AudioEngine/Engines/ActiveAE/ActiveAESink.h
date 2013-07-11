@@ -53,7 +53,7 @@ public:
   enum InSignal
   {
     ACC,
-    ERROR,
+    ERR,
     STATS,
   };
 };
