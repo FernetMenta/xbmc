@@ -24,12 +24,11 @@
 #include "AEAudioFormat.h"
 #include "ActiveAE.h"
 #include "ActiveAESound.h"
-
 #include "utils/log.h"
-
 #include "DllAvUtil.h"
 
 using namespace ActiveAE;
+using namespace XFILE;
 
 /* typecast AE to CActiveAE */
 #define AE (*((CActiveAE*)CAEFactory::GetEngine()))
@@ -41,6 +40,7 @@ CActiveAESound::CActiveAESound(const std::string &filename) :
 {
   m_orig_sound = NULL;
   m_dst_sound = NULL;
+  m_pFile = NULL;
 }
 
 CActiveAESound::~CActiveAESound()
@@ -49,6 +49,7 @@ CActiveAESound::~CActiveAESound()
     delete m_orig_sound;
   if (m_dst_sound)
     delete m_dst_sound;
+  Finish();
 }
 
 void CActiveAESound::Play()
@@ -118,4 +119,46 @@ CSoundPacket *CActiveAESound::GetSound(bool orig)
     return m_orig_sound;
   else
     return m_dst_sound;
+}
+
+bool CActiveAESound::Prepare()
+{
+  unsigned int flags = READ_TRUNCATED | READ_CHUNKED;
+  m_pFile = new CFile();
+
+  if (!m_pFile->Open(m_filename, flags))
+  {
+    delete m_pFile;
+    m_pFile = NULL;
+    return false;
+  }
+  m_isSeekPosible = m_pFile->IoControl(IOCTRL_SEEK_POSSIBLE, NULL);
+  m_fileSize = m_pFile->GetLength();
+  return true;
+}
+
+void CActiveAESound::Finish()
+{
+  delete m_pFile;
+  m_pFile = NULL;
+}
+
+int CActiveAESound::GetChunkSize()
+{
+  return m_pFile->GetChunkSize();
+}
+
+int CActiveAESound::Read(void *h, uint8_t* buf, int size)
+{
+  CFile *pFile = static_cast<CActiveAESound*>(h)->m_pFile;
+  return pFile->Read(buf, size);
+}
+
+offset_t CActiveAESound::Seek(void *h, offset_t pos, int whence)
+{
+  CFile* pFile = static_cast<CActiveAESound*>(h)->m_pFile;
+  if(whence == AVSEEK_SIZE)
+    return pFile->GetLength();
+  else
+    return pFile->Seek(pos, whence & ~AVSEEK_FORCE);
 }

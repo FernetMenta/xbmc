@@ -1846,37 +1846,43 @@ void CActiveAE::FreeSoundSample(uint8_t **data)
  */
 
 #define SOUNDBUFFER_SIZE 20480
-uint8_t soundLoadbuffer[SOUNDBUFFER_SIZE + FF_INPUT_BUFFER_PADDING_SIZE];
 
 IAESound *CActiveAE::MakeSound(const std::string& file)
 {
   AVFormatContext *fmt_ctx = NULL;
   AVCodecContext *dec_ctx = NULL;
+  AVIOContext *io_ctx;
+  AVInputFormat *io_fmt;
   AVCodec *dec = NULL;
   int bit_rate;
   CActiveAESound *sound = NULL;
   SampleConfig config;
 
-  // get length of file in order to estimate number of samples
-  FILE *f;
-  int fileSize = 0;
-  f = fopen(file.c_str(), "rb");
-  if (!f)
+  sound = new CActiveAESound(file);
+  if (!sound->Prepare())
+    return NULL;
+  int fileSize = sound->GetFileSize();
+
+  fmt_ctx = m_dllAvFormat.avformat_alloc_context();
+  unsigned char* buffer = (unsigned char*)m_dllAvUtil.av_malloc(SOUNDBUFFER_SIZE+FF_INPUT_BUFFER_PADDING_SIZE);
+  io_ctx = m_dllAvFormat.avio_alloc_context(buffer, SOUNDBUFFER_SIZE, 0,
+                                            sound, CActiveAESound::Read, NULL, CActiveAESound::Seek);
+  io_ctx->max_packet_size = sound->GetChunkSize();
+  if(io_ctx->max_packet_size)
+    io_ctx->max_packet_size *= SOUNDBUFFER_SIZE / io_ctx->max_packet_size;
+
+  if(!sound->IsSeekPosible())
+    io_ctx->seekable = 0;
+
+  fmt_ctx->pb = io_ctx;
+
+  m_dllAvFormat.av_probe_input_buffer(io_ctx, &io_fmt, file.c_str(), NULL, 0, 0);
+  if (!io_fmt)
   {
+    m_dllAvFormat.avformat_close_input(&fmt_ctx);
+    delete sound;
     return NULL;
   }
-  if(fseek(f, 0, SEEK_END))
-  {
-    fclose(f);
-    return NULL;
-  }
-  fileSize = ftell(f);
-  if (fseek(f, 0, SEEK_SET))
-  {
-    fclose(f);
-    return NULL;
-  }
-  fclose(f);
 
   // find decoder
   if (m_dllAvFormat.avformat_open_input(&fmt_ctx, file.c_str(), NULL, NULL) == 0)
@@ -1895,6 +1901,7 @@ IAESound *CActiveAE::MakeSound(const std::string& file)
   if (dec == NULL)
   {
     m_dllAvFormat.avformat_close_input(&fmt_ctx);
+    delete sound;
     return NULL;
   }
 
@@ -1911,7 +1918,6 @@ IAESound *CActiveAE::MakeSound(const std::string& file)
 
   if (m_dllAvCodec.avcodec_open2(dec_ctx, dec, NULL) >= 0)
   {
-    sound = new CActiveAESound(file);
     bool init = false;
 
     // decode until eof
@@ -1927,6 +1933,7 @@ IAESound *CActiveAE::MakeSound(const std::string& file)
         m_dllAvUtil.av_free(dec_ctx);
         m_dllAvUtil.av_free(&decoded_frame);
         m_dllAvFormat.avformat_close_input(&fmt_ctx);
+        delete sound;
         return NULL;
       }
       if (got_frame)
@@ -1948,6 +1955,8 @@ IAESound *CActiveAE::MakeSound(const std::string& file)
   m_dllAvUtil.av_free(dec_ctx);
   m_dllAvUtil.av_free(decoded_frame);
   m_dllAvFormat.avformat_close_input(&fmt_ctx);
+
+  sound->Finish();
 
   // register sound
   m_dataPort.SendOutMessage(CActiveAEDataProtocol::NEWSOUND, &sound, sizeof(CActiveAESound*));
