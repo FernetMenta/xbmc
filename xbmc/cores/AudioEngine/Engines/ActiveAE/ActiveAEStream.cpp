@@ -83,7 +83,7 @@ unsigned int CActiveAEStream::GetSpace()
 unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
 {
   Message *msg;
-  int copied = 0;
+  unsigned int copied = 0;
   int bytesToCopy = size;
   while(copied < size)
   {
@@ -297,6 +297,7 @@ bool CActiveAEStream::SetResampleRatio(double ratio)
 {
   m_streamResampleRatio = ratio;
   AE.SetStreamResampleRatio(this, m_streamResampleRatio);
+  return true;
 }
 
 void CActiveAEStream::FadeVolume(float from, float target, unsigned int time)

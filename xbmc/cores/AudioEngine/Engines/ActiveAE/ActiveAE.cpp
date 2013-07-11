@@ -456,7 +456,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             m_state = AE_TOP_CONFIGURED_PLAY;
           }
           else
-            msg->Reply(CActiveAEDataProtocol::ERROR);
+            msg->Reply(CActiveAEDataProtocol::ERR);
           return;
         case CActiveAEDataProtocol::STREAMSAMPLE:
           MsgStreamSample *msgData;
@@ -734,6 +734,7 @@ void CActiveAE::Configure()
     inputFormat.m_frames        = 0;
     inputFormat.m_frameSamples  = 0;
     inputFormat.m_frameSize     = 0;
+    UnregisterAudioCallback();
   }
   else
   {
@@ -744,10 +745,11 @@ void CActiveAE::Configure()
   ApplySettingsToFormat(m_sinkRequestFormat, m_settings);
   std::string device = AE_IS_RAW(m_sinkRequestFormat.m_dataFormat) ? m_settings.passthoughdevice : m_settings.device;
   std::string driver;
-  CAESinkFactory::ParseDevice(device, driver);
-  if (!m_sink.IsCompatible(m_sinkRequestFormat, device))
+  CAESinkFactory::ParseDevice(device, m_settings.driver);
+  if (!m_sink.IsCompatible(m_sinkRequestFormat, device) || m_settings.driver.compare(driver) != 0)
   {
     InitSink();
+    m_settings.driver = driver;
     initSink = true;
     m_stats.Reset(m_sinkFormat.m_sampleRate);
   }
@@ -1142,6 +1144,9 @@ bool CActiveAE::NeedReconfigureSink()
   std::string device = AE_IS_RAW(newFormat.m_dataFormat) ? m_settings.passthoughdevice : m_settings.device;
   std::string driver;
   CAESinkFactory::ParseDevice(device, driver);
+  if (m_settings.driver.compare(driver) != 0)
+    return true;
+
   if (!m_sink.IsCompatible(newFormat, device))
     return true;
 
