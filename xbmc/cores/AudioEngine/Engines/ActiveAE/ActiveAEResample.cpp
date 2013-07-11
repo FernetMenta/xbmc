@@ -189,6 +189,7 @@ AVSampleFormat CActiveAEResample::GetAVSampleFormat(AEDataFormat format)
   else if (format == AE_FMT_S32NE)  return AV_SAMPLE_FMT_S32;
   else if (format == AE_FMT_FLOAT)  return AV_SAMPLE_FMT_FLT;
   else if (format == AE_FMT_DOUBLE) return AV_SAMPLE_FMT_DBL;
+  else if (format == AE_FMT_S24NE4) return AV_SAMPLE_FMT_S32;
 
   else if (format == AE_FMT_U8P)     return AV_SAMPLE_FMT_U8P;
   else if (format == AE_FMT_S16NEP)  return AV_SAMPLE_FMT_S16P;

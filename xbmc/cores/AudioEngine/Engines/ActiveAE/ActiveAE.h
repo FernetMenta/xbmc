@@ -46,6 +46,7 @@ class CActiveAEStream;
 struct AudioSettings
 {
   std::string device;
+  std::string driver;
   std::string passthoughdevice;
   int mode;
   int channels;
@@ -86,7 +87,7 @@ public:
   enum InSignal
   {
     ACC,
-    ERROR,
+    ERR,
     STATS,
   };
 };
@@ -109,7 +110,7 @@ public:
   enum InSignal
   {
     ACC,
-    ERROR,
+    ERR,
     STREAMBUFFER,
     STREAMDRAINED,
   };

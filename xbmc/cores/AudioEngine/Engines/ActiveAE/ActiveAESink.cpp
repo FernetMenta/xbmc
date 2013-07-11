@@ -131,7 +131,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           else
           {
             m_state = S_TOP_UNCONFIGURED;
-            msg->Reply(CSinkControlProtocol::ERROR);
+            msg->Reply(CSinkControlProtocol::ERR);
           }
           return;
 
