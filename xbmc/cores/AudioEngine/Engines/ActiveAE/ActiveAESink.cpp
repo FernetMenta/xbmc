@@ -248,6 +248,9 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           msg->Reply(CSinkDataProtocol::RETURNSAMPLE, &samples, sizeof(CSampleBuffer*));
           if (m_extError)
           {
+            m_sink->Deinitialize();
+            delete m_sink;
+            m_sink = NULL;
             m_state = S_TOP_CONFIGURED_SUSPEND;
             m_extTimeout = 0;
           }
@@ -361,7 +364,12 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           unsigned int delay;
           delay = OutputSamples(&m_sampleOfSilence);
           if (m_extError)
+          {
+            m_sink->Deinitialize();
+            delete m_sink;
+            m_sink = NULL;
             m_state = S_TOP_CONFIGURED_SUSPEND;
+          }
           m_extTimeout = 0;
           return;
         default:
@@ -685,6 +693,7 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
       if (retry > 4)
       {
         m_extError = true;
+        CLog::Log(LOGERROR, "CActiveAESink::OutputSamples - failed");
         return 0;
       }
       else
