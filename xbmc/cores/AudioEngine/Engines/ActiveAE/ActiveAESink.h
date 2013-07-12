@@ -26,6 +26,7 @@
 #include "Interfaces/AESink.h"
 #include "AESinkFactory.h"
 #include "ActiveAEResample.h"
+#include "Utils/AEConvert.h"
 
 namespace ActiveAE
 {
@@ -95,7 +96,9 @@ protected:
   void OpenSink();
   void ReturnBuffers();
 
-  unsigned OutputSamples(CSampleBuffer* samples);
+  unsigned int OutputSamples(CSampleBuffer* samples);
+  void ConvertInit(CSampleBuffer* samples);
+  inline uint8_t* Convert(CSampleBuffer* samples);
 
   CEvent m_outMsgEvent;
   CEvent *m_inMsgEvent;
@@ -106,6 +109,15 @@ protected:
   bool m_extSilence;
 
   CSampleBuffer m_sampleOfSilence;
+  uint8_t *m_convertBuffer;
+  CAEConvert::AEConvertFrFn m_convertFn;
+  enum
+  {
+    CHECK_CONVERT,
+    NEED_CONVERT,
+    NEED_BYTESWAP,
+    SKIP_CONVERT,
+  } m_convertState;
 
   std::string m_deviceFriendlyName;
   AESinkInfoList m_sinkInfoList;
