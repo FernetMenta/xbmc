@@ -108,7 +108,7 @@ float CEngineStats::GetCacheTime(CActiveAEStream *stream)
 
 float CEngineStats::GetCacheTotal(CActiveAEStream *stream)
 {
-  return MAX_CACHE_LEVEL;
+  return MAX_CACHE_LEVEL + m_sinkCacheTotal;
 }
 
 float CEngineStats::GetWaterLevel()

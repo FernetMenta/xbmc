@@ -158,10 +158,12 @@ public:
   float GetCacheTotal(CActiveAEStream *stream);
   float GetWaterLevel();
   void SetSuspended(bool state);
+  void SetSinkCacheTotal(float time) { m_sinkCacheTotal = time; }
   bool IsSuspended();
   CCriticalSection *GetLock() { return &m_lock; }
 protected:
   float m_sinkDelay;
+  float m_sinkCacheTotal;
   int m_bufferedSamples;
   unsigned int m_sinkSampleRate;
   unsigned int m_sinkUpdate;
