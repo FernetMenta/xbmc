@@ -1069,7 +1069,7 @@ float CActiveAE::CalcStreamAmplification(CActiveAEStream *stream, CSampleBuffer 
 void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings)
 {
   // raw pass through
-  if (AE_IS_RAW(format.m_dataFormat))
+  if (m_settings.mode != AUDIO_ANALOG && AE_IS_RAW(format.m_dataFormat))
   {
     if ((format.m_dataFormat == AE_FMT_AC3 && !settings.ac3passthrough) ||
         (format.m_dataFormat == AE_FMT_TRUEHD && !settings.truehdpassthrough) ||
