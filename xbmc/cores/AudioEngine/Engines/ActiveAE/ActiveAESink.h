@@ -109,6 +109,7 @@ protected:
   int m_extTimeout;
   bool m_extError;
   bool m_extSilence;
+  int m_extCycleCounter;
 
   CSampleBuffer m_sampleOfSilence;
   CSampleBuffer m_sampleOfNoise;
