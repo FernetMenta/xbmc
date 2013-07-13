@@ -787,11 +787,17 @@ void CActiveAESink::GenerateNoise()
   int nb_floats = m_sinkFormat.m_frames*m_sinkFormat.m_channelLayout.Count();
   float *noise = new float[nb_floats];
 
+  float R1, R2;
   for(int i=0; i<nb_floats;i++)
   {
-    float R1 = (float) rand() / (float) RAND_MAX;
-    float R2 = (float) rand() / (float) RAND_MAX;
-    noise[i] = (float) sqrt( -2.0f * log( R1 )) * cos( 2.0f * PI * R2 ) * 0.001;
+    do
+    {
+      R1 = (float) rand() / (float) RAND_MAX;
+      R2 = (float) rand() / (float) RAND_MAX;
+    }
+    while(R1 == 0.0f);
+    
+    noise[i] = (float) sqrt( -2.0f * log( R1 )) * cos( 2.0f * PI * R2 ) * 0.00001;
   }
 
   CAEConvert::AEConvertFrFn convertFn = CAEConvert::FrFloat(m_sinkFormat.m_dataFormat);
