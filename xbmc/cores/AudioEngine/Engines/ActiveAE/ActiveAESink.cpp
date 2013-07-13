@@ -71,6 +71,9 @@ void CActiveAESink::Dispose()
     m_sampleOfSilence.pkt = NULL;
   }
 
+  delete m_sampleOfNoise.pkt;
+  m_sampleOfNoise.pkt = NULL;
+
   if (m_convertBuffer)
   {
     _aligned_free(m_convertBuffer);
@@ -274,7 +277,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         case CSinkDataProtocol::SAMPLE:
           m_extError = false;
           OpenSink();
-          OutputSamples(&m_sampleOfSilence);
+          OutputSamples(&m_sampleOfNoise);
           m_state = S_TOP_CONFIGURED_PLAY;
           m_extTimeout = 0;
           m_bStateMachineSelfTrigger = true;
@@ -305,7 +308,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         switch (signal)
         {
         case CSinkDataProtocol::SAMPLE:
-          OutputSamples(&m_sampleOfSilence);
+          OutputSamples(&m_sampleOfNoise);
           m_state = S_TOP_CONFIGURED_PLAY;
           m_extTimeout = 0;
           m_bStateMachineSelfTrigger = true;
@@ -634,6 +637,12 @@ void CActiveAESink::OpenSink()
   m_sampleOfSilence.pkt = new CSoundPacket(config, m_sinkFormat.m_frames);
   m_sampleOfSilence.pkt->nb_samples = m_sampleOfSilence.pkt->max_nb_samples;
 
+  // init sample of noise
+  delete m_sampleOfNoise.pkt;
+  m_sampleOfNoise.pkt = new CSoundPacket(config, m_sinkFormat.m_frames);
+  m_sampleOfNoise.pkt->nb_samples = m_sampleOfNoise.pkt->max_nb_samples;
+  GenerateNoise();
+
   if (m_convertBuffer)
   {
     _aligned_free(m_convertBuffer);
@@ -730,4 +739,23 @@ uint8_t* CActiveAESink::Convert(CSampleBuffer* samples)
 {
   unsigned int nb_samples = m_convertFn((float*)samples->pkt->data[0], samples->pkt->nb_samples * samples->pkt->config.channels, m_convertBuffer);
   return m_convertBuffer;
+}
+
+#define PI 3.1415926536f
+
+void CActiveAESink::GenerateNoise()
+{
+  int nb_floats = m_sinkFormat.m_frames*m_sinkFormat.m_channelLayout.Count();
+  float *noise = new float[nb_floats];
+
+  for(int i=0; i<nb_floats;i++)
+  {
+    float R1 = (float) rand() / (float) RAND_MAX;
+    float R2 = (float) rand() / (float) RAND_MAX;
+    noise[i] = (float) sqrt( -2.0f * log( R1 )) * cos( 2.0f * PI * R2 ) * 0.001;
+  }
+
+  CAEConvert::AEConvertFrFn convertFn = CAEConvert::FrFloat(m_sinkFormat.m_dataFormat);
+  convertFn(noise, nb_floats, m_sampleOfNoise.pkt->data[0]);
+  delete [] noise;
 }
