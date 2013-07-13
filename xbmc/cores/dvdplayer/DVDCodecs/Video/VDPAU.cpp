@@ -1139,7 +1139,7 @@ void CVdpauRenderPicture::ReturnUnused()
 // Mixer
 //-----------------------------------------------------------------------------
 CMixer::CMixer(CEvent *inMsgEvent) :
-  CThread("Vdpau Mixer Thread"),
+  CThread("Vdpau Mixer"),
   m_controlPort("ControlPort", inMsgEvent, &m_outMsgEvent),
   m_dataPort("DataPort", inMsgEvent, &m_outMsgEvent)
 {
@@ -2353,19 +2353,20 @@ void CMixer::ProcessPicture()
   CheckStatus(vdp_st, __LINE__);
 
   // sync mixer, read blocks until output surface is written
-  {
-    uint32_t data[16];
-    VdpRect rect;
-    rect.x0 = rect.y0 = 0;
-    rect.x1 = rect.y1 = 1;
-    uint32_t *pdata[] = {data};
-    uint32_t pitches[] = {4};
-
-    vdp_st = m_config.vdpProcs.vdp_output_surface_get_bits_native(m_processPicture.outputSurface,
-                                                             &rect,
-                                                             (void**)pdata,
-                                                             pitches);
-  }
+  // this does a busy wait :(
+//  {
+//    uint32_t data[16];
+//    VdpRect rect;
+//    rect.x0 = rect.y0 = 0;
+//    rect.x1 = rect.y1 = 1;
+//    uint32_t *pdata[] = {data};
+//    uint32_t pitches[] = {4};
+//
+//    vdp_st = m_config.vdpProcs.vdp_output_surface_get_bits_native(m_processPicture.outputSurface,
+//                                                             &rect,
+//                                                             (void**)pdata,
+//                                                             pitches);
+//  }
 
   if (m_mixerfield != VDP_VIDEO_MIXER_PICTURE_STRUCTURE_FRAME)
   {
@@ -2410,7 +2411,7 @@ bool CMixer::CheckStatus(VdpStatus vdp_st, int line)
 // Output
 //-----------------------------------------------------------------------------
 COutput::COutput(CEvent *inMsgEvent) :
-  CThread("Vdpau Output Thread"),
+  CThread("Vdpau Output"),
   m_controlPort("OutputControlPort", inMsgEvent, &m_outMsgEvent),
   m_dataPort("OutputDataPort", inMsgEvent, &m_outMsgEvent),
   m_mixer(&m_outMsgEvent)
