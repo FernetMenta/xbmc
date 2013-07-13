@@ -791,7 +791,7 @@ void CActiveAESink::GenerateNoise()
   {
     float R1 = (float) rand() / (float) RAND_MAX;
     float R2 = (float) rand() / (float) RAND_MAX;
-    noise[i] = (float) sqrt( -2.0f * log( R1 )) * cos( 2.0f * PI * R2 ) * 0.001;
+    noise[i] = (float) sqrt( -2.0f * log( R1 )) * cos( 2.0f * PI * R2 ) * 0.00001;
   }
 
   CAEConvert::AEConvertFrFn convertFn = CAEConvert::FrFloat(m_sinkFormat.m_dataFormat);
