@@ -100,6 +100,8 @@ protected:
   void ConvertInit(CSampleBuffer* samples);
   inline uint8_t* Convert(CSampleBuffer* samples);
 
+  void GenerateNoise();
+
   CEvent m_outMsgEvent;
   CEvent *m_inMsgEvent;
   int m_state;
@@ -109,6 +111,7 @@ protected:
   bool m_extSilence;
 
   CSampleBuffer m_sampleOfSilence;
+  CSampleBuffer m_sampleOfNoise;
   uint8_t *m_convertBuffer;
   CAEConvert::AEConvertFrFn m_convertFn;
   enum
