@@ -679,7 +679,8 @@ void CActiveAESink::OpenSink()
   delete m_sampleOfNoise.pkt;
   m_sampleOfNoise.pkt = new CSoundPacket(config, m_sinkFormat.m_frames);
   m_sampleOfNoise.pkt->nb_samples = m_sampleOfNoise.pkt->max_nb_samples;
-  GenerateNoise();
+  if (!passthrough)
+    GenerateNoise();
 
   if (m_convertBuffer)
   {
