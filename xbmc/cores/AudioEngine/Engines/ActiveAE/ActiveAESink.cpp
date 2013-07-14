@@ -826,14 +826,7 @@ void CActiveAESink::GenerateNoise()
     noise[i] = (float) sqrt( -2.0f * log( R1 )) * cos( 2.0f * PI * R2 ) * 0.00001;
   }
 
-  if (m_sinkFormat.m_dataFormat != AE_FMT_FLOAT)
-  {
-    CAEConvert::AEConvertFrFn convertFn = CAEConvert::FrFloat(m_sinkFormat.m_dataFormat);
-    convertFn(noise, nb_floats, m_sampleOfNoise.pkt->data[0]);
-  }
-  else
-  {
-    memcpy(m_sampleOfNoise.pkt->data[0], noise, nb_floats*sizeof(float));
-  }
+  CAEConvert::AEConvertFrFn convertFn = CAEConvert::FrFloat(m_sinkFormat.m_dataFormat);
+  convertFn(noise, nb_floats, m_sampleOfNoise.pkt->data[0]);
   delete [] noise;
 }
