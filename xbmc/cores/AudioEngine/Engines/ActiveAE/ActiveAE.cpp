@@ -1087,6 +1087,7 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
   }
   else
   {
+    format.m_dataFormat = AE_FMT_FLOAT;
     if ((format.m_channelLayout.Count() > 2) || settings.stereoupmix)
     {
       switch (settings.channels)
