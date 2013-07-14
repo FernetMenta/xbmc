@@ -648,6 +648,18 @@ void CActiveAESink::OpenSink()
       return;
     }
 
+#ifdef WORDS_BIGENDIAN
+    if (m_sinkFormat.m_dataFormat == AE_FMT_S16BE)
+      m_sinkFormat.m_dataFormat = AE_FMT_S16NE;
+    else if (m_sinkFormat.m_dataFormat == AE_FMT_S32BE)
+      m_sinkFormat.m_dataFormat = AE_FMT_S32NE;
+#else
+    if (m_sinkFormat.m_dataFormat == AE_FMT_S16LE)
+      m_sinkFormat.m_dataFormat = AE_FMT_S16NE;
+    else if (m_sinkFormat.m_dataFormat == AE_FMT_S32LE)
+      m_sinkFormat.m_dataFormat = AE_FMT_S32NE;
+#endif
+
     CLog::Log(LOGDEBUG, "CActiveAE::OpenSink - %s Initialized:", m_sink->GetName());
     CLog::Log(LOGDEBUG, "  Output Device : %s", m_deviceFriendlyName.c_str());
     CLog::Log(LOGDEBUG, "  Sample Rate   : %d", m_sinkFormat.m_sampleRate);
