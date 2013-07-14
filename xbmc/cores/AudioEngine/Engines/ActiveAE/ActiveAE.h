@@ -314,6 +314,7 @@ protected:
 
   float m_volume;
   bool m_muted;
+  bool m_sinkHasVolume;
 
   // viz
   IAudioCallback *m_audioCallback;

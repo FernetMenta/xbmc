@@ -49,6 +49,7 @@ public:
     CONFIGURE,
     UNCONFIGURE,
     SILENCEMODE,
+    VOLUME,
     TIMEOUT,
   };
   enum InSignal
@@ -85,6 +86,7 @@ public:
   void Start();
   void Dispose();
   bool IsCompatible(const AEAudioFormat format, const std::string &device);
+  bool HasVolume();
   CSinkControlProtocol m_controlPort;
   CSinkDataProtocol m_dataPort;
 
@@ -128,6 +130,7 @@ protected:
   IAESink *m_sink;
   AEAudioFormat m_sinkFormat, m_requestedFormat;
   CEngineStats *m_stats;
+  float m_volume;
 };
 
 }

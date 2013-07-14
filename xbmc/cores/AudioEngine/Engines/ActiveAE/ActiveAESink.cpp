@@ -39,6 +39,7 @@ CActiveAESink::CActiveAESink(CEvent *inMsgEvent) :
   m_sink = NULL;
   m_stats = NULL;
   m_convertBuffer = NULL;
+  m_volume = 0.0;
 }
 
 void CActiveAESink::Start()
@@ -86,6 +87,13 @@ bool CActiveAESink::IsCompatible(const AEAudioFormat format, const std::string &
   if (!m_sink)
     return false;
   return m_sink->IsCompatible(format, device);
+}
+
+bool CActiveAESink::HasVolume()
+{
+  if (!m_sink)
+    return false;
+  return m_sink->HasVolume();
 }
 
 enum SINK_STATES
@@ -231,6 +239,10 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
             m_state = S_TOP_CONFIGURED_WARMUP;
             m_extTimeout = 0;
           }
+          return;
+        case CSinkControlProtocol::VOLUME:
+          m_volume = *(float*)msg->data;
+          m_sink->SetVolume(m_volume);
           return;
         default:
           break;
@@ -647,6 +659,8 @@ void CActiveAESink::OpenSink()
       m_extError = true;
       return;
     }
+
+    m_sink->SetVolume(m_volume);
 
 #ifdef WORDS_BIGENDIAN
     if (m_sinkFormat.m_dataFormat == AE_FMT_S16BE)
