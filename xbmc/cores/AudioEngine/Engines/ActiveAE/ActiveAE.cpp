@@ -146,6 +146,7 @@ CActiveAE::CActiveAE() :
   m_encoder = NULL;
   m_audioCallback = NULL;
   m_vizInitialized = false;
+  m_sinkHasVolume = false;
 }
 
 CActiveAE::~CActiveAE()
@@ -217,6 +218,8 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           return;
         case CActiveAEControlProtocol::VOLUME:
           m_volume = *(float*)msg->data;
+          if (m_sinkHasVolume)
+            m_sink.m_controlPort.SendOutMessage(CSinkControlProtocol::VOLUME, &m_volume, sizeof(float));
           return;
         case CActiveAEControlProtocol::MUTE:
           m_muted = *(bool*)msg->data;
@@ -752,6 +755,7 @@ void CActiveAE::Configure()
     m_settings.driver = driver;
     initSink = true;
     m_stats.Reset(m_sinkFormat.m_sampleRate);
+    m_sink.m_controlPort.SendOutMessage(CSinkControlProtocol::VOLUME, &m_volume, sizeof(float));
   }
 
   if (m_silenceBuffers)
@@ -1181,6 +1185,7 @@ void CActiveAE::InitSink()
     {
       m_sinkFormat = *data;
     }
+    m_sinkHasVolume = m_sink.HasVolume();
     reply->Release();
   }
   else
@@ -1461,7 +1466,8 @@ bool CActiveAE::RunStages()
       {
         // mix gui sounds
         MixSounds(*(out->pkt));
-        Deamplify(*(out->pkt));
+        if (!m_sinkHasVolume)
+          Deamplify(*(out->pkt));
 
         // viz
         {
