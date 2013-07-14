@@ -807,11 +807,7 @@ void CActiveAESink::GenerateNoise()
   }
   else
   {
-    float *dst = (float*)m_sampleOfNoise.pkt->data[0];
-    for(int i=0; i<nb_floats;i++)
-    {
-      dst[i] = noise[i];
-    }
+    memcpy(m_sampleOfNoise.pkt->data[0], noise, nb_floats*sizeof(float));
   }
   delete [] noise;
 }
