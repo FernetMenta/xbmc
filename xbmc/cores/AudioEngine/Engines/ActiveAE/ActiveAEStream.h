@@ -22,6 +22,7 @@
 #include "AEAudioFormat.h"
 #include "Interfaces/AEStream.h"
 #include "Utils/AELimiter.h"
+#include "Utils/AEConvert.h"
 
 namespace ActiveAE
 {
@@ -89,6 +90,7 @@ protected:
   int m_streamFreeBuffers;
   bool m_streamIsBuffering;
   IAEStream *m_streamSlave;
+  CAEConvert::AEConvertToFn m_convertFn;
   CCriticalSection m_streamLock;
 
   // only accessed by engine
