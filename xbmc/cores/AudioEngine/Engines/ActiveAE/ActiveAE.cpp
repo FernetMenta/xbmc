@@ -808,8 +808,8 @@ void CActiveAE::Configure()
       sinkInputFormat = m_sinkFormat;
       m_mode = MODE_RAW;
     }
-    // transcode
-    else if (m_settings.ac3passthrough && !m_settings.multichannellpcm)
+    // transcode everything with more than 2 channels
+    else if (m_settings.ac3passthrough && !m_settings.multichannellpcm && inputFormat.m_channelLayout.Count() > 2)
     {
       outputFormat = inputFormat;
       outputFormat.m_dataFormat = AE_FMT_FLOATP;
@@ -874,7 +874,8 @@ void CActiveAE::Configure()
     for(it=m_streams.begin(); it!=m_streams.end(); ++it)
     {
       // check if we support input format of stream
-      if (CActiveAEResample::GetAVSampleFormat(inputFormat.m_dataFormat) == AV_SAMPLE_FMT_FLT &&
+      if (!AE_IS_RAW(inputFormat.m_dataFormat) && 
+          CActiveAEResample::GetAVSampleFormat(inputFormat.m_dataFormat) == AV_SAMPLE_FMT_FLT &&
           inputFormat.m_dataFormat != AE_FMT_FLOAT)
       {
         (*it)->m_convertFn = CAEConvert::ToFloat((*it)->m_format.m_dataFormat);
