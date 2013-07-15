@@ -874,7 +874,8 @@ void CActiveAE::Configure()
     for(it=m_streams.begin(); it!=m_streams.end(); ++it)
     {
       // check if we support input format of stream
-      if (CActiveAEResample::GetAVSampleFormat(inputFormat.m_dataFormat) == AV_SAMPLE_FMT_FLT &&
+      if (!AE_IS_RAW(inputFormat.m_dataFormat) && 
+          CActiveAEResample::GetAVSampleFormat(inputFormat.m_dataFormat) == AV_SAMPLE_FMT_FLT &&
           inputFormat.m_dataFormat != AE_FMT_FLOAT)
       {
         (*it)->m_convertFn = CAEConvert::ToFloat((*it)->m_format.m_dataFormat);
