@@ -808,8 +808,8 @@ void CActiveAE::Configure()
       sinkInputFormat = m_sinkFormat;
       m_mode = MODE_RAW;
     }
-    // transcode
-    else if (m_settings.ac3passthrough && !m_settings.multichannellpcm)
+    // transcode everything with more than 2 channels
+    else if (m_settings.ac3passthrough && !m_settings.multichannellpcm && inputFormat.m_channelLayout.Count() > 2)
     {
       outputFormat = inputFormat;
       outputFormat.m_dataFormat = AE_FMT_FLOATP;
