@@ -873,6 +873,14 @@ void CActiveAE::Configure()
     std::list<CActiveAEStream*>::iterator it;
     for(it=m_streams.begin(); it!=m_streams.end(); ++it)
     {
+      // check if we support input format of stream
+      if (CActiveAEResample::GetAVSampleFormat(inputFormat.m_dataFormat) == AV_SAMPLE_FMT_FLT &&
+          inputFormat.m_dataFormat != AE_FMT_FLOAT)
+      {
+        (*it)->m_convertFn = CAEConvert::ToFloat((*it)->m_format.m_dataFormat);
+        (*it)->m_format.m_dataFormat = AE_FMT_FLOAT;
+      }
+
       if (!(*it)->m_inputBuffers)
       {
         // align input buffers with period of sink

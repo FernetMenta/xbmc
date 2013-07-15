@@ -713,6 +713,7 @@ void CActiveAESink::OpenSink()
     _aligned_free(m_convertBuffer);
     m_convertBuffer = NULL;
   }
+  m_convertFn = NULL;
   m_convertState = CHECK_CONVERT;
 }
 
@@ -826,7 +827,8 @@ void CActiveAESink::GenerateNoise()
     noise[i] = (float) sqrt( -2.0f * log( R1 )) * cos( 2.0f * PI * R2 ) * 0.00001;
   }
 
-  CAEConvert::AEConvertFrFn convertFn = CAEConvert::FrFloat(m_sinkFormat.m_dataFormat);
+  AEDataFormat fmt = CActiveAEResample::GetAESampleFormat(m_sampleOfNoise.pkt->config.fmt);
+  CAEConvert::AEConvertFrFn convertFn = CAEConvert::FrFloat(fmt);
   convertFn(noise, nb_floats, m_sampleOfNoise.pkt->data[0]);
   delete [] noise;
 }
