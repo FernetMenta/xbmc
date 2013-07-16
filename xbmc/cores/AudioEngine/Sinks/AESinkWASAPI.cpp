@@ -468,10 +468,7 @@ unsigned int CAESinkWASAPI::AddPackets(uint8_t *data, unsigned int frames, bool 
 
     /* Inject one buffer of silence if sink has just opened */
     /* to avoid losing start of stream or GUI sound         */
-    if (g_advancedSettings.m_streamSilence)
-      memcpy(buf, data, NumFramesRequested * m_format.m_frameSize); //fill buffer with audio
-    else
-      memset(buf,    0, NumFramesRequested * m_format.m_frameSize); //fill buffer with silence
+    memset(buf,    0, NumFramesRequested * m_format.m_frameSize); //fill buffer with silence
 
     hr = m_pRenderClient->ReleaseBuffer(NumFramesRequested, flags); //pass back to audio driver
     if (FAILED(hr))
