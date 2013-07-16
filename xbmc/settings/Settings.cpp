@@ -760,6 +760,9 @@ void CSettings::InitializeConditions()
   if (g_application.IsStandAlone())
     m_settingsManager->AddCondition("isstandalone");
 
+  if (CAEFactory::SupportsDrain())
+    m_settingsManager->AddCondition("audiosupportsdrain");
+
   // add more complex conditions
   m_settingsManager->AddCondition("addonhassettings", AddonHasSettings);
   m_settingsManager->AddCondition("checkmasterlock", CheckMasterLock);
@@ -852,6 +855,7 @@ void CSettings::InitializeISettingCallbacks()
   settingSet.insert("audiooutput.multichannellpcm");
   settingSet.insert("audiooutput.audiodevice");
   settingSet.insert("audiooutput.passthroughdevice");
+  settingSet.insert("audiooutput.streamsilence");
   settingSet.insert("lookandfeel.skin");
   settingSet.insert("lookandfeel.skinsettings");
   settingSet.insert("lookandfeel.font");
