@@ -750,7 +750,7 @@ void CActiveAE::Configure()
   }
 
   m_sinkRequestFormat = inputFormat;
-  ApplySettingsToFormat(m_sinkRequestFormat, m_settings);
+  ApplySettingsToFormat(m_sinkRequestFormat, m_settings, true);
   std::string device = AE_IS_RAW(m_sinkRequestFormat.m_dataFormat) ? m_settings.passthoughdevice : m_settings.device;
   std::string driver;
   CAESinkFactory::ParseDevice(device, driver);
@@ -807,14 +807,13 @@ void CActiveAE::Configure()
     m_sink.m_controlPort.SendOutMessage(CSinkControlProtocol::SILENCEMODE, &silence, sizeof(bool));
 
     AEAudioFormat outputFormat;
-    if (AE_IS_RAW(inputFormat.m_dataFormat))
+    if (m_mode == MODE_RAW)
     {
       outputFormat = inputFormat;
       sinkInputFormat = m_sinkFormat;
-      m_mode = MODE_RAW;
     }
     // transcode everything with more than 2 channels
-    else if (m_settings.ac3passthrough && !m_settings.multichannellpcm && inputFormat.m_channelLayout.Count() > 2)
+    else if (m_mode == MODE_TRANSCODE)
     {
       outputFormat = inputFormat;
       outputFormat.m_dataFormat = AE_FMT_FLOATP;
@@ -859,7 +858,6 @@ void CActiveAE::Configure()
         }
       }
 
-      m_mode = MODE_TRANSCODE;
       sinkInputFormat = m_sinkFormat;
     }
     else
@@ -1084,7 +1082,7 @@ float CActiveAE::CalcStreamAmplification(CActiveAEStream *stream, CSampleBuffer 
   return amp;
 }
 
-void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings)
+void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings, bool setmode)
 {
   // raw pass through
   if (m_settings.mode != AUDIO_ANALOG && AE_IS_RAW(format.m_dataFormat))
@@ -1096,12 +1094,20 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
     {
       CLog::Log(LOGERROR, "CActiveAE::ApplySettingsToFormat - input audio format is wrong");
     }
+    if (setmode)
+      m_mode = MODE_RAW;
   }
   // transcode
-  else if (m_settings.mode != AUDIO_ANALOG && settings.ac3passthrough && !settings.multichannellpcm && !m_streams.empty())
+  else if (m_settings.mode != AUDIO_ANALOG && 
+           settings.ac3passthrough &&
+           (!settings.multichannellpcm || (m_settings.mode != AUDIO_HDMI)) && 
+           !m_streams.empty() &&
+           format.m_channelLayout.Count() > 2)
   {
     format.m_dataFormat = AE_FMT_AC3;
     format.m_sampleRate = 48000;
+    if (setmode)
+      m_mode = MODE_TRANSCODE;
   }
   else
   {

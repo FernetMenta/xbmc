@@ -248,7 +248,7 @@ protected:
   void LoadSettings();
   bool NeedReconfigureBuffers();
   bool NeedReconfigureSink();
-  void ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings);
+  void ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings, bool setmode = false);
   void Configure();
   CActiveAEStream* CreateStream(MsgStreamNew *streamMsg);
   void DiscardStream(CActiveAEStream *stream);
