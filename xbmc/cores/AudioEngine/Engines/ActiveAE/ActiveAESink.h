@@ -100,6 +100,7 @@ protected:
 
   unsigned int OutputSamples(CSampleBuffer* samples);
   void ConvertInit(CSampleBuffer* samples);
+  inline void EnsureConvertBuffer(CSampleBuffer* samples);
   inline uint8_t* Convert(CSampleBuffer* samples);
 
   void GenerateNoise();
@@ -116,6 +117,7 @@ protected:
   CSampleBuffer m_sampleOfSilence;
   CSampleBuffer m_sampleOfNoise;
   uint8_t *m_convertBuffer;
+  int m_convertBufferSampleSize;
   CAEConvert::AEConvertFrFn m_convertFn;
   enum
   {

@@ -249,7 +249,7 @@ protected:
   bool NeedReconfigureBuffers();
   bool NeedReconfigureSink();
   void ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &settings, bool setmode = false);
-  void Configure();
+  void Configure(AEAudioFormat *desiredFmt = NULL);
   CActiveAEStream* CreateStream(MsgStreamNew *streamMsg);
   void DiscardStream(CActiveAEStream *stream);
   void SFlushStream(CActiveAEStream *stream);
