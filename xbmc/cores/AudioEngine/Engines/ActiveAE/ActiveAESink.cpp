@@ -744,6 +744,7 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
   case SKIP_CONVERT:
     break;
   case NEED_CONVERT:
+    EnsureConvertBuffer(samples);
     buffer = Convert(samples);
     break;
   case NEED_BYTESWAP:
@@ -788,8 +789,9 @@ void CActiveAESink::ConvertInit(CSampleBuffer* samples)
     m_convertFn = CAEConvert::FrFloat(m_sinkFormat.m_dataFormat);
     if (m_convertBuffer)
       _aligned_free(m_convertBuffer);
-    m_convertBuffer = (uint8_t*)_aligned_malloc(m_sinkFormat.m_frames * m_sinkFormat.m_channelLayout.Count() * m_sinkFormat.m_frameSize, 16);
-    memset(m_convertBuffer, 0, m_sinkFormat.m_frames * m_sinkFormat.m_channelLayout.Count() * m_sinkFormat.m_frameSize);
+    m_convertBufferSampleSize = samples->pkt->max_nb_samples;
+    m_convertBuffer = (uint8_t*)_aligned_malloc(samples->pkt->max_nb_samples * m_sinkFormat.m_channelLayout.Count() * m_sinkFormat.m_frameSize, 16);
+    memset(m_convertBuffer, 0, samples->pkt->max_nb_samples * m_sinkFormat.m_channelLayout.Count() * m_sinkFormat.m_frameSize);
     m_convertState = NEED_CONVERT;
   }
   else if (AE_IS_RAW(m_requestedFormat.m_dataFormat) && CAEUtil::S16NeedsByteSwap(AE_FMT_S16NE, m_sinkFormat.m_dataFormat))
@@ -798,6 +800,20 @@ void CActiveAESink::ConvertInit(CSampleBuffer* samples)
   }
   else
     m_convertState = SKIP_CONVERT;
+}
+
+void CActiveAESink::EnsureConvertBuffer(CSampleBuffer* samples)
+{
+  if (!m_convertBuffer)
+    return;
+
+  if (samples->pkt->max_nb_samples <= m_convertBufferSampleSize)
+    return;
+
+  _aligned_free(m_convertBuffer);
+  m_convertBufferSampleSize = samples->pkt->max_nb_samples;
+  m_convertBuffer = (uint8_t*)_aligned_malloc(samples->pkt->max_nb_samples * m_sinkFormat.m_channelLayout.Count() * m_sinkFormat.m_frameSize, 16);
+  memset(m_convertBuffer, 0, samples->pkt->max_nb_samples * m_sinkFormat.m_channelLayout.Count() * m_sinkFormat.m_frameSize);
 }
 
 uint8_t* CActiveAESink::Convert(CSampleBuffer* samples)

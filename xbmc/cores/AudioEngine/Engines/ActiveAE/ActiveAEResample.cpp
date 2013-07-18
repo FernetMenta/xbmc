@@ -111,8 +111,8 @@ int64_t CActiveAEResample::GetDelay(int64_t base)
 
 int CActiveAEResample::GetBufferedSamples()
 {
-  return m_dllAvUtil.av_rescale_rnd(m_dllSwResample.swr_get_delay(m_pContext, m_dst_rate),
-                                    m_src_rate, m_dst_rate, AV_ROUND_UP);
+  return m_dllAvUtil.av_rescale_rnd(m_dllSwResample.swr_get_delay(m_pContext, m_src_rate),
+                                    m_dst_rate, m_src_rate, AV_ROUND_UP);
 }
 
 int CActiveAEResample::CalcDstSampleCount(int src_samples, int dst_rate, int src_rate)

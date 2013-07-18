@@ -727,7 +727,7 @@ void CActiveAE::Process()
   }
 }
 
-void CActiveAE::Configure()
+void CActiveAE::Configure(AEAudioFormat *desiredFmt)
 {
   bool initSink = false;
   AEAudioFormat sinkInputFormat, inputFormat;
@@ -743,6 +743,16 @@ void CActiveAE::Configure()
     inputFormat.m_frameSamples  = 0;
     inputFormat.m_frameSize     = 0;
     UnregisterAudioCallback();
+  }
+  // force input format after unpausing slave
+  else if (desiredFmt != NULL)
+  {
+    inputFormat = *desiredFmt;
+  }
+  // keep format when having multiple streams
+  else if (m_streams.size() > 1 && m_silenceBuffers == NULL)
+  {
+    inputFormat = m_sinkRequestFormat;
   }
   else
   {
@@ -877,9 +887,9 @@ void CActiveAE::Configure()
     for(it=m_streams.begin(); it!=m_streams.end(); ++it)
     {
       // check if we support input format of stream
-      if (!AE_IS_RAW(inputFormat.m_dataFormat) && 
-          CActiveAEResample::GetAVSampleFormat(inputFormat.m_dataFormat) == AV_SAMPLE_FMT_FLT &&
-          inputFormat.m_dataFormat != AE_FMT_FLOAT)
+      if (!AE_IS_RAW((*it)->m_format.m_dataFormat) && 
+          CActiveAEResample::GetAVSampleFormat((*it)->m_format.m_dataFormat) == AV_SAMPLE_FMT_FLT &&
+          (*it)->m_format.m_dataFormat != AE_FMT_FLOAT)
       {
         (*it)->m_convertFn = CAEConvert::ToFloat((*it)->m_format.m_dataFormat);
         (*it)->m_format.m_dataFormat = AE_FMT_FLOAT;
@@ -1313,7 +1323,9 @@ bool CActiveAE::RunStages()
         CSingleLock lock((*it)->m_streamLock);
         if ((*it)->m_streamSlave)
         {
-          ((CActiveAEStream*)(*it)->m_streamSlave)->m_paused = false;;
+          CActiveAEStream *slave = (CActiveAEStream*)((*it)->m_streamSlave);
+          slave->m_paused = false;
+          Configure(&slave->m_format);
           (*it)->m_streamSlave = NULL;
         }
         (*it)->m_streamDrained = true;
