@@ -284,7 +284,20 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
       break;
 
     case S_TOP_CONFIGURED_SUSPEND:
-      if (port == &m_dataPort)
+      if (port == &m_controlPort)
+      {
+        switch (signal)
+        {
+        case CSinkControlProtocol::SILENCEMODE:
+          return;
+        case CSinkControlProtocol::VOLUME:
+          m_volume = *(float*)msg->data;
+          return;
+        default:
+          break;
+        }
+      }
+      else if (port == &m_dataPort)
       {
         switch (signal)
         {
