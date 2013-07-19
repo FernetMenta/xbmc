@@ -432,7 +432,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           }
           else if(m_extCycleCounter <= 0)
           {
-            m_extCycleCounter = 30;
+            m_extCycleCounter = 20;
             m_state = S_TOP_CONFIGURED_SILENCE;
           }
           m_extTimeout = 0;
