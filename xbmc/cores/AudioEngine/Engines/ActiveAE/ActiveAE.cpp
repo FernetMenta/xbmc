@@ -1504,7 +1504,7 @@ bool CActiveAE::RunStages()
         // viz
         {
           CSingleLock lock(m_vizLock);
-          if (m_audioCallback)
+          if (m_audioCallback && m_vizBuffers)
           {
             if (!m_vizInitialized)
             {
