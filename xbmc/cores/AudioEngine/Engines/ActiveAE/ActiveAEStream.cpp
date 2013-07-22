@@ -50,6 +50,7 @@ CActiveAEStream::CActiveAEStream(AEAudioFormat *format)
   m_streamFading = false;
   m_streamFreeBuffers = 0;
   m_streamIsBuffering = true;
+  m_streamBufferingCounter = 0;
   m_streamSlave = NULL;
   m_convertFn = NULL;
 }
@@ -120,6 +121,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
         msgData.stream = this;
         m_streamPort->SendOutMessage(CActiveAEDataProtocol::STREAMSAMPLE, &msgData, sizeof(MsgStreamSample));
         m_currentBuffer = NULL;
+        m_streamBufferingCounter++;
       }
       continue;
     }
@@ -153,7 +155,7 @@ double CActiveAEStream::GetDelay()
 bool CActiveAEStream::IsBuffering()
 {
   CSingleLock lock(m_streamLock);
-  return m_streamIsBuffering;
+  return m_streamIsBuffering && (m_streamBufferingCounter < 2);
 }
 
 double CActiveAEStream::GetCacheTime()

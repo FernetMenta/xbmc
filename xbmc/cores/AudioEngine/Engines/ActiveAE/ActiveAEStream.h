@@ -89,6 +89,7 @@ protected:
   bool m_streamFading;
   int m_streamFreeBuffers;
   bool m_streamIsBuffering;
+  unsigned int m_streamBufferingCounter;
   IAEStream *m_streamSlave;
   CAEConvert::AEConvertToFn m_convertFn;
   CCriticalSection m_streamLock;
