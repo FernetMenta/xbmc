@@ -284,6 +284,29 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
       return;
 
     case AE_TOP_ERROR:
+      if (port == NULL) // timeout
+      {
+        switch (signal)
+        {
+        case CActiveAEControlProtocol::TIMEOUT:
+          m_extError = false;
+          LoadSettings();
+          Configure();
+          if (!m_extError)
+          {
+            m_state = AE_TOP_CONFIGURED_IDLE;
+            m_extTimeout = 0;
+          }
+          else
+          {
+            m_state = AE_TOP_ERROR;
+            m_extTimeout = 500;
+          }
+          return;
+        default:
+          break;
+        }
+      }
       break;
 
     case AE_TOP_UNCONFIGURED:
@@ -305,6 +328,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           else
           {
             m_state = AE_TOP_ERROR;
+            m_extTimeout = 500;
           }
           return;
 
@@ -326,14 +350,16 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             m_extTimeout = 0;
             return;
           }
-          if (HasWork())
+          if (!m_sinkBuffers->m_inputSamples.empty() || !m_sinkBuffers->m_outputSamples.empty())
           {
             m_extTimeout = 100;
             return;
           }
           if (NeedReconfigureSink())
             DrainSink();
-          Configure();
+
+          if (!m_extError)
+            Configure();
           if (!m_extError)
           {
             m_state = AE_TOP_CONFIGURED_PLAY;
@@ -342,9 +368,9 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           else
           {
             m_state = AE_TOP_ERROR;
-            m_extTimeout = 1000;
+            m_extTimeout = 500;
           }
-          m_dataPort.DeferOut(false);
+          m_extDeferData = false;
           return;
         default:
           break;
@@ -369,12 +395,13 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           m_state = AE_TOP_RECONFIGURING;
           m_extTimeout = 0;
           // don't accept any data until we are reconfigured
-          m_dataPort.DeferOut(true);
+          m_extDeferData = true;
           return;
         case CActiveAEControlProtocol::SUSPEND:
           UnconfigureSink();
           m_stats.SetSuspended(true);
           m_state = AE_TOP_CONFIGURED_SUSPEND;
+          m_extDeferData = true;
           return;
         case CActiveAEControlProtocol::DISPLAYLOST:
           if (m_settings.mode == AUDIO_HDMI)
@@ -382,6 +409,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             UnconfigureSink();
             m_stats.SetSuspended(true);
             m_state = AE_TOP_CONFIGURED_SUSPEND;
+            m_extDeferData = true;
           }
           return;
         case CActiveAEControlProtocol::PAUSESTREAM:
@@ -460,8 +488,16 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           {
             msg->Reply(CActiveAEDataProtocol::ACC, &stream, sizeof(CActiveAEStream*));
             Configure();
-            m_extTimeout = 0;
-            m_state = AE_TOP_CONFIGURED_PLAY;
+            if (!m_extError)
+            {
+              m_state = AE_TOP_CONFIGURED_PLAY;
+              m_extTimeout = 0;
+            }
+            else
+            {
+              m_state = AE_TOP_ERROR;
+              m_extTimeout = 500;
+            }
           }
           else
             msg->Reply(CActiveAEDataProtocol::ERR);
@@ -549,14 +585,16 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             msg->Reply(CActiveAEControlProtocol::ACC);
           if (!m_extError)
           {
-            m_stats.SetSuspended(false);
             m_state = AE_TOP_CONFIGURED_PLAY;
             m_extTimeout = 0;
           }
           else
           {
             m_state = AE_TOP_ERROR;
+            m_extTimeout = 500;
           }
+          m_stats.SetSuspended(false);
+          m_extDeferData = false;
           return;
         default:
           break;
@@ -577,8 +615,16 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             if (m_extDrainTimer.IsTimePast())
             {
               Configure();
-              m_state = AE_TOP_CONFIGURED_PLAY;
-              m_extTimeout = 0;
+              if (!m_extError)
+              {
+                m_state = AE_TOP_CONFIGURED_PLAY;
+                m_extTimeout = 0;
+              }
+              else
+              {
+                m_state = AE_TOP_ERROR;
+                m_extTimeout = 500;
+              }
             }
             else
               m_extTimeout = m_extDrainTimer.MillisLeft();
@@ -637,6 +683,7 @@ void CActiveAE::Process()
   m_extTimeout = 1000;
   m_bStateMachineSelfTrigger = false;
   m_extDrain = false;
+  m_extDeferData = false;
 
   // start sink
   m_sink.Start();
@@ -644,7 +691,6 @@ void CActiveAE::Process()
   while (!m_bStop)
   {
     gotMsg = false;
-    deferData = (m_state == AE_TOP_CONFIGURED_SUSPEND);
 
     if (m_bStateMachineSelfTrigger)
     {
@@ -664,19 +710,19 @@ void CActiveAE::Process()
       gotMsg = true;
       port = &m_controlPort;
     }
-    else if (!deferData)
+    // check sink data port
+    else if (m_sink.m_dataPort.ReceiveInMessage(&msg))
+    {
+      gotMsg = true;
+      port = &m_sink.m_dataPort;
+    }
+    else if (!m_extDeferData)
     {
       // check data port
       if (m_dataPort.ReceiveOutMessage(&msg))
       {
         gotMsg = true;
         port = &m_dataPort;
-      }
-      // check sink data port
-      else if (m_sink.m_dataPort.ReceiveInMessage(&msg))
-      {
-        gotMsg = true;
-        port = &m_sink.m_dataPort;
       }
       // stream data ports
       else
@@ -766,7 +812,8 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
   CAESinkFactory::ParseDevice(device, driver);
   if (!m_sink.IsCompatible(m_sinkRequestFormat, device) || m_settings.driver.compare(driver) != 0)
   {
-    InitSink();
+    if (!InitSink())
+      return;
     m_settings.driver = driver;
     initSink = true;
     m_stats.Reset(m_sinkFormat.m_sampleRate);
@@ -1188,7 +1235,7 @@ bool CActiveAE::NeedReconfigureSink()
   return false;
 }
 
-void CActiveAE::InitSink()
+bool CActiveAE::InitSink()
 {
   SinkConfig config;
   config.format = m_sinkRequestFormat;
@@ -1207,7 +1254,7 @@ void CActiveAE::InitSink()
       reply->Release();
       CLog::Log(LOGERROR, "ActiveAE::%s - returned error", __FUNCTION__);
       m_extError = true;
-      return;
+      return false;
     }
     AEAudioFormat *data;
     data = (AEAudioFormat*)reply->data;
@@ -1222,10 +1269,11 @@ void CActiveAE::InitSink()
   {
     CLog::Log(LOGERROR, "ActiveAE::%s - failed to init", __FUNCTION__);
     m_extError = true;
-    return;
+    return false;
   }
 
   m_inMsgEvent.Reset();
+  return true;
 }
 
 void CActiveAE::DrainSink()
