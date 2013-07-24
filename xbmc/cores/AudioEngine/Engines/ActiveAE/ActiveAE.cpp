@@ -1291,7 +1291,7 @@ bool CActiveAE::RunStages()
     if ((*it)->m_resampleBuffers && !(*it)->m_paused)
       busy = (*it)->m_resampleBuffers->ResampleBuffers();
     else if ((*it)->m_resampleBuffers && 
-            (((*it)->m_resampleBuffers->m_inputSamples.size() / (*it)->m_resampleBuffers->m_allSamples.size()) > 0.5))
+            (((float) (*it)->m_resampleBuffers->m_inputSamples.size() / (*it)->m_resampleBuffers->m_allSamples.size()) > 0.5))
     {
       CSingleLock lock((*it)->m_streamLock);
       (*it)->m_streamIsBuffering = false;
