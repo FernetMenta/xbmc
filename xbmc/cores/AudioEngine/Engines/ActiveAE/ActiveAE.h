@@ -240,7 +240,7 @@ protected:
 protected:
   void Process();
   void StateMachine(int signal, Protocol *port, Message *msg);
-  void InitSink();
+  bool InitSink();
   void DrainSink();
   void UnconfigureSink();
   void Start();
@@ -276,6 +276,7 @@ protected:
   bool m_extError;
   bool m_extDrain;
   XbmcThreads::EndTime m_extDrainTimer;
+  bool m_extDeferData;
 
   enum
   {

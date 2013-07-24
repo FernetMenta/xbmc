@@ -196,7 +196,6 @@ AVSampleFormat CActiveAEResample::GetAVSampleFormat(AEDataFormat format)
   else if (format == AE_FMT_FLOATP)  return AV_SAMPLE_FMT_FLTP;
   else if (format == AE_FMT_DOUBLEP) return AV_SAMPLE_FMT_DBLP;
 
-  CLog::Log(LOGDEBUG, "CActiveAEResample::GetAVSampleFormat - format not supported");
   return AV_SAMPLE_FMT_FLT;
 }
 
