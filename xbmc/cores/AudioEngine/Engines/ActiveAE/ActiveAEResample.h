@@ -25,6 +25,11 @@
 #include "AEAudioFormat.h"
 #include "ActiveAEBuffer.h"
 
+// This is for the Audiophiles
+#define AE_SWR_LOW_QUALITY 0
+#define AE_SWR_NORMAL_QUALITY 1
+#define AE_SWR_HIGH_QUALITY 2
+
 namespace ActiveAE
 {
 
@@ -33,7 +38,7 @@ class CActiveAEResample
 public:
   CActiveAEResample();
   virtual ~CActiveAEResample();
-  bool Init(uint64_t dst_chan_layout, int dst_channels, int dst_rate, AVSampleFormat dst_fmt, uint64_t src_chan_layout, int src_channels, int src_rate, AVSampleFormat src_fmt, CAEChannelInfo *remapLayout = NULL);
+  bool Init(uint64_t dst_chan_layout, int dst_channels, int dst_rate, AVSampleFormat dst_fmt, uint64_t src_chan_layout, int src_channels, int src_rate, AVSampleFormat src_fmt, CAEChannelInfo *remapLayout = NULL, int quality = AE_SWR_NORMAL_QUALITY);
   int Resample(uint8_t **dst_buffer, int dst_samples, uint8_t **src_buffer, int src_samples);
   int64_t GetDelay(int64_t base);
   int GetBufferedSamples();
