@@ -1102,7 +1102,7 @@ bool CDecoder::CheckStatus(VdpStatus vdp_st, int line)
 
 CVdpauRenderPicture* CVdpauRenderPicture::Acquire()
 {
-  CSingleLock lock(*renderPicSection);
+  CSingleLock lock(renderPicSection);
 
   if (refCount == 0)
     vdpau->Acquire();
@@ -1113,7 +1113,7 @@ CVdpauRenderPicture* CVdpauRenderPicture::Acquire()
 
 long CVdpauRenderPicture::Release()
 {
-  CSingleLock lock(*renderPicSection);
+  CSingleLock lock(renderPicSection);
 
   refCount--;
   if (refCount > 0)
@@ -1128,7 +1128,7 @@ long CVdpauRenderPicture::Release()
 
 void CVdpauRenderPicture::ReturnUnused()
 {
-  { CSingleLock lock(*renderPicSection);
+  { CSingleLock lock(renderPicSection);
     if (refCount > 0)
       return;
   }
@@ -2395,6 +2395,31 @@ bool CMixer::CheckStatus(VdpStatus vdp_st, int line)
 }
 
 //-----------------------------------------------------------------------------
+// Buffer Pool
+//-----------------------------------------------------------------------------
+
+VdpauBufferPool::VdpauBufferPool()
+{
+  CVdpauRenderPicture *pic;
+  for (unsigned int i = 0; i < NUM_RENDER_PICS; i++)
+  {
+    pic = new CVdpauRenderPicture(renderPicSec);
+    allRenderPics.push_back(pic);
+  }
+}
+
+VdpauBufferPool::~VdpauBufferPool()
+{
+  CVdpauRenderPicture *pic;
+  for (unsigned int i = 0; i < NUM_RENDER_PICS; i++)
+  {
+    pic = allRenderPics[i];
+    delete pic;
+  }
+  allRenderPics.clear();
+}
+
+//-----------------------------------------------------------------------------
 // Output
 //-----------------------------------------------------------------------------
 COutput::COutput(CEvent *inMsgEvent) :
@@ -2405,16 +2430,9 @@ COutput::COutput(CEvent *inMsgEvent) :
 {
   m_inMsgEvent = inMsgEvent;
 
-  CVdpauRenderPicture pic;
-  pic.renderPicSection = &m_bufferPool.renderPicSec;
-  pic.refCount = 0;
-  for (unsigned int i = 0; i < NUM_RENDER_PICS; i++)
-  {
-    m_bufferPool.allRenderPics.push_back(pic);
-  }
   for (unsigned int i = 0; i < m_bufferPool.allRenderPics.size(); ++i)
   {
-    m_bufferPool.freeRenderPics.push_back(&m_bufferPool.allRenderPics[i]);
+    m_bufferPool.freeRenderPics.push_back(i);
   }
 }
 
@@ -2429,7 +2447,6 @@ COutput::~COutput()
 
   m_bufferPool.freeRenderPics.clear();
   m_bufferPool.usedRenderPics.clear();
-  m_bufferPool.allRenderPics.clear();
 }
 
 void COutput::Dispose()
@@ -2832,13 +2849,14 @@ void COutput::Flush()
   }
 
   // reset used render flag which was cleared on mixer flush
-  std::deque<CVdpauRenderPicture*>::iterator it;
+  std::deque<int>::iterator it;
   for (it = m_bufferPool.usedRenderPics.begin(); it != m_bufferPool.usedRenderPics.end(); ++it)
   {
-    if ((*it)->DVDPic.format == RENDER_FMT_VDPAU_420)
+    CVdpauRenderPicture *pic = m_bufferPool.allRenderPics[*it];
+    if (pic->DVDPic.format == RENDER_FMT_VDPAU_420)
     {
       std::map<VdpVideoSurface, VdpauBufferPool::GLVideoSurface>::iterator it2;
-      it2 = m_bufferPool.glVideoSurfaceMap.find((*it)->sourceIdx);
+      it2 = m_bufferPool.glVideoSurfaceMap.find(pic->sourceIdx);
       if (it2 == m_bufferPool.glVideoSurfaceMap.end())
       {
         CLog::Log(LOGDEBUG, "COutput::Flush - gl surface not found");
@@ -2871,7 +2889,7 @@ bool COutput::HasWork()
 
 CVdpauRenderPicture* COutput::ProcessMixerPicture()
 {
-  CVdpauRenderPicture *retPic = 0;
+  CVdpauRenderPicture *retPic = NULL;
 
   if (m_config.usePixmaps)
   {
@@ -2885,7 +2903,7 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
       pixmap->surface = pic.outputSurface;
       pixmap->DVDPic = pic.DVDPic;
       pixmap->id = i;
-      m_bufferPool.notVisiblePixmaps.push_back(pixmap);
+      m_bufferPool.notVisiblePixmaps.push_back(i);
       m_config.vdpProcs.vdp_presentation_queue_display(pixmap->vdp_flip_queue,
                                                        pixmap->surface,0,0,0);
     }
@@ -2894,15 +2912,17 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
       VdpStatus vdp_st;
       VdpTime time;
       VdpPresentationQueueStatus status;
-      VdpauBufferPool::Pixmaps *pixmap = m_bufferPool.notVisiblePixmaps.front();
+      int idx = m_bufferPool.notVisiblePixmaps.front();
+      VdpauBufferPool::Pixmaps *pixmap = &m_bufferPool.pixmaps[idx];
       vdp_st = m_config.vdpProcs.vdp_presentation_queue_query_surface_status(
                         pixmap->vdp_flip_queue, pixmap->surface, &status, &time);
 
       if (vdp_st == VDP_STATUS_OK && status == VDP_PRESENTATION_QUEUE_STATUS_VISIBLE)
       {
-        retPic = m_bufferPool.freeRenderPics.front();
+        int idx = m_bufferPool.freeRenderPics.front();
+        retPic = m_bufferPool.allRenderPics[idx];
         m_bufferPool.freeRenderPics.pop_front();
-        m_bufferPool.usedRenderPics.push_back(retPic);
+        m_bufferPool.usedRenderPics.push_back(idx);
         retPic->sourceIdx = pixmap->id;
         retPic->DVDPic = pixmap->DVDPic;
         retPic->valid = true;
@@ -2915,9 +2935,10 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
   } // pixmap
   else if (!m_bufferPool.processedPics.empty() && !m_bufferPool.freeRenderPics.empty())
   {
-    retPic = m_bufferPool.freeRenderPics.front();
+    int idx = m_bufferPool.freeRenderPics.front();
+    retPic = m_bufferPool.allRenderPics[idx];
     m_bufferPool.freeRenderPics.pop_front();
-    m_bufferPool.usedRenderPics.push_back(retPic);
+    m_bufferPool.usedRenderPics.push_back(idx);
     CVdpauProcessedPicture procPic = m_bufferPool.processedPics.front();
     m_bufferPool.processedPics.pop();
 
@@ -2953,15 +2974,22 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
 
 void COutput::ProcessReturnPicture(CVdpauRenderPicture *pic)
 {
-  std::deque<CVdpauRenderPicture*>::iterator it;
-  it = std::find(m_bufferPool.usedRenderPics.begin(), m_bufferPool.usedRenderPics.end(), pic);
+  std::deque<int>::iterator it;
+  for (it = m_bufferPool.usedRenderPics.begin(); it != m_bufferPool.usedRenderPics.end(); ++it)
+  {
+    if (m_bufferPool.allRenderPics[*it] == pic)
+    {
+      break;
+    }
+  }
+
   if (it == m_bufferPool.usedRenderPics.end())
   {
     CLog::Log(LOGWARNING, "COutput::ProcessReturnPicture - pic not found");
     return;
   }
+  m_bufferPool.freeRenderPics.push_back(*it);
   m_bufferPool.usedRenderPics.erase(it);
-  m_bufferPool.freeRenderPics.push_back(pic);
   if (!pic->valid)
   {
     CLog::Log(LOGDEBUG, "COutput::%s - return of invalid render pic", __FUNCTION__);
@@ -3119,7 +3147,7 @@ void COutput::ReleaseBufferPool()
   // invalidate all used render pictures
   for (unsigned int i = 0; i < m_bufferPool.usedRenderPics.size(); ++i)
   {
-    m_bufferPool.usedRenderPics[i]->valid = false;
+    m_bufferPool.allRenderPics[m_bufferPool.usedRenderPics[i]]->valid = false;
   }
 }
 
@@ -3138,10 +3166,12 @@ void COutput::PreCleanup()
 
     // check if output surface is in use
     bool used = false;
-    std::deque<CVdpauRenderPicture*>::iterator it;
+    std::deque<int>::iterator it;
+    CVdpauRenderPicture *pic;
     for (it = m_bufferPool.usedRenderPics.begin(); it != m_bufferPool.usedRenderPics.end(); ++it)
     {
-      if (((*it)->sourceIdx == m_bufferPool.outputSurfaces[i]) && (*it)->valid)
+      pic = m_bufferPool.allRenderPics[*it];
+      if ((pic->sourceIdx == m_bufferPool.outputSurfaces[i]) && pic->valid)
       {
         used = true;
         break;

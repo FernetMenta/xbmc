@@ -223,6 +223,8 @@ class CVdpauRenderPicture
   friend class CDecoder;
   friend class COutput;
 public:
+  CVdpauRenderPicture(CCriticalSection &section)
+    : renderPicSection(section), refCount(0) {}
   DVDVideoPicture DVDPic;
   int texWidth, texHeight;
   CRect crop;
@@ -235,7 +237,7 @@ public:
 private:
   void ReturnUnused();
   int refCount;
-  CCriticalSection *renderPicSection;
+  CCriticalSection &renderPicSection;
 };
 
 //-----------------------------------------------------------------------------
@@ -356,6 +358,8 @@ protected:
  */
 struct VdpauBufferPool
 {
+  VdpauBufferPool();
+  virtual ~VdpauBufferPool();
   struct Pixmaps
   {
     unsigned short id;
@@ -377,16 +381,16 @@ struct VdpauBufferPool
     vdpau_render_state *sourceVuv;
     VdpOutputSurface sourceRgb;
   };
+  std::vector<CVdpauRenderPicture*> allRenderPics;
   unsigned short numOutputSurfaces;
   std::vector<Pixmaps> pixmaps;
   std::vector<VdpOutputSurface> outputSurfaces;
-  std::deque<Pixmaps*> notVisiblePixmaps;
-  std::vector<CVdpauRenderPicture> allRenderPics;
+  std::deque<int> notVisiblePixmaps;
   std::map<VdpVideoSurface, GLVideoSurface> glVideoSurfaceMap;
   std::map<VdpOutputSurface, GLVideoSurface> glOutputSurfaceMap;
   std::queue<CVdpauProcessedPicture> processedPics;
-  std::deque<CVdpauRenderPicture*> usedRenderPics;
-  std::deque<CVdpauRenderPicture*> freeRenderPics;
+  std::deque<int> usedRenderPics;
+  std::deque<int> freeRenderPics;
   CCriticalSection renderPicSec;
 };
 
