@@ -1556,9 +1556,10 @@ void CLinuxRendererGL::RenderFromFBO()
 
 void CLinuxRendererGL::RenderProgressiveWeave(int index, int field)
 {
-  bool scaleUp = (int)m_sourceHeight < g_graphicsContext.GetHeight() || (int)m_sourceWidth < g_graphicsContext.GetWidth();
+  bool scale = (int)m_sourceHeight != m_destRect.Height() ||
+               (int)m_sourceWidth != m_destRect.Width();
 
-  if (m_fbo.fbo.IsSupported() && (scaleUp || m_renderQuality == RQ_MULTIPASS))
+  if (m_fbo.fbo.IsSupported() && (scale || m_renderQuality == RQ_MULTIPASS))
   {
     glEnable(GL_POLYGON_STIPPLE);
     glPolygonStipple(stipple_weave);
@@ -1582,7 +1583,7 @@ void CLinuxRendererGL::RenderProgressiveWeave(int index, int field)
 void CLinuxRendererGL::RenderVDPAU(int index, int field)
 {
 #ifdef HAVE_LIBVDPAU
-  YUVPLANE &plane = m_buffers[index].fields[0][1];
+  YUVPLANE &plane = m_buffers[index].fields[FIELD_FULL][0];
 
   glEnable(m_textureTarget);
   glActiveTextureARB(GL_TEXTURE0);
@@ -2329,15 +2330,11 @@ void CLinuxRendererGL::DeleteNV12Texture(int index)
 void CLinuxRendererGL::DeleteVDPAUTexture(int index)
 {
 #ifdef HAVE_LIBVDPAU
-  YUVPLANE &plane = m_buffers[index].fields[0][0];
-  YUVFIELDS &fields = m_buffers[index].fields;
+  YUVPLANE &plane = m_buffers[index].fields[FIELD_FULL][0];
 
   SAFE_RELEASE(m_buffers[index].vdpau);
 
-  if(plane.id && glIsTexture(plane.id))
-    glDeleteTextures(1, &plane.id);
   plane.id = 0;
-  fields[0][1].id = 0;
 #endif
 }
 
@@ -2346,7 +2343,7 @@ bool CLinuxRendererGL::CreateVDPAUTexture(int index)
 #ifdef HAVE_LIBVDPAU
   YV12Image &im     = m_buffers[index].image;
   YUVFIELDS &fields = m_buffers[index].fields;
-  YUVPLANE  &plane  = fields[0][0];
+  YUVPLANE  &plane  = fields[FIELD_FULL][0];
 
   DeleteVDPAUTexture(index);
 
@@ -2361,7 +2358,7 @@ bool CLinuxRendererGL::CreateVDPAUTexture(int index)
   plane.pixpertex_x = 1;
   plane.pixpertex_y = 1;
 
-  glGenTextures(1, &plane.id);
+  plane.id = 1;
 
 #endif
   return true;
@@ -2375,7 +2372,7 @@ bool CLinuxRendererGL::UploadVDPAUTexture(int index)
   unsigned int flipindex = m_buffers[index].flipindex;
   YV12Image &im     = m_buffers[index].image;
   YUVFIELDS &fields = m_buffers[index].fields;
-  YUVPLANE &plane = fields[0][1];
+  YUVPLANE &plane = fields[FIELD_FULL][0];
 
   if (!vdpau || !vdpau->valid)
   {
@@ -2383,9 +2380,6 @@ bool CLinuxRendererGL::UploadVDPAUTexture(int index)
   }
 
   plane.id = vdpau->texture[0];
-
-  plane.pixpertex_x = 1;
-  plane.pixpertex_y = 1;
 
   plane.rect = m_sourceRect;
   plane.width  = im.width;
@@ -2415,14 +2409,11 @@ bool CLinuxRendererGL::UploadVDPAUTexture(int index)
 void CLinuxRendererGL::DeleteVDPAUTexture420(int index)
 {
 #ifdef HAVE_LIBVDPAU
-  YUVPLANE &plane = m_buffers[index].fields[0][0];
   YUVFIELDS &fields = m_buffers[index].fields;
 
   SAFE_RELEASE(m_buffers[index].vdpau);
 
-  if(plane.id && glIsTexture(plane.id))
-    glDeleteTextures(1, &plane.id);
-  plane.id = 0;
+  fields[0][0].id = 0;
   fields[1][0].id = 0;
   fields[1][1].id = 0;
   fields[2][0].id = 0;
@@ -2451,14 +2442,12 @@ bool CLinuxRendererGL::CreateVDPAUTexture420(int index)
   im.plane[1] = NULL;
   im.plane[2] = NULL;
 
-  for(int p = 0;p<3;p++)
+  for(int p=0; p<3; p++)
   {
     pbo[p] = None;
   }
 
-  glEnable(m_textureTarget);
-  glGenTextures(1, &plane.id);
-  glDisable(m_textureTarget);
+  plane.id = 1;
 
 #endif
   return true;
@@ -2472,7 +2461,6 @@ bool CLinuxRendererGL::UploadVDPAUTexture420(int index)
 
   unsigned int flipindex = m_buffers[index].flipindex;
   YUVFIELDS &fields = m_buffers[index].fields;
-  YUVPLANE &plane = fields[0][0];
 
   if (!vdpau || !vdpau->valid)
   {
@@ -2483,13 +2471,12 @@ bool CLinuxRendererGL::UploadVDPAUTexture420(int index)
   im.width  = vdpau->texWidth;
 
   // YUV
-  for (int f = FIELD_FULL; f<=FIELD_BOT ; f++)
+  for (int f = FIELD_TOP; f<=FIELD_BOT ; f++)
   {
-    int fieldshift = (f==FIELD_FULL) ? 0 : 1;
     YUVPLANES &planes = fields[f];
 
     planes[0].texwidth  = im.width;
-    planes[0].texheight = im.height >> fieldshift;
+    planes[0].texheight = im.height >> 1;
 
     planes[1].texwidth  = planes[0].texwidth  >> im.cshift_x;
     planes[1].texheight = planes[0].texheight >> im.cshift_y;
@@ -2511,13 +2498,15 @@ bool CLinuxRendererGL::UploadVDPAUTexture420(int index)
   // set textures
   fields[1][0].id = vdpau->texture[0];
   fields[1][1].id = vdpau->texture[2];
+  fields[1][2].id = vdpau->texture[2];
   fields[2][0].id = vdpau->texture[1];
   fields[2][1].id = vdpau->texture[3];
+  fields[2][2].id = vdpau->texture[3];
 
   glEnable(m_textureTarget);
-  for (int f = 1; f < 3; f++)
+  for (int f = FIELD_TOP; f <= FIELD_BOT; f++)
   {
-    for (int p=0;p<2;p++)
+    for (int p=0; p<2; p++)
     {
       glBindTexture(m_textureTarget,fields[f][p].id);
       glTexParameteri(m_textureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -2528,7 +2517,6 @@ bool CLinuxRendererGL::UploadVDPAUTexture420(int index)
       glBindTexture(m_textureTarget,0);
       VerifyGLState();
     }
-    fields[f][2].id = fields[f][1].id;
   }
   CalculateTextureSourceRects(index, 3);
   glDisable(m_textureTarget);
