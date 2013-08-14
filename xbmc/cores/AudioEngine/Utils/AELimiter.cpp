@@ -34,12 +34,15 @@ CAELimiter::CAELimiter()
   m_increase = 0.0f;
 }
 
-float CAELimiter::Run(float* frame, int channels)
+float CAELimiter::Run(float* frame, int channels, int stride /*= 1*/)
 {
-  float* end = frame + channels;
+  float* end = frame + channels*stride;
   float highest = 0.0f;
   while (frame != end)
-    highest = std::max(highest, fabsf(*(frame++)));
+  {
+    highest = std::max(highest, fabsf(*(frame)));
+    frame += stride;
+  }
 
   float sample = highest * m_amplify;
   if (sample * m_attenuation > 1.0f)
