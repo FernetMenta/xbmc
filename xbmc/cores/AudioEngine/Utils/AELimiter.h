@@ -48,5 +48,5 @@ class CAELimiter
       m_samplerate = (float)samplerate;
     }
 
-    float Run(float* frame, int channels);
+    float Run(float* frame, int channels, int stride = 1);
 };
