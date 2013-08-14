@@ -972,6 +972,9 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
       }
       if (m_mode == MODE_TRANSCODE || m_streams.size() > 1)
         (*it)->m_resampleBuffers->m_fillPackets = true;
+
+      // amplification
+      (*it)->m_limiter.SetSamplerate(outputFormat.m_sampleRate);
     }
 
     // buffers for viz
@@ -1163,19 +1166,6 @@ void CActiveAE::DiscardSound(CActiveAESound *sound)
       return;
     }
   }
-}
-
-float CActiveAE::CalcStreamAmplification(CActiveAEStream *stream, CSampleBuffer *buf)
-{
-  float amp = 1.0f;
-  int nb_floats = buf->pkt->nb_samples * buf->pkt->config.channels / buf->pkt->planes;
-  float tamp;
-  for(int i=0; i<buf->pkt->planes; i++)
-  {
-    tamp = stream->m_limiter.Run((float*)buf->pkt->data[i], nb_floats);
-    amp = std::min(amp, tamp);
-  }
-  return amp;
 }
 
 void CActiveAE::ChangeResampleQuality()
@@ -1488,12 +1478,10 @@ bool CActiveAE::RunStages()
             out = (*it)->m_resampleBuffers->m_outputSamples.front();
             (*it)->m_resampleBuffers->m_outputSamples.pop_front();
 
-            // volume for stream
-            float amp = (*it)->m_rgain * CalcStreamAmplification((*it), out);
-
             int nb_floats = out->pkt->nb_samples * out->pkt->config.channels / out->pkt->planes;
             int nb_loops = 1;
             float fadingStep = 0.0f;
+            int stride = 1;
 
             // fading
             if ((*it)->m_fadingSamples == -1)
@@ -1508,6 +1496,7 @@ bool CActiveAE::RunStages()
               float delta = (*it)->m_fadingTarget - (*it)->m_fadingBase;
               int samples = m_internalFormat.m_sampleRate * (float)(*it)->m_fadingTime / 1000.0f;
               fadingStep = delta / samples;
+              stride = out->pkt->planes > 1 ? out->pkt->linesize : 1;
             }
             for(int i=0; i<nb_loops; i++)
             {
@@ -1523,7 +1512,10 @@ bool CActiveAE::RunStages()
                   (*it)->m_streamFading = false;
                 }
               }
-              float volume = (*it)->m_volume * amp;
+
+              // volume for stream
+              float volume = (*it)->m_volume * (*it)->m_rgain * 
+                             (*it)->m_limiter.Run((float*)out->pkt->data[0]+i*nb_floats, out->pkt->config.channels, stride);
 
               for(int j=0; j<out->pkt->planes; j++)
               {
@@ -1543,12 +1535,10 @@ bool CActiveAE::RunStages()
             mix = (*it)->m_resampleBuffers->m_outputSamples.front();
             (*it)->m_resampleBuffers->m_outputSamples.pop_front();
 
-            // volume for stream
-            float amp = (*it)->m_volume * (*it)->m_rgain * CalcStreamAmplification((*it), mix);
-
             int nb_floats = mix->pkt->nb_samples * mix->pkt->config.channels / mix->pkt->planes;
             int nb_loops = 1;
             float fadingStep = 0.0f;
+            int stride = 1;
 
             // fading
             if ((*it)->m_fadingSamples == -1)
@@ -1563,6 +1553,7 @@ bool CActiveAE::RunStages()
               float delta = (*it)->m_fadingTarget - (*it)->m_fadingBase;
               int samples = m_internalFormat.m_sampleRate * (float)(*it)->m_fadingTime / 1000.0f;
               fadingStep = delta / samples;
+              stride = out->pkt->planes > 1 ? out->pkt->linesize : 1;
             }
             for(int i=0; i<nb_loops; i++)
             {
@@ -1578,7 +1569,10 @@ bool CActiveAE::RunStages()
                   (*it)->m_streamFading = false;
                 }
               }
-              float volume = (*it)->m_volume * amp;
+
+              // volume for stream
+              float volume = (*it)->m_volume * (*it)->m_rgain *
+                             (*it)->m_limiter.Run((float*)out->pkt->data[0]+i*nb_floats, out->pkt->config.channels, stride);
 
               for(int j=0; j<out->pkt->planes && j<mix->pkt->planes; j++)
               {
