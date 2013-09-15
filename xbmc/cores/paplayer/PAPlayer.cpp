@@ -75,7 +75,9 @@ PAPlayer::PAPlayer(IPlayerCallback& callback) :
   m_currentStream      (NULL ),
   m_audioCallback      (NULL ),
   m_FileItem           (new CFileItem()),
-  m_jobCounter         (0)
+  m_jobCounter         (0),
+  m_continueStream     (false),
+  m_seekOffset         (0)
 {
   memset(&m_playerGUIData, 0, sizeof(m_playerGUIData));
 }
@@ -309,6 +311,20 @@ bool PAPlayer::QueueNextFile(const CFileItem &file)
 bool PAPlayer::QueueNextFileEx(const CFileItem &file, bool fadeIn/* = true */, bool job /* = false */)
 {
   StreamInfo *si = new StreamInfo();
+
+  // check if we advance a track of a CUE sheet
+  // if this is the case we don't need to open a new stream
+  if (file.GetPath().Equals(m_FileItem->GetPath()) &&
+      file.m_lStartOffset == m_FileItem->m_lEndOffset)
+  {
+    m_continueStream = true;
+    m_upcomingCrossfadeMS = 0;
+    return true;
+  }
+  else
+  {
+    m_continueStream = false;
+  }
 
   if (!si->m_decoder.Create(file, (file.m_lStartOffset * 1000) / 75))
   {
@@ -699,7 +715,7 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, double &delay, double &buffe
       ToFFRW(1);
     }
 
-    si->m_decoder.Seek(time);
+    si->m_decoder.Seek(time + m_seekOffset);
   }
 
   int status = si->m_decoder.GetStatus();
@@ -708,8 +724,39 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, double &delay, double &buffe
       si->m_decoder.ReadSamples(PACKET_SIZE) == RET_ERROR ||
       ((si->m_endOffset) && (si->m_framesSent / si->m_sampleRate >= (si->m_endOffset - si->m_startOffset) / 1000)))
   {
-    CLog::Log(LOGINFO, "PAPlayer::ProcessStream - Stream Finished");
-    return false;
+    if (si == m_currentStream && m_continueStream)
+    {
+      // update current stream with info of next track
+      si->m_startOffset = m_FileItem->m_lStartOffset * 1000 / 75;
+      si->m_endOffset = m_FileItem->m_lEndOffset * 1000 / 75;
+      si->m_framesSent = 0;
+
+      // update offset for seeking
+      m_seekOffset += si->m_endOffset - si->m_startOffset;
+
+      // calculate time when to prepare next stream
+      int64_t streamTotalTime = si->m_endOffset - si->m_startOffset;
+      si->m_prepareNextAtFrame = 0;
+      if (streamTotalTime >= TIME_TO_CACHE_NEXT_FILE + m_defaultCrossfadeMS)
+        si->m_prepareNextAtFrame = (int)((streamTotalTime - TIME_TO_CACHE_NEXT_FILE - m_defaultCrossfadeMS) * si->m_sampleRate / 1000.0f);
+
+      si->m_prepareTriggered = false;
+      si->m_playNextAtFrame = 0;
+      si->m_playNextTriggered = false;
+
+      //update the current stream to start playing the next track at the correct frame.
+      UpdateStreamInfoPlayNextAtFrame(m_currentStream, m_upcomingCrossfadeMS);
+
+      UpdateGUIData(si);
+      m_callback.OnPlayBackStarted();
+      m_continueStream = false;
+    }
+    else
+    {
+      m_seekOffset = 0;
+      CLog::Log(LOGINFO, "PAPlayer::ProcessStream - Stream Finished");
+      return false;
+    }
   }
 
   if (!QueueData(si))
@@ -848,7 +895,7 @@ int64_t PAPlayer::GetTotalTime64()
   if (!m_currentStream)
     return 0;
 
-  int64_t total = m_currentStream->m_decoder.TotalTime();
+  int64_t total = m_currentStream->m_decoder.TotalTime() - m_seekOffset;
   if (m_currentStream->m_endOffset)
     total = m_currentStream->m_endOffset;
   total -= m_currentStream->m_startOffset;
@@ -970,7 +1017,7 @@ void PAPlayer::UpdateGUIData(StreamInfo *si)
   strncpy(m_playerGUIData.m_codec,codec ? codec->m_CodecName : "",20);
   m_playerGUIData.m_cacheLevel   = codec ? codec->GetCacheLevel() : 0;
 
-  int64_t total = si->m_decoder.TotalTime();
+  int64_t total = si->m_decoder.TotalTime() - m_seekOffset;
   if (si->m_endOffset)
     total = m_currentStream->m_endOffset;
   total -= m_currentStream->m_startOffset;

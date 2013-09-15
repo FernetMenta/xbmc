@@ -142,6 +142,8 @@ private:
   StreamList          m_finishing;           /* finishing streams */
   int                 m_jobCounter;
   CEvent              m_jobEvent;
+  bool                m_continueStream;
+  int64_t             m_seekOffset;
 
   bool QueueNextFileEx(const CFileItem &file, bool fadeIn = true, bool job = false);
   void SoftStart(bool wait = false);
