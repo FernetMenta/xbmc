@@ -1393,17 +1393,17 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#337"
-msgid "Audio output"
+msgid "Output configuration"
 msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#338"
-msgid "Analogue"
+msgid "Fixed"
 msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#339"
-msgid "Optical/Coax"
+msgid "Optimized"
 msgstr ""
 
 msgctxt "#340"
@@ -1447,7 +1447,7 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#348"
-msgid "Multichannel LPCM capable receiver"
+msgid "Enable passthrough"
 msgstr ""
 
 #: system/settings/settings.xml
@@ -1780,12 +1780,12 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#420"
-msgid "HDMI"
+msgid "Best Match"
 msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#421"
-msgid "Stream silence when idle"
+msgid "Keep audio device alive"
 msgstr ""
 
 msgctxt "#422"
@@ -1937,7 +1937,10 @@ msgctxt "#457"
 msgid "Switch view"
 msgstr ""
 
-#empty string with id 458
+#: system/settings/settings.xml
+msgctxt "#458"
+msgid "Limit sampling rate (kHz)"
+msgstr ""
 
 msgctxt "#459"
 msgid "Subs"
@@ -12442,7 +12445,7 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#34111"
-msgid "When activated silence is output in order to keep alive receiver, otherwise sink is drained in idle state"
+msgid "Stream very quiet noise while nothing is played to keep the output device alive at all times. This might block concurrent applications from outputting sound."
 msgstr ""
 
 #empty strings from id 34112 to 34119
@@ -12471,8 +12474,38 @@ msgctxt "#34123"
 msgid "Never"
 msgstr ""
 
-#empty strings from id 34124 to 34200
-#34124-34200 reserved for future use
+#. SPDIF max sampling rate
+#: system/settings/settings.xml
+msgctxt "#34124"
+msgid "44.1"
+msgstr ""
+
+#. SPDIF max sampling rate
+#: system/settings/settings.xml
+msgctxt "#34125"
+msgid "48"
+msgstr ""
+
+#. SPDIF max sampling rate
+#: system/settings/settings.xml
+msgctxt "#34126"
+msgid "88.2"
+msgstr ""
+
+#. SPDIF max sampling rate
+#: system/settings/settings.xml
+msgctxt "#34127"
+msgid "96"
+msgstr ""
+
+#. SPDIF max sampling rate
+#: system/settings/settings.xml
+msgctxt "#34128"
+msgid "192"
+msgstr ""
+
+#empty strings from id 34129 to 34200
+#34129-34200 reserved for future use
 
 #: xbmc\PlayListPlayer.cpp
 msgctxt "#34201"
@@ -14175,12 +14208,12 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#36361"
-msgid "Type of connection to the audio equipment."
+msgid "Configuration regarding PCM channels and sample rate. Fixed will never change the configuration, Best match will always try to find best configuration for content, Optimized avoids changing it during playback."
 msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#36362"
-msgid "Select your physical speaker layout."
+msgid "PCM channel configuration (does not apply for passthrough)."
 msgstr ""
 
 #: system/settings/settings.xml
@@ -14210,7 +14243,7 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#36368"
-msgid "Select this option if your receiver is capable of decoding LPCM streams."
+msgid "Enable passthrough audio options."
 msgstr ""
 
 #: system/settings/settings.xml
@@ -14230,7 +14263,7 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#36372"
-msgid "Select the device you use to play encoded formats, these are any of the formats checked above in the 'capable receiver' options."
+msgid "Select the device you use to play encoded formats, these are any of the formats below in the 'capable receiver' options."
 msgstr ""
 
 #: system/settings/settings.xml
@@ -14556,7 +14589,10 @@ msgctxt "#36522"
 msgid "Use preferred mode"
 msgstr ""
 
-#empty string with id 36523
+#: system/settings/settings.xml
+msgctxt "#36523"
+msgid "Maximum sampling rate for spdif or sampling rate for fixed output configuration"
+msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#36524"
