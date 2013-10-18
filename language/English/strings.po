@@ -1939,7 +1939,7 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#458"
-msgid "Limit sampling rate"
+msgid "Limit sampling rate (kHz)"
 msgstr ""
 
 msgctxt "#459"
