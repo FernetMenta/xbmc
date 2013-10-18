@@ -2041,6 +2041,9 @@ void CActiveAE::OnSettingsChange(const std::string& setting)
 
 bool CActiveAE::SupportsRaw(AEDataFormat format)
 {
+  if (!m_sink.HasPassthroughDevice())
+    return false;
+
   // TODO: check ELD?
   return true;
 }
@@ -2074,7 +2077,7 @@ bool CActiveAE::IsSettingVisible(const std::string &settingId)
   }
   else if (settingId == "audiooutput.passthrough")
   {
-    if (m_sink.HasPassthroughDevice() && CSettings::Get().GetInt("audiooutput.config") != 1)
+    if (m_sink.HasPassthroughDevice() && CSettings::Get().GetInt("audiooutput.config") != AE_CONFIG_FIXED)
       return true;
   }
   return false;

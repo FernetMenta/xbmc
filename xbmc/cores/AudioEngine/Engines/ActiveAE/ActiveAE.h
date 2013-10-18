@@ -58,7 +58,7 @@ struct AudioSettings
   bool stereoupmix;
   bool passthrough;
   int config;
-  int samplerate;
+  unsigned int samplerate;
   AEQuality resampleQuality;
 };
 
