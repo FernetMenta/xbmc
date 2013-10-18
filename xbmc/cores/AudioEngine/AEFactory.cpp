@@ -40,6 +40,7 @@
 
 #include "guilib/LocalizeStrings.h"
 #include "settings/Setting.h"
+#include "settings/Settings.h"
 #include "utils/StringUtils.h"
 
 IAE* CAEFactory::AE = NULL;
@@ -238,10 +239,18 @@ std::string CAEFactory::GetDefaultDevice(bool passthrough)
   return "default";
 }
 
-bool CAEFactory::SupportsRaw()
+bool CAEFactory::SupportsRaw(AEDataFormat format)
 {
+  // check if passthrough is enabled
+  if (!CSettings::Get().GetBool("audiooutput.passthrough"))
+    return false;
+
+  // fixed config disabled passthrough
+  if (CSettings::Get().GetInt("audiooutput.config") == AE_CONFIG_FIXED)
+    return false;
+
   if(AE)
-    return AE->SupportsRaw();
+    return AE->SupportsRaw(format);
 
   return false;
 }
@@ -339,15 +348,6 @@ void CAEFactory::SettingOptionsAudioDevicesPassthroughFiller(const CSetting *set
   SettingOptionsAudioDevicesFillerGeneral(setting, list, current, true);
 }
 
-void CAEFactory::SettingOptionsAudioOutputModesFiller(const CSetting *setting, std::vector< std::pair<std::string, int> > &list, int &current)
-{
-  list.push_back(std::make_pair(g_localizeStrings.Get(338), AUDIO_ANALOG));
-#if !defined(TARGET_RASPBERRY_PI)
-  list.push_back(std::make_pair(g_localizeStrings.Get(339), AUDIO_IEC958));
-#endif
-  list.push_back(std::make_pair(g_localizeStrings.Get(420), AUDIO_HDMI));
-}
-
 void CAEFactory::SettingOptionsAudioQualityLevelsFiller(const CSetting *setting, std::vector< std::pair<std::string, int> > &list, int &current)
 {
   if (!AE)
@@ -409,4 +409,12 @@ void CAEFactory::UnregisterAudioCallback()
 {
   if (AE)
     AE->UnregisterAudioCallback();
+}
+
+bool CAEFactory::IsSettingVisible(const std::string &condition, const std::string &value, const std::string &settingId)
+{
+  if (settingId.empty() || value.empty() || !AE)
+    return false;
+
+  return AE->IsSettingVisible(value);
 }
