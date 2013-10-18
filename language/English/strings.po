@@ -14210,7 +14210,7 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#36362"
-msgid "PCM channel configuration (does not apply for passthrough)."
+msgid "PCM channel configuration (does not apply for passthrough). If you are using an spdif/optical/coax output - this has to be 2.0! (5.1 will work via passthrough anyways)"
 msgstr ""
 
 #: system/settings/settings.xml
