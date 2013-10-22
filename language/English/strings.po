@@ -6080,7 +6080,15 @@ msgctxt "#13553"
 msgid "%.1f Seconds"
 msgstr ""
 
-#empty strings from id 13554 to 13599
+msgctxt "#13554"
+msgid "%d Minute"
+msgstr ""
+
+msgctxt "#13555"
+msgid "%d Minutes"
+msgstr ""
+
+#empty strings from id 13556 to 13599
 
 #: system/settings/darwin.xml
 msgctxt "#13600"
@@ -12442,7 +12450,7 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#34111"
-msgid "Stream very quiet noise while nothing is played to keep the output device alive at all times. This might block concurrent applications from outputting sound."
+msgid "Stream very quiet noise (for a given period of time) when idle, so the receiver is immediately available when new sounds are played. This might block concurrent applications from outputting sound."
 msgstr ""
 
 #empty strings from id 34112 to 34119
