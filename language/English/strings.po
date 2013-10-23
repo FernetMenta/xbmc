@@ -12488,7 +12488,7 @@ msgstr ""
 #. SPDIF max sampling rate
 #: system/settings/settings.xml
 msgctxt "#34125"
-msgid "48"
+msgid "48.0"
 msgstr ""
 
 #. SPDIF max sampling rate
@@ -12500,13 +12500,13 @@ msgstr ""
 #. SPDIF max sampling rate
 #: system/settings/settings.xml
 msgctxt "#34127"
-msgid "96"
+msgid "96.0"
 msgstr ""
 
 #. SPDIF max sampling rate
 #: system/settings/settings.xml
 msgctxt "#34128"
-msgid "192"
+msgid "192.0"
 msgstr ""
 
 #empty strings from id 34129 to 34200
