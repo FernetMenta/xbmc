@@ -447,7 +447,6 @@ void CAESinkALSA::Deinitialize()
 {
   if (m_pcm)
   {
-    snd_pcm_nonblock(m_pcm, 0);
     Stop();
     snd_pcm_close(m_pcm);
     m_pcm = NULL;
@@ -569,10 +568,8 @@ void CAESinkALSA::Drain()
   if (!m_pcm)
     return;
 
-  snd_pcm_nonblock(m_pcm, 0);
   snd_pcm_drain(m_pcm);
   snd_pcm_prepare(m_pcm);
-  snd_pcm_nonblock(m_pcm, 1);
 }
 
 void CAESinkALSA::AppendParams(std::string &device, const std::string &params)
