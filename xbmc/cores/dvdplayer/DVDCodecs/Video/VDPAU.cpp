@@ -1681,11 +1681,6 @@ void CMixer::CreateVdpauMixer()
                                 &m_videoMixer);
   CheckStatus(vdp_st, __LINE__);
 
-  // create 3 pitches of black lines needed for clipping top
-  // and bottom lines when de-interlacing
-  m_BlackBar = new uint32_t[3*m_config.outWidth];
-  memset(m_BlackBar, 0, 3*m_config.outWidth*sizeof(uint32_t));
-
 }
 
 void CMixer::InitCSCMatrix(int Width)
@@ -2240,8 +2235,6 @@ void CMixer::Uninit()
     m_outputSurfaces.pop();
   }
   m_config.context->GetProcs().vdp_video_mixer_destroy(m_videoMixer);
-
-  delete [] m_BlackBar;
 }
 
 void CMixer::Flush()
@@ -2373,6 +2366,11 @@ void CMixer::InitCycle()
     m_processPicture.outputSurface = m_outputSurfaces.front();
     m_mixerInput[1].DVDPic.iWidth = m_config.outWidth;
     m_mixerInput[1].DVDPic.iHeight = m_config.outHeight;
+    if (m_mixerfield != VDP_VIDEO_MIXER_PICTURE_STRUCTURE_FRAME)
+    {
+      m_mixerInput[1].DVDPic.iHeight -= 6;
+      m_mixerInput[1].DVDPic.iDisplayHeight -= 6;
+    }
   }
   else
   {
@@ -2507,32 +2505,6 @@ void CMixer::ProcessPicture()
                                 0,
                                 NULL);
   CheckStatus(vdp_st, __LINE__);
-
-  if (m_mixerfield != VDP_VIDEO_MIXER_PICTURE_STRUCTURE_FRAME)
-  {
-    // in order to clip top and bottom lines when de-interlacing
-    // we black those lines as a work around for not working
-    // background colour using the mixer
-    // pixel perfect is preferred over overscanning or zooming
-
-    VdpRect clipRect = destRect;
-    clipRect.y1 = clipRect.y0 + 2;
-    uint32_t *data[] = {m_BlackBar};
-    uint32_t pitches[] = {destRect.x1};
-    vdp_st = m_config.context->GetProcs().vdp_output_surface_put_bits_native(m_processPicture.outputSurface,
-                                            (void**)data,
-                                            pitches,
-                                            &clipRect);
-    CheckStatus(vdp_st, __LINE__);
-
-    clipRect = destRect;
-    clipRect.y0 = clipRect.y1 - 2;
-    vdp_st = m_config.context->GetProcs().vdp_output_surface_put_bits_native(m_processPicture.outputSurface,
-                                            (void**)data,
-                                            pitches,
-                                            &clipRect);
-    CheckStatus(vdp_st, __LINE__);
-  }
 }
 
 
@@ -3063,7 +3035,12 @@ CVdpauRenderPicture* COutput::ProcessMixerPicture()
       GLMapSurfaces();
       retPic->sourceIdx = procPic.outputSurface;
       retPic->texture[0] = m_bufferPool.glOutputSurfaceMap[procPic.outputSurface].texture[0];
-      retPic->crop = CRect(0,0,0,0);
+      retPic->texWidth = m_config.outWidth;
+      retPic->texHeight = m_config.outHeight;
+      retPic->crop.x1 = 0;
+      retPic->crop.y1 = (m_config.outHeight - retPic->DVDPic.iHeight) / 2;
+      retPic->crop.x2 = m_config.outWidth;
+      retPic->crop.y2 = m_config.outHeight - retPic->crop.y1;
     }
     else
     {
