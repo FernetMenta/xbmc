@@ -341,7 +341,7 @@ bool COMXSelectionStreams::Get(StreamType type, CDemuxStream::EFlags flag, OMXSe
   CSingleLock lock(m_section);
   for(int i=0;i<(int)m_Streams.size();i++)
   {
-    if(m_Streams[i].type != type)
+    if(type && m_Streams[i].type != type)
       continue;
     if((m_Streams[i].flags & flag) != flag)
       continue;
