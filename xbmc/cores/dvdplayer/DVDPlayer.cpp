@@ -110,7 +110,7 @@ SelectionStream& CSelectionStreams::Get(StreamType type, int index)
   int count = -1;
   for(int i=0;i<(int)m_Streams.size();i++)
   {
-    if(m_Streams[i].type != type)
+    if(type && m_Streams[i].type != type)
       continue;
     count++;
     if(count == index)
