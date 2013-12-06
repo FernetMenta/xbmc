@@ -52,7 +52,7 @@ static enum AEChannel ALSAChannelMap51Wide[ALSA_MAX_CHANNELS + 1] = {
 };
 
 static enum AEChannel ALSAChannelMap71Wide[ALSA_MAX_CHANNELS + 1] = {
-  AE_CH_FL      , AE_CH_FR      , AE_CH_BL      , AE_CH_BR      , AE_CH_FC      , AE_CH_LFE     , AE_CH_BLOC      , AE_CH_BROC      ,
+  AE_CH_FL      , AE_CH_FR      , AE_CH_BL      , AE_CH_BR      , AE_CH_FC      , AE_CH_LFE     , AE_CH_FLOC      , AE_CH_FROC      ,
   AE_CH_UNKNOWN1, AE_CH_UNKNOWN2, AE_CH_UNKNOWN3, AE_CH_UNKNOWN4, AE_CH_UNKNOWN5, AE_CH_UNKNOWN6, AE_CH_UNKNOWN7, AE_CH_UNKNOWN8, /* for p16v devices */
   AE_CH_NULL
 };
@@ -133,6 +133,10 @@ inline CAEChannelInfo CAESinkALSA::GetChannelLayout(AEAudioFormat format)
   CAEChannelInfo info;
   for (unsigned int i = 0; i < count; ++i)
     info += channelMapOut[i];
+
+  CLog::Log(LOGDEBUG, "CAESinkALSA::GetChannelLayout - Input Channel Count: %d Output Channel Count: %d", format.m_channelLayout.Count(), count);
+  CLog::Log(LOGDEBUG, "CAESinkALSA::GetChannelLayout - Requested Layout: %s", std::string(format.m_channelLayout).c_str());
+  CLog::Log(LOGDEBUG, "CAESinkALSA::GetChannelLayout - Got Layout: %s", std::string(info).c_str());
 
   return info;
 }
