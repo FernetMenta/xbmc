@@ -52,10 +52,13 @@ static enum AEChannel ALSAChannelMap51Wide[ALSA_MAX_CHANNELS + 1] = {
 };
 
 static enum AEChannel ALSAChannelMap71Wide[ALSA_MAX_CHANNELS + 1] = {
-  AE_CH_FL      , AE_CH_FR      , AE_CH_BL      , AE_CH_BR      , AE_CH_FC      , AE_CH_LFE     , AE_CH_FLOC      , AE_CH_FROC      ,
+  AE_CH_FLOC      , AE_CH_FROC      , AE_CH_BL      , AE_CH_BR      , AE_CH_FC      , AE_CH_LFE     , AE_CH_FL      , AE_CH_FR      ,
   AE_CH_UNKNOWN1, AE_CH_UNKNOWN2, AE_CH_UNKNOWN3, AE_CH_UNKNOWN4, AE_CH_UNKNOWN5, AE_CH_UNKNOWN6, AE_CH_UNKNOWN7, AE_CH_UNKNOWN8, /* for p16v devices */
   AE_CH_NULL
 };
+
+static enum AEChannel *ChannelMapIn = ALSAChannelMap;
+static enum AEChannel *ChannelMapOut = ALSAChannelMap;
 
 static unsigned int ALSASampleRateList[] =
 {
@@ -95,8 +98,9 @@ CAESinkALSA::~CAESinkALSA()
 
 inline CAEChannelInfo CAESinkALSA::GetChannelLayout(AEAudioFormat format)
 {
-  enum AEChannel* channelMapOut = ALSAChannelMap;
   unsigned int count = 0;
+  ChannelMapIn = ALSAChannelMap; 
+  ChannelMapOut = ALSAChannelMap;
 
        if (format.m_dataFormat == AE_FMT_AC3 ||
            format.m_dataFormat == AE_FMT_DTS ||
@@ -110,20 +114,19 @@ inline CAEChannelInfo CAESinkALSA::GetChannelLayout(AEAudioFormat format)
     // According to CEA-861-D only RL and RR are known. In case of a format having SL and SR channels
     // but no BR BL channels, we use the wide map in order to open only the num of channels really
     // needed.
-    enum AEChannel* channelMapIn = ALSAChannelMap;
     if (format.m_channelLayout.HasChannel(AE_CH_SL) && !format.m_channelLayout.HasChannel(AE_CH_BL))
     {
-      channelMapIn = ALSAChannelMap51Wide;
-      channelMapOut = ALSAChannelMap51Wide;
+      ChannelMapIn = ALSAChannelMap51Wide;
+      ChannelMapOut = ALSAChannelMap51Wide;
     }
     else if (format.m_channelLayout.HasChannel(AE_CH_FLOC) && !format.m_channelLayout.HasChannel(AE_CH_SL))
     {
-      channelMapIn = ALSAChannelMap71Wide;
-      channelMapOut = ALSAChannelMap71Wide;
+      ChannelMapIn = ALSAChannelMap71Wide;
+      ChannelMapOut = ALSAChannelMap71Wide;
     }
     for (unsigned int c = 0; c < 8; ++c)
       for (unsigned int i = 0; i < format.m_channelLayout.Count(); ++i)
-        if (format.m_channelLayout[i] == channelMapIn[c])
+        if (format.m_channelLayout[i] == ChannelMapIn[c])
         {
           count = c + 1;
           break;
@@ -132,7 +135,7 @@ inline CAEChannelInfo CAESinkALSA::GetChannelLayout(AEAudioFormat format)
 
   CAEChannelInfo info;
   for (unsigned int i = 0; i < count; ++i)
-    info += channelMapOut[i];
+    info += ChannelMapOut[i];
 
   CLog::Log(LOGDEBUG, "CAESinkALSA::GetChannelLayout - Input Channel Count: %d Output Channel Count: %d", format.m_channelLayout.Count(), count);
   CLog::Log(LOGDEBUG, "CAESinkALSA::GetChannelLayout - Requested Layout: %s", std::string(format.m_channelLayout).c_str());
@@ -298,7 +301,7 @@ bool CAESinkALSA::InitializeHW(AEAudioFormat &format)
   /* update the channelLayout to what we managed to open */
   format.m_channelLayout.Reset();
   for (unsigned int i = 0; i < channelCount; ++i)
-    format.m_channelLayout += ALSAChannelMap[i];
+    format.m_channelLayout += ChannelMapOut[i];
 
   snd_pcm_format_t fmt = AEFormatToALSAFormat(format.m_dataFormat);
   if (fmt == SND_PCM_FORMAT_UNKNOWN)
@@ -1086,9 +1089,9 @@ void CAESinkALSA::EnumerateDevice(AEDeviceInfoList &list, const std::string &dev
   CAEChannelInfo alsaChannels;
   for (int i = 0; i < channels; ++i)
   {
-    if (!info.m_channels.HasChannel(ALSAChannelMap[i]))
-      info.m_channels += ALSAChannelMap[i];
-    alsaChannels += ALSAChannelMap[i];
+    if (!info.m_channels.HasChannel(ChannelMapOut[i]))
+      info.m_channels += ChannelMapOut[i];
+    alsaChannels += ChannelMapOut[i];
   }
 
   /* remove the channels from m_channels that we cant use */
