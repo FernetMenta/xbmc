@@ -138,6 +138,12 @@ inline CAEChannelInfo CAESinkALSA::GetChannelLayout(AEAudioFormat format, unsign
           break;
         }
   }
+ 
+  // ALSA always wants to open channels pairwise, e.g. 5.0 needs to be 
+  // opened as 5.1. Most of the time the LFE channel is missing. This 
+  // will add it until we have a better solution in ALSA 
+  if (count % 2 != 0)
+    count++;
 
   CAEChannelInfo info;
   for (unsigned int i = 0; i < count && i < maxChannels+1; ++i)
