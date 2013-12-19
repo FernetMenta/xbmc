@@ -233,6 +233,7 @@ void CDVDPlayerVideo::OpenStream(CDVDStreamInfo &hint, CDVDVideoCodec* codec)
   m_bCalcFrameRate = CSettings::Get().GetBool("videoplayer.usedisplayasclock") ||
                      CSettings::Get().GetInt("videoplayer.adjustrefreshrate") != ADJUST_REFRESHRATE_OFF;
   ResetFrameRateCalc();
+  m_bCalcSuccess = false;
 
   m_iDroppedRequest = 0;
   m_iLateFrames = 0;
@@ -553,28 +554,6 @@ void CDVDPlayerVideo::Process()
       // decoder still needs to provide an empty image structure, with correct flags
       m_pVideoCodec->SetDropState(bRequestDrop);
 
-      // ask codec to do deinterlacing if possible
-      EDEINTERLACEMODE mDeintMode = CMediaSettings::Get().GetCurrentVideoSettings().m_DeinterlaceMode;
-      EINTERLACEMETHOD mInt       = g_renderManager.AutoInterlaceMethod(CMediaSettings::Get().GetCurrentVideoSettings().m_InterlaceMethod);
-
-      unsigned int     mFilters = 0;
-
-      if (mDeintMode != VS_DEINTERLACEMODE_OFF)
-      {
-        if (mInt == VS_INTERLACEMETHOD_DEINTERLACE)
-          mFilters = CDVDVideoCodec::FILTER_DEINTERLACE_ANY;
-        else if(mInt == VS_INTERLACEMETHOD_DEINTERLACE_HALF)
-          mFilters = CDVDVideoCodec::FILTER_DEINTERLACE_ANY | CDVDVideoCodec::FILTER_DEINTERLACE_HALFED;
-
-        if (mDeintMode == VS_DEINTERLACEMODE_AUTO && mFilters)
-          mFilters |=  CDVDVideoCodec::FILTER_DEINTERLACE_FLAGGED;
-      }
-
-      if (!g_renderManager.Supports(RENDERFEATURE_ROTATION))
-        mFilters |= CDVDVideoCodec::FILTER_ROTATE;
-
-      mFilters = m_pVideoCodec->SetFilters(mFilters);
-
       int iDecoderState = m_pVideoCodec->Decode(pPacket->pData, pPacket->iSize, pPacket->dts, pPacket->pts);
 
       // buffer packets so we can recover should decoder flush for some reason
@@ -661,6 +640,8 @@ void CDVDPlayerVideo::Process()
 
             //Deinterlace if codec said format was interlaced or if we have selected we want to deinterlace
             //this video
+            EDEINTERLACEMODE mDeintMode = CMediaSettings::Get().GetCurrentVideoSettings().m_DeinterlaceMode;
+            EINTERLACEMETHOD mInt       = g_renderManager.AutoInterlaceMethod(CMediaSettings::Get().GetCurrentVideoSettings().m_InterlaceMethod);
             if ((mDeintMode == VS_DEINTERLACEMODE_AUTO && (picture.iFlags & DVP_FLAG_INTERLACED)) || mDeintMode == VS_DEINTERLACEMODE_FORCE)
             {
               if(mInt == VS_INTERLACEMETHOD_SW_BLEND)
@@ -703,7 +684,15 @@ void CDVDPlayerVideo::Process()
             }
 
             if (picture.iRepeatPicture)
+            {
+              double pts;
+              int skipped, deint;
+              m_pVideoCodec->GetCodecStats(pts, skipped, deint);
+              picture.iDuration = frametime;
+              if (m_bCalcSuccess && deint)
+                picture.iDuration *= 2;
               picture.iDuration *= picture.iRepeatPicture + 1;
+            }
 
             int iResult = OutputPicture(&picture, pts);
 
@@ -1537,6 +1526,7 @@ void CDVDPlayerVideo::CalcFrameRate()
         CLog::Log(LOGDEBUG,"%s framerate was:%f calculated:%f", __FUNCTION__, m_fFrameRate, m_fStableFrameRate / m_iFrameRateCount);
         m_fFrameRate = m_fStableFrameRate / m_iFrameRateCount;
         m_bFpsInvalid = false;
+        m_bCalcSuccess = true;
       }
 
       //reset the stored framerates

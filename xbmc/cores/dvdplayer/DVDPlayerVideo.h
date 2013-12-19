@@ -160,6 +160,7 @@ protected:
   int    m_iFrameRateErr;    //how many frames we couldn't calculate the framerate, we give up after a while
   int    m_iFrameRateLength; //how many seconds we should measure the framerate
                              //this is increased exponentially from CDVDPlayerVideo::CalcFrameRate()
+  bool   m_bCalcSuccess;
 
   bool   m_bFpsInvalid;      // needed to ignore fps (e.g. dvd stills)
 
