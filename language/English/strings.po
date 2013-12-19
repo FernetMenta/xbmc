@@ -6092,7 +6092,13 @@ msgctxt "#13456"
 msgid "Hardware accelerated"
 msgstr ""
 
-#empty strings from id 13457 to 13499
+#. Option for video related setting #13454: sw filter
+#: system/settings/settings.xml
+msgctxt "#13457"
+msgid "Use SW Filter for VAAPI"
+msgstr ""
+
+#empty strings from id 13458 to 13499
 
 #: system/settings/settings.xml
 msgctxt "#13500"
@@ -15177,7 +15183,14 @@ msgctxt "#36431"
 msgid "Defines whether video decoding should be performed in software (requires more CPU) or with hardware acceleration where possible."
 msgstr ""
 
-#empty strings from id 36432 to 36499
+#. Description for video related setting #13457: vaapi sw filter 
+#: system/settings/settings.xml
+msgctxt "#36432"
+msgid "This option enables the deinterlacing methods available for software decoding. It gives the possiblity to use high quality deinterlacers in combination with VAAPI."
+msgstr ""
+
+#empty strings from id 36433 to 36499
+
 #end reservation
 
 #: system/settings/settings.xml
