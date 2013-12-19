@@ -387,7 +387,7 @@ unsigned int CDVDVideoCodecFFmpeg::SetFilters(unsigned int flags)
 {
   m_filters_next.clear();
 
-  if(m_pHardware)
+  if(m_pHardware && !m_pHardware->UseFilter())
     return 0;
 
   if(flags & FILTER_ROTATE)
@@ -461,10 +461,10 @@ int CDVDVideoCodecFFmpeg::Decode(uint8_t* pData, int iSize, double dts, double p
     if(section)
       lock = shared_ptr<CSingleLock>(new CSingleLock(*section));
 
-    int result;
+    int result = 0;
     if(pData)
       result = m_pHardware->Check(m_pCodecContext);
-    else
+    else if (!m_pHardware->UseFilter())
       result = m_pHardware->Decode(m_pCodecContext, NULL);
 
     if(result)
@@ -519,11 +519,19 @@ int CDVDVideoCodecFFmpeg::Decode(uint8_t* pData, int iSize, double dts, double p
   || m_pCodecContext->codec_id == AV_CODEC_ID_SVQ3)
     m_started = true;
 
-  if(m_pHardware == NULL)
+  if(m_pHardware == NULL || m_pHardware->UseFilter())
   {
+    if (m_pHardware)
+    {
+      int result = m_pHardware->Decode(m_pCodecContext, m_pFrame);
+      if (result == VC_BUFFER)
+        return result;
+      m_pHardware->MapFrame(m_pCodecContext, m_pFrame);
+    }
+
     bool need_scale = std::find( m_formats.begin()
                                , m_formats.end()
-                               , m_pCodecContext->pix_fmt) == m_formats.end();
+                               , m_pFrame->format) == m_formats.end();
 
     bool need_reopen  = false;
     if(!m_filters.Equals(m_filters_next))
@@ -531,7 +539,7 @@ int CDVDVideoCodecFFmpeg::Decode(uint8_t* pData, int iSize, double dts, double p
 
     if(m_pFilterIn)
     {
-      if(m_pFilterIn->outputs[0]->format != m_pCodecContext->pix_fmt
+      if(m_pFilterIn->outputs[0]->format != m_pFrame->format
       || m_pFilterIn->outputs[0]->w      != m_pCodecContext->width
       || m_pFilterIn->outputs[0]->h      != m_pCodecContext->height)
         need_reopen = true;
@@ -548,7 +556,7 @@ int CDVDVideoCodecFFmpeg::Decode(uint8_t* pData, int iSize, double dts, double p
   }
 
   int result;
-  if(m_pHardware)
+  if(m_pHardware && !m_pHardware->UseFilter())
     result = m_pHardware->Decode(m_pCodecContext, m_pFrame);
   else if(m_pFilterGraph)
     result = FilterProcess(m_pFrame);
@@ -636,7 +644,10 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(DVDVideoPicture* pDvdVideoPicture)
     pDvdVideoPicture->stereo_mode[sizeof(pDvdVideoPicture->stereo_mode)-1] = '\0';
   }
 
-  pDvdVideoPicture->iRepeatPicture = 0.5 * m_pFrame->repeat_pict;
+  if (m_pFrame->repeat_pict >= 0)
+    pDvdVideoPicture->iRepeatPicture = 0.5 * m_pFrame->repeat_pict;
+  else
+    pDvdVideoPicture->iRepeatPicture = 0;
   pDvdVideoPicture->iFlags = DVP_FLAG_ALLOCATED;
   pDvdVideoPicture->iFlags |= m_pFrame->interlaced_frame ? DVP_FLAG_INTERLACED : 0;
   pDvdVideoPicture->iFlags |= m_pFrame->top_field_first ? DVP_FLAG_TOP_FIELD_FIRST: 0;
@@ -644,6 +655,7 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(DVDVideoPicture* pDvdVideoPicture)
   pDvdVideoPicture->chroma_position = m_pCodecContext->chroma_sample_location;
   pDvdVideoPicture->color_primaries = m_pCodecContext->color_primaries;
   pDvdVideoPicture->color_transfer = m_pCodecContext->color_trc;
+  pDvdVideoPicture->color_matrix = m_pCodecContext->colorspace;
   if(m_pCodecContext->color_range == AVCOL_RANGE_JPEG
   || m_pCodecContext->pix_fmt     == PIX_FMT_YUVJ420P)
     pDvdVideoPicture->color_range = 1;
@@ -698,7 +710,7 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(DVDVideoPicture* pDvdVideoPicture)
 
 bool CDVDVideoCodecFFmpeg::GetPicture(DVDVideoPicture* pDvdVideoPicture)
 {
-  if(m_pHardware)
+  if(m_pHardware && !m_pHardware->UseFilter())
     return m_pHardware->GetPicture(m_pCodecContext, m_pFrame, pDvdVideoPicture);
 
   if(!GetPictureCommon(pDvdVideoPicture))
@@ -723,6 +735,7 @@ bool CDVDVideoCodecFFmpeg::GetPicture(DVDVideoPicture* pDvdVideoPicture)
     pix_fmt = (PixelFormat)m_pFrame->format;
 
   pDvdVideoPicture->format = CDVDCodecUtils::EFormatFromPixfmt(pix_fmt);
+
   return true;
 }
 
@@ -737,7 +750,7 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const CStdString& filters, bool scale)
   if (filters.empty() && !scale)
     return 0;
 
-  if (m_pHardware)
+  if (m_pHardware && !m_pHardware->UseFilter())
   {
     CLog::Log(LOGWARNING, "CDVDVideoCodecFFmpeg::FilterOpen - skipped opening filters on hardware decode");
     return 0;
@@ -755,7 +768,7 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const CStdString& filters, bool scale)
   CStdString args = StringUtils::Format("%d:%d:%d:%d:%d:%d:%d",
                                         m_pCodecContext->width,
                                         m_pCodecContext->height,
-                                        m_pCodecContext->pix_fmt,
+                                        m_pFrame->format,
                                         m_pCodecContext->time_base.num,
                                         m_pCodecContext->time_base.den,
                                         m_pCodecContext->sample_aspect_ratio.num,
