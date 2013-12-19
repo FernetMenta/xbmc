@@ -101,11 +101,31 @@ struct CHolder
   {}
 };
 
+struct CProcPic
+{
+  AVFrame frame;
+  CSurfacePtr surface;
+  CProcPic()
+  {}
+  CProcPic(const CProcPic &other)
+  {
+    memcpy(&this->frame, &other.frame, sizeof(AVFrame));
+    surface = other.surface;
+  }
+  CProcPic & operator= (const CProcPic &other)
+  {
+    memcpy(&this->frame, &other.frame, sizeof(AVFrame));
+    surface = other.surface;
+    return *this;
+  }
+};
+
 class CDecoder
   : public CDVDVideoCodecFFmpeg::IHardwareDecoder
 {
   bool EnsureContext(AVCodecContext *avctx);
   bool EnsureSurfaces(AVCodecContext *avctx, unsigned n_surfaces_count);
+  void CheckUseFilter();
 public:
   CDecoder();
  ~CDecoder();
@@ -114,9 +134,12 @@ public:
   virtual bool GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture);
   virtual int  Check     (AVCodecContext* avctx);
   virtual void Close();
+  virtual void Reset();
   virtual const std::string Name() { return "vaapi"; }
   virtual CCriticalSection* Section() { if(m_display) return m_display.get(); else return NULL; }
   virtual unsigned GetAllowedReferences();
+  virtual bool UseFilter() { return m_use_filter; }
+  virtual bool MapFrame(AVCodecContext* avctx, AVFrame* frame);
 
   int   GetBuffer(AVCodecContext *avctx, AVFrame *pic);
   void  RelBuffer(AVCodecContext *avctx, AVFrame *pic);
@@ -132,10 +155,14 @@ protected:
   int                    m_refs;
   std::list<CSurfacePtr> m_surfaces_used;
   std::list<CSurfacePtr> m_surfaces_free;
+  std::list<CProcPic>    m_surfaces_proc;
 
   CDisplayPtr    m_display;
   VAConfigID     m_config;
   VAContextID    m_context;
+  bool           m_use_filter;
+  uint8_t       *m_frame_buffer;
+  uint8_t       *m_cache;
 
   vaapi_context *m_hwaccel;
 

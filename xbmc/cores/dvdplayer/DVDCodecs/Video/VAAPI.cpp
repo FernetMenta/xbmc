@@ -25,6 +25,12 @@
 #include "DVDVideoCodec.h"
 #include <boost/scoped_array.hpp>
 #include <boost/weak_ptr.hpp>
+#include "smmintrin.h"
+#include "XMemUtils.h"
+#include "utils/CPUInfo.h"
+
+#define CACHED_BUFFER_SIZE 4096
+void CopyFrame( void * pSrc, void * pDest, void * pCacheBlock, UINT width, UINT height, UINT pitch );
 
 #define CHECK(a) \
 do { \
@@ -157,12 +163,16 @@ CDecoder::CDecoder()
   m_context         = 0;
   m_hwaccel         = (vaapi_context*)calloc(1, sizeof(vaapi_context));
   memset(m_surfaces, 0, sizeof(*m_surfaces));
+  m_frame_buffer    = NULL;
+  m_cache           = NULL;
 }
 
 CDecoder::~CDecoder()
 {
   Close();
   free(m_hwaccel);
+  _aligned_free(m_frame_buffer);
+  _aligned_free(m_cache);
 }
 
 void CDecoder::RelBuffer(AVCodecContext *avctx, AVFrame *pic)
@@ -375,6 +385,8 @@ bool CDecoder::Open(AVCodecContext *avctx, enum PixelFormat fmt, unsigned int su
   if (!EnsureContext(avctx))
     return false;
 
+  CheckUseFilter();
+
   m_hwaccel->display     = m_display->get();
 
   avctx->hwaccel_context = m_hwaccel;
@@ -459,7 +471,34 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* frame)
     return status;
 
   if(frame)
+  {
+    if (m_use_filter)
+    {
+      VASurfaceID surface = GetSurfaceID(frame);
+      std::list<CSurfacePtr>::iterator it;
+      for(it = m_surfaces_used.begin(); it != m_surfaces_used.end(); ++it)
+      {
+        if((*it)->m_id == surface)
+        {
+          m_holder.surface = *it;
+          break;
+        }
+      }
+      if (it == m_surfaces_used.end())
+      {
+        CLog::Log(LOGERROR, "VAAPI::Decode - surface not found");
+        return VC_ERROR;
+      }
+      CProcPic pic;
+      memcpy(&pic.frame, frame, sizeof(AVFrame));
+      pic.surface = *it;
+      m_surfaces_proc.push_back(pic);
+      if (m_surfaces_proc.size() < m_renderbuffers_count)
+        return VC_BUFFER;
+    }
+
     return VC_BUFFER | VC_PICTURE;
+  }
   else
     return VC_BUFFER;
 }
@@ -535,6 +574,198 @@ int CDecoder::Check(AVCodecContext* avctx)
 unsigned CDecoder::GetAllowedReferences()
 {
   return m_renderbuffers_count;
+}
+
+void CDecoder::Reset()
+{
+  m_surfaces_proc.clear();
+}
+
+void CDecoder::CheckUseFilter()
+{
+  m_use_filter = true;
+  _aligned_free(m_frame_buffer);
+  _aligned_free(m_cache);
+  if (!CSettings::Get().GetBool("videoplayer.usevaapirender"))
+  {
+    if (!(g_cpuInfo.GetCPUFeatures() & CPU_FEATURE_SSE4))
+    {
+      CLog::Log(LOGNOTICE,"VAAPI::CheckUseFilter cpu does not support SSE4");
+      m_use_filter = false;
+      int i;
+      i++;
+      return;
+    }
+    VASurfaceStatus surf_status;
+    VAImage image;
+    VASurfaceID surface = m_surfaces_free.front()->m_id;
+    VAStatus status = status = vaDeriveImage(m_display->get(), surface, &image);
+    m_use_filter = true;
+    if (status != VA_STATUS_SUCCESS)
+    {
+      CLog::Log(LOGNOTICE,"VAAPI::CheckUseFilter vaDeriveImage not supported");
+      m_use_filter = false;
+    }
+    if (image.format.fourcc != VA_FOURCC_NV12)
+    {
+      CLog::Log(LOGNOTICE,"VAAPI::CheckUseFilter image format not NV12");
+      m_use_filter = false;
+    }
+    if ((image.pitches[0] % 64) || (image.pitches[1] % 64))
+    {
+      CLog::Log(LOGNOTICE,"VAAPI::CheckUseFilter patches no multiple of 64");
+      m_use_filter = false;
+    }
+    if (m_use_filter)
+    {
+      m_frame_buffer = (uint8_t*)_aligned_malloc(image.height*image.width*2 + 256, 64);
+      m_cache = (uint8_t*)_aligned_malloc(CACHED_BUFFER_SIZE, 64);
+    }
+    vaDestroyImage(m_display->get(),image.image_id);
+  }
+  else
+  {
+    m_use_filter = false;
+  }
+}
+
+bool CDecoder::MapFrame(AVCodecContext* avctx, AVFrame* frame)
+{
+  if (m_surfaces_proc.empty())
+  {
+    return false;
+  }
+  if(frame)
+  {
+    CProcPic pic = m_surfaces_proc.front();
+    m_surfaces_proc.pop_front();
+    VASurfaceID surface = pic.surface->m_id;
+    VASurfaceStatus surf_status;
+    VAImage image;
+    uint8_t *buf;
+    CHECK(vaQuerySurfaceStatus(m_display->get(), surface, &surf_status))
+    while (surf_status != VASurfaceReady)
+    {
+      Sleep(1);
+      CHECK(vaQuerySurfaceStatus(m_display->get(), surface, &surf_status))
+    }
+    CHECK(vaDeriveImage(m_display->get(), surface, &image));
+    CHECK(vaMapBuffer(m_display->get(), image.buf, (void**)&buf))
+
+    uint8_t *src, *dst;
+    src = buf + image.offsets[0];
+    dst = m_frame_buffer + image.offsets[0];
+    CopyFrame(src, dst, m_cache, image.width, image.height, image.pitches[0]);
+    src = buf + image.offsets[1];
+    dst = m_frame_buffer + image.offsets[1];
+    CopyFrame(src, dst, m_cache, image.width, image.height/2, image.pitches[1]);
+
+    memcpy(frame, &pic.frame, sizeof(AVFrame));
+    frame->format = AV_PIX_FMT_NV12;
+    frame->data[0] = m_frame_buffer + image.offsets[0];
+    frame->linesize[0] = image.pitches[0];
+    frame->data[1] = m_frame_buffer + image.offsets[1];
+    frame->linesize[1] = image.pitches[1];
+    frame->data[2] = NULL;
+    frame->data[3] = NULL;
+    frame->pkt_size = image.data_size;
+
+    CHECK(vaUnmapBuffer(m_display->get(), image.buf))
+    CHECK(vaDestroyImage(m_display->get(),image.image_id))
+  }
+  return true;
+}
+
+//  http://software.intel.com/en-us/articles/copying-accelerated-video-decode-frame-buffers
+//
+//  COPIES VIDEO FRAMES FROM USWC MEMORY TO WB SYSTEM MEMORY VIA CACHED BUFFER
+//    ASSUMES PITCH IS A MULTIPLE OF 64B CACHE LINE SIZE, WIDTH MAY NOT BE
+
+typedef unsigned int UINT;
+
+void CopyFrame( void * pSrc, void * pDest, void * pCacheBlock,
+    UINT width, UINT height, UINT pitch )
+{
+#ifdef __SSE4_1__
+
+  __m128i         x0, x1, x2, x3;
+  __m128i         *pLoad;
+  __m128i         *pStore;
+  __m128i         *pCache;
+  UINT            x, y, yLoad, yStore;
+  UINT            rowsPerBlock;
+  UINT            width64;
+  UINT            extraPitch;
+
+
+  rowsPerBlock = CACHED_BUFFER_SIZE / pitch;
+  width64 = (width + 63) & ~0x03f;
+  extraPitch = (pitch - width64) / 16;
+
+  pLoad  = (__m128i *)pSrc;
+  pStore = (__m128i *)pDest;
+
+  //  COPY THROUGH 4KB CACHED BUFFER
+  for( y = 0; y < height; y += rowsPerBlock  )
+  {
+    //  ROWS LEFT TO COPY AT END
+    if( y + rowsPerBlock > height )
+      rowsPerBlock = height - y;
+
+    pCache = (__m128i *)pCacheBlock;
+
+    _mm_mfence();
+
+    // LOAD ROWS OF PITCH WIDTH INTO CACHED BLOCK
+    for( yLoad = 0; yLoad < rowsPerBlock; yLoad++ )
+    {
+      // COPY A ROW, CACHE LINE AT A TIME
+      for( x = 0; x < pitch; x +=64 )
+      {
+        x0 = _mm_stream_load_si128( pLoad +0 );
+        x1 = _mm_stream_load_si128( pLoad +1 );
+        x2 = _mm_stream_load_si128( pLoad +2 );
+        x3 = _mm_stream_load_si128( pLoad +3 );
+
+        _mm_store_si128( pCache +0,     x0 );
+        _mm_store_si128( pCache +1, x1 );
+        _mm_store_si128( pCache +2, x2 );
+        _mm_store_si128( pCache +3, x3 );
+
+        pCache += 4;
+        pLoad += 4;
+      }
+    }
+
+    _mm_mfence();
+
+    pCache = (__m128i *)pCacheBlock;
+
+    // STORE ROWS OF FRAME WIDTH FROM CACHED BLOCK
+    for( yStore = 0; yStore < rowsPerBlock; yStore++ )
+    {
+      // copy a row, cache line at a time
+      for( x = 0; x < width64; x +=64 )
+      {
+        x0 = _mm_load_si128( pCache );
+        x1 = _mm_load_si128( pCache +1 );
+        x2 = _mm_load_si128( pCache +2 );
+        x3 = _mm_load_si128( pCache +3 );
+
+        _mm_stream_si128( pStore,       x0 );
+        _mm_stream_si128( pStore +1, x1 );
+        _mm_stream_si128( pStore +2, x2 );
+        _mm_stream_si128( pStore +3, x3 );
+
+        pCache += 4;
+        pStore += 4;
+      }
+
+      pCache += extraPitch;
+      pStore += extraPitch;
+    }
+  }
+#endif
 }
 
 #endif
