@@ -873,6 +873,14 @@ elif test "$use_arch" = "arm"; then
       FFMPEG_EXTRACFLAGS="$FFMPEG_EXTRACFLAGS -mfpu=neon"
     fi
   fi
+elif test "$ARCH" = "x86_64-linux"; then
+    SAVE_CFLAGS="$CFLAGS"
+    CFLAGS="-msse4.1"
+    AC_COMPILE_IFELSE(
+      [AC_LANG_SOURCE([int foo;])],
+      [ CFLAGS="$SAVE_CFLAGS -msse4.1"
+        CXXFLAGS="$CXXFLAGS -msse4.1"],
+      [ CFLAGS="$SAVE_CFLAGS"])
 fi
 
 # Checks for library functions.
