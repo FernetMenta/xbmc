@@ -424,6 +424,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             m_state = AE_TOP_CONFIGURED_SUSPEND;
             m_extDeferData = true;
           }
+          msg->Reply(CActiveAEControlProtocol::ACC);
           return;
         case CActiveAEControlProtocol::PAUSESTREAM:
           CActiveAEStream *stream;
@@ -2270,7 +2271,15 @@ void CActiveAE::KeepConfiguration(unsigned int millis)
 
 void CActiveAE::OnLostDevice()
 {
-  m_controlPort.SendOutMessage(CActiveAEControlProtocol::DISPLAYLOST);
+  Message *reply;
+  if (m_controlPort.SendOutMessageSync(CActiveAEControlProtocol::DISPLAYLOST, &reply, 2000))
+  {
+    if(reply->signal != CActiveAEControlProtocol::ACC)
+      CLog::Log(LOGDEBUG, "CActiveAE::OnLostDevice - Sink did not want to suspend");
+  
+    reply->Release();
+  }
+  reply = NULL;
 }
 
 void CActiveAE::OnResetDevice()
