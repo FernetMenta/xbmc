@@ -323,6 +323,12 @@ CHECK_LIBADD=@WAYLAND_TEST_LIBS@
 endif
 endif
 
+ifeq (@USE_SSE4@,1)
+FINAL_TARGETS+=sse4
+sse4 : force
+	$(MAKE) -C xbmc/linux/sse4
+endif
+
 CHECK_PROGRAMS = xbmc-test
 
 CLEAN_FILES += $(CHECK_PROGRAMS) $(CHECK_EXTENSIONS)
