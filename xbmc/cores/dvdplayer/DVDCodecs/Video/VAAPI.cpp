@@ -586,7 +586,7 @@ void CDecoder::CheckUseFilter()
   m_use_filter = true;
   _aligned_free(m_frame_buffer);
   _aligned_free(m_cache);
-  if (!CSettings::Get().GetBool("videoplayer.usevaapirender"))
+  if (CSettings::Get().GetBool("videoplayer.usevaapiswfilter"))
   {
     if (!(g_cpuInfo.GetCPUFeatures() & CPU_FEATURE_SSE4))
     {

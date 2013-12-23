@@ -436,13 +436,13 @@
           <default>true</default>
           <control type="toggle" />
         </setting>
-        <setting id="videoplayer.usevaapirender" type="boolean" label="13441" help="36424">
+        <setting id="videoplayer.usevaapiswfilter" type="boolean" label="13441" help="36424">
           <requirement>HAVE_LIBVA</requirement>
           <dependencies>
             <dependency type="visible" setting="videoplayer.usevaapi" operator="is">true</dependency>
           </dependencies>
           <level>2</level>
-          <default>true</default>
+          <default>false</default>
           <control type="toggle" />
         </setting>
         <setting id="videoplayer.usedxva2" type="boolean" label="13427" help="36158">

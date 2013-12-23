@@ -6003,7 +6003,7 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#13441"
-msgid "Use VAAPI render method"
+msgid "Use SW Filter for VAAPI"
 msgstr ""
 
 #empty strings from id 13442 to 13499
@@ -14705,7 +14705,7 @@ msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#36424"
-msgid "VAAPI render method is faster but not using it enables deinterlacing methods available for software decoding"
+msgid "This option enables the deinterlacing methods available for software decoding. It gives the possiblity to use high quality deinterlacers in combination with VAAPI."
 msgstr ""
 
 #empty strings from id 36425 to 36499
