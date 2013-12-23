@@ -425,6 +425,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
             m_state = AE_TOP_CONFIGURED_SUSPEND;
             m_extDeferData = true;
           }
+          msg->Reply(CActiveAEControlProtocol::ACC);
           return;
         case CActiveAEControlProtocol::PAUSESTREAM:
           CActiveAEStream *stream;
@@ -2251,7 +2252,22 @@ void CActiveAE::KeepConfiguration(unsigned int millis)
 
 void CActiveAE::OnLostDevice()
 {
-  m_controlPort.SendOutMessage(CActiveAEControlProtocol::DISPLAYLOST);
+  Message *reply;
+  if (m_controlPort.SendOutMessageSync(CActiveAEControlProtocol::DISPLAYLOST,
+                                                 &reply,
+                                                 5000))
+  {
+    bool success = reply->signal == CActiveAEControlProtocol::ACC ? true : false;
+    reply->Release();
+    if (!success)
+    {
+      CLog::Log(LOGERROR, "ActiveAE::%s - returned error", __FUNCTION__);
+    }
+  }
+  else
+  {
+    CLog::Log(LOGERROR, "ActiveAE::%s - timed out", __FUNCTION__);
+  }
 }
 
 void CActiveAE::OnResetDevice()
