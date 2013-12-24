@@ -37,6 +37,7 @@
 #include "utils/log.h"
 #include "boost/shared_ptr.hpp"
 #include "threads/Atomics.h"
+#include "settings/MediaSettings.h"
 
 #ifndef TARGET_POSIX
 #define RINT(x) ((x) >= 0 ? ((int)((x) + 0.5)) : ((int)((x) - 0.5)))
@@ -534,6 +535,34 @@ int CDVDVideoCodecFFmpeg::Decode(uint8_t* pData, int iSize, double dts, double p
                                , m_pFrame->format) == m_formats.end();
 
     bool need_reopen  = false;
+
+
+    // ask codec to do deinterlacing if possible
+    EDEINTERLACEMODE mDeintMode = CMediaSettings::Get().GetCurrentVideoSettings().m_DeinterlaceMode;
+    EINTERLACEMETHOD mInt       = g_renderManager.AutoInterlaceMethod(CMediaSettings::Get().GetCurrentVideoSettings().m_InterlaceMethod);
+
+    unsigned int mFilters = 0;
+
+    if (mDeintMode != VS_DEINTERLACEMODE_OFF)
+    {
+      if (mDeintMode == VS_DEINTERLACEMODE_FORCE ||
+          m_pFrame->interlaced_frame)
+      {
+        if (mInt == VS_INTERLACEMETHOD_DEINTERLACE)
+          mFilters = CDVDVideoCodec::FILTER_DEINTERLACE_ANY;
+        else if(mInt == VS_INTERLACEMETHOD_DEINTERLACE_HALF)
+          mFilters = CDVDVideoCodec::FILTER_DEINTERLACE_ANY | CDVDVideoCodec::FILTER_DEINTERLACE_HALFED;
+
+        if (mDeintMode == VS_DEINTERLACEMODE_AUTO && mFilters)
+          mFilters |=  CDVDVideoCodec::FILTER_DEINTERLACE_FLAGGED;
+      }
+    }
+
+    if (!g_renderManager.Supports(RENDERFEATURE_ROTATION))
+      mFilters |= CDVDVideoCodec::FILTER_ROTATE;
+
+    SetFilters(mFilters);
+
     if(!m_filters.Equals(m_filters_next))
       need_reopen = true;
 
