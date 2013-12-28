@@ -876,7 +876,7 @@ elif test "$use_arch" = "arm"; then
 fi
 
 use_sse4=no
-if test "$ARCH" = "x86_64-linux"; then
+if test "$ARCH" = "x86_64-linux" || test "$ARCH" = "i486-linux"; then
     SAVE_CFLAGS="$CFLAGS"
     CFLAGS="-msse4.1"
     AC_COMPILE_IFELSE(
