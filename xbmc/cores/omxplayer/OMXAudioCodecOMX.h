@@ -21,9 +21,9 @@
  */
 
 #include "cores/AudioEngine/Utils/AEAudioFormat.h"
-#include "DllAvCodec.h"
-#include "DllAvFormat.h"
-#include "DllAvUtil.h"
+#include "libavcodec/avcodec.h"
+#include "libavformat/avformat.h"
+#include "libavutil/avutil.h"
 #include "DllSwResample.h"
 
 #include "DVDStreamInfo.h"
@@ -63,7 +63,4 @@ protected:
 
   bool m_bFirstFrame;
   bool m_bGotFrame;
-  DllAvCodec m_dllAvCodec;
-  DllAvUtil m_dllAvUtil;
-  DllSwResample m_dllSwResample;
 };

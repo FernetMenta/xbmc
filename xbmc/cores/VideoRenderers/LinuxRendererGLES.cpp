@@ -44,7 +44,7 @@
 #include "windowing/WindowingFactory.h"
 #include "dialogs/GUIDialogKaiToast.h"
 #include "guilib/Texture.h"
-#include "lib/DllSwScale.h"
+#include "lib/libswscale/swscale.h"
 #include "../dvdplayer/DVDCodecs/Video/OpenMaxVideo.h"
 #include "threads/SingleLock.h"
 #include "RenderCapture.h"
@@ -133,7 +133,6 @@ CLinuxRendererGLES::CLinuxRendererGLES()
   m_rgbBuffer = NULL;
   m_rgbBufferSize = 0;
 
-  m_dllSwScale = new DllSwScale;
   m_sw_context = NULL;
   m_NumYV12Buffers = 0;
   m_iLastRenderBuffer = 0;
@@ -168,8 +167,6 @@ CLinuxRendererGLES::~CLinuxRendererGLES()
     delete m_pYUVShader;
     m_pYUVShader = NULL;
   }
-
-  delete m_dllSwScale;
 }
 
 bool CLinuxRendererGLES::ValidateRenderTarget()
@@ -607,9 +604,6 @@ unsigned int CLinuxRendererGLES::PreInit()
   // setup the background colour
   m_clearColour = (float)(g_advancedSettings.m_videoBlackBarColour & 0xff) / 0xff;
 
-  if (!m_dllSwScale->Load())
-    CLog::Log(LOGERROR,"CLinuxRendererGL::PreInit - failed to load rescale libraries!");
-
   return true;
 }
 
@@ -838,9 +832,9 @@ void CLinuxRendererGLES::UnInit()
   for (int i = 0; i < NUM_BUFFERS; ++i)
     (this->*m_textureDelete)(i);
 
-  if (m_dllSwScale && m_sw_context)
+  if (m_sw_context)
   {
-    m_dllSwScale->sws_freeContext(m_sw_context);
+    sws_freeContext(m_sw_context);
     m_sw_context = NULL;
   }
 
@@ -1679,7 +1673,7 @@ void CLinuxRendererGLES::UploadYV12Texture(int source)
     else
 #endif
     {
-      m_sw_context = m_dllSwScale->sws_getCachedContext(m_sw_context,
+      m_sw_context = sws_getCachedContext(m_sw_context,
         im->width, im->height, PIX_FMT_YUV420P,
         im->width, im->height, PIX_FMT_RGBA,
         SWS_FAST_BILINEAR, NULL, NULL, NULL);
@@ -1688,7 +1682,7 @@ void CLinuxRendererGLES::UploadYV12Texture(int source)
       int srcStride[] = { im->stride[0], im->stride[1], im->stride[2], 0 };
       uint8_t *dst[]  = { m_rgbBuffer, 0, 0, 0 };
       int dstStride[] = { m_sourceWidth*4, 0, 0, 0 };
-      m_dllSwScale->sws_scale(m_sw_context, src, srcStride, 0, im->height, dst, dstStride);
+      sws_scale(m_sw_context, src, srcStride, 0, im->height, dst, dstStride);
     }
   }
 
