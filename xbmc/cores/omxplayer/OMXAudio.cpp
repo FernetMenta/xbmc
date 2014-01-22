@@ -414,7 +414,7 @@ bool COMXAudio::Initialize(AEAudioFormat format, OMXClock *clock, CDVDStreamInfo
 
   Deinitialize();
 
-  if(!m_dllAvUtil.Load())
+  if(!Load())
     return false;
 
   m_HWDecode    = bUseHWDecode;
@@ -746,7 +746,7 @@ bool COMXAudio::Deinitialize()
   m_extradata = NULL;
   m_extrasize = 0;
 
-  m_dllAvUtil.Unload();
+  Unload();
 
   while(!m_ampqueue.empty())
     m_ampqueue.pop_front();
@@ -1543,7 +1543,7 @@ unsigned int COMXAudio::SyncAC3(BYTE* pData, unsigned int iSize)
     else crc_size = (framesize >> 1) + (framesize >> 3) - 1;
 
     if (crc_size <= iSize - skip)
-      if(m_dllAvUtil.av_crc(m_dllAvUtil.av_crc_get_table(AV_CRC_16_ANSI), 0, &pData[2], crc_size * 2))
+      if(av_crc(av_crc_get_table(AV_CRC_16_ANSI), 0, &pData[2], crc_size * 2))
         continue;
 
     /* if we get here, we can sync */
