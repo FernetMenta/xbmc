@@ -24,7 +24,7 @@
 #include "threads/CriticalSection.h"
 #include "threads/SystemClock.h"
 #include <map>
-#include "lib/ffmpeg.h"
+#include "cores/FFmpeg.h"
 
 class CDVDDemuxFFmpeg;
 class CURL;
