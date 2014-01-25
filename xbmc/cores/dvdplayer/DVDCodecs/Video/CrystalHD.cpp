@@ -41,7 +41,7 @@ extern "C" {
 }
 #include "utils/TimeUtils.h"
 #include "windowing/WindowingFactory.h"
-#include "lib/ffmpeg.h"
+#include "cores/FFmpeg.h"
 
 namespace BCM
 {
