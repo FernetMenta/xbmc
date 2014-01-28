@@ -1722,15 +1722,19 @@ void CDVDDemuxFFmpeg::ParsePacket(AVPacket *pkt)
 bool CDVDDemuxFFmpeg::IsVideoReady()
 {
   AVStream *st;
+  bool hasVideo = false;
   if(m_program != UINT_MAX)
   {
     for (unsigned int i = 0; i < m_pFormatContext->programs[m_program]->nb_stream_indexes; i++)
     {
       int idx = m_pFormatContext->programs[m_program]->stream_index[i];
       st = m_pFormatContext->streams[idx];
-      if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO &&
-          (!st->codec->width || st->codec->pix_fmt == PIX_FMT_NONE))
-        return false;
+      if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+      {
+        if (st->codec->width && st->codec->pix_fmt != PIX_FMT_NONE)
+          return true;
+        hasVideo = true;
+      }
     }
   }
   else
@@ -1738,12 +1742,15 @@ bool CDVDDemuxFFmpeg::IsVideoReady()
     for (unsigned int i = 0; i < m_pFormatContext->nb_streams; i++)
     {
       st = m_pFormatContext->streams[i];
-      if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO &&
-          (!st->codec->width || st->codec->pix_fmt == PIX_FMT_NONE))
-        return false;
+      if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+      {
+        if (st->codec->width && st->codec->pix_fmt != PIX_FMT_NONE)
+          return true;
+        hasVideo = true;
+      }
     }
   }
-  return true;
+  return !hasVideo;
 }
 
 void CDVDDemuxFFmpeg::ResetVideoStreams()
@@ -1755,7 +1762,7 @@ void CDVDDemuxFFmpeg::ResetVideoStreams()
     if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO)
     {
       if (st->codec->extradata)
-        m_dllAvUtil.av_free(st->codec->extradata);
+        av_free(st->codec->extradata);
       st->codec->extradata = NULL;
       st->codec->width = 0;
     }
