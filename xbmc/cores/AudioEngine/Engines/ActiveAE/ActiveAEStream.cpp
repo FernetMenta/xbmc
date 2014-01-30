@@ -200,7 +200,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
 
   while(copied < size)
   {
-    buf = (uint8_t*)data;
+    buf = ((uint8_t*)data) + copied;
     bytesToCopy = size - copied;
 
     if (m_currentBuffer)
@@ -210,8 +210,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
       {
         int fillbytes = m_format.m_frameSize - m_leftoverBytes;
         memcpy(m_leftoverBuffer+m_leftoverBytes, (uint8_t*)data, fillbytes);
-        data = (uint8_t*)data + fillbytes;
-        size -= fillbytes;
+        copied += fillbytes;
         // leftover buffer will be copied on next cycle
         buf = m_leftoverBuffer;
         bytesToCopy = m_format.m_frameSize;
@@ -229,7 +228,7 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
       // if we don't have a full frame, copy to leftover buffer
       if (!availableSamples && bytesToCopy)
       {
-        memcpy(m_leftoverBuffer+m_leftoverBytes, buf+copied, bytesToCopy);
+        memcpy(m_leftoverBuffer+m_leftoverBytes, buf, bytesToCopy);
         m_leftoverBytes = bytesToCopy;
         copied += bytesToCopy;
       }
@@ -239,9 +238,9 @@ unsigned int CActiveAEStream::AddData(void *data, unsigned int size)
 
       //TODO: handle planar formats
       if (m_convertFn)
-        m_convertFn(buf+copied, samples*m_currentBuffer->pkt->config.channels, (float*)(m_currentBuffer->pkt->data[0] + start));
+        m_convertFn(buf, samples*m_currentBuffer->pkt->config.channels, (float*)(m_currentBuffer->pkt->data[0] + start));
       else
-        memcpy(m_currentBuffer->pkt->data[0] + start, buf+copied, bytes);
+        memcpy(m_currentBuffer->pkt->data[0] + start, buf, bytes);
       {
         CSingleLock lock(*m_statsLock);
         m_currentBuffer->pkt->nb_samples += samples;
