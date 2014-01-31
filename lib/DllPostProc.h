@@ -37,13 +37,8 @@ extern "C" {
 #pragma warning(disable:4244)
 #endif
   
-#if (defined USE_EXTERNAL_FFMPEG)
-  #include <libavutil/avutil.h>
-  #include <libpostproc/postprocess.h>
-#else
-  #include "libavutil/avutil.h"
-  #include "libpostproc/postprocess.h"
-#endif
+#include <libavutil/avutil.h>
+#include <libpostproc/postprocess.h>
 }
 
 #include "utils/CPUInfo.h"
@@ -78,9 +73,6 @@ public:
   virtual void pp_free_context(pp_context *ppContext)=0;
 };
 
-#if (defined USE_EXTERNAL_FFMPEG) || (defined TARGET_DARWIN) 
-
-// We call directly.
 class DllPostProc : public DllDynamic, DllPostProcInterface
 {
 public:
@@ -103,25 +95,3 @@ public:
   virtual void Unload() {}
 };
 
-#else
-class DllPostProc : public DllDynamic, DllPostProcInterface
-{
-  DECLARE_DLL_WRAPPER(DllPostProc, DLL_PATH_LIBPOSTPROC)
-  DEFINE_METHOD11(void, pp_postprocess, (uint8_t* p1[3], int p2[3], uint8_t * p3[3], int p4[3],
-                      int p5, int p6, QP_STORE_T *p7,  int p8,
-                      pp_mode *p9, pp_context *p10, int p11))
-  DEFINE_METHOD2(pp_mode*, pp_get_mode_by_name_and_quality, (char *p1, int p2))
-  DEFINE_METHOD1(void, pp_free_mode, (pp_mode *p1))
-  DEFINE_METHOD3(pp_context*, pp_get_context, (int p1, int p2, int p3))
-  DEFINE_METHOD1(void, pp_free_context, (pp_context *p1))
-
-  BEGIN_METHOD_RESOLVE()
-    RESOLVE_METHOD(pp_postprocess)
-    RESOLVE_METHOD(pp_get_mode_by_name_and_quality)
-    RESOLVE_METHOD(pp_free_mode)
-    RESOLVE_METHOD(pp_get_context)
-    RESOLVE_METHOD(pp_free_context)
-  END_METHOD_RESOLVE()
-};
-
-#endif
