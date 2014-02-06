@@ -444,7 +444,6 @@ protected:
   void InitMixer();
   bool GLInit();
   void GLMapSurface(bool yuv, uint32_t source);
-  void GLUnmapSurface(bool yuv, uint32_t source);
   void GLUnmapSurfaces();
   bool CheckStatus(VdpStatus vdp_st, int line);
   CEvent m_outMsgEvent;

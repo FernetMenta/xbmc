@@ -3164,8 +3164,8 @@ void COutput::ProcessReturnPicture(CVdpauRenderPicture *pic)
       CLog::Log(LOGDEBUG, "COutput::ProcessReturnPicture - gl surface not found");
       return;
     }
+    glVDPAUUnmapSurfacesNV(1, &(it->second.glVdpauSurface));
     VdpVideoSurface surf = it->second.sourceVuv;
-    GLUnmapSurface(true, surf);
     m_config.videoSurfaces->ClearRender(surf);
   }
   else if (pic->DVDPic.format == RENDER_FMT_VDPAU)
@@ -3177,8 +3177,8 @@ void COutput::ProcessReturnPicture(CVdpauRenderPicture *pic)
       CLog::Log(LOGDEBUG, "COutput::ProcessReturnPicture - gl surface not found");
       return;
     }
+    glVDPAUUnmapSurfacesNV(1, &(it->second.glVdpauSurface));
     VdpOutputSurface outSurf = it->second.sourceRgb;
-    GLUnmapSurface(false, outSurf);
     m_mixer.m_dataPort.SendOutMessage(CMixerDataProtocol::BUFFER, &outSurf, sizeof(outSurf));
   }
 }
@@ -3484,30 +3484,6 @@ void COutput::GLMapSurface(bool yuv, uint32_t source)
 
     if (m_vdpError)
       return;
-  }
-#endif
-}
-
-void COutput::GLUnmapSurface(bool yuv, uint32_t source)
-{
-#ifdef GL_NV_vdpau_interop
-  if (yuv)
-  {
-    std::map<VdpOutputSurface, VdpauBufferPool::GLVideoSurface>::iterator it;
-    it = m_bufferPool.glVideoSurfaceMap.find(source);
-    if (it != m_bufferPool.glVideoSurfaceMap.end())
-    {
-      glVDPAUUnmapSurfacesNV(1, &(it->second.glVdpauSurface));
-    }
-  }
-  else
-  {
-    std::map<VdpOutputSurface, VdpauBufferPool::GLVideoSurface>::iterator it;
-    it = m_bufferPool.glVideoSurfaceMap.find(source);
-    if (it != m_bufferPool.glVideoSurfaceMap.end())
-    {
-      glVDPAUUnmapSurfacesNV(1, &(it->second.glVdpauSurface));
-    }
   }
 #endif
 }
