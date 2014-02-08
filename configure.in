@@ -1280,8 +1280,9 @@ if test "x$use_pulse" != "xno"; then
     USE_PULSE=0
   else
     PKG_CHECK_MODULES([PULSE], [libpulse >= 1.0],
-      [INCLUDES="$INCLUDES $PULSE_CFLAGS"; LIBS="$LIBS $PULSE_LIBS"; USE_PULSE=1],
-      [pulse_found="no"; USE_PULSE=0])
+      [INCLUDES="$INCLUDES $PULSE_CFLAGS"; LIBS="$LIBS $PULSE_LIBS"; USE_PULSE=1;
+        HAVE_LIBPULSE=1; AC_DEFINE([HAVE_LIBPULSE],[1],[Pulse audio enabled])],
+      [pulse_found="no"; USE_PULSE=0; HAVE_LIBPULSE=0])
 
     if test "$pulse_found" = "no"; then
       if test "x$use_pulse" = "xyes"; then
@@ -2618,6 +2619,7 @@ AC_SUBST(USE_LIBAFPCLIENT)
 AC_SUBST(USE_AIRPLAY)
 AC_SUBST(USE_OPENMAX)
 AC_SUBST(USE_PULSE)
+AC_SUBST(HAVE_LIBPULSE)
 AC_SUBST(USE_XRANDR)
 AC_SUBST(USE_ALSA)
 AC_SUBST(USE_TEXTUREPACKER)
