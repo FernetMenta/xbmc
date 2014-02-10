@@ -34,7 +34,7 @@ extern "C" {
 #include "libavutil/avutil.h"
 }
 
-#define CACHED_BUFFER_SIZE 4096
+#define CACHED_BUFFER_SIZE 8192
 
 #define CHECK(a) \
 do { \
