@@ -20,7 +20,7 @@
 
 #include "smmintrin.h"
 
-#define CACHED_BUFFER_SIZE 4096
+#define CACHED_BUFFER_SIZE 8192
 typedef unsigned int UINT;
 
 extern "C"
