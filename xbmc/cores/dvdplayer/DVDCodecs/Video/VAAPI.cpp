@@ -404,7 +404,10 @@ bool CDecoder::Open(AVCodecContext *avctx, enum PixelFormat fmt, unsigned int su
   if (!EnsureContext(avctx))
     return false;
 
-  CheckUseFilter();
+  if (avctx->width <= 1920 && avctx->height <= 1088)
+    CheckUseFilter();
+  else
+    m_use_filter = false;
 
   m_hwaccel->display     = m_display->get();
 
