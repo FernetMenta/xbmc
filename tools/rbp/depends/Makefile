@@ -18,7 +18,7 @@ buildtools:
 	for d in $(BUILDTOOLS); do $(MAKE) -C $$d; done
 
 subdirs:
-	for d in $(SUBDIRS); do $(MAKE) -C $$d; done
+	for d in $(SUBDIRS); do if test -f $$d/.installed; then :; else $(MAKE) -C $$d; fi; done
 
 clean:
 	for d in $(BUILDTOOLS); do $(MAKE) -C $$d clean; done
