@@ -1739,6 +1739,7 @@ if test "$cross_compiling" != "yes"; then
     # always build our ffmpeg
     AC_MSG_NOTICE("FFmpeg installation forced by user - installing our version")
     CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" ${ffmpeg_build}/autobuild.sh ${FFMPEG_OPTS}
+    export PKG_CONFIG_PATH="${ffmpeg_build}/ffmpeg-install/lib/pkgconfig:$PKG_CONFIG_PATH"
   elif test "$with_ffmpeg" != "no"; then
     # user passed --with-ffmpeg=/some/path, lets use it
     AC_MSG_NOTICE("using ffmpeg: ${with_ffmpeg}")
