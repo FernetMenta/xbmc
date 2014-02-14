@@ -1719,6 +1719,15 @@ FFMPEG_LIBNAMES="libavcodec >= 55.39.101
 if test "${USE_STATIC_FFMPEG}" = "1"; then
   ff_libs=$(${ECHO} ${FFMPEG_LIBNAMES} | ${AWK} '/lib/{print $1}' ORS='.a ')
 fi
+if test -n "${PKG_CONFIG_SYSROOT_DIR}"; then
+  # workaround for cross compiling with buildroot on different buildsystem
+  # Rpi buildroots pkg-config returns static libs with
+  # PKG_CONFIG_SYSROOT_DIR prefixed, OEs does not
+  # so lets make sure we always prefix in case PKG_CONFIG_SYSROOT_DIR is defined
+  pkg_cfg_prefix="${PKG_CONFIG_SYSROOT_DIR}"
+elif test "${target_platform}" = "target_raspberry_pi" && test "${USE_BUILDROOT}" = "1"; then
+    pkg_cfg_prefix=${SYSROOT}
+fi
 
 if test "$cross_compiling" != "yes"; then
   ffmpeg_build="$(pwd)/tools/depends/target/ffmpeg"
@@ -1739,7 +1748,7 @@ if test "$cross_compiling" != "yes"; then
 
     if test "${USE_STATIC_FFMPEG}" = "1" && test "$FFMPEG_FOUND" = "true"; then
       # we need to check if static libs are available
-      FFMPEG_LIBDIR=$(PKG_CONFIG_SYSROOT_DIR="" ${PKG_CONFIG} --static --variable=libdir libavcodec)
+      FFMPEG_LIBDIR=$(${PKG_CONFIG} --static --variable=libdir libavcodec)
       for ff_lib in ${ff_libs}; do
         if test -f ${FFMPEG_LIBDIR}/${ff_lib}; then :; else
           AC_MSG_NOTICE("${FFMPEG_LIBDIR}/${ff_lib} not found")
@@ -1779,9 +1788,9 @@ fi
 
 if test "${USE_STATIC_FFMPEG}" = "1"; then
   # get the libdir for static linking
-  FFMPEG_LIBDIR=$(PKG_CONFIG_SYSROOT_DIR="" ${PKG_CONFIG} --static --variable=libdir libavcodec)
-  GNUTLS_ALL_LIBS=$(PKG_CONFIG_SYSROOT_DIR="" ${PKG_CONFIG} --static --libs-only-l --silence-errors gnutls)
-  VORBISENC_ALL_LIBS=$(PKG_CONFIG_SYSROOT_DIR="" ${PKG_CONFIG} --static --libs-only-l --silence-errors vorbisenc)
+  FFMPEG_LIBDIR=${pkg_cfg_prefix}$(PKG_CONFIG_SYSROOT_DIR="" ${PKG_CONFIG} --static --variable=libdir libavcodec)
+  GNUTLS_ALL_LIBS=$(${PKG_CONFIG} --static --libs-only-l --silence-errors gnutls)
+  VORBISENC_ALL_LIBS=$(${PKG_CONFIG} --static --libs-only-l --silence-errors vorbisenc)
 
   # check if static libs are available
   for ff_lib in ${ff_libs}; do
