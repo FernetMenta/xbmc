@@ -299,7 +299,8 @@ bool CDVDVideoCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
   int num_threads = std::min(8 /*MAX_THREADS*/, g_cpuInfo.getCPUCount());
   if( num_threads > 1 && !hints.software && m_pHardware == NULL // thumbnail extraction fails when run threaded
   && ( pCodec->id == AV_CODEC_ID_H264
-    || pCodec->id == AV_CODEC_ID_MPEG4 ))
+    || pCodec->id == AV_CODEC_ID_MPEG4
+    || pCodec->id == AV_CODEC_ID_HEVC))
     m_pCodecContext->thread_count = num_threads;
 
   if (avcodec_open2(m_pCodecContext, pCodec, NULL) < 0)
