@@ -521,7 +521,7 @@
           <dependencies>
             <dependency type="visible" setting="videoplayer.usevaapi" operator="is">true</dependency>
           </dependencies>
-          <level>3</level>
+          <level>2</level>
           <default>false</default>
           <control type="toggle" />
         </setting>
