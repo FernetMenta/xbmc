@@ -1706,6 +1706,8 @@ else
 fi
 
 # FFmpeg
+# TODO: make this conditional
+USE_STATIC_FFMPEG=1 
 FFMPEG_LIBNAMES="libavcodec >= 55.39.101
                  libavfilter >= 3.90.100
                  libavformat >= 55.19.104
@@ -1713,6 +1715,19 @@ FFMPEG_LIBNAMES="libavcodec >= 55.39.101
                  libpostproc >= 52.3.100
                  libswscale >= 2.5.101
                  libswresample >= 0.17.104"
+
+if test "${USE_STATIC_FFMPEG}" = "1"; then
+  ff_libs=$(${ECHO} ${FFMPEG_LIBNAMES} | ${AWK} '/lib/{print $1}' ORS='.a ')
+fi
+if test -n "${PKG_CONFIG_SYSROOT_DIR}"; then
+  # workaround for cross compiling with buildroot on different buildsystem
+  # Rpi buildroots pkg-config returns static libs with
+  # PKG_CONFIG_SYSROOT_DIR prefixed, OEs does not
+  # so lets make sure we always prefix in case PKG_CONFIG_SYSROOT_DIR is defined
+  pkg_cfg_prefix="${PKG_CONFIG_SYSROOT_DIR}"
+elif test "${target_platform}" = "target_raspberry_pi" && test "${USE_BUILDROOT}" = "1"; then
+    pkg_cfg_prefix=${SYSROOT}
+fi
 
 if test "$cross_compiling" != "yes"; then
   ffmpeg_build="$(pwd)/tools/depends/target/ffmpeg"
@@ -1723,22 +1738,41 @@ if test "$cross_compiling" != "yes"; then
     FFMPEG_OPTS="${FFMPEG_OPTS} --disable-optimizations"
   fi
 
-  if test "$with_ffmpeg" = "auto" -o "$with_ffmpeg" = "yes"; then
-    # check for system installed ffmpeg. We require our specific versions.
+  if test "$with_ffmpeg" = "auto" || test "$with_ffmpeg" = "yes"; then
+    SAVE_INCLUDES="$INCLUDES"
+    SAVE_LIBS="$LIBS"
+    # check for system installed ffmpeg. We require minimum versions.
     PKG_CHECK_MODULES([FFMPEG], [$FFMPEG_LIBNAMES],
       [INCLUDES="$INCLUDES $FFMPEG_CFLAGS"; LIBS="$LIBS $FFMPEG_LIBS"; FFMPEG_FOUND="true"],
       [FFMPEG_FOUND="false"])
 
-    if test "$with_ffmpeg" = "yes" -o "$FFMPEG_FOUND" != "true"; then
+    if test "${USE_STATIC_FFMPEG}" = "1" && test "$FFMPEG_FOUND" = "true"; then
+      # we need to check if static libs are available
+      FFMPEG_LIBDIR=$(${PKG_CONFIG} --static --variable=libdir libavcodec)
+      for ff_lib in ${ff_libs}; do
+        if test -f ${FFMPEG_LIBDIR}/${ff_lib}; then :; else
+          AC_MSG_NOTICE("${FFMPEG_LIBDIR}/${ff_lib} not found")
+          FFMPEG_FOUND="false"
+          # restore includes and libs, the ones we found are invalid
+          INCLUDES="$SAVE_INCLUDES"
+          LIBS="$SAVE_LIBS"
+          unset FFMPEG_LIBS FFMPEG_CFLAGS FFMPEG_LIBDIR
+        fi
+      done
+    fi
+    if test "$with_ffmpeg" = "yes" || test "$FFMPEG_FOUND" = "false"; then
       # ffmpeg not found with pkg-config, lets install it
       AC_MSG_NOTICE("Installing FFmpeg")
       CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" ${ffmpeg_build}/autobuild.sh ${FFMPEG_OPTS}
       export PKG_CONFIG_PATH="${ffmpeg_build}/ffmpeg-install/lib/pkgconfig:$PKG_CONFIG_PATH"
     fi
+
   elif test "$with_ffmpeg" = "force"; then
     # always build our ffmpeg
     AC_MSG_NOTICE("FFmpeg installation forced by user - installing our version")
     CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" ${ffmpeg_build}/autobuild.sh ${FFMPEG_OPTS}
+    export PKG_CONFIG_PATH="${ffmpeg_build}/ffmpeg-install/lib/pkgconfig:$PKG_CONFIG_PATH"
+
   elif test "$with_ffmpeg" != "no"; then
     # user passed --with-ffmpeg=/some/path, lets use it
     AC_MSG_NOTICE("using ffmpeg: ${with_ffmpeg}")
@@ -1752,13 +1786,20 @@ if test "$FFMPEG_FOUND" != "true"; then
     [AC_MSG_ERROR("ffmpeg not found")])
 fi
 
-# get the libdir for static linking
-FFMPEG_LIBDIR=$(PKG_CONFIG_SYSROOT_DIR="" ${PKG_CONFIG} --static --variable=libdir libavcodec)
-GNUTLS_ALL_LIBS=$(PKG_CONFIG_SYSROOT_DIR="" ${PKG_CONFIG} --static --libs-only-l --silence-errors gnutls)
-VORBISENC_ALL_LIBS=$(PKG_CONFIG_SYSROOT_DIR="" ${PKG_CONFIG} --static --libs-only-l --silence-errors vorbisenc)
+if test "${USE_STATIC_FFMPEG}" = "1"; then
+  # get the libdir for static linking
+  FFMPEG_LIBDIR=${pkg_cfg_prefix}$(PKG_CONFIG_SYSROOT_DIR="" ${PKG_CONFIG} --static --variable=libdir libavcodec)
+  GNUTLS_ALL_LIBS=$(${PKG_CONFIG} --static --libs-only-l --silence-errors gnutls)
+  VORBISENC_ALL_LIBS=$(${PKG_CONFIG} --static --libs-only-l --silence-errors vorbisenc)
 
-# TODO: make this conditional
-USE_STATIC_FFMPEG=1 
+  # check if static libs are available
+  for ff_lib in ${ff_libs}; do
+    if test -f ${FFMPEG_LIBDIR}/${ff_lib}; then :; else
+      AC_MSG_ERROR("${FFMPEG_LIBDIR}/${ff_lib} not found")
+    fi
+  done
+fi
+
 
 echo "Checking for SWIG installation"
 AC_PATH_PROG(SWIG_EXE, swig, "none")

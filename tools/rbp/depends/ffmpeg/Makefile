@@ -30,7 +30,7 @@ endif
 
 CLEAN_FILES=$(ARCHIVE) rpi
 
-all: .installed-rpi
+all: .installed
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
 	cd $(TARBALLS_LOCATION); $(RETRIEVE_TOOL) -Ls --create-dirs -f -o $(TARBALLS_LOCATION)/$(ARCHIVE) $(BASE_URL)/$(VERSION).tar.gz
@@ -48,17 +48,13 @@ rpi: $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" \
 	./configure $(ffmpg_config)
 
-build: rpi
-	$(MAKE) -j $(JOBS) -C rpi
-
-.installed-rpi: build
-	$(MAKE) -C rpi install
-	touch $@
+.installed: rpi
+	$(MAKE) -j $(JOBS) -C rpi && $(MAKE) -C rpi install && touch $@
 
 clean:
 	$(MAKE) -C rpi clean
-	rm -f .installed-rpi
+	rm -f .installed
 
 distclean::
-	rm -rf rpi .installed-rpi
+	rm -rf rpi .installed
 
