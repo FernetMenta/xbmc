@@ -49,7 +49,8 @@ rpi: $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	./configure $(ffmpg_config)
 
 .installed: rpi
-	$(MAKE) -j $(JOBS) -C rpi && $(MAKE) -C rpi install && touch $@
+	$(MAKE) -j $(JOBS) -C rpi || exit 1
+	$(MAKE) -C rpi install && touch $@
 
 clean:
 	$(MAKE) -C rpi clean
