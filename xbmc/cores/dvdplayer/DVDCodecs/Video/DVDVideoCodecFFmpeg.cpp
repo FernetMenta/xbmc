@@ -212,11 +212,8 @@ bool CDVDVideoCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
       break;
     }
   }
-  #ifdef AV_CODEC_ID_HEVC
   else if (hints.codec == AV_CODEC_ID_HEVC)
     m_isSWCodec = true;
-  #endif
-
 
   if(pCodec == NULL)
     pCodec = avcodec_find_decoder(hints.codec);
