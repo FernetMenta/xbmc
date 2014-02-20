@@ -197,7 +197,7 @@ static void SinkChangedCallback(pa_context *c, pa_subscription_event_type_t t, u
     return;
 
   CSingleLock lock(p->m_sec);
-  if (p->InitDone())
+  if (p->IsInitialized())
   {
     if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_NEW)
     {
@@ -807,6 +807,12 @@ void CAESinkPULSE::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
     pa_threaded_mainloop_free(mainloop);
     mainloop = NULL;
   }
+}
+
+bool CAESinkPULSE::IsInitialized()
+{
+ CSingleLock lock(m_sec);
+ return m_IsAllocated; 
 }
 
 bool CAESinkPULSE::Pause(bool pause)

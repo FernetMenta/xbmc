@@ -48,7 +48,7 @@ public:
   virtual void SetVolume(float volume);
 
   static void EnumerateDevicesEx(AEDeviceInfoList &list, bool force = false);
-  inline bool InitDone() { return m_IsAllocated; };
+  bool IsInitialized();
   CCriticalSection m_sec;
 private:
   bool Pause(bool pause);
