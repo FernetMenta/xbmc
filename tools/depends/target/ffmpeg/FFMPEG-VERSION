@@ -1,5 +1,5 @@
 LIBNAME=ffmpeg
 BASE_URL=https://github.com/FernetMenta/FFmpeg/archive
-VERSION=11086c540305ffb208e6fc17d301db989d3c4151
+VERSION=7b6df3aa6af8b8dc1148bf7d558a701ae7d536ed
 ARCHIVE=$(LIBNAME)-$(VERSION).tar.gz
 
