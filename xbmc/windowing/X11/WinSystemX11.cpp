@@ -905,8 +905,8 @@ bool CWinSystemX11::SetWindow(int width, int height, bool fullscreen, const std:
 
     if (fullscreen && hasWM)
     {
-      Atom fs = XInternAtom(m_dpy, "_NET_WM_STATE_FULLSCREEN", True);
-      XChangeProperty(m_dpy, m_mainWindow, XInternAtom(m_dpy, "_NET_WM_STATE", True), XA_ATOM, 32, PropModeReplace, (unsigned char *) &fs, 1);
+      Atom fs = XInternAtom(m_dpy, "_NET_WM_STATE_FULLSCREEN", False);
+      XChangeProperty(m_dpy, m_mainWindow, XInternAtom(m_dpy, "_NET_WM_STATE", False), XA_ATOM, 32, PropModeReplace, (unsigned char *) &fs, 1);
     }
 
     // define invisible cursor
@@ -1139,7 +1139,7 @@ bool CWinSystemX11::HasWindowManager()
   unsigned long items_read, items_left, i;
   char req = 0;
 
-  prop = XInternAtom(m_dpy, "_NET_SUPPORTING_WM_CHECK", True);
+  prop = XInternAtom(m_dpy, "_NET_SUPPORTING_WM_CHECK", False);
   if (prop == None)
     return false;
   status = XGetWindowProperty(m_dpy, DefaultRootWindow(m_dpy), prop,
@@ -1174,7 +1174,7 @@ bool CWinSystemX11::HasWindowManager()
 
   XFree(data);
 
-  prop = XInternAtom(m_dpy, "_NET_WM_NAME", True);
+  prop = XInternAtom(m_dpy, "_NET_WM_NAME", False);
   if (prop == None)
   {
     CLog::Log(LOGDEBUG,"Window Manager Name: ");
