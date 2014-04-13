@@ -161,5 +161,6 @@ protected:
   bool m_bPtsWrap, m_bPtsWrapChecked;
   int64_t m_iStartTime, m_iMaxTime, m_iEndTime;
   bool m_streaminfo;
+  bool m_checkvideo;
 };
 
