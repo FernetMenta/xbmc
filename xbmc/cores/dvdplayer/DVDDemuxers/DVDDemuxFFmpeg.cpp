@@ -156,6 +156,7 @@ CDVDDemuxFFmpeg::CDVDDemuxFFmpeg() : CDVDDemux()
   m_pkt.result = -1;
   memset(&m_pkt.pkt, 0, sizeof(AVPacket));
   m_streaminfo = true; /* set to true if we want to look for streams before playback */
+  m_checkvideo = false;
 }
 
 CDVDDemuxFFmpeg::~CDVDDemuxFFmpeg()
@@ -386,11 +387,10 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput, bool streaminfo)
   if (iformat && (strcmp(iformat->name, "mjpeg") == 0) && m_ioContext->seekable == 0)
     m_pFormatContext->max_analyze_duration = 500000;
 
-  bool short_analyze = false;
   if (iformat && (strcmp(iformat->name, "mpegts") == 0))
   {
     m_pFormatContext->max_analyze_duration = 500000;
-    short_analyze = true;
+    m_checkvideo = true;
   }
 
   // we need to know if this is matroska or avi later
@@ -422,14 +422,17 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput, bool streaminfo)
     }
     CLog::Log(LOGDEBUG, "%s - av_find_stream_info finished", __FUNCTION__);
 
-    if (short_analyze)
+    if (m_checkvideo)
     {
       // make sure we start video with an i-frame
       ResetVideoStreams();
     }
   }
   else
+  {
     m_program = 0;
+    m_checkvideo = true;
+  }
 
   // reset any timeout
   m_timeout.SetInfinite();
@@ -1723,6 +1726,10 @@ bool CDVDDemuxFFmpeg::IsVideoReady()
 {
   AVStream *st;
   bool hasVideo = false;
+
+  if(!m_checkvideo)
+    return true;
+
   if(m_program != UINT_MAX)
   {
     for (unsigned int i = 0; i < m_pFormatContext->programs[m_program]->nb_stream_indexes; i++)
