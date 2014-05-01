@@ -2352,9 +2352,6 @@
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEUtil.cpp">
       <Filter>cores\AudioEngine\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEWAVLoader.cpp">
-      <Filter>cores\AudioEngine\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEDeviceInfo.cpp">
       <Filter>cores\AudioEngine\Utils</Filter>
     </ClCompile>
@@ -5442,9 +5439,6 @@
       <Filter>cores\AudioEngine\Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEUtil.h">
-      <Filter>cores\AudioEngine\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEWAVLoader.h">
       <Filter>cores\AudioEngine\Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEDeviceInfo.h">
