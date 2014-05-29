@@ -268,7 +268,7 @@ snd_pcm_format_t CAESinkALSA::AEFormatToALSAFormat(const enum AEDataFormat forma
     case AE_FMT_S16NE : return SND_PCM_FORMAT_S16;
     case AE_FMT_S16LE : return SND_PCM_FORMAT_S16_LE;
     case AE_FMT_S16BE : return SND_PCM_FORMAT_S16_BE;
-    case AE_FMT_S24NE4: return SND_PCM_FORMAT_S24;
+    case AE_FMT_S24NE4R: return SND_PCM_FORMAT_S24;
 #ifdef __BIG_ENDIAN__
     case AE_FMT_S24NE3: return SND_PCM_FORMAT_S24_3BE;
 #else
