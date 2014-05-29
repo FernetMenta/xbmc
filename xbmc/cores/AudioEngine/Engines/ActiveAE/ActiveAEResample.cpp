@@ -204,11 +204,12 @@ int CActiveAEResample::Resample(uint8_t **dst_buffer, int dst_samples, uint8_t *
     if (m_dst_bits != 32 && (m_dst_dither_bits + m_dst_bits) != 32)
     {
       int planes = av_sample_fmt_is_planar(m_dst_fmt) ? m_dst_channels : 1;
+      int samples = ret * m_dst_channels / planes;
       int shift = m_dst_bits - m_dst_dither_bits;
       for (int i=0; i<planes; i++)
       {
         uint32_t* buf = (uint32_t*)dst_buffer[i];
-        for (int j=0; j<ret; j++)
+        for (int j=0; j<planes; j++)
         {
           *buf = *buf >> m_dst_dither_bits;
         }
