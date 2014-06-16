@@ -1882,7 +1882,7 @@ if test "x$use_vaapi" != "xno"; then
     initial_val=$use_vaapi
     AC_CHECK_LIB([va], main, :, use_vaapi=no)
     if test "x$use_vaapi" != "xno"; then
-      AC_CHECK_LIB([va-glx], main, LIBS="-lva -lva-glx $LIBS", use_vaapi=no, -lva)
+      AC_CHECK_LIB([va-glx], main, LIBS="-lva -lva-x11 $LIBS", use_vaapi=no, -lva)
     fi
 
     if test "x$use_vaapi" = "xno"; then
@@ -1893,7 +1893,7 @@ if test "x$use_vaapi" != "xno"; then
       fi
       USE_VAAPI=0
     else
-      AC_DEFINE([HAVE_LIBVA], [1], [Define to 1 if you have the 'vaapi' libraries (-lva AND -lva-glx)])
+      AC_DEFINE([HAVE_LIBVA], [1], [Define to 1 if you have the 'vaapi' libraries (-lva AND -lva-x11)])
       USE_VAAPI=1
     fi
   fi

@@ -20,6 +20,7 @@
 #pragma once
 
 #include "system_gl.h"
+#define GLX_GLXEXT_PROTOTYPES
 #include <GL/glx.h>
 
 #include "DVDVideoCodec.h"
@@ -162,7 +163,7 @@ class CVaapiRenderPicture
   friend class COutput;
 public:
   CVaapiRenderPicture(CCriticalSection &section)
-    : texture(None), avFrame(NULL), refCount(0), surface(NULL), renderPicSection(section) { fence = None; }
+    : texture(None), avFrame(NULL), refCount(0), renderPicSection(section) { fence = None; }
   void Sync();
   DVDVideoPicture DVDPic;
   int texWidth, texHeight;
@@ -178,7 +179,8 @@ private:
   bool usefence;
   GLsync fence;
   int refCount;
-  void *surface;
+  Pixmap pixmap;
+  GLXPixmap glPixmap;
   CCriticalSection &renderPicSection;
 };
 
@@ -282,6 +284,8 @@ protected:
   void ReleaseBufferPool(bool precleanup = false);
   bool GLInit();
   bool CheckSuccess(VAStatus status);
+  PFNGLXBINDTEXIMAGEEXTPROC glXBindTexImageEXT;
+  PFNGLXRELEASETEXIMAGEEXTPROC glXReleaseTexImageEXT;
   CEvent m_outMsgEvent;
   CEvent *m_inMsgEvent;
   int m_state;

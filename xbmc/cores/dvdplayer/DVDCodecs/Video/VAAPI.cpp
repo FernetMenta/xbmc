@@ -30,7 +30,7 @@
 #include "settings/Settings.h"
 #include "guilib/GraphicContext.h"
 #include "settings/MediaSettings.h"
-#include <va/va_glx.h>
+#include <va/va_x11.h>
 
 #if VA_CHECK_VERSION(0,34,0)
 #define HAVE_VPP 1
@@ -128,7 +128,7 @@ bool CVAAPIContext::CreateContext()
       m_X11dpy = XOpenDisplay(NULL);
   }
 
-  m_display = vaGetDisplayGLX(m_X11dpy);
+  m_display = vaGetDisplay(m_X11dpy);
 
   int major_version, minor_version;
   if (!CheckSuccess(vaInitialize(m_display, &major_version, &minor_version)))
@@ -1727,13 +1727,23 @@ CVaapiRenderPicture* COutput::ProcessPicture(CVaapiProcessedPicture &pic)
         else
           colorStandard = VA_SRC_BT601;
     }
-    if (!CheckSuccess(vaCopySurfaceGLX(m_config.dpy,
-        retPic->surface,
-        pic.videoSurface,
-        VA_FRAME_PICTURE | colorStandard)))
+
+    if (!CheckSuccess(vaSyncSurface(m_config.dpy, pic.videoSurface)))
+      return NULL;
+
+    if (!CheckSuccess(vaPutSurface(m_config.dpy,
+                                   pic.videoSurface,
+                                   retPic->pixmap,
+                                   0,0,
+                                   m_config.surfaceWidth, m_config.surfaceHeight,
+                                   0,0,
+                                   m_config.surfaceWidth, m_config.surfaceHeight,
+                                   NULL,0,
+                                   VA_FRAME_PICTURE | colorStandard)))
     {
       return NULL;
     }
+    XSync(m_Display, false);
     retPic->DVDPic.format = RENDER_FMT_VAAPI;
   }
   else if (pic.source == CVaapiProcessedPicture::FFMPEG_SRC)
@@ -1891,33 +1901,79 @@ bool COutput::ProcessSyncPicture()
 
 void COutput::ProcessReturnPicture(CVaapiRenderPicture *pic)
 {
-  av_frame_unref(pic->avFrame);
+  if (pic->avFrame)
+    av_frame_unref(pic->avFrame);
   pic->valid = false;
 }
 
 bool COutput::EnsureBufferPool()
 {
-  VAStatus status;
+  int fbConfigIndex = 0;
+  int num;
+
+  XWindowAttributes wndattribs;
+  XGetWindowAttributes(m_Display, g_Windowing.GetWindow(), &wndattribs);
+
+  int doubleVisAttributes[] = {
+      GLX_RENDER_TYPE, GLX_RGBA_BIT,
+      GLX_RED_SIZE, 8,
+      GLX_GREEN_SIZE, 8,
+      GLX_BLUE_SIZE, 8,
+      GLX_ALPHA_SIZE, 8,
+      GLX_DEPTH_SIZE, 8,
+      GLX_DRAWABLE_TYPE, GLX_PIXMAP_BIT,
+      GLX_BIND_TO_TEXTURE_RGBA_EXT, True,
+      GLX_DOUBLEBUFFER, False,
+      GLX_Y_INVERTED_EXT, True,
+      GLX_X_RENDERABLE, True,
+      None};
+
+  int pixmapAttribs[] = {
+      GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
+      GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGBA_EXT,
+      None};
+
+  GLXFBConfig *fbConfigs;
+  fbConfigs = glXChooseFBConfig(m_Display, g_Windowing.GetCurrentScreen(), doubleVisAttributes, &num);
+  if (fbConfigs==NULL)
+  {
+    CLog::Log(LOGERROR, "VAAPI::EnsureBufferPool - No compatible framebuffers found");
+    return false;
+  }
+
+  fbConfigIndex = 0;
+  glEnable(m_textureTarget);
 
   // create glx surfaces and avFrames
   CVaapiRenderPicture *pic;
-  glEnable(m_textureTarget);
   for (unsigned int i = 0; i < m_bufferPool.allRenderPics.size(); i++)
   {
     pic = m_bufferPool.allRenderPics[i];
-    glGenTextures(1, &pic->texture);
-    glBindTexture(m_textureTarget, pic->texture);
-    glTexParameteri(m_textureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(m_textureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    glTexImage2D(m_textureTarget, 0, GL_RGBA, m_config.surfaceWidth, m_config.surfaceHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 
-    if (!CheckSuccess(vaCreateSurfaceGLX(m_config.dpy , m_textureTarget, pic->texture, &pic->surface)))
+    pic->pixmap = XCreatePixmap(m_Display,
+                                m_Window,
+                                m_config.surfaceWidth,
+                                m_config.surfaceHeight,
+                                wndattribs.depth);
+    if (!pic->pixmap)
     {
+      CLog::Log(LOGERROR, "VAAPI::COutput::EnsureBufferPool - Unable to create XPixmap");
       return false;
     }
+
+    // create gl pixmap
+    pic->glPixmap = glXCreatePixmap(m_Display, fbConfigs[fbConfigIndex], pic->pixmap, pixmapAttribs);
+
+    if (!pic->glPixmap)
+    {
+      CLog::Log(LOGINFO, "VAAPI::COutput::EnsureBufferPool - Could not create glPixmap");
+      return false;
+    }
+
+    glGenTextures(1, &pic->texture);
+    glBindTexture(m_textureTarget, pic->texture);
+    glXBindTexImageEXT(m_Display, pic->glPixmap, GLX_FRONT_LEFT_EXT, NULL);
+    glBindTexture(m_textureTarget, 0);
 
     pic->avFrame = av_frame_alloc();
     pic->valid = false;
@@ -1971,19 +2027,27 @@ void COutput::ReleaseBufferPool(bool precleanup)
 
   ProcessSyncPicture();
 
+  glEnable(m_textureTarget);
   for (unsigned int i = 0; i < m_bufferPool.allRenderPics.size(); i++)
   {
     pic = m_bufferPool.allRenderPics[i];
-    if (pic->surface == NULL)
-      continue;
+
     if (precleanup && pic->valid)
       continue;
-    CheckSuccess(vaDestroySurfaceGLX(m_config.dpy, pic->surface));
-    glDeleteTextures(1, &pic->texture);
-    pic->surface = NULL;
-    pic->valid = false;
+
+    if (glIsTexture(pic->texture))
+    {
+      glBindTexture(m_textureTarget, pic->texture);
+      glXReleaseTexImageEXT(m_Display, pic->glPixmap, GLX_FRONT_LEFT_EXT);
+      glBindTexture(m_textureTarget, 0);
+      glDeleteTextures(1, &pic->texture);
+      glXDestroyPixmap(m_Display, pic->glPixmap);
+      XFreePixmap(m_Display, pic->pixmap);
+    }
     av_frame_free(&pic->avFrame);
+    pic->valid = false;
   }
+  glDisable(m_textureTarget);
 
   for (unsigned int i = 0; i < m_bufferPool.decodedPics.size(); i++)
   {
@@ -2014,6 +2078,9 @@ bool COutput::GLInit()
   }
   else
     m_textureTarget = GL_TEXTURE_2D;
+
+  glXBindTexImageEXT = (PFNGLXBINDTEXIMAGEEXTPROC)glXGetProcAddress((GLubyte *) "glXBindTexImageEXT");
+  glXReleaseTexImageEXT = (PFNGLXRELEASETEXIMAGEEXTPROC)glXGetProcAddress((GLubyte *) "glXReleaseTexImageEXT");
 
   return true;
 }
