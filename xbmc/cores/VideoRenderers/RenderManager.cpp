@@ -55,7 +55,10 @@
 #include "../dvdplayer/DVDClock.h"
 #include "../dvdplayer/DVDCodecs/Video/DVDVideoCodec.h"
 #include "../dvdplayer/DVDCodecs/DVDCodecUtils.h"
-#include "../dvdplayer/DVDCodecs/Video/VAAPI.h"
+
+#ifdef HAVE_LIBVA
+  #include "../dvdplayer/DVDCodecs/Video/VAAPI.h"
+#endif
 
 #define MAXPRESENTDELAY 0.500
 
