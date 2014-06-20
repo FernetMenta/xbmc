@@ -759,7 +759,7 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* pFrame)
 
   if (!retval)
   {
-    CLog::Log(LOGERROR, "VAAPI::%s - timed out waiting for output message", __FUNCTION__);
+    CLog::Log(LOGERROR, "VAAPI::%s - timed out waiting for output message: free %s", __FUNCTION__, m_videoSurfaces.HasFree() ? "yes" : "no");
     m_DisplayState = VAAPI_ERROR;
     retval |= VC_ERROR;
   }
