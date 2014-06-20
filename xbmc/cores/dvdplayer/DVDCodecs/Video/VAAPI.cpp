@@ -1744,6 +1744,12 @@ CVaapiRenderPicture* COutput::ProcessPicture(CVaapiProcessedPicture &pic)
       return NULL;
     }
     XSync(m_Display, false);
+    glEnable(m_textureTarget);
+    glBindTexture(m_textureTarget, retPic->texture);
+    glXBindTexImageEXT(m_Display, retPic->glPixmap, GLX_FRONT_LEFT_EXT, NULL);
+    glBindTexture(m_textureTarget, 0);
+    glDisable(m_textureTarget);
+
     retPic->DVDPic.format = RENDER_FMT_VAAPI;
   }
   else if (pic.source == CVaapiProcessedPicture::FFMPEG_SRC)
@@ -1903,6 +1909,16 @@ void COutput::ProcessReturnPicture(CVaapiRenderPicture *pic)
 {
   if (pic->avFrame)
     av_frame_unref(pic->avFrame);
+
+  if (pic->DVDPic.format == RENDER_FMT_VAAPI)
+  {
+    glEnable(m_textureTarget);
+    glBindTexture(m_textureTarget, pic->texture);
+    glXReleaseTexImageEXT(m_Display, pic->glPixmap, GLX_FRONT_LEFT_EXT);
+    glBindTexture(m_textureTarget, 0);
+    glDisable(m_textureTarget);
+  }
+
   pic->valid = false;
 }
 
@@ -1942,7 +1958,6 @@ bool COutput::EnsureBufferPool()
   }
 
   fbConfigIndex = 0;
-  glEnable(m_textureTarget);
 
   // create glx surfaces and avFrames
   CVaapiRenderPicture *pic;
@@ -1978,7 +1993,6 @@ bool COutput::EnsureBufferPool()
     pic->avFrame = av_frame_alloc();
     pic->valid = false;
   }
-  glDisable(m_textureTarget);
 
   CLog::Log(LOGNOTICE, "VAAPI::COutput::InitBufferPool - Surfaces created");
   return true;
@@ -2027,7 +2041,6 @@ void COutput::ReleaseBufferPool(bool precleanup)
 
   ProcessSyncPicture();
 
-  glEnable(m_textureTarget);
   for (unsigned int i = 0; i < m_bufferPool.allRenderPics.size(); i++)
   {
     pic = m_bufferPool.allRenderPics[i];
@@ -2037,9 +2050,6 @@ void COutput::ReleaseBufferPool(bool precleanup)
 
     if (glIsTexture(pic->texture))
     {
-      glBindTexture(m_textureTarget, pic->texture);
-      glXReleaseTexImageEXT(m_Display, pic->glPixmap, GLX_FRONT_LEFT_EXT);
-      glBindTexture(m_textureTarget, 0);
       glDeleteTextures(1, &pic->texture);
       glXDestroyPixmap(m_Display, pic->glPixmap);
       XFreePixmap(m_Display, pic->pixmap);
@@ -2047,7 +2057,6 @@ void COutput::ReleaseBufferPool(bool precleanup)
     av_frame_free(&pic->avFrame);
     pic->valid = false;
   }
-  glDisable(m_textureTarget);
 
   for (unsigned int i = 0; i < m_bufferPool.decodedPics.size(); i++)
   {
