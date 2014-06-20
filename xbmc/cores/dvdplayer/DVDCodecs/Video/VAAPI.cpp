@@ -765,7 +765,6 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* pFrame)
   }
 
   return retval;
-
 }
 
 int CDecoder::Check(AVCodecContext* avctx)
@@ -1384,6 +1383,7 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
             m_state = O_TOP_CONFIGURED_IDLE;
           }
           m_config.stats->DecDecoded();
+          m_controlPort.SendInMessage(COutputControlProtocol::STATS);
           m_extTimeout = 0;
           return;
         default:
