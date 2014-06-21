@@ -439,6 +439,17 @@ CDecoder::~CDecoder()
 
 bool CDecoder::Open(AVCodecContext* avctx, const enum PixelFormat fmt, unsigned int surfaces)
 {
+  // don't support broken wrappers
+  // nvidia cards with a vaapi to vdpau wrapper
+  // fglrx cards with xvba-va-driver
+  std::string gpuvendor = g_Windowing.GetRenderVendor();
+  std::transform(gpuvendor.begin(), gpuvendor.end(), gpuvendor.begin(), ::tolower);
+  if (gpuvendor.compare(0, 5, "intel") != 0)
+  {
+    CLog::Log(LOGNOTICE, "VAAPI is not correctly supported on your hardware - will close the decoder.");
+    return false;
+  }
+
   // check if user wants to decode this format with VAAPI
   if (CDVDVideoCodec::IsCodecDisabled(g_vaapi_available, settings_count, avctx->codec_id))
     return false;
