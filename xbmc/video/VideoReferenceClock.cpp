@@ -97,9 +97,8 @@ void CVideoReferenceClock::Process()
   {
     //set up the vblank clock
 #if defined(HAVE_X11)
-  std::string gpuvendor = g_Windowing.GetRenderVendor();
-  std::transform(gpuvendor.begin(), gpuvendor.end(), gpuvendor.begin(), ::tolower);
-  if (gpuvendor.compare(0, 5, "intel") == 0)
+  std::string gpurenderer = g_Windowing.GetRenderRenderer();
+  if (gpurenderer.find("Intel") != std::string::npos || gpurenderer.find("AMD") != std::string::npos)
     m_pVideoSync = new CVideoSyncDRM();
 #if defined(HAS_GLX)
   else
