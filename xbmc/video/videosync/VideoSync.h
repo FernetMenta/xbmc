@@ -24,6 +24,7 @@ typedef void (*PUPDATECLOCK)(int NrVBlanks, uint64_t time);
 class CVideoSync
 {
 public:
+  virtual ~CVideoSync() {};
   virtual bool Setup(PUPDATECLOCK func) = 0;
   virtual void Run(volatile bool& stop) = 0;
   virtual void Cleanup() = 0;
