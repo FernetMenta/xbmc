@@ -355,7 +355,7 @@ bool CGUIWindowFullScreen::OnAction(const CAction &action)
 
 void CGUIWindowFullScreen::ClearBackground()
 {
-  if (!g_renderManager.IsGuiLayer())
+  if (g_renderManager.IsVideoLayer())
     g_graphicsContext.Clear(0);
 }
 

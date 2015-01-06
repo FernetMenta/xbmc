@@ -809,6 +809,19 @@ bool CXBMCRenderManager::IsGuiLayer()
   return false;
 }
 
+bool CXBMCRenderManager::IsVideoLayer()
+{
+  { CSingleLock lock(m_presentlock);
+
+    if (!m_pRenderer)
+      return false;
+
+    if (!m_pRenderer->IsGuiLayer())
+      return true;
+  }
+  return false;
+}
+
 /* simple present method */
 void CXBMCRenderManager::PresentSingle(bool clear, DWORD flags, DWORD alpha)
 {
