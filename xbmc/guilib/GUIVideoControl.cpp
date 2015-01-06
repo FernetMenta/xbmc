@@ -70,7 +70,7 @@ void CGUIVideoControl::Render()
 
 #ifdef HAS_VIDEO_PLAYBACK
     color_t alpha = g_graphicsContext.MergeAlpha(0xFF000000) >> 24;
-    if (!g_renderManager.IsGuiLayer())
+    if (g_renderManager.IsVideoLayer())
     {
       CRect old = g_graphicsContext.GetScissors();
       CRect region = GetRenderRegion();
