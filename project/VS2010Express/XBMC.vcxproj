@@ -227,8 +227,10 @@
     <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxBXA.cpp" />
     <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxCC.cpp" />
     <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxCDDA.cpp" />
+    <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxMultiFiles.cpp" />
     <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxPVRClient.cpp" />
     <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDInputStreams\DVDInputStreamBluray.cpp" />
+    <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDInputStreams\DVDInputStreamMultiFiles.cpp" />
     <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDInputStreams\DVDInputStreamPVRManager.cpp" />
     <ClCompile Include="..\..\xbmc\cores\FFmpeg.cpp" />
     <ClCompile Include="..\..\xbmc\cores\VideoRenderers\OverlayRendererGUI.cpp" />
@@ -720,8 +722,6 @@
     <ClCompile Include="..\..\xbmc\pvr\channels\PVRChannelGroupsContainer.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRChannelManager.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRChannelsOSD.cpp" />
-    <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRCutterOSD.cpp" />
-    <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRDirectorOSD.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGroupManager.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGuideInfo.cpp" />
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGuideOSD.cpp" />
@@ -848,6 +848,8 @@
     <ClInclude Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxBXA.h" />
     <ClInclude Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxCC.h" />
     <ClInclude Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxCDDA.h" />
+    <ClInclude Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxMultiFiles.h" />
+    <ClInclude Include="..\..\xbmc\cores\dvdplayer\DVDInputStreams\DVDInputStreamMultiFiles.h" />
     <ClInclude Include="..\..\xbmc\cores\FFmpeg.h" />
     <ClInclude Include="..\..\xbmc\cores\VideoRenderers\OverlayRendererGUI.h" />
     <ClInclude Include="..\..\xbmc\dialogs\GUIDialogKeyboardGeneric.h" />
@@ -1966,8 +1968,6 @@
     <ClInclude Include="..\..\xbmc\pvr\channels\PVRChannelGroupsContainer.h" />
     <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRChannelManager.h" />
     <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRChannelsOSD.h" />
-    <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRCutterOSD.h" />
-    <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRDirectorOSD.h" />
     <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGroupManager.h" />
     <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGuideInfo.h" />
     <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGuideOSD.h" />

@@ -1720,12 +1720,6 @@
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRChannelsOSD.cpp">
       <Filter>pvr\dialogs</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRCutterOSD.cpp">
-      <Filter>pvr\dialogs</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRDirectorOSD.cpp">
-      <Filter>pvr\dialogs</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGroupManager.cpp">
       <Filter>pvr\dialogs</Filter>
     </ClCompile>
@@ -3084,6 +3078,12 @@
       <Filter>cores\dvdplayer\DVDCodecs\Overlay\contrib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxCC.cpp">
+      <Filter>cores\dvdplayer\DVDDemuxers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDInputStreams\DVDInputStreamMultiFiles.cpp">
+      <Filter>cores\dvdplayer\DVDInputStreams</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxMultiFiles.cpp">
       <Filter>cores\dvdplayer\DVDDemuxers</Filter>
     </ClCompile>
   </ItemGroup>
@@ -4689,12 +4689,6 @@
     <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRChannelsOSD.h">
       <Filter>pvr\dialogs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRCutterOSD.h">
-      <Filter>pvr\dialogs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRDirectorOSD.h">
-      <Filter>pvr\dialogs</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\xbmc\pvr\dialogs\GUIDialogPVRGroupManager.h">
       <Filter>pvr\dialogs</Filter>
     </ClInclude>
@@ -6007,6 +6001,12 @@
       <Filter>cores\dvdplayer\DVDCodecs\Overlay\contrib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxCC.h">
+      <Filter>cores\dvdplayer\DVDDemuxers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\dvdplayer\DVDInputStreams\DVDInputStreamMultiFiles.h">
+      <Filter>cores\dvdplayer\DVDInputStreams</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\dvdplayer\DVDDemuxers\DVDDemuxMultiFiles.h">
       <Filter>cores\dvdplayer\DVDDemuxers</Filter>
     </ClInclude>
   </ItemGroup>
