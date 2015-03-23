@@ -15,7 +15,7 @@ DEPENDS = \
 	python26 libshairplay \
 	libplist libcec libbluray boost tinyxml dummy-libxbmc \
 	libamplayer libssh taglib libusb libnfs libmp3lame \
-	pythonmodule-pil libxslt ffmpeg platform crossguid
+	pythonmodule-pil libxslt ffmpeg platform crossguid libdcadec
 
 FFMPEG_DEPENDS = gnutls
 
@@ -97,7 +97,7 @@ nettle: gmp
 pythonmodule-pil: $(ZLIB) libjpeg-turbo libpng freetype2 python26
 libsdl2: $(LINUX_SYSTEM_LIBS)
 libxslt: libgcrypt
-ffmpeg: $(ICONV) $(ZLIB) bzip2 libvorbis $(FFMPEG_DEPENDS)
+ffmpeg: $(ICONV) $(ZLIB) bzip2 libvorbis libdcadec $(FFMPEG_DEPENDS)
 libcec: platform
 ifeq ($(OS),linux)
 crossguid: libuuid

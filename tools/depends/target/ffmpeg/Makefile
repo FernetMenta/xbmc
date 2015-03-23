@@ -56,6 +56,7 @@ endif
 ifeq ($(Configuration), Release)
   ffmpg_config += --disable-debug
 endif
+ffmpg_config += --enable-libdcadec --disable-decoder=dca
 
 
 CLEAN_FILES=$(ARCHIVE) $(PLATFORM)
