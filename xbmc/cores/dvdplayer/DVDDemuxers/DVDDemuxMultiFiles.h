@@ -43,12 +43,13 @@ public:
   int GetNrOfStreams();
   virtual std::string GetFileName() {return "";};
 
-protected:
+private:
   void Dispose();
   bool UpdateStreamMap(int inputIndex, DemuxPtr demuxer);
   bool RebuildStreamMap();
+  static CDemuxStream* CopyStream(CDemuxStream* right);
 
-  std::map<unsigned int, std::pair<unsigned int, unsigned int>> m_StreamMap;
+  std::vector<CDemuxStream*> m_StreamMap;
   std::map<std::pair<int, DemuxPtr>, unsigned int> m_InternalToExternalStreamMap;
   CDVDInputStreamMultiFiles* m_pInput;
   CDVDDemux* m_pDemuxer;                            // master demuxer for current playing file

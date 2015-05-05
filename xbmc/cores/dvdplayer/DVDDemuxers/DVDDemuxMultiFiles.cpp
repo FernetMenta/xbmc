@@ -39,18 +39,22 @@ CDVDDemuxMultiFiles::~CDVDDemuxMultiFiles()
 
 CDemuxStream* CDVDDemuxMultiFiles::GetStream(int iStreamId)
 {
-  std::map<unsigned int, std::pair<unsigned int, unsigned int>>::iterator iter = m_StreamMap.find(iStreamId);
-  if (iter == m_StreamMap.end())
+  if (iStreamId < m_StreamMap.size())
+    return m_StreamMap[iStreamId];
+  else
     return NULL;
+  //std::map<unsigned int, std::pair<unsigned int, unsigned int>>::iterator iter = m_StreamMap.find(iStreamId);
+  //if (iter == m_StreamMap.end())
+  //  return NULL;
 
-  std::map<int, DemuxPtr>::iterator demuxIter = m_pDemuxers.find(iter->second.first);
-  if (demuxIter == m_pDemuxers.end())
-    return NULL;
+  //std::map<int, DemuxPtr>::iterator demuxIter = m_pDemuxers.find(iter->second.first);
+  //if (demuxIter == m_pDemuxers.end())
+  //  return NULL;
 
-  CDemuxStream* stream = demuxIter->second.get()->GetStream(iter->second.second);
-  if (stream)
-    stream->iId = iStreamId;
-  return stream;
+  //CDemuxStream* stream = demuxIter->second.get()->GetStream(iter->second.second);
+  //if (stream)
+  //  stream->iId = iStreamId;
+  //return stream;
 }
 
 bool CDVDDemuxMultiFiles::UpdateStreamMap(int inputIndex, DemuxPtr demuxer)
@@ -58,20 +62,21 @@ bool CDVDDemuxMultiFiles::UpdateStreamMap(int inputIndex, DemuxPtr demuxer)
   if (!demuxer.get())
     return false;
 
-  unsigned int firstFree = 0;
-
-  if (m_StreamMap.empty())
-    firstFree = 0;
-  else
-    firstFree = ((--m_StreamMap.end())->first) + 1;
-
   for (int i = 0; i < demuxer.get()->GetNrOfStreams(); ++i)
   {
     CDemuxStream* stream = demuxer.get()->GetStream(i);
     if (stream)
-      m_StreamMap[firstFree] = std::make_pair(inputIndex, stream->iId);
-    m_InternalToExternalStreamMap[std::make_pair(stream->iId, demuxer)] = firstFree;
-    firstFree++;
+    {
+      CDemuxStream* streamInternal = CopyStream(stream);
+      if (!streamInternal)
+        continue;
+      unsigned int idx = m_StreamMap.size();
+      streamInternal->iId = idx;
+      m_InternalToExternalStreamMap[std::make_pair(stream->iId, demuxer)] = idx;
+      m_StreamMap.push_back(streamInternal);
+    }
+    
+    //firstFree++;
   }
 
   return true;
@@ -152,6 +157,10 @@ void CDVDDemuxMultiFiles::Flush()
 
 void CDVDDemuxMultiFiles::Dispose()
 {
+  for each (CDemuxStream* stream in m_StreamMap)
+  {
+    delete stream;
+  }
   m_StreamMap.clear();
   m_pDemuxers.clear();
   m_pDemuxer = NULL;
@@ -170,12 +179,16 @@ DemuxPacket* CDVDDemuxMultiFiles::Read()
   DemuxPacket* packet = demuxer->Read();
   if (packet)
   {
-
-    std::map<std::pair<int, DemuxPtr>, unsigned int>::iterator iter = m_InternalToExternalStreamMap.find(std::make_pair(packet->iStreamId, m_pDemuxers[0]));
+    std::map<std::pair<int, DemuxPtr>, unsigned int>::iterator iter = m_InternalToExternalStreamMap.find(std::make_pair(packet->iStreamId, demuxer));
     if (iter != m_InternalToExternalStreamMap.end())
+    {
       packet->iStreamId = iter->second;
+    }
+    else //new stream
+    {
+      //UpdateStreamMap()
+    }
   }
-
 
   m_streamsRead++;
 
@@ -206,3 +219,90 @@ bool CDVDDemuxMultiFiles::SeekTime(int time, bool backwords, double* startpts)
   return true;
 }
 
+CDemuxStream* CDVDDemuxMultiFiles::CopyStream(CDemuxStream* right)
+{
+  CDemuxStream* stream = NULL;
+  switch (right->type)
+  {
+  case STREAM_VIDEO:
+  {
+    CDemuxStreamVideo* rightS = dynamic_cast<CDemuxStreamVideo*>(right);
+    CDemuxStreamVideo* streamV = new CDemuxStreamVideo();
+    streamV->iFpsScale = rightS->iFpsScale;
+    streamV->iFpsRate = rightS->iFpsRate;
+    streamV->irFpsScale = rightS->irFpsScale;
+    streamV->irFpsRate = rightS->irFpsRate;
+    streamV->iHeight = rightS->iHeight;
+    streamV->iWidth = rightS->iWidth;
+    streamV->fAspect = rightS->fAspect;
+    streamV->bVFR = rightS->bVFR;
+    streamV->bPTSInvalid = rightS->bPTSInvalid;
+    streamV->bForcedAspect = rightS->bForcedAspect;
+    streamV->type = STREAM_VIDEO;
+    streamV->iOrientation = rightS->iOrientation;
+    streamV->iBitsPerPixel = rightS->iBitsPerPixel;
+    stream = streamV;
+    break;
+  }
+  case STREAM_AUDIO:
+  {
+    CDemuxStreamAudio* rightS = dynamic_cast<CDemuxStreamAudio*>(right);
+    CDemuxStreamAudio* streamA = new CDemuxStreamAudio();
+    streamA->iChannels = rightS->iChannels;
+    streamA->iSampleRate = rightS->iSampleRate;
+    streamA->iBlockAlign = rightS->iBlockAlign;
+    streamA->iBitRate = rightS->iBitRate;
+    streamA->iBitsPerSample = rightS->iBitsPerSample;
+    streamA->type = STREAM_AUDIO;
+    stream = streamA;
+    break;
+  }
+  case STREAM_TELETEXT:
+  {
+    CDemuxStreamTeletext* streamT = new CDemuxStreamTeletext();
+    streamT->type = STREAM_TELETEXT;
+    stream = streamT;
+    break;
+  }
+  case STREAM_SUBTITLE:
+  {
+    CDemuxStreamSubtitle* streamS = new CDemuxStreamSubtitle();
+    streamS->type = STREAM_SUBTITLE;
+    stream = streamS;
+    break;
+  }
+  default:
+    return NULL;
+    break;
+  }
+
+  if (!stream)
+    return NULL;
+
+  stream->iId = right->iId;
+  stream->iPhysicalId = right->iPhysicalId;
+  stream->codec = right->codec;
+  stream->codec_fourcc = right->codec_fourcc;
+  stream->profile = right->profile;
+  stream->level = right->level;
+  stream->type = right->type;
+  stream->source = right->source;
+  stream->iDuration = right->iDuration;
+  stream->pPrivate = right->pPrivate; //mmmh
+  stream->ExtraData = NULL;
+  stream->ExtraSize = right->ExtraSize;
+  if (stream->ExtraSize)
+  {
+    stream->ExtraData = (uint8_t*) malloc(stream->ExtraSize);
+    if (!stream->ExtraData)
+      return NULL;
+    memcpy(stream->ExtraData, right->ExtraData, stream->ExtraSize);
+  }
+  memcpy(stream->language, right->language, sizeof(right->language));
+  stream->disabled = right->disabled;
+  stream->changes = right->changes;
+  stream->flags = right->flags;
+  stream->orig_type = right->orig_type;
+
+  return stream;
+}
