@@ -46,6 +46,7 @@ namespace Shaders {
     virtual GLuint Handle() = 0;
     virtual void SetSource(const string& src) { m_source = src; }
     virtual bool LoadSource(const string& filename, const string& prefix = "");
+    virtual bool AppendSource(const string& filename);
     bool OK() const { return m_compiled; }
 
   protected:
