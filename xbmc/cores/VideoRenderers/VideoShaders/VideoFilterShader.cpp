@@ -78,7 +78,7 @@ BaseVideoFilterShader::BaseVideoFilterShader()
   PixelShader()->SetSource(shaderp);
 }
 
-ConvolutionFilterShader::ConvolutionFilterShader(ESCALINGMETHOD method, bool stretch)
+ConvolutionFilterShader::ConvolutionFilterShader(ESCALINGMETHOD method, bool stretch, bool output)
 {
   m_method = method;
   m_kernelTex1 = 0;
@@ -128,6 +128,11 @@ ConvolutionFilterShader::ConvolutionFilterShader(ESCALINGMETHOD method, bool str
   else
     defines += "#define XBMC_STRETCH 0\n";
 
+  if (output)
+    defines += "#define XBMC_OUTPUT 1\n";
+  else
+    defines += "#define XBMC_OUTPUT 0\n";
+
   //tell shader if we're using a 1D texture
 #ifdef USE1DTEXTURE
   defines += "#define USE1DTEXTURE 1\n";
@@ -137,6 +142,7 @@ ConvolutionFilterShader::ConvolutionFilterShader(ESCALINGMETHOD method, bool str
 
   CLog::Log(LOGDEBUG, "GL: ConvolutionFilterShader: using %s defines:\n%s", shadername.c_str(), defines.c_str());
   PixelShader()->LoadSource(shadername, defines);
+  PixelShader()->AppendSource("output.glsl");
 }
 
 void ConvolutionFilterShader::OnCompiledAndLinked()
