@@ -40,6 +40,7 @@ public:
   virtual void SetSpeed(int iSpeed) {};
   int GetStreamLength();
   virtual CDemuxStream* GetStream(int iStreamId);
+  void GetStreamCodecName(int iStreamId, std::string &strName);
   int GetNrOfStreams();
   virtual std::string GetFileName() {return "";};
 
@@ -56,4 +57,5 @@ private:
   std::map<int, DemuxPtr> m_pDemuxers;              // demuxers for current playing file
   unsigned int m_nextDemuxerToRead;
   int m_streamsRead;
+  std::map<int, std::pair<int, DemuxPtr>> m_ExternalToInternalStreamMap;
 };

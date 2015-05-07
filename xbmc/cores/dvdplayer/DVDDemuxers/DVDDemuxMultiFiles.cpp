@@ -57,6 +57,15 @@ CDemuxStream* CDVDDemuxMultiFiles::GetStream(int iStreamId)
   //return stream;
 }
 
+void CDVDDemuxMultiFiles::GetStreamCodecName(int iStreamId, std::string &strName)
+{
+  auto iter = m_ExternalToInternalStreamMap.find(iStreamId);
+  if (iter != m_ExternalToInternalStreamMap.end())
+  {
+    iter->second.second->GetStreamCodecName(iter->second.first, strName);
+  }
+};
+
 bool CDVDDemuxMultiFiles::UpdateStreamMap(int inputIndex, DemuxPtr demuxer)
 {
   if (!demuxer.get())
@@ -73,6 +82,7 @@ bool CDVDDemuxMultiFiles::UpdateStreamMap(int inputIndex, DemuxPtr demuxer)
       unsigned int idx = m_StreamMap.size();
       streamInternal->iId = idx;
       m_InternalToExternalStreamMap[std::make_pair(stream->iId, demuxer)] = idx;
+      m_ExternalToInternalStreamMap[idx] = std::make_pair(stream->iId, demuxer);
       m_StreamMap.push_back(streamInternal);
     }
     
