@@ -22,11 +22,21 @@
 #include "DVDDemux.h"
 #include "DVDInputStreams/DVDInputStreamMultiFiles.h"
 #include <vector>
+#include <queue>
+#include <tuple>
 
 typedef std::shared_ptr<CDVDDemux> DemuxPtr;
 
+struct comparator{
+  bool operator() (std::pair<double, DemuxPtr> x, std::pair<double, DemuxPtr> y){
+    return x.first > y.first;
+  }
+};
+
+
 class CDVDDemuxMultiFiles : public CDVDDemux
 {
+
 public:
   CDVDDemuxMultiFiles();
   virtual ~CDVDDemuxMultiFiles();
@@ -58,4 +68,5 @@ private:
   unsigned int m_nextDemuxerToRead;
   int m_streamsRead;
   std::map<int, std::pair<int, DemuxPtr>> m_ExternalToInternalStreamMap;
+  std::priority_queue<std::pair<double, DemuxPtr>, std::vector<std::pair<double, DemuxPtr>>, comparator> minHeap;
 };

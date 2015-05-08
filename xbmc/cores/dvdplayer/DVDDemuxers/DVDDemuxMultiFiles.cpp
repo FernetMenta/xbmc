@@ -21,6 +21,7 @@
 #include "DVDDemuxMultiFiles.h"
 #include "DVDFactoryDemuxer.h"
 #include "DVDInputStreams/DVDInputStream.h"
+#include "DVDClock.h"
 #include "utils/log.h"
 #include <map>
 
@@ -139,6 +140,7 @@ bool CDVDDemuxMultiFiles::Open(CDVDInputStream* pInput)
     {
       UpdateStreamMap(inputIndex, demuxer);
       m_pDemuxers[inputIndex] = demuxer;
+      minHeap.push(std::make_pair(DVD_NOPTS_VALUE, demuxer));
       ++iter;
     }
   }
@@ -178,14 +180,23 @@ void CDVDDemuxMultiFiles::Dispose()
 
 DemuxPacket* CDVDDemuxMultiFiles::Read()
 {
-  std::map<int, DemuxPtr>::iterator demuxIter = m_pDemuxers.find(m_nextDemuxerToRead);
+  //std::map<int, DemuxPtr>::iterator demuxIter = m_pDemuxers.find(m_nextDemuxerToRead);
 
-  if (demuxIter == m_pDemuxers.end())
+  //if (demuxIter == m_pDemuxers.end())
+  //  return NULL;
+
+  //DemuxPtr demuxer = demuxIter->second;
+  DemuxPtr demuxer = NULL;
+  if (minHeap.empty())
+    demuxer = m_pDemuxers[0];
+  else
+  {
+    demuxer = minHeap.top().second;
+    minHeap.pop();
+  }
+
+  if (!demuxer)
     return NULL;
-
-  DemuxPtr demuxer = demuxIter->second;
-
-
   DemuxPacket* packet = demuxer->Read();
   if (packet)
   {
@@ -193,6 +204,7 @@ DemuxPacket* CDVDDemuxMultiFiles::Read()
     if (iter != m_InternalToExternalStreamMap.end())
     {
       packet->iStreamId = iter->second;
+      minHeap.push(std::make_pair(packet->pts, demuxer));
     }
     else //new stream
     {
