@@ -42,9 +42,9 @@ bool CDVDInputStreamTV::IsEOF()
   return !m_pFile || m_eof;
 }
 
-bool CDVDInputStreamTV::Open(const char* strFile, const std::string& content)
+bool CDVDInputStreamTV::Open(const char* strFile, const std::string& content, bool contentLookup)
 {
-  if (!CDVDInputStream::Open(strFile, content)) return false;
+  if (!CDVDInputStream::Open(strFile, content, contentLookup)) return false;
 
   if (strncmp(strFile, "sling://", 8) == 0)
   {
