@@ -3098,11 +3098,14 @@
       <Filter>music</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\filesystem\NFSDirectory.cpp" />
+    <ClCompile Include="..\..\xbmc\test\TestUtil.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\xbmc\settings\dialogs\GUIDialogAudioDSPManager.cpp">
       <Filter>settings\dialogs</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\xbmc\test\TestUtil.cpp">
-      <Filter>test</Filter>
+    <ClCompile Include="..\..\xbmc\settings\dialogs\GUIDialogAudioDSPSettings.cpp">
+      <Filter>settings\dialogs</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\utils\rfft.cpp">
       <Filter>utils</Filter>
@@ -6072,6 +6075,8 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\messaging\IMessageTarget.h">
       <Filter>messaging</Filter>
+    <ClInclude Include="..\..\xbmc\settings\dialogs\GUIDialogAudioDSPSettings.h">
+      <Filter>settings\dialogs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
