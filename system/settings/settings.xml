@@ -2514,6 +2514,17 @@
           </updates>
           <control type="toggle" />
         </setting>
+        <setting id="videoscreen.ditherdepth" type="integer" label="36043" help="36550">
+          <requirement>HAS_GL</requirement>
+          <level>3</level>
+          <default>8</default>
+          <constraints>
+            <minimum>2</minimum>
+            <step>1</step>
+            <maximum>8</maximum>
+          </constraints>
+          <control type="spinner" format="integer" />
+        </setting>
       </group>
     </category>
     <category id="audiooutput" label="772" help="36360">

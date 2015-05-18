@@ -250,6 +250,16 @@ bool CWinSystemBase::UseLimitedColor()
 #endif
 }
 
+unsigned CWinSystemBase::DitherDepth()
+{
+#if defined(HAS_GL)
+  static CSettingInt* setting = (CSettingInt*)CSettings::Get().GetSetting("videoscreen.ditherdepth");
+  return setting->GetValue();
+#else
+  return 8;
+#endif
+}
+
 std::string CWinSystemBase::GetClipboardText(void)
 {
   return "";
