@@ -614,6 +614,7 @@ namespace PVR
 
     std::string GetBackendHostnameByClientId(int iClientId) const;
 
+    bool IsTimeshifting() const;
     time_t GetPlayingTime() const;
     time_t GetBufferTimeStart() const;
     time_t GetBufferTimeEnd() const;

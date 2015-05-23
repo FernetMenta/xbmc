@@ -621,6 +621,12 @@ extern "C"
   const char* GetBackendHostname();
 
   /*!
+   *  Check if timeshift is active
+   *  @return true if timeshift is active
+   */
+  bool IsTimeshifting();
+
+  /*!
    * Called by XBMC to assign the function pointers of this add-on to pClient.
    * @param pClient The struct to assign the function pointers to.
    */
@@ -704,6 +710,8 @@ extern "C"
     pClient->GetBufferTimeEnd               = GetBufferTimeEnd;
 
     pClient->GetBackendHostname             = GetBackendHostname;
+
+    pClient->IsTimeshifting                 = IsTimeshifting;
   };
 };
 

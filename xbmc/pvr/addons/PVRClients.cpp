@@ -1626,6 +1626,14 @@ time_t CPVRClients::GetPlayingTime() const
   return time;
 }
 
+bool CPVRClients::IsTimeshifting(void) const
+{
+  PVR_CLIENT client;
+  if (GetPlayingClient(client))
+    return client->IsTimeshifting();
+  return false;
+}
+
 time_t CPVRClients::GetBufferTimeStart() const
 {
   PVR_CLIENT client;
