@@ -18,7 +18,7 @@
  *
  */
 
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "guilib/GUIControlFactory.h"
 #include "guilib/GUIListItem.h"
 #include "guilib/LocalizeStrings.h"
@@ -35,6 +35,8 @@
 #include "pvr/channels/PVRChannel.h"
 
 #include "GUIEPGGridContainer.h"
+
+#include <assert.h>
 
 using namespace PVR;
 using namespace EPG;
@@ -770,7 +772,7 @@ bool CGUIEPGGridContainer::OnMessage(CGUIMessage& message)
                 itemsPointer.start = i;
               }
               iLastChannelID = iCurrentChannelID;
-              CGUIListItemPtr item(new CFileItem(*channel));
+              CGUIListItemPtr item(new CFileItem(channel));
               m_channelItems.push_back(item);
             }
           }
@@ -1086,13 +1088,15 @@ void CGUIEPGGridContainer::SetChannel(const std::string &channel)
   SetSelectedChannel(iChannelIndex);
 }
 
-void CGUIEPGGridContainer::SetChannel(const CPVRChannel &channel)
+void CGUIEPGGridContainer::SetChannel(const CPVRChannelPtr &channel)
 {
+  assert(channel.get());
+
   int iChannelIndex(-1);
   for (unsigned int iIndex = 0; iIndex < m_channelItems.size(); iIndex++)
   {
     int iChannelId = (int)m_channelItems[iIndex]->GetProperty("channelid").asInteger(-1);
-    if (iChannelId == channel.ChannelID())
+    if (iChannelId == channel->ChannelID())
     {
       iChannelIndex = iIndex;
       break;
@@ -1278,16 +1282,16 @@ bool CGUIEPGGridContainer::OnMouseWheel(char wheel, const CPoint &point)
   return true;
 }
 
-CPVRChannel* CGUIEPGGridContainer::GetChannel(int iIndex)
+CPVRChannelPtr CGUIEPGGridContainer::GetChannel(int iIndex)
 {
   if (iIndex >= 0 && (size_t) iIndex < m_channelItems.size())
   {
-    CFileItemPtr fileItem = boost::static_pointer_cast<CFileItem>(m_channelItems[iIndex]);
+    CFileItemPtr fileItem = std::static_pointer_cast<CFileItem>(m_channelItems[iIndex]);
     if (fileItem->HasPVRChannelInfoTag())
       return fileItem->GetPVRChannelInfoTag();
   }
   
-  return NULL;
+  return CPVRChannelPtr();
 }
 
 void CGUIEPGGridContainer::SetSelectedChannel(int channelIndex)

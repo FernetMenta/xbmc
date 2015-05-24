@@ -46,6 +46,7 @@
 #include "utils/log.h"
 #include "utils/URIUtils.h"
 #include "utils/Variant.h"
+#include "video/VideoLibraryQueue.h"
 #include "video/VideoThumbLoader.h"
 #include "TextureCache.h"
 #include "GUIUserMessages.h"
@@ -58,8 +59,9 @@ using namespace ADDON;
 namespace VIDEO
 {
 
-  CVideoInfoScanner::CVideoInfoScanner() : CThread("VideoInfoScanner")
+  CVideoInfoScanner::CVideoInfoScanner()
   {
+    m_bStop = false;
     m_bRunning = false;
     m_handle = NULL;
     m_showDialog = false;
@@ -76,6 +78,8 @@ namespace VIDEO
 
   void CVideoInfoScanner::Process()
   {
+    m_bStop = false;
+
     try
     {
       if (m_showDialog && !CSettings::Get().GetBool("videolibrary.backgroundupdate"))
@@ -89,7 +93,8 @@ namespace VIDEO
       // check if we only need to perform a cleaning
       if (m_bClean && m_pathsToScan.empty())
       {
-        CleanDatabase(m_handle, NULL, false);
+        std::set<int> paths;
+        CVideoLibraryQueue::Get().CleanLibrary(paths, false, m_handle);
 
         if (m_handle)
           m_handle->MarkFinished();
@@ -113,15 +118,13 @@ namespace VIDEO
       m_currentItem = 0;
       m_itemCount = -1;
 
-      SetPriority(GetMinPriority());
-
       // Database operations should not be canceled
       // using Interupt() while scanning as it could
       // result in unexpected behaviour.
       m_bCanInterrupt = false;
 
       bool bCancelled = false;
-      while (!bCancelled && m_pathsToScan.size())
+      while (!bCancelled && !m_pathsToScan.empty())
       {
         /*
          * A copy of the directory path is used because the path supplied is
@@ -147,7 +150,7 @@ namespace VIDEO
       if (!bCancelled)
       {
         if (m_bClean)
-          CleanDatabase(m_handle,&m_pathsToClean, false);
+          CVideoLibraryQueue::Get().CleanLibrary(m_pathsToClean, false, m_handle);
         else
         {
           if (m_handle)
@@ -156,6 +159,7 @@ namespace VIDEO
         }
       }
 
+      g_infoManager.ResetLibraryBools();
       m_database.Close();
 
       tick = XbmcThreads::SystemClockMillis() - tick;
@@ -168,11 +172,6 @@ namespace VIDEO
     
     m_bRunning = false;
     ANNOUNCEMENT::CAnnouncementManager::Get().Announce(ANNOUNCEMENT::VideoLibrary, "xbmc", "OnScanFinished");
-
-    // we need to clear the videodb cache and update any active lists
-    CUtil::DeleteVideoDatabaseDirectoryCache();
-    CGUIMessage msg(GUI_MSG_SCAN_FINISHED, 0, 0, 0);
-    g_windowManager.SendThreadMessage(msg);
     
     if (m_handle)
       m_handle->MarkFinished();
@@ -212,28 +211,8 @@ namespace VIDEO
     m_database.Close();
     m_bClean = g_advancedSettings.m_bVideoLibraryCleanOnUpdate;
 
-    StopThread();
-    Create();
     m_bRunning = true;
-  }
-
-  void CVideoInfoScanner::StartCleanDatabase()
-  {
-    m_strStartDir.clear();
-    m_scanAll = false;
-    m_pathsToScan.clear();
-    m_pathsToClean.clear();
-
-    m_bClean = true;
-
-    StopThread();
-    Create();
-    m_bRunning = true;
-  }
-
-  bool CVideoInfoScanner::IsScanning()
-  {
-    return m_bRunning;
+    Process();
   }
 
   void CVideoInfoScanner::Stop()
@@ -241,16 +220,7 @@ namespace VIDEO
     if (m_bCanInterrupt)
       m_database.Interupt();
 
-    StopThread(false);
-  }
-
-  void CVideoInfoScanner::CleanDatabase(CGUIDialogProgressBarHandle* handle /*= NULL */, const set<int>* paths /*= NULL */, bool showProgress /*= true */)
-  {
-    m_bRunning = true;
-    m_database.Open();
-    m_database.CleanDatabase(handle, paths, showProgress);
-    m_database.Close();
-    m_bRunning = false;
+    m_bStop = true;
   }
 
   static void OnDirectoryScanned(const std::string& strDirectory)
@@ -317,7 +287,10 @@ namespace VIDEO
         m_handle->SetTitle(StringUtils::Format(g_localizeStrings.Get(str).c_str(), info->Name().c_str()));
       }
 
-      std::string fastHash = GetFastHash(strDirectory, regexps);
+      std::string fastHash;
+      if (g_advancedSettings.m_bVideoLibraryUseFastHash)
+        fastHash = GetFastHash(strDirectory, regexps);
+
       if (m_database.GetPathHash(strDirectory, dbHash) && !fastHash.empty() && fastHash == dbHash)
       { // fast hashes match - no need to process anything
         hash = fastHash;
@@ -367,10 +340,7 @@ namespace VIDEO
         GetPathHash(items, hash);
         bSkip = true;
         if (!m_database.GetPathHash(strDirectory, dbHash) || dbHash != hash)
-        {
-          m_database.SetPathHash(strDirectory, hash);
           bSkip = false;
-        }
         else
           items.Clear();
       }
@@ -519,7 +489,6 @@ namespace VIDEO
     if(pDlgProgress)
       pDlgProgress->ShowProgressBar(false);
 
-    g_infoManager.ResetLibraryBools();
     m_database.Close();
     return FoundSomeInfo;
   }
@@ -707,7 +676,36 @@ namespace VIDEO
 
     CVideoInfoTag showInfo;
     m_database.GetTvShowInfo("", showInfo, showID);
-    return OnProcessSeriesFolder(files, scraper, useLocal, showInfo, progress);
+    INFO_RET ret = OnProcessSeriesFolder(files, scraper, useLocal, showInfo, progress);
+
+    if (ret == INFO_ADDED)
+    {
+      map<int, map<string, string> > seasonArt;
+      m_database.GetTvShowSeasonArt(showID, seasonArt);
+
+      bool updateSeasonArt = false;
+      for (map<int, map<string, string> >::const_iterator i = seasonArt.begin(); i != seasonArt.end(); ++i)
+      {
+        if (i->second.empty())
+        {
+          updateSeasonArt = true;
+          break;
+        }
+      }
+
+      if (updateSeasonArt)
+      {
+        CVideoInfoDownloader loader(scraper);
+        loader.GetArtwork(showInfo);
+        GetSeasonThumbs(showInfo, seasonArt, CVideoThumbLoader::GetArtTypes(MediaTypeSeason), useLocal);
+        for (map<int, map<string, string> >::const_iterator i = seasonArt.begin(); i != seasonArt.end(); ++i)
+        {
+          int seasonID = m_database.AddSeason(showID, i->first);
+          m_database.SetArtForItem(seasonID, MediaTypeSeason, i->second);
+        }
+      }
+    }
+    return ret;
   }
 
   bool CVideoInfoScanner::EnumerateSeriesFolder(CFileItem* item, EPISODELIST& episodeList)
@@ -729,7 +727,9 @@ namespace VIDEO
         m_pathsToScan.erase(it);
 
       std::string hash, dbHash;
-      hash = GetRecursiveFastHash(item->GetPath(), regexps);
+      if (g_advancedSettings.m_bVideoLibraryUseFastHash)
+        hash = GetRecursiveFastHash(item->GetPath(), regexps);
+
       if (m_database.GetPathHash(item->GetPath(), dbHash) && !hash.empty() && dbHash == hash)
       {
         // fast hashes match - no need to process anything
@@ -1190,15 +1190,6 @@ namespace VIDEO
     {
       if (pItem->m_bIsFolder)
       {
-        map<int, map<string, string> > seasonArt;
-        if (!libraryImport)
-        { // get and cache season thumbs
-          GetSeasonThumbs(movieDetails, seasonArt, CVideoThumbLoader::GetArtTypes(MediaTypeSeason), useLocal);
-          for (map<int, map<string, string> >::iterator i = seasonArt.begin(); i != seasonArt.end(); ++i)
-            for (map<string, string>::iterator j = i->second.begin(); j != i->second.end(); ++j)
-              CTextureCache::Get().BackgroundCacheImage(j->second);
-        }
-
         /*
          multipaths are not stored in the database, so in the case we have one,
          we split the paths, and compute the parent paths in each case.
@@ -1209,6 +1200,11 @@ namespace VIDEO
         vector< pair<string, string> > paths;
         for (vector<string>::const_iterator i = multipath.begin(); i != multipath.end(); ++i)
           paths.push_back(make_pair(*i, URIUtils::GetParentPath(*i)));
+
+        map<int, map<string, string> > seasonArt;
+
+        if (!libraryImport)
+          GetSeasonThumbs(movieDetails, seasonArt, CVideoThumbLoader::GetArtTypes(MediaTypeSeason), useLocal);
 
         lResult = m_database.SetDetailsForTvShow(paths, movieDetails, art, seasonArt);
         movieDetails.m_iDbId = lResult;
@@ -1253,7 +1249,7 @@ namespace VIDEO
 
     CFileItemPtr itemCopy = CFileItemPtr(new CFileItem(*pItem));
     CVariant data;
-    if (IsScanning())
+    if (m_bRunning)
       data["transaction"] = true;
     ANNOUNCEMENT::CAnnouncementManager::Get().Announce(ANNOUNCEMENT::VideoLibrary, "xbmc", "OnUpdate", itemCopy, data);
     return lResult;
@@ -1362,7 +1358,7 @@ namespace VIDEO
     pItem->SetArt(art);
 
     // parent folder to apply the thumb to and to search for local actor thumbs
-    std::string parentDir = GetParentDir(*pItem);
+    std::string parentDir = URIUtils::GetBasePath(pItem->GetPath());
     if (CSettings::Get().GetBool("videolibrary.actorthumbs"))
       FetchActorThumbs(movieDetails.m_cast, actorArtPath.empty() ? parentDir : actorArtPath);
     if (bApplyToDir)
@@ -1776,6 +1772,9 @@ namespace VIDEO
 
   bool CVideoInfoScanner::CanFastHash(const CFileItemList &items, const vector<string> &excludes) const
   {
+    if (!g_advancedSettings.m_bVideoLibraryUseFastHash)
+      return false;
+
     for (int i = 0; i < items.Size(); ++i)
     {
       if (items[i]->m_bIsFolder && !CUtil::ExcludeFileOrFolder(items[i]->GetPath(), excludes))
@@ -1867,6 +1866,11 @@ namespace VIDEO
     }
     for (int season = -1; season <= maxSeasons; season++)
     {
+      // skip if we already have some art
+      map<int, map<string, string> >::const_iterator it = seasonArt.find(season);
+      if (it != seasonArt.end() && !it->second.empty())
+        continue;
+
       map<string, string> art;
       if (useLocal)
       {
@@ -1920,7 +1924,7 @@ namespace VIDEO
           art.insert(make_pair(artTypes.front(), image));
       }
 
-      seasonArt.insert(make_pair(season, art));
+      seasonArt[season] = art;
     }
   }
 
@@ -2058,27 +2062,4 @@ namespace VIDEO
     }
     return 0;    // didn't find anything
   }
-
-  std::string CVideoInfoScanner::GetParentDir(const CFileItem &item) const
-  {
-    std::string strCheck = item.GetPath();
-    if (item.IsStack())
-      strCheck = CStackDirectory::GetFirstStackedFile(item.GetPath());
-
-    std::string strDirectory = URIUtils::GetDirectory(strCheck);
-    if (URIUtils::IsInRAR(strCheck))
-    {
-      std::string strPath=strDirectory;
-      URIUtils::GetParentPath(strPath, strDirectory);
-    }
-    if (item.IsStack())
-    {
-      strCheck = strDirectory;
-      URIUtils::RemoveSlashAtEnd(strCheck);
-      if (URIUtils::GetFileName(strCheck).size() == 3 && StringUtils::StartsWithNoCase(URIUtils::GetFileName(strCheck), "cd"))
-        strDirectory = URIUtils::GetDirectory(strCheck);
-    }
-    return strDirectory;
-  }
-
 }

@@ -40,7 +40,7 @@
 #include "utils/md5.h"
 #include "utils/Variant.h"
 #include "settings/Settings.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "URL.h"
 #include "cores/IPlayer.h"
 #include "interfaces/AnnouncementManager.h"
@@ -138,7 +138,7 @@ const char *eventStrings[] = {"playing", "paused", "loading", "stopped"};
 "<key>protovers</key>\r\n"\
 "<string>1.0</string>\r\n"\
 "<key>srcvers</key>\r\n"\
-"<string>"AIRPLAY_SERVER_VERSION_STR"</string>\r\n"\
+"<string>" AIRPLAY_SERVER_VERSION_STR "</string>\r\n"\
 "</dict>\r\n"\
 "</plist>\r\n"
 

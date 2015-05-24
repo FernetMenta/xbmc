@@ -408,6 +408,13 @@ public:
    */
   int GetPlayCount(const CFileItem &item);
 
+  /*! \brief Get the playcount of a filename and path
+   \param strFilenameAndPath filename and path to get the playcount for
+   \return the playcount of the item, or -1 on error
+   \sa SetPlayCount, IncrementPlayCount, GetPlayCounts
+   */
+  int GetPlayCount(const std::string& strFilenameAndPath);
+
   /*! \brief Update the last played time of an item
    Updates the last played date
    \param item CFileItem to update the last played time for
@@ -459,6 +466,9 @@ public:
 
   void GetEpisodesByFile(const std::string& strFilenameAndPath, std::vector<CVideoInfoTag>& episodes);
 
+  int SetDetailsForItem(const CVideoInfoTag& details, const std::map<std::string, std::string> &artwork);
+  int SetDetailsForItem(int id, const MediaType& mediaType, const CVideoInfoTag& details, const std::map<std::string, std::string> &artwork);
+
   int SetDetailsForMovie(const std::string& strFilenameAndPath, const CVideoInfoTag& details, const std::map<std::string, std::string> &artwork, int idMovie = -1);
   int SetDetailsForMovieSet(const CVideoInfoTag& details, const std::map<std::string, std::string> &artwork, int idSet = -1);
 
@@ -503,9 +513,32 @@ public:
   void DeleteSet(int idSet);
   void DeleteTag(int idTag, VIDEODB_CONTENT_TYPE mediaType);
 
-  // per-file video settings
-  bool GetVideoSettings(const std::string &strFilenameAndPath, CVideoSettings &settings);
-  void SetVideoSettings(const std::string &strFilenameAndPath, const CVideoSettings &settings);
+  /*! \brief Get video settings for the specified file id
+   \param idFile file id to get the settings for
+   \return true if video settings found, false otherwise
+   \sa SetVideoSettings
+   */
+  bool GetVideoSettings(int idFile, CVideoSettings &settings);
+
+  /*! \brief Get video settings for the specified file item
+   \param item item to get the settings for
+   \return true if video settings found, false otherwise
+   \sa SetVideoSettings
+   */
+  bool GetVideoSettings(const CFileItem &item, CVideoSettings &settings);
+
+  /*! \brief Get video settings for the specified file path
+   \param filePath filepath to get the settings for
+   \return true if video settings found, false otherwise
+   \sa SetVideoSettings
+   */
+  bool GetVideoSettings(const std::string &filePath, CVideoSettings &settings);
+
+  /*! \brief Set video settings for the specified file path
+   \param filePath filepath to set the settings for
+   \sa GetVideoSettings
+   */
+  void SetVideoSettings(const std::string &filePath, const CVideoSettings &settings);
 
   /**
    * Erases settings for all files beginning with the specified path. Defaults 
@@ -658,7 +691,7 @@ public:
   bool HasContent(VIDEODB_CONTENT_TYPE type);
   bool HasSets() const;
 
-  void CleanDatabase(CGUIDialogProgressBarHandle* handle=NULL, const std::set<int>* paths=NULL, bool showProgress=true);
+  void CleanDatabase(CGUIDialogProgressBarHandle* handle = NULL, const std::set<int>& paths = std::set<int>(), bool showProgress = true);
 
   /*! \brief Add a file to the database, if necessary
    If the file is already in the database, we simply return its id.
@@ -691,7 +724,6 @@ public:
   void UpdateFileDateAdded(int idFile, const std::string& strFileNameAndPath);
 
   void ExportToXML(const std::string &path, bool singleFiles = false, bool images=false, bool actorThumbs=false, bool overwrite=false);
-  bool ExportSkipEntry(const std::string &nfoFile);
   void ExportActorThumbs(const std::string &path, const CVideoInfoTag& tag, bool singleFiles, bool overwrite=false);
   void ImportFromXML(const std::string &path);
   void DumpToDummyFiles(const std::string &path);
@@ -745,6 +777,7 @@ public:
   std::string GetArtForItem(int mediaId, const MediaType &mediaType, const std::string &artType);
   bool RemoveArtForItem(int mediaId, const MediaType &mediaType, const std::string &artType);
   bool RemoveArtForItem(int mediaId, const MediaType &mediaType, const std::set<std::string> &artTypes);
+  bool GetTvShowSeasons(int showId, std::map<int, int> &seasons);
   bool GetTvShowSeasonArt(int mediaId, std::map<int, std::map<std::string, std::string> > &seasonArt);
   bool GetArtTypes(const MediaType &mediaType, std::vector<std::string> &artTypes);
 
@@ -755,12 +788,12 @@ public:
 
   virtual bool GetFilter(CDbUrl &videoUrl, Filter &filter, SortDescription &sorting);
 
+  int AddSeason(int showID, int season);
   int AddSet(const std::string& strSet);
   void ClearMovieSet(int idMovie);
   void SetMovieSet(int idMovie, int idSet);
 
 protected:
-  friend class CEdenVideoArtUpdater;
   int GetMovieId(const std::string& strFilenameAndPath);
   int GetMusicVideoId(const std::string& strFilenameAndPath);
 
@@ -782,7 +815,6 @@ protected:
 
   int AddTvShow();
   int AddMusicVideo(const std::string& strFilenameAndPath);
-  int AddSeason(int showID, int season);
 
   /*! \brief Adds a path to the tvshow link table.
    \param idShow the id of the show.
@@ -813,20 +845,20 @@ protected:
 
   void DeleteStreamDetails(int idFile);
   CVideoInfoTag GetDetailsByTypeAndId(VIDEODB_CONTENT_TYPE type, int id);
-  CVideoInfoTag GetDetailsForMovie(std::auto_ptr<dbiplus::Dataset> &pDS, bool getDetails = false);
+  CVideoInfoTag GetDetailsForMovie(std::unique_ptr<dbiplus::Dataset> &pDS, bool getDetails = false);
   CVideoInfoTag GetDetailsForMovie(const dbiplus::sql_record* const record, bool getDetails = false);
-  CVideoInfoTag GetDetailsForTvShow(std::auto_ptr<dbiplus::Dataset> &pDS, bool getDetails = false, CFileItem* item = NULL);
+  CVideoInfoTag GetDetailsForTvShow(std::unique_ptr<dbiplus::Dataset> &pDS, bool getDetails = false, CFileItem* item = NULL);
   CVideoInfoTag GetDetailsForTvShow(const dbiplus::sql_record* const record, bool getDetails = false, CFileItem* item = NULL);
-  CVideoInfoTag GetDetailsForEpisode(std::auto_ptr<dbiplus::Dataset> &pDS, bool getDetails = false);
+  CVideoInfoTag GetDetailsForEpisode(std::unique_ptr<dbiplus::Dataset> &pDS, bool getDetails = false);
   CVideoInfoTag GetDetailsForEpisode(const dbiplus::sql_record* const record, bool getDetails = false);
-  CVideoInfoTag GetDetailsForMusicVideo(std::auto_ptr<dbiplus::Dataset> &pDS, bool getDetails = false);
+  CVideoInfoTag GetDetailsForMusicVideo(std::unique_ptr<dbiplus::Dataset> &pDS, bool getDetails = false);
   CVideoInfoTag GetDetailsForMusicVideo(const dbiplus::sql_record* const record, bool getDetails = false);
   bool GetPeopleNav(const std::string& strBaseDir, CFileItemList& items, const char *type, int idContent = -1, const Filter &filter = Filter(), bool countOnly = false);
   bool GetNavCommon(const std::string& strBaseDir, CFileItemList& items, const char *type, int idContent=-1, const Filter &filter = Filter(), bool countOnly = false);
   void GetCast(int media_id, const std::string &media_type, std::vector<SActorInfo> &cast);
   void GetTags(int media_id, const std::string &media_type, std::vector<std::string> &tags);
 
-  void GetDetailsFromDB(std::auto_ptr<dbiplus::Dataset> &pDS, int min, int max, const SDbTableOffsets *offsets, CVideoInfoTag &details, int idxOffset = 2);
+  void GetDetailsFromDB(std::unique_ptr<dbiplus::Dataset> &pDS, int min, int max, const SDbTableOffsets *offsets, CVideoInfoTag &details, int idxOffset = 2);
   void GetDetailsFromDB(const dbiplus::sql_record* const record, int min, int max, const SDbTableOffsets *offsets, CVideoInfoTag &details, int idxOffset = 2);
   std::string GetValueString(const CVideoInfoTag &details, int min, int max, const SDbTableOffsets *offsets) const;
 
@@ -864,6 +896,13 @@ private:
    \param shows whether this path is from a tvshow (defaults to false)
    */
   bool LookupByFolders(const std::string &path, bool shows = false);
+
+  /*! \brief Get the playcount for a file id
+   \param iFileId file id to get the playcount for
+   \return the playcount of the item, or -1 on error
+   \sa SetPlayCount, IncrementPlayCount, GetPlayCounts
+   */
+  int GetPlayCount(int iFileId);
 
   virtual int GetMinSchemaVersion() const { return 60; };
   virtual int GetSchemaVersion() const;

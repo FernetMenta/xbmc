@@ -28,7 +28,7 @@
 #include "utils/SortUtils.h"
 #include "utils/StringUtils.h"
 #include "FileItem.h"
-#include "Key.h"
+#include "input/Key.h"
 #include "utils/MathUtils.h"
 #include "utils/XBMCTinyXML.h"
 #include "listproviders/IListProvider.h"
@@ -1227,7 +1227,7 @@ std::string CGUIBaseContainer::GetLabel(int info) const
     break;
   case CONTAINER_CURRENT_ITEM:
     {
-      if (m_items.size() && m_items[0]->IsFileItem() && (boost::static_pointer_cast<CFileItem>(m_items[0]))->IsParentFolder())
+      if (m_items.size() && m_items[0]->IsFileItem() && (std::static_pointer_cast<CFileItem>(m_items[0]))->IsParentFolder())
         label = StringUtils::Format("%i", GetSelectedItem());
       else
         label = StringUtils::Format("%i", GetSelectedItem() + 1);
@@ -1236,7 +1236,7 @@ std::string CGUIBaseContainer::GetLabel(int info) const
   case CONTAINER_NUM_ITEMS:
     {
       unsigned int numItems = GetNumItems();
-      if (numItems && m_items[0]->IsFileItem() && (boost::static_pointer_cast<CFileItem>(m_items[0]))->IsParentFolder())
+      if (numItems && m_items[0]->IsFileItem() && (std::static_pointer_cast<CFileItem>(m_items[0]))->IsParentFolder())
         label = StringUtils::Format("%u", numItems-1);
       else
         label = StringUtils::Format("%u", numItems);

@@ -52,6 +52,7 @@
 #include "GUIUserMessages.h"
 #include "addons/AddonManager.h"
 #include "addons/Scraper.h"
+#include "CueDocument.h"
 
 #include <algorithm>
 
@@ -129,7 +130,7 @@ void CMusicInfoScanner::Process()
       m_needsCleanup = false;
 
       bool commit = true;
-      for (std::set<std::string>::const_iterator it = m_pathsToScan.begin(); it != m_pathsToScan.end(); it++)
+      for (std::set<std::string>::const_iterator it = m_pathsToScan.begin(); it != m_pathsToScan.end(); ++it)
       {
         if (!CDirectory::Exists(*it) && !m_bClean)
         {
@@ -443,7 +444,7 @@ bool CMusicInfoScanner::DoScan(const std::string& strDirectory)
 
   // load subfolder
   CFileItemList items;
-  CDirectory::GetDirectory(strDirectory, items, g_advancedSettings.m_musicExtensions + "|.jpg|.tbn|.lrc|.cdg");
+  CDirectory::GetDirectory(strDirectory, items, g_advancedSettings.GetMusicExtensions() + "|.jpg|.tbn|.lrc|.cdg");
 
   // sort and get the path hash.  Note that we don't filter .cue sheet items here as we want
   // to detect changes in the .cue sheet as well.  The .cue sheet items only need filtering
@@ -532,20 +533,29 @@ INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items, CFileItemList& 
     CMusicInfoTag& tag = *pItem->GetMusicInfoTag();
     if (!tag.Loaded())
     {
-      auto_ptr<IMusicInfoTagLoader> pLoader (CMusicInfoTagLoaderFactory::CreateLoader(pItem->GetPath()));
+      unique_ptr<IMusicInfoTagLoader> pLoader (CMusicInfoTagLoaderFactory::CreateLoader(*pItem));
       if (NULL != pLoader.get())
         pLoader->Load(pItem->GetPath(), tag);
     }
 
     if (m_handle && m_itemCount>0)
-      m_handle->SetPercentage(m_currentItem/(float)m_itemCount*100);
+      m_handle->SetPercentage(m_currentItem / (float)m_itemCount * 100);
 
-    if (!tag.Loaded())
+    if (!tag.Loaded() && !pItem->HasCueDocument())
     {
       CLog::Log(LOGDEBUG, "%s - No tag found for: %s", __FUNCTION__, pItem->GetPath().c_str());
       continue;
     }
-    scannedItems.Add(pItem);
+    else
+    {
+      if (!tag.GetCueSheet().empty())
+        pItem->LoadEmbeddedCue();
+    }
+
+    if (pItem->HasCueDocument())
+      pItem->LoadTracksFromCueDocument(scannedItems);
+    else
+      scannedItems.Add(pItem);
   }
   return INFO_ADDED;
 }
@@ -745,16 +755,20 @@ int CMusicInfoScanner::RetrieveMusicInfo(const std::string& strDirectory, CFileI
   ADDON::ScraperPtr albumScraper;
   ADDON::ScraperPtr artistScraper;
   if(ADDON::CAddonMgr::Get().GetDefault(ADDON::ADDON_SCRAPER_ALBUMS, addon))
-    albumScraper = boost::dynamic_pointer_cast<ADDON::CScraper>(addon);
+    albumScraper = std::dynamic_pointer_cast<ADDON::CScraper>(addon);
 
   if(ADDON::CAddonMgr::Get().GetDefault(ADDON::ADDON_SCRAPER_ARTISTS, addon))
-    artistScraper = boost::dynamic_pointer_cast<ADDON::CScraper>(addon);
+    artistScraper = std::dynamic_pointer_cast<ADDON::CScraper>(addon);
 
   // Add each album
   for (VECALBUMS::iterator album = albums.begin(); album != albums.end(); ++album)
   {
     if (m_bStop)
       break;
+
+    // mark albums without a title as singles
+    if (album->strAlbum.empty())
+      album->releaseType = CAlbum::Single;
 
     album->strPath = strDirectory;
     m_musicDatabase.AddAlbum(*album);
@@ -804,7 +818,7 @@ int CMusicInfoScanner::RetrieveMusicInfo(const std::string& strDirectory, CFileI
 
         for (VECSONGS::iterator song  = album->songs.begin();
                                 song != album->songs.end();
-                                song++)
+                                ++song)
         {
           if (m_bStop)
             break;
@@ -1477,7 +1491,7 @@ int CMusicInfoScanner::CountFilesRecursively(const std::string& strPath)
 {
   // load subfolder
   CFileItemList items;
-  CDirectory::GetDirectory(strPath, items, g_advancedSettings.m_musicExtensions, DIR_FLAG_NO_FILE_DIRS);
+  CDirectory::GetDirectory(strPath, items, g_advancedSettings.GetMusicExtensions(), DIR_FLAG_NO_FILE_DIRS);
 
   if (m_bStop)
     return 0;

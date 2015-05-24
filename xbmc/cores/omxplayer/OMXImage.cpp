@@ -39,6 +39,7 @@
 #include "utils/URIUtils.h"
 #include "windowing/WindowingFactory.h"
 #include "Application.h"
+#include <cassert>
 
 #ifdef _DEBUG
 #define CheckError() m_result = eglGetError(); if (m_result != EGL_SUCCESS) CLog::Log(LOGERROR, "EGL error in %s: %x",__FUNCTION__, m_result);
@@ -1056,6 +1057,7 @@ bool COMXImageDec::HandlePortSettingChange(unsigned int resize_width, unsigned i
     if(omx_err != OMX_ErrorNone)
      {
       CLog::Log(LOGERROR, "%s::%s m_omx_resize FillThisBuffer result(0x%x)\n", CLASSNAME, __func__, omx_err);
+      m_omx_resize.DecoderFillBufferDone(m_omx_resize.GetComponent(), m_decoded_buffer);
       return false;
     }
   }
@@ -1172,6 +1174,7 @@ bool COMXImageDec::Decode(const uint8_t *demuxer_content, unsigned demuxer_bytes
        if (omx_err != OMX_ErrorNone)
        {
          CLog::Log(LOGERROR, "%s::%s OMX_EmptyThisBuffer() failed with result(0x%x)\n", CLASSNAME, __func__, omx_err);
+         m_omx_decoder.DecoderEmptyBufferDone(m_omx_decoder.GetComponent(), omx_buffer);
          return false;
        }
     }
@@ -1238,8 +1241,17 @@ COMXImageEnc::~COMXImageEnc()
 
   OMX_INIT_STRUCTURE(m_encoded_format);
   m_encoded_buffer = NULL;
-  if(m_omx_encoder.IsInitialized())
-    m_omx_encoder.Deinitialize();
+  if (!m_success)
+  {
+    if(m_omx_encoder.IsInitialized())
+    {
+      m_omx_encoder.SetStateForComponent(OMX_StateIdle);
+      m_omx_encoder.FlushAll();
+      m_omx_encoder.FreeInputBuffers();
+      m_omx_encoder.FreeOutputBuffers();
+      m_omx_encoder.Deinitialize();
+    }
+  }
   limit_calls_leave();
 }
 
@@ -1381,6 +1393,7 @@ bool COMXImageEnc::Encode(unsigned char *buffer, int size, unsigned width, unsig
     if (omx_err != OMX_ErrorNone)
     {
       CLog::Log(LOGERROR, "%s::%s OMX_EmptyThisBuffer() failed with result(0x%x)\n", CLASSNAME, __func__, omx_err);
+      m_omx_encoder.DecoderEmptyBufferDone(m_omx_encoder.GetComponent(), omx_buffer);
       break;
     }
   }
@@ -1395,12 +1408,15 @@ bool COMXImageEnc::Encode(unsigned char *buffer, int size, unsigned width, unsig
 
   omx_err = m_omx_encoder.FillThisBuffer(m_encoded_buffer);
   if(omx_err != OMX_ErrorNone)
+  {
+    CLog::Log(LOGERROR, "%s::%s m_omx_encoder.FillThisBuffer result(0x%x)\n", CLASSNAME, __func__, omx_err);
+    m_omx_encoder.DecoderFillBufferDone(m_omx_encoder.GetComponent(), m_encoded_buffer);
     return false;
-
-  omx_err = m_omx_encoder.WaitForOutputDone(1000);
+  }
+  omx_err = m_omx_encoder.WaitForOutputDone(2000);
   if(omx_err != OMX_ErrorNone)
   {
-    CLog::Log(LOGERROR, "%s::%s m_omx_resize.WaitForOutputDone result(0x%x)\n", CLASSNAME, __func__, omx_err);
+    CLog::Log(LOGERROR, "%s::%s m_omx_encoder.WaitForOutputDone result(0x%x)\n", CLASSNAME, __func__, omx_err);
     return false;
   }
 
@@ -1443,6 +1459,7 @@ bool COMXImageEnc::CreateThumbnailFromSurface(unsigned char* buffer, unsigned in
     return true;
   }
 
+  m_success = true;
   return false;
 }
 
@@ -1840,6 +1857,7 @@ bool COMXImageReEnc::ReEncode(COMXImageFile &srcFile, unsigned int maxWidth, uns
          if (omx_err != OMX_ErrorNone)
          {
            CLog::Log(LOGERROR, "%s::%s %s OMX_EmptyThisBuffer() failed with result(0x%x)\n", CLASSNAME, __func__, srcFile.GetFilename(), omx_err);
+           m_omx_decoder.DecoderEmptyBufferDone(m_omx_decoder.GetComponent(), omx_buffer);
            return false;
          }
       }
@@ -1878,12 +1896,13 @@ bool COMXImageReEnc::ReEncode(COMXImageFile &srcFile, unsigned int maxWidth, uns
       if(omx_err != OMX_ErrorNone)
       {
         CLog::Log(LOGERROR, "%s::%s %s FillThisBuffer() failed (%x)\n", CLASSNAME, __func__, srcFile.GetFilename(), omx_err);
+        m_omx_encoder.DecoderFillBufferDone(m_omx_encoder.GetComponent(), m_encoded_buffer);
         return false;
       }
     }
     if (m_encoded_buffer)
     {
-      omx_err = m_omx_encoder.WaitForOutputDone(1000);
+      omx_err = m_omx_encoder.WaitForOutputDone(2000);
       if (omx_err != OMX_ErrorNone)
       {
         CLog::Log(LOGERROR, "%s::%s %s m_omx_encoder.WaitForOutputDone result(0x%x)\n", CLASSNAME, __func__, srcFile.GetFilename(), omx_err);
@@ -2197,6 +2216,7 @@ bool COMXTexture::Decode(const uint8_t *demuxer_content, unsigned demuxer_bytes,
         if (omx_err != OMX_ErrorNone)
         {
           CLog::Log(LOGERROR, "%s::%s - m_omx_decoder.OMX_EmptyThisBuffer (%x)", CLASSNAME, __func__, omx_err);
+          m_omx_decoder.DecoderEmptyBufferDone(m_omx_decoder.GetComponent(), omx_buffer);
           return false;
          }
       }
@@ -2246,10 +2266,11 @@ bool COMXTexture::Decode(const uint8_t *demuxer_content, unsigned demuxer_bytes,
       if (omx_err != OMX_ErrorNone)
       {
         CLog::Log(LOGERROR, "%s::%s error m_omx_egl_render.FillThisBuffer (%x)", CLASSNAME, __func__, omx_err);
+        m_omx_egl_render.DecoderFillBufferDone(m_omx_egl_render.GetComponent(), m_egl_buffer);
         return false;
       }
 
-      omx_err = m_omx_egl_render.WaitForOutputDone(1000);
+      omx_err = m_omx_egl_render.WaitForOutputDone(2000);
       if (omx_err != OMX_ErrorNone)
       {
         CLog::Log(LOGERROR, "%s::%s m_omx_egl_render.WaitForOutputDone result(0x%x)\n", CLASSNAME, __func__, omx_err);

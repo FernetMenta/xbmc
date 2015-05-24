@@ -72,8 +72,6 @@ public:
 
   virtual std::string GetLabel2() const;
 
-  void SetShowCursorAlways(bool always) { m_cursorShowAlways = always; }
-
   unsigned int GetCursorPosition() const;
   void SetCursorPosition(unsigned int iPosition);
 
@@ -92,6 +90,7 @@ protected:
   virtual void RenderText();
   virtual CGUILabel::COLOR GetTextColor() const;
   std::wstring GetDisplayedText() const;
+  std::string GetDescriptionByIndex(int index) const;
   bool SetStyledText(const std::wstring &text);
   void RecalcLabelPosition();
   void ValidateCursor();
@@ -119,7 +118,6 @@ protected:
 
   unsigned int m_cursorPos;
   unsigned int m_cursorBlink;
-  bool         m_cursorShowAlways;
 
   int m_inputHeading;
   INPUT_TYPE m_inputType;

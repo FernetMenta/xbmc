@@ -28,10 +28,11 @@
 #include "GUIUserMessages.h"
 #include "settings/DisplaySettings.h"
 #include "guilib/GUIWindowManager.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #ifdef HAS_SDL_JOYSTICK
 #include "input/SDLJoystick.h"
 #endif
+#include "input/InputManager.h"
 #include "input/MouseStat.h"
 #include "WindowingFactory.h"
 #if defined(TARGET_DARWIN)
@@ -237,7 +238,7 @@ bool CWinEventsSDL::MessagePump()
       case SDL_JOYHATMOTION:
       case SDL_JOYDEVICEADDED:
       case SDL_JOYDEVICEREMOVED:
-        g_Joystick.Update(event);
+        CInputManager::Get().UpdateJoystick(event);
         ret = true;
         break;
 #endif
@@ -345,7 +346,7 @@ bool CWinEventsSDL::MessagePump()
       {
         if (0 == (SDL_GetAppState() & SDL_APPMOUSEFOCUS))
         {
-          g_Mouse.SetActive(false);
+          CInputManager::Get().SetMouseActive(false);
 #if defined(TARGET_DARWIN_OSX)
           // See CApplication::ProcessSlow() for a description as to why we call Cocoa_HideMouse.
           // this is here to restore the pointer when toggling back to window mode from fullscreen.

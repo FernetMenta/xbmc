@@ -46,6 +46,7 @@
 #include "utils/StringUtils.h"
 #include "guilib/LocalizeStrings.h"
 #include "music/MusicDbUrl.h"
+#include "settings/Settings.h"
 
 using namespace std;
 using namespace XFILE::MUSICDATABASEDIRECTORY;
@@ -95,7 +96,7 @@ CDirectoryNode* CDirectoryNode::ParseURL(const std::string& strPath)
 //  returns the database ids of the path,
 void CDirectoryNode::GetDatabaseInfo(const std::string& strPath, CQueryParams& params)
 {
-  auto_ptr<CDirectoryNode> pNode(CDirectoryNode::ParseURL(strPath));
+  unique_ptr<CDirectoryNode> pNode(CDirectoryNode::ParseURL(strPath));
 
   if (!pNode.get())
     return;
@@ -260,7 +261,7 @@ bool CDirectoryNode::GetChilds(CFileItemList& items)
   if (CanCache() && items.Load())
     return true;
 
-  auto_ptr<CDirectoryNode> pNode(CDirectoryNode::CreateNode(GetChildType(), "", this));
+  unique_ptr<CDirectoryNode> pNode(CDirectoryNode::CreateNode(GetChildType(), "", this));
 
   bool bSuccess=false;
   if (pNode.get())
@@ -292,8 +293,8 @@ void CDirectoryNode::AddQueuingFolder(CFileItemList& items) const
   if (!musicUrl.FromString(BuildPath()))
     return;
 
-  // always hide "all" items
-  if (g_advancedSettings.m_bMusicLibraryHideAllItems)
+  // always show "all" items by default
+  if (!CSettings::Get().GetBool("musiclibrary.showallitems"))
     return;
 
   // no need for "all" item when only one item

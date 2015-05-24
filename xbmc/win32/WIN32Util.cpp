@@ -42,6 +42,9 @@
 #include "utils/Environment.h"
 #include "utils/URIUtils.h"
 #include "utils/StringUtils.h"
+#include "win32/crts_caller.h"
+
+#include <cassert>
 
 #define DLL_ENV_PATH "special://xbmc/system/;" \
                      "special://xbmc/system/players/dvdplayer/;" \
@@ -50,6 +53,8 @@
                      "special://xbmc/system/python/;" \
                      "special://xbmc/system/webserver/;" \
                      "special://xbmc/"
+
+#include <locale.h>
 
 extern HWND g_hWnd;
 
@@ -772,8 +777,8 @@ bool CWIN32Util::EjectDrive(const char cDriveLetter)
   char VetoName[MAX_PATH];
   bool bSuccess = false;
 
-  res = CM_Get_Parent(&DevInst, DevInst, 0); // disk's parent, e.g. the USB bridge, the SATA controller....
-  res = CM_Get_DevNode_Status(&Status, &ProblemNumber, DevInst, 0);
+  CM_Get_Parent(&DevInst, DevInst, 0); // disk's parent, e.g. the USB bridge, the SATA controller....
+  CM_Get_DevNode_Status(&Status, &ProblemNumber, DevInst, 0);
 
   for(int i=0;i<3;i++)
   {
@@ -1387,8 +1392,14 @@ LONG CWIN32Util::UtilRegGetValue( const HKEY hKey, const char *const pcKey, DWOR
   {
     if (ppcBuffer)
     {
-      char *pcValue=*ppcBuffer;
-      if (!pcValue || !pdwSizeBuff || dwSize +dwSizeAdd > *pdwSizeBuff) pcValue= (char*)realloc(pcValue, dwSize +dwSizeAdd);
+      char *pcValue=*ppcBuffer, *pcValueTmp;
+      if (!pcValue || !pdwSizeBuff || dwSize +dwSizeAdd > *pdwSizeBuff) {
+        pcValueTmp = (char*)realloc(pcValue, dwSize +dwSizeAdd);
+        if(pcValueTmp != NULL)
+        {
+          pcValue = pcValueTmp;
+        }
+      }
       lRet= RegQueryValueEx(hKey,pcKey,NULL,NULL,(LPBYTE)pcValue,&dwSize);
 
       if ( lRet == ERROR_SUCCESS || *ppcBuffer ) *ppcBuffer= pcValue;
@@ -1598,3 +1609,10 @@ std::string CWIN32Util::WUSysMsg(DWORD dwError)
   else
     return StringUtils::Format("Unknown error (0x%X)", dwError);
 }
+
+bool CWIN32Util::SetThreadLocalLocale(bool enable /* = true */)
+{
+  const int param = enable ? _ENABLE_PER_THREAD_LOCALE : _DISABLE_PER_THREAD_LOCALE;
+  return CALL_IN_CRTS(_configthreadlocale, param) != -1;
+}
+

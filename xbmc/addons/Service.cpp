@@ -57,7 +57,7 @@ bool CService::Start()
   {
 #ifdef HAS_PYTHON
   case PYTHON:
-    ret = (CScriptInvocationManager::Get().Execute(LibPath(), this->shared_from_this()) != -1);
+    ret = (CScriptInvocationManager::Get().ExecuteAsync(LibPath(), this->shared_from_this()) != -1);
     break;
 #endif
 
@@ -111,48 +111,6 @@ void CService::BuildServiceType()
     m_type = UNKNOWN;
     CLog::Log(LOGERROR, "ADDON: extension '%s' is not currently supported for service addon", ext.c_str());
   }
-}
-
-void CService::OnDisabled()
-{
-  Stop();
-}
-
-void CService::OnEnabled()
-{
-  Start();
-}
-
-bool CService::OnPreInstall()
-{
-  // make sure the addon is stopped
-  AddonPtr localAddon; // need to grab the local addon so we have the correct library path to stop
-  if (CAddonMgr::Get().GetAddon(ID(), localAddon, ADDON_SERVICE, false))
-  {
-    boost::shared_ptr<CService> service = boost::dynamic_pointer_cast<CService>(localAddon);
-    if (service)
-      service->Stop();
-  }
-  return !CAddonMgr::Get().IsAddonDisabled(ID());
-}
-
-void CService::OnPostInstall(bool restart, bool update)
-{
-  if (restart) // reload/start it if it was running
-  {
-    AddonPtr localAddon; // need to grab the local addon so we have the correct library path to stop
-    if (CAddonMgr::Get().GetAddon(ID(), localAddon, ADDON_SERVICE, false))
-    {
-      boost::shared_ptr<CService> service = boost::dynamic_pointer_cast<CService>(localAddon);
-      if (service)
-        service->Start();
-    }
-  }
-}
-
-void CService::OnPreUnInstall()
-{
-  Stop();
 }
 
 }

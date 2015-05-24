@@ -35,8 +35,9 @@
 #include "FileItem.h"
 #include "settings/Settings.h"
 #include "GUIUserMessages.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "guilib/LocalizeStrings.h"
+#include "ContextMenuManager.h"
 
 #define CONTROL_LABELFILES        12
 
@@ -148,12 +149,21 @@ bool CGUIWindowMusicPlaylistEditor::GetDirectory(const std::string &strDirectory
     files->SetLabelPreformated(true);
     files->m_bIsShareOrDrive = true;
     items.Add(files);
-    CFileItemPtr db(new CFileItem("musicdb://", true));
-    db->SetLabel(g_localizeStrings.Get(14022));
-    db->SetLabelPreformated(true);
-    db->m_bIsShareOrDrive = true;
+
+    CFileItemPtr mdb(new CFileItem("musicdb://", true));
+    mdb->SetLabel(g_localizeStrings.Get(14022));
+    mdb->SetLabelPreformated(true);
+    mdb->m_bIsShareOrDrive = true;
     items.SetPath("");
-    items.Add(db);
+    items.Add(mdb);
+
+    CFileItemPtr vdb(new CFileItem("videodb://musicvideos/", true));
+    vdb->SetLabel(g_localizeStrings.Get(20389));
+    vdb->SetLabelPreformated(true);
+    vdb->m_bIsShareOrDrive = true;
+    items.SetPath("");
+    items.Add(vdb);
+
     return true;
   }
 
@@ -318,6 +328,8 @@ void CGUIWindowMusicPlaylistEditor::GetContextButtons(int itemNumber, CContextBu
     buttons.Add(CONTEXT_BUTTON_CLEAR, 192);
   }
   buttons.Add(CONTEXT_BUTTON_LOAD, 21385);
+
+  CContextMenuManager::Get().AddVisibleItems(item, buttons);
 }
 
 bool CGUIWindowMusicPlaylistEditor::OnContextButton(int itemNumber, CONTEXT_BUTTON button)

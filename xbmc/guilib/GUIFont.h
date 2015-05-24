@@ -48,12 +48,15 @@ class CGUIFontTTFBase;
 #define XBFONT_TRUNCATED  0x00000008
 #define XBFONT_JUSTIFIED  0x00000010
 
+// flags for font style. lower 16 bits are the unicode code
+// points, 16-24 are color bits and 24-32 are style bits
 #define FONT_STYLE_NORMAL       0
 #define FONT_STYLE_BOLD         1
 #define FONT_STYLE_ITALICS      2
 #define FONT_STYLE_UPPERCASE    4
 #define FONT_STYLE_LOWERCASE    8
-#define FONT_STYLE_MASK       0xF
+#define FONT_STYLE_CAPITALIZE  16
+#define FONT_STYLE_MASK      0xFF
 
 class CScrollInfo
 {
@@ -67,7 +70,6 @@ public:
   void Reset()
   {
     waitTime = initialWait;
-    characterPos = 0;
     // pixelPos is where we start the current letter, so is measured
     // to the left of the text rendering's left edge.  Thus, a negative
     // value will mean the text starts to the right
@@ -75,25 +77,19 @@ public:
     // privates:
     m_averageFrameTime = 1000.f / fabs((float)defaultSpeed);
     m_lastFrameTime = 0;
-  }
-  uint32_t GetCurrentChar(const vecText &text) const
-  {
-    assert(text.size());
-    if (characterPos < text.size())
-      return text[characterPos];
-    else if (characterPos < text.size() + suffix.size())
-      return suffix[characterPos - text.size()];
-    return text[0];
+    m_widthValid = false;
   }
   float GetPixelsPerFrame();
 
   float pixelPos;
   float pixelSpeed;
   unsigned int waitTime;
-  unsigned int characterPos;
   unsigned int initialWait;
   float initialPos;
-  std::wstring suffix;
+  vecText suffix;
+  mutable float m_textWidth;
+  mutable float m_totalWidth;
+  mutable bool m_widthValid;
 
   static const int defaultSpeed = 60;
 private:

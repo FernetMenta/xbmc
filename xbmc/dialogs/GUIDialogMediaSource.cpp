@@ -23,7 +23,7 @@
 #include "GUIDialogFileBrowser.h"
 #include "video/windows/GUIWindowVideoBase.h"
 #include "guilib/GUIWindowManager.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "utils/StringUtils.h"
@@ -59,6 +59,8 @@ using namespace XFILE;
 
 CGUIDialogMediaSource::CGUIDialogMediaSource(void)
     : CGUIDialog(WINDOW_DIALOG_MEDIA_SOURCE, "DialogMediaSource.xml")
+    , m_confirmed(false)
+    , m_bNameChanged(false)
 {
   m_paths =  new CFileItemList;
   m_loadType = KEEP_IN_MEMORY;
@@ -107,8 +109,6 @@ bool CGUIDialogMediaSource::OnMessage(CGUIMessage& message)
     break;
   case GUI_MSG_WINDOW_INIT:
     {
-      m_confirmed = false;
-      m_bNameChanged=false;
       UpdateButtons();
     }
     break;
@@ -285,10 +285,6 @@ void CGUIDialogMediaSource::OnPathBrowse(int item)
     share1.strName = g_localizeStrings.Get(20012);
     extraShares.push_back(share1);
 
-    share1.strPath = "rtv://*/";
-    share1.strName = StringUtils::Format(strDevices.c_str(), "ReplayTV"); //"ReplayTV Devices"
-    extraShares.push_back(share1);
-
     share1.strPath = "hdhomerun://";
     share1.strName = StringUtils::Format(strDevices.c_str(), "HDHomerun"); //"HDHomerun Devices"
     extraShares.push_back(share1);
@@ -300,8 +296,14 @@ void CGUIDialogMediaSource::OnPathBrowse(int item)
     // add the recordings dir as needed
     if (CPVRDirectory::HasRecordings())
     {
-      share1.strPath = "pvr://recordings/";
+      share1.strPath = "pvr://recordings/active/";
       share1.strName = g_localizeStrings.Get(19017); // TV Recordings
+      extraShares.push_back(share1);
+    }
+    if (CPVRDirectory::HasDeletedRecordings())
+    {
+      share1.strPath = "pvr://recordings/deleted/";
+      share1.strName = g_localizeStrings.Get(19108); // Deleted TV Recordings
       extraShares.push_back(share1);
     }
   }

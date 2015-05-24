@@ -28,6 +28,7 @@
 #include "guilib/GraphicContext.h"
 #include "video/videosync/VideoSync.h"
 #include "windowing/WindowingFactory.h"
+#include "settings/Settings.h"
 
 #if defined(HAS_GLX)
 #include "video/videosync/VideoSyncGLX.h"
@@ -40,8 +41,11 @@
 #if defined(TARGET_WINDOWS)
 #include "video/videosync/VideoSyncD3D.h"
 #endif
-#if defined(TARGET_DARWIN)
-#include "video/videosync/VideoSyncCocoa.h"
+#if defined(TARGET_DARWIN_OSX)
+#include "video/videosync/VideoSyncOsx.h"
+#endif
+#if defined(TARGET_DARWIN_IOS)
+#include "video/videosync/VideoSyncIos.h"
 #endif
 
 using namespace std;
@@ -67,6 +71,13 @@ CVideoReferenceClock::CVideoReferenceClock() : CThread("RefClock")
 
 CVideoReferenceClock::~CVideoReferenceClock()
 {
+}
+
+void CVideoReferenceClock::Start()
+{
+  CSingleExit lock(g_graphicsContext);
+  if(CSettings::Get().GetBool("videoplayer.usedisplayasclock") && !IsRunning())
+    Create();
 }
 
 void CVideoReferenceClock::Stop()
@@ -106,8 +117,10 @@ void CVideoReferenceClock::Process()
 #endif
 #elif defined(TARGET_WINDOWS)
     m_pVideoSync = new CVideoSyncD3D();
-#elif defined(TARGET_DARWIN)
-    m_pVideoSync = new CVideoSyncCocoa();
+#elif defined(TARGET_DARWIN_OSX)
+    m_pVideoSync = new CVideoSyncOsx();
+#elif defined(TARGET_DARWIN_IOS)
+    m_pVideoSync = new CVideoSyncIos();
 #elif defined(TARGET_RASPBERRY_PI)
     m_pVideoSync = new CVideoSyncPi();
 #endif
@@ -280,6 +293,7 @@ void CVideoReferenceClock::UpdateRefreshrate()
 {
   CSingleLock SingleLock(m_CritSection);
   m_RefreshRate = m_pVideoSync->GetFps();
+  m_ClockSpeed = 1.0;
 
   CLog::Log(LOGDEBUG, "CVideoReferenceClock: Detected refreshrate: %.3f hertz", m_RefreshRate);
 }

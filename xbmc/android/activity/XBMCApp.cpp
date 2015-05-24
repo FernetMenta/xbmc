@@ -33,7 +33,7 @@
 
 #include "input/MouseStat.h"
 #include "input/XBMC_keysym.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "windowing/XBMC_events.h"
 #include <android/log.h>
 
@@ -86,17 +86,17 @@ void* thread_run(void* obj)
 }
 CEvent CXBMCApp::m_windowCreated;
 ANativeActivity *CXBMCApp::m_activity = NULL;
+CJNIWakeLock *CXBMCApp::m_wakeLock = NULL;
 ANativeWindow* CXBMCApp::m_window = NULL;
 int CXBMCApp::m_batteryLevel = 0;
-int CXBMCApp::m_initialVolume = 0;
+bool CXBMCApp::m_hasFocus = false;
 CCriticalSection CXBMCApp::m_applicationsMutex;
 std::vector<androidPackage> CXBMCApp::m_applications;
 
 
 CXBMCApp::CXBMCApp(ANativeActivity* nativeActivity)
-  : CJNIContext(nativeActivity)
+  : CJNIApplicationMainActivity(nativeActivity)
   , CJNIBroadcastReceiver("org/xbmc/kodi/XBMCBroadcastReceiver")
-  , m_wakeLock(NULL)
 {
   m_activity = nativeActivity;
   m_firstrun = true;
@@ -111,6 +111,7 @@ CXBMCApp::CXBMCApp(ANativeActivity* nativeActivity)
 
 CXBMCApp::~CXBMCApp()
 {
+  delete m_wakeLock;
 }
 
 void CXBMCApp::onStart()
@@ -137,9 +138,16 @@ void CXBMCApp::onStart()
 void CXBMCApp::onResume()
 {
   android_printf("%s: ", __PRETTY_FUNCTION__);
-  CJNIIntentFilter batteryFilter;
-  batteryFilter.addAction("android.intent.action.BATTERY_CHANGED");
-  registerReceiver(*this, batteryFilter);
+  CJNIIntentFilter intentFilter;
+  intentFilter.addAction("android.intent.action.BATTERY_CHANGED");
+  intentFilter.addAction("android.intent.action.DREAMING_STOPPED");
+  intentFilter.addAction("android.intent.action.SCREEN_ON");
+  registerReceiver(*this, intentFilter);
+
+  if (!g_application.IsInScreenSaver())
+    EnableWakeLock(true);
+  else
+    g_application.WakeUpScreenSaverAndDPMS();
 
   // Clear the applications cache. We could have installed/deinstalled apps
   {
@@ -152,14 +160,13 @@ void CXBMCApp::onPause()
 {
   android_printf("%s: ", __PRETTY_FUNCTION__);
 
-  // Restore volume
-  SetSystemVolume(m_initialVolume);
-
   unregisterReceiver(*this);
 
   // non-aml boxes will ignore this intent broadcast.
   CJNIIntent intent_aml_video_off = CJNIIntent("android.intent.action.REALVIDEO_OFF");
   sendBroadcast(intent_aml_video_off);
+
+  EnableWakeLock(false);
 }
 
 void CXBMCApp::onStop()
@@ -178,12 +185,6 @@ void CXBMCApp::onDestroy()
     XBMC_Stop();
     pthread_join(m_thread, NULL);
     android_printf(" => XBMC finished");
-  }
-
-  if (m_wakeLock != NULL && m_activity != NULL)
-  {
-    delete m_wakeLock;
-    m_wakeLock = NULL;
   }
 }
 
@@ -215,8 +216,6 @@ void CXBMCApp::onCreateWindow(ANativeWindow* window)
   }
   m_window = window;
   m_windowCreated.Set();
-  if (getWakeLock() &&  m_wakeLock)
-    m_wakeLock->acquire();
   if(!m_firstrun)
   {
     XBMC_SetupDisplay();
@@ -242,33 +241,54 @@ void CXBMCApp::onDestroyWindow()
     XBMC_DestroyDisplay();
     XBMC_Pause(true);
   }
-
-  if (m_wakeLock)
-    m_wakeLock->release();
-
 }
 
 void CXBMCApp::onGainFocus()
 {
   android_printf("%s: ", __PRETTY_FUNCTION__);
+  m_hasFocus = true;
+  g_application.WakeUpScreenSaverAndDPMS();
 }
 
 void CXBMCApp::onLostFocus()
 {
   android_printf("%s: ", __PRETTY_FUNCTION__);
+  m_hasFocus = false;
 }
 
-bool CXBMCApp::getWakeLock()
+bool CXBMCApp::EnableWakeLock(bool on)
 {
-  if (m_wakeLock)
-    return true;
+  android_printf("%s: %s", __PRETTY_FUNCTION__, on ? "true" : "false");
+  if (!m_wakeLock)
+  {
+    std::string appName = CCompileInfo::GetAppName();
+    StringUtils::ToLower(appName);
+    std::string className = "org.xbmc." + appName;
+    // SCREEN_BRIGHT_WAKE_LOCK is marked as deprecated but there is no real alternatives for now
+    m_wakeLock = new CJNIWakeLock(CJNIPowerManager(getSystemService("power")).newWakeLock(CJNIPowerManager::SCREEN_BRIGHT_WAKE_LOCK, className.c_str()));
+    if (m_wakeLock)
+      m_wakeLock->setReferenceCounted(false);
+    else
+      return false;
+  }
 
-  std::string appName = CCompileInfo::GetAppName();
-  StringUtils::ToLower(appName);
-  std::string className = "org.xbmc." + appName;
-  m_wakeLock = new CJNIWakeLock(CJNIPowerManager(getSystemService("power")).newWakeLock(className.c_str()));
+  if (on)
+  {
+    if (!m_wakeLock->isHeld())
+      m_wakeLock->acquire();
+  }
+  else
+  {
+    if (m_wakeLock->isHeld())
+      m_wakeLock->release();
+  }
 
   return true;
+}
+
+bool CXBMCApp::HasFocus()
+{
+  return m_hasFocus;
 }
 
 void CXBMCApp::run()
@@ -277,8 +297,6 @@ void CXBMCApp::run()
 
   SetupEnv();
   XBMC::Context context;
-
-  m_initialVolume = GetSystemVolume();
 
   CJNIIntent startIntent = getIntent();
 
@@ -509,10 +527,12 @@ bool CXBMCApp::GetExternalStorage(std::string &path, const std::string &type /* 
 
 bool CXBMCApp::GetStorageUsage(const std::string &path, std::string &usage)
 {
+#define PATH_MAXLEN 50
+
   if (path.empty())
   {
     std::ostringstream fmt;
-    fmt.width(24);  fmt << std::left  << "Filesystem";
+    fmt.width(PATH_MAXLEN);  fmt << std::left  << "Filesystem";
     fmt.width(12);  fmt << std::right << "Size";
     fmt.width(12);  fmt << "Used";
     fmt.width(12);  fmt << "Avail";
@@ -538,7 +558,7 @@ bool CXBMCApp::GetStorageUsage(const std::string &path, std::string &usage)
   std::ostringstream fmt;
   fmt << std::fixed;
   fmt.precision(1);
-  fmt.width(24);  fmt << std::left  << path;
+  fmt.width(PATH_MAXLEN);  fmt << std::left  << (path.size() < PATH_MAXLEN-1 ? path : StringUtils::Left(path, PATH_MAXLEN-4) + "...");
   fmt.width(12);  fmt << std::right << totalSize << "G"; // size in GB
   fmt.width(12);  fmt << usedSize << "G"; // used in GB
   fmt.width(12);  fmt << freeSize << "G"; // free
@@ -571,11 +591,11 @@ int CXBMCApp::GetMaxSystemVolume(JNIEnv *env)
   return 0;
 }
 
-int CXBMCApp::GetSystemVolume()
+float CXBMCApp::GetSystemVolume()
 {
   CJNIAudioManager audioManager(getSystemService("audio"));
   if (audioManager)
-    return audioManager.getStreamVolume();
+    return (float)audioManager.getStreamVolume() / GetMaxSystemVolume();
   else 
   {
     android_printf("CXBMCApp::GetSystemVolume: Could not get Audio Manager");
@@ -583,16 +603,7 @@ int CXBMCApp::GetSystemVolume()
   }
 }
 
-void CXBMCApp::SetSystemVolume(int val)
-{
-  CJNIAudioManager audioManager(getSystemService("audio"));
-  if (audioManager)
-    audioManager.setStreamVolume(val);
-  else
-    android_printf("CXBMCApp::SetSystemVolume: Could not get Audio Manager");
-}
-
-void CXBMCApp::SetSystemVolume(JNIEnv *env, float percent)
+void CXBMCApp::SetSystemVolume(float percent)
 {
   CJNIAudioManager audioManager(getSystemService("audio"));
   int maxVolume = (int)(GetMaxSystemVolume() * percent);
@@ -608,6 +619,9 @@ void CXBMCApp::onReceive(CJNIIntent intent)
   android_printf("CXBMCApp::onReceive Got intent. Action: %s", action.c_str());
   if (action == "android.intent.action.BATTERY_CHANGED")
     m_batteryLevel = intent.getIntExtra("level",-1);
+  else if (action == "android.intent.action.DREAMING_STOPPED" || action == "android.intent.action.SCREEN_ON")
+    if (HasFocus())
+      g_application.WakeUpScreenSaverAndDPMS();
 }
 
 void CXBMCApp::onNewIntent(CJNIIntent intent)
@@ -618,6 +632,11 @@ void CXBMCApp::onNewIntent(CJNIIntent intent)
     std::string playFile = GetFilenameFromIntent(intent);
     CApplicationMessenger::Get().MediaPlay(playFile);
   }
+}
+
+void CXBMCApp::onVolumeChanged(int volume)
+{
+  CApplicationMessenger::Get().SendAction(CAction(ACTION_VOLUME_SET, (float)volume), WINDOW_INVALID, false);
 }
 
 void CXBMCApp::SetupEnv()

@@ -20,15 +20,14 @@
 
 #define INITGUID
 
+#include <algorithm>
+
 #include "AESinkDirectSound.h"
 #include "utils/log.h"
 #include <initguid.h>
 #include <list>
 #include "threads/SingleLock.h"
 #include "threads/SystemClock.h"
-#include "utils/SystemInfo.h"
-#include "utils/TimeUtils.h"
-#include "utils/CharsetConverter.h"
 #include <Audioclient.h>
 #include <Mmreg.h>
 #include <mmdeviceapi.h>
@@ -206,6 +205,10 @@ bool CAESinkDirectSound::Initialize(AEAudioFormat &format, std::string &device)
   }
 
   WAVEFORMATEXTENSIBLE wfxex = {0};
+
+  // clamp samplerate to a minimum
+  if (format.m_sampleRate < 44100)
+    format.m_sampleRate = 44100;
 
   //fill waveformatex
   ZeroMemory(&wfxex, sizeof(WAVEFORMATEXTENSIBLE));

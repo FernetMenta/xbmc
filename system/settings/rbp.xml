@@ -7,12 +7,31 @@
       </group>
       <group id="3">
         <setting id="videoplayer.usemmal" type="boolean" label="36434" help="36435">
-          <dependencies>
-            <dependency type="enable" setting="videoplayer.decodingmethod" operator="is">1</dependency>
-          </dependencies>
           <level>2</level>
           <default>true</default>
           <control type="toggle" />
+        </setting>
+      </group>
+      <group id="3">
+        <setting id="videoplayer.limitguiupdate" type="integer" label="38013" help="38014">
+          <level>2</level>
+          <default>10</default>
+          <constraints>
+            <minimum label="38015">0</minimum> <!-- Unlimited -->
+            <step>5</step>
+            <maximum>25</maximum>
+          </constraints>
+          <control type="spinner" format="string">
+            <formatlabel>38016</formatlabel>
+          </control>
+          <control type="edit" format="integer" />
+        </setting>
+      </group>
+    </category>
+    <category id="myvideos">
+      <group id="1">
+        <setting id="myvideos.extractchapterthumbs">
+          <default>false</default>
         </setting>
       </group>
     </category>

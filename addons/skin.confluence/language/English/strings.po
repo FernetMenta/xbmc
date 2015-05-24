@@ -431,7 +431,7 @@ msgid "Resolution"
 msgstr ""
 
 msgctxt "#31328"
-msgid "Recently Added"
+msgid "Recently added"
 msgstr ""
 
 msgctxt "#31329"
@@ -582,7 +582,7 @@ msgid "Scheduled Time"
 msgstr ""
 
 msgctxt "#31502"
-msgid "Live TV"
+msgid "TV"
 msgstr ""
 
 msgctxt "#31503"

@@ -25,7 +25,7 @@
 #include "settings/MediaSettings.h"
 #include "settings/Settings.h"
 #include "cores/IPlayer.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "guilib/LocalizeStrings.h"
 #include "guilib/GUISliderControl.h"
 #include "dialogs/GUIDialogKaiToast.h"
@@ -69,7 +69,7 @@ bool CPlayerController::OnAction(const CAction &action)
         {
           SPlayerSubtitleStreamInfo info;
           g_application.m_pPlayer->GetSubtitleStreamInfo(g_application.m_pPlayer->GetSubtitle(), info);
-          if (!g_LangCodeExpander.Lookup(lang, info.language))
+          if (!g_LangCodeExpander.Lookup(info.language, lang))
             lang = g_localizeStrings.Get(13205); // Unknown
 
           if (info.name.length() == 0)
@@ -116,7 +116,7 @@ bool CPlayerController::OnAction(const CAction &action)
         {
           SPlayerSubtitleStreamInfo info;
           g_application.m_pPlayer->GetSubtitleStreamInfo(currentSub, info);
-          if (!g_LangCodeExpander.Lookup(lang, info.language))
+          if (!g_LangCodeExpander.Lookup(info.language, lang))
             lang = g_localizeStrings.Get(13205); // Unknown
 
           if (info.name.length() == 0)
@@ -212,7 +212,7 @@ bool CPlayerController::OnAction(const CAction &action)
         std::string lan;
         SPlayerAudioStreamInfo info;
         g_application.m_pPlayer->GetAudioStreamInfo(currentAudio, info);
-        if (!g_LangCodeExpander.Lookup(lan, info.language))
+        if (!g_LangCodeExpander.Lookup(info.language, lan))
           lan = g_localizeStrings.Get(13205); // Unknown
         if (info.name.empty())
           aud = lan;
@@ -392,6 +392,16 @@ bool CPlayerController::OnAction(const CAction &action)
         return true;
       }
 
+      case ACTION_VOLAMP:
+      {
+        float sliderMax = VOLUME_DRC_MAXIMUM / 100.0f;
+        float sliderMin = VOLUME_DRC_MINIMUM / 100.0f;
+        ShowSlider(action.GetID(), 660,
+                   CMediaSettings::Get().GetCurrentVideoSettings().m_VolumeAmplification,
+                   sliderMin, 1.0f, sliderMax, true);
+        return true;
+      }
+
       default:
         break;
     }
@@ -421,7 +431,9 @@ void CPlayerController::OnSliderChange(void *data, CGUISliderControl *slider)
     std::string strValue = StringUtils::Format("%1.2f",slider->GetFloatValue());
     slider->SetTextValue(strValue);
   }
-  else if (m_sliderAction == ACTION_VOLAMP_UP || m_sliderAction == ACTION_VOLAMP_DOWN)
+  else if (m_sliderAction == ACTION_VOLAMP_UP ||
+          m_sliderAction == ACTION_VOLAMP_DOWN ||
+          m_sliderAction == ACTION_VOLAMP)
     slider->SetTextValue(CGUIDialogAudioSubtitleSettings::FormatDecibel(slider->GetFloatValue()));
   else
     slider->SetTextValue(CGUIDialogAudioSubtitleSettings::FormatDelay(slider->GetFloatValue(), 0.025f));
@@ -437,6 +449,11 @@ void CPlayerController::OnSliderChange(void *data, CGUISliderControl *slider)
     {
       CMediaSettings::Get().GetCurrentVideoSettings().m_SubtitleDelay = slider->GetFloatValue();
       g_application.m_pPlayer->SetSubTitleDelay(CMediaSettings::Get().GetCurrentVideoSettings().m_SubtitleDelay);
+    }
+    else if (m_sliderAction == ACTION_VOLAMP)
+    {
+      CMediaSettings::Get().GetCurrentVideoSettings().m_VolumeAmplification = slider->GetFloatValue();
+      g_application.m_pPlayer->SetDynamicRangeCompression((long)(CMediaSettings::Get().GetCurrentVideoSettings().m_VolumeAmplification * 100));
     }
   }
 }

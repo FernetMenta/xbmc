@@ -37,7 +37,7 @@ namespace ADDON
 {
   class CSkinInfo;
   class IAddon;
-  typedef boost::shared_ptr<IAddon> AddonPtr;
+  typedef std::shared_ptr<IAddon> AddonPtr;
 }
 
 namespace MEDIA_DETECT
@@ -179,7 +179,7 @@ public:
   PlayBackRet PlayFile(const CFileItem& item, bool bRestart = false);
   void SaveFileState(bool bForeground = false);
   void UpdateFileState();
-  void LoadVideoSettings(const std::string &path);
+  void LoadVideoSettings(const CFileItem& item);
   void StopPlaying();
   void Restart(bool bSamePosition = true);
   void DelayedPlayerRestart();
@@ -187,7 +187,6 @@ public:
   bool IsPlayingFullScreenVideo() const;
   bool IsStartingPlayback() const { return m_bPlaybackStarting; }
   bool IsFullScreen();
-  bool OnKey(const CKey& key);
   bool OnAppCommand(const CAction &action);
   bool OnAction(const CAction &action);
   void CheckShutdown();
@@ -359,16 +358,12 @@ public:
     return m_bTestMode;
   }
 
+  bool IsAppFocused() const { return m_AppFocused; }
+
   void Minimize();
   bool ToggleDPMS(bool manual);
 
   float GetDimScreenSaverLevel() const;
-
-  /*! \brief Retrieve the applications seek handler.
-   \return a constant pointer to the seek handler.
-   \sa CSeekHandler
-   */
-  const CSeekHandler *GetSeekHandler() const { return m_seekHandler; };
 
   bool SwitchToFullScreen();
 
@@ -377,6 +372,7 @@ public:
   bool GetRenderGUI() const { return m_renderGUI; };
 
   bool SetLanguage(const std::string &strLanguage);
+  bool LoadLanguage(bool reload, bool& fallback);
 
   ReplayGainSettings& GetReplayGainSettings() { return m_replayGainSettings; }
 
@@ -404,7 +400,7 @@ protected:
   virtual bool OnSettingUpdate(CSetting* &setting, const char *oldSettingId, const TiXmlNode *oldSettingNode);
 
   bool LoadSkin(const std::string& skinID);
-  bool LoadSkin(const boost::shared_ptr<ADDON::CSkinInfo>& skin);
+  bool LoadSkin(const std::shared_ptr<ADDON::CSkinInfo>& skin);
   
   /*!
    \brief Delegates the action to all registered action handlers.
@@ -467,13 +463,13 @@ protected:
   bool m_bPresentFrame;
   unsigned int m_lastFrameTime;
   unsigned int m_lastRenderTime;
+  bool m_skipGuiRender;
 
   bool m_bStandalone;
   bool m_bEnableLegacyRes;
   bool m_bTestMode;
   bool m_bSystemScreenSaverEnable;
 
-  VIDEO::CVideoInfoScanner *m_videoInfoScanner;
   MUSIC_INFO::CMusicInfoScanner *m_musicInfoScanner;
 
   bool m_muted;
@@ -487,33 +483,20 @@ protected:
   void VolumeChanged() const;
 
   PlayBackRet PlayStack(const CFileItem& item, bool bRestart);
-  bool ProcessMouse();
-  bool ProcessRemote(float frameTime);
-  bool ProcessGamepad(float frameTime);
-  bool ProcessEventServer(float frameTime);
-  bool ProcessPeripherals(float frameTime);
-  bool ProcessJoystickEvent(const std::string& joystickName, int button, short inputType, float fAmount, unsigned int holdTime = 0);
-  bool ExecuteInputAction(const CAction &action);
   int  GetActiveWindowID(void);
 
   float NavigationIdleTime();
-  static bool AlwaysProcess(const CAction& action);
 
   bool InitDirectoriesLinux();
   bool InitDirectoriesOSX();
   bool InitDirectoriesWin32();
   void CreateUserDirs();
 
-  CSeekHandler *m_seekHandler;
   CPlayerController *m_playerController;
   CInertialScrollingHandler *m_pInertialScrollingHandler;
   CNetwork    *m_network;
 #ifdef HAS_PERFORMANCE_SAMPLE
   CPerformanceStats m_perfStats;
-#endif
-
-#ifdef HAS_EVENT_SERVER
-  std::map<std::string, std::map<int, float> > m_lastAxisMap;
 #endif
 
   ReplayGainSettings m_replayGainSettings;

@@ -23,12 +23,7 @@
 #include "EGLNativeTypeAndroid.h"
 #include "utils/log.h"
 #include "guilib/gui3d.h"
-#if defined(TARGET_ANDROID)
-  #include "android/activity/XBMCApp.h"
-  #if defined(HAS_AMLPLAYER) || defined(HAS_LIBAMCODEC)
-    #include "utils/AMLUtils.h"
-  #endif
-#endif
+#include "android/activity/XBMCApp.h"
 #include "utils/StringUtils.h"
 
 CEGLNativeTypeAndroid::CEGLNativeTypeAndroid()
@@ -41,29 +36,15 @@ CEGLNativeTypeAndroid::~CEGLNativeTypeAndroid()
 
 bool CEGLNativeTypeAndroid::CheckCompatibility()
 {
-#if defined(TARGET_ANDROID)
   return true;
-#endif
-  return false;
 }
 
 void CEGLNativeTypeAndroid::Initialize()
 {
-#if defined(TARGET_ANDROID) && (defined(HAS_AMLPLAYER) || defined(HAS_LIBAMCODEC))
-  aml_permissions();
-  aml_cpufreq_min(true);
-  aml_cpufreq_max(true);
-#endif
-
   return;
 }
 void CEGLNativeTypeAndroid::Destroy()
 {
-#if defined(TARGET_ANDROID) && (defined(HAS_AMLPLAYER) || defined(HAS_LIBAMCODEC))
-  aml_cpufreq_min(false);
-  aml_cpufreq_max(false);
-#endif
-
   return;
 }
 
@@ -75,12 +56,8 @@ bool CEGLNativeTypeAndroid::CreateNativeDisplay()
 
 bool CEGLNativeTypeAndroid::CreateNativeWindow()
 {
-#if defined(TARGET_ANDROID)
   // Android hands us a window, we don't have to create it
   return true;
-#else
-  return false;
-#endif
 }  
 
 bool CEGLNativeTypeAndroid::GetNativeDisplay(XBNativeDisplayType **nativeDisplay) const
@@ -93,14 +70,10 @@ bool CEGLNativeTypeAndroid::GetNativeDisplay(XBNativeDisplayType **nativeDisplay
 
 bool CEGLNativeTypeAndroid::GetNativeWindow(XBNativeWindowType **nativeWindow) const
 {
-#if defined(TARGET_ANDROID)
   if (!nativeWindow)
     return false;
   *nativeWindow = (XBNativeWindowType*) CXBMCApp::GetNativeWindow(30000);
   return (*nativeWindow != NULL);
-#else
-  return false;
-#endif
 }
 
 bool CEGLNativeTypeAndroid::DestroyNativeDisplay()
@@ -115,7 +88,6 @@ bool CEGLNativeTypeAndroid::DestroyNativeWindow()
 
 bool CEGLNativeTypeAndroid::GetNativeResolution(RESOLUTION_INFO *res) const
 {
-#if defined(TARGET_ANDROID)
   EGLNativeWindowType *nativeWindow = (EGLNativeWindowType*)CXBMCApp::GetNativeWindow(30000);
   if (!nativeWindow)
     return false;
@@ -137,9 +109,6 @@ bool CEGLNativeTypeAndroid::GetNativeResolution(RESOLUTION_INFO *res) const
   res->dwFlags & D3DPRESENTFLAG_INTERLACED ? "i" : "");
   CLog::Log(LOGNOTICE,"Current resolution: %s\n",res->strMode.c_str());
   return true;
-#else
-  return false;
-#endif
 }
 
 bool CEGLNativeTypeAndroid::SetNativeResolution(const RESOLUTION_INFO &res)

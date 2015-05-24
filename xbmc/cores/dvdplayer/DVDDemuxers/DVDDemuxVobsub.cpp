@@ -24,7 +24,6 @@
 #include "DVDStreamInfo.h"
 #include "DVDCodecs/DVDCodecs.h"
 #include "DVDDemuxers/DVDDemuxFFmpeg.h"
-#include "DVDDemuxers/DVDDemuxUtils.h"
 #include "DVDClock.h"
 #include "DVDSubtitles/DVDSubtitleStream.h"
 
@@ -45,11 +44,12 @@ CDVDDemuxVobsub::~CDVDDemuxVobsub()
   m_Streams.clear();
 }
 
-bool CDVDDemuxVobsub::Open(const string& filename, const string& subfilename)
+bool CDVDDemuxVobsub::Open(const string& filename, int source, const string& subfilename)
 {
   m_Filename = filename;
+  m_source = source;
 
-  auto_ptr<CDVDSubtitleStream> pStream(new CDVDSubtitleStream());
+  unique_ptr<CDVDSubtitleStream> pStream(new CDVDSubtitleStream());
   if(!pStream->Open(filename))
     return false;
 
@@ -195,7 +195,7 @@ bool CDVDDemuxVobsub::ParseDelay(SState& state, char* line)
 
 bool CDVDDemuxVobsub::ParseId(SState& state, char* line)
 {
-  auto_ptr<CStream> stream(new CStream(this));
+  unique_ptr<CStream> stream(new CStream(this));
 
   while(*line == ' ') line++;
   strncpy(stream->language, line, 2);
@@ -214,7 +214,7 @@ bool CDVDDemuxVobsub::ParseId(SState& state, char* line)
 
   stream->codec = AV_CODEC_ID_DVD_SUBTITLE;
   stream->iId = m_Streams.size();
-  stream->source = STREAM_SOURCE_DEMUX_SUB;
+  stream->source = m_source;
 
   state.id = stream->iId;
   m_Streams.push_back(stream.release());

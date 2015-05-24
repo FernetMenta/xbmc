@@ -22,17 +22,8 @@
 #include <vector>
 
 #include "Interfaces/AE.h"
-#include "threads/Thread.h"
 
 class CSetting;
-
-enum AEEngine
-{
-  AE_ENGINE_NULL,
-  AE_ENGINE_COREAUDIO,
-  AE_ENGINE_ACTIVE,
-  AE_ENGINE_PIAUDIO
-};
 
 class CAEFactory
 {
@@ -84,7 +75,6 @@ public:
   static void UnregisterAudioCallback();
 
 private:
-  static bool LoadEngine(enum AEEngine engine);
   static IAE *AE;
 
   static void SettingOptionsAudioDevicesFillerGeneral(const CSetting *setting, std::vector< std::pair<std::string, std::string> > &list, std::string &current, bool passthrough);

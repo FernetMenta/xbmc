@@ -111,6 +111,7 @@ public:
    \param strMusicBrainzTrackID [in] the MusicBrainz track ID of the song
    \param strPathAndFileName [in] the path and filename to the song
    \param strComment [in] the ids of the added songs
+   \param strMood [in] the mood of the added song
    \param strThumb [in] the ids of the added songs
    \param artistString [in] the assembled artist string, denormalized from CONCAT(strArtist||strJoinPhrase)
    \param genres [in] a vector of genres to which this song belongs
@@ -130,6 +131,7 @@ public:
               const std::string& strMusicBrainzTrackID,
               const std::string& strPathAndFileName,
               const std::string& strComment,
+              const std::string& strMood,
               const std::string& strThumb,
               const std::string &artistString, const std::vector<std::string>& genres,
               int iTrack, int iDuration, int iYear,
@@ -157,6 +159,7 @@ public:
    \param strMusicBrainzTrackID [in] the MusicBrainz track ID of the song
    \param strPathAndFileName [in] the path and filename to the song
    \param strComment [in] the ids of the added songs
+   \param strMood [in] the mood of the added song
    \param strThumb [in] the ids of the added songs
    \param artistString [in] the full artist string, denormalized from CONCAT(song_artist.strArtist || song_artist.strJoinPhrase)
    \param genres [in] a vector of genres to which this song belongs
@@ -174,7 +177,7 @@ public:
   int UpdateSong(int idSong,
                  const std::string& strTitle, const std::string& strMusicBrainzTrackID,
                  const std::string& strPathAndFileName, const std::string& strComment,
-                 const std::string& strThumb,
+                 const std::string& strMood, const std::string& strThumb,
                  const std::string& artistString, const std::vector<std::string>& genres,
                  int iTrack, int iDuration, int iYear,
                  int iTimesPlayed, int iStartOffset, int iEndOffset,
@@ -206,7 +209,7 @@ public:
    */
   int  AddAlbum(const std::string& strAlbum, const std::string& strMusicBrainzAlbumID,
                 const std::string& strArtist, const std::string& strGenre,
-                int year, bool bCompilation);
+                int year, bool bCompilation, CAlbum::ReleaseType releaseType);
   /*! \brief retrieve an album, optionally with all songs.
    \param idAlbum the database id of the album.
    \param album [out] the album to fill.
@@ -222,7 +225,8 @@ public:
                    const std::string& strThemes, const std::string& strReview,
                    const std::string& strImage, const std::string& strLabel,
                    const std::string& strType,
-                   int iRating, int iYear, bool bCompilation);
+                   int iRating, int iYear, bool bCompilation,
+                   CAlbum::ReleaseType releaseType);
   bool ClearAlbumLastScrapedTime(int idAlbum);
   bool HasAlbumBeenScraped(int idAlbum);
   int  AddAlbumInfoSong(int idAlbum, const CSong& song);
@@ -261,6 +265,12 @@ public:
 
   std::string GetArtistById(int id);
   int GetArtistByName(const std::string& strArtist);
+
+  /////////////////////////////////////////////////
+  // Cuesheets
+  /////////////////////////////////////////////////
+  void SaveCuesheet(const std::string& fullSongPath, const std::string& strCuesheet);
+  std::string LoadCuesheet(const std::string& fullSongPath);
 
   /////////////////////////////////////////////////
   // Paths
@@ -322,9 +332,8 @@ public:
   bool GetCompilationAlbums(const std::string& strBaseDir, CFileItemList& items);
   bool GetCompilationSongs(const std::string& strBaseDir, CFileItemList& items);
   int  GetCompilationAlbumsCount();
-  bool GetVariousArtistsAlbums(const std::string& strBaseDir, CFileItemList& items);
-  bool GetVariousArtistsAlbumsSongs(const std::string& strBaseDir, CFileItemList& items);
-  int GetVariousArtistsAlbumsCount();
+
+  int GetSinglesCount();
   
   /*! \brief Increment the playcount of an item
    Increments the playcount and updates the last played date
@@ -465,6 +474,8 @@ protected:
   std::map<std::string, int> m_pathCache;
   std::map<std::string, int> m_thumbCache;
   std::map<std::string, CAlbum> m_albumCache;
+  typedef std::map<std::string, std::string> CueCache;
+  CueCache m_cueCache;
 
   virtual void CreateTables();
   virtual void CreateAnalytics();
@@ -528,6 +539,8 @@ private:
     song_strKarEncoding,
     song_bCompilation,
     song_strAlbumArtists,
+    song_strAlbumReleaseType,
+    song_mood,
     song_enumCount // end of the enum, do not add past here
   } SongFields;
 
@@ -551,6 +564,7 @@ private:
     album_iRating,
     album_bCompilation,
     album_iTimesPlayed,
+    album_strReleaseType,
     album_enumCount // end of the enum, do not add past here
   } AlbumFields;
 

@@ -29,11 +29,8 @@
 #include "cores/dvdplayer/DVDCodecs/DVDFactoryCodec.h"
 #include "music/tags/TagLoaderTagLib.h"
 #include "utils/log.h"
-#include "settings/Settings.h"
 #include "URL.h"
 #include "utils/StringUtils.h"
-
-#include "AudioDecoder.h"
 
 DVDPlayerCodec::DVDPlayerCodec()
 {
@@ -249,7 +246,8 @@ bool DVDPlayerCodec::Init(const std::string &strFile, unsigned int filecache)
                        false,
                        false,
                        NULL,
-                       AE_QUALITY_UNKNOWN);
+                       AE_QUALITY_UNKNOWN,
+                       false);
     m_planes = AE_IS_PLANAR(m_DataFormat) ? m_ChannelInfo.Count() : 1;
     m_srcFormat = m_DataFormat;
     m_srcFrameSize = (CAEUtil::DataFormatToBits(m_DataFormat)>>3) * m_ChannelInfo.Count();

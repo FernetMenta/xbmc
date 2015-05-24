@@ -28,6 +28,7 @@
 #include "utils/log.h"
 #include "utils/URIUtils.h"
 #include "settings/AdvancedSettings.h"
+#include "video/VideoInfoTag.h"
 #include "music/tags/MusicInfoTag.h"
 
 using namespace PLAYLIST;
@@ -170,6 +171,8 @@ bool CPlayListM3U::Load(const std::string& strFileName)
           if (iEndOffset)
             lDuration = (iEndOffset - iStartOffset + 37) / 75;
         }
+        if (newItem->IsVideo() && !newItem->HasVideoInfoTag()) // File is a video and needs a VideoInfoTag
+          newItem->GetVideoInfoTag()->Reset(); // Force VideoInfoTag creation
         if (lDuration && newItem->IsAudio())
           newItem->GetMusicInfoTag()->SetDuration(lDuration);
         Add(newItem);
@@ -200,7 +203,7 @@ void CPlayListM3U::Save(const std::string& strFileName) const
     return;
   }
   std::string strLine = StringUtils::Format("%s\n",M3U_START_MARKER);
-  if (file.Write(strLine.c_str(), strLine.size()) != strLine.size())
+  if (file.Write(strLine.c_str(), strLine.size()) != static_cast<ssize_t>(strLine.size()))
     return; // error
 
   for (int i = 0; i < (int)m_vecItems.size(); ++i)
@@ -209,7 +212,7 @@ void CPlayListM3U::Save(const std::string& strFileName) const
     std::string strDescription=item->GetLabel();
     g_charsetConverter.utf8ToStringCharset(strDescription);
     strLine = StringUtils::Format( "%s:%i,%s\n", M3U_INFO_MARKER, item->GetMusicInfoTag()->GetDuration() / 1000, strDescription.c_str() );
-    if (file.Write(strLine.c_str(), strLine.size()) != strLine.size())
+    if (file.Write(strLine.c_str(), strLine.size()) != static_cast<ssize_t>(strLine.size()))
       return; // error
     if (item->m_lStartOffset != 0 || item->m_lEndOffset != 0)
     {
@@ -219,7 +222,7 @@ void CPlayListM3U::Save(const std::string& strFileName) const
     std::string strFileName = ResolveURL(item);
     g_charsetConverter.utf8ToStringCharset(strFileName);
     strLine = StringUtils::Format("%s\n",strFileName.c_str());
-    if (file.Write(strLine.c_str(), strLine.size()) != strLine.size())
+    if (file.Write(strLine.c_str(), strLine.size()) != static_cast<ssize_t>(strLine.size()))
       return; // error
   }
   file.Close();

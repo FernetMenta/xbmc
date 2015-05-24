@@ -15,7 +15,6 @@ SRCS += Crc32.cpp
 SRCS += CryptThreading.cpp
 SRCS += DatabaseUtils.cpp
 SRCS += EndianSwap.cpp
-SRCS += EdenVideoArtUpdater.cpp
 SRCS += Environment.cpp
 SRCS += Fanart.cpp
 SRCS += fastmemcpy.c
@@ -26,10 +25,10 @@ SRCS += fstrcmp.c
 SRCS += fft.cpp
 SRCS += GLUtils.cpp
 SRCS += GroupUtils.cpp
-SRCS += HTMLTable.cpp
 SRCS += HTMLUtil.cpp
 SRCS += HttpHeader.cpp
 SRCS += HttpParser.cpp
+SRCS += HttpRangeUtils.cpp
 SRCS += HttpResponse.cpp
 SRCS += InfoLoader.cpp
 SRCS += JobManager.cpp
@@ -38,15 +37,16 @@ SRCS += JSONVariantWriter.cpp
 SRCS += LabelFormatter.cpp
 SRCS += LangCodeExpander.cpp
 SRCS += LegacyPathTranslation.cpp
+SRCS += Locale.cpp
 SRCS += log.cpp
 SRCS += md5.cpp
-SRCS += MarkWatchedJob.cpp
 SRCS += Mime.cpp
 SRCS += Observer.cpp
 SRCS += PerformanceSample.cpp
 SRCS += PerformanceStats.cpp
 SRCS += posix/PosixInterfaceForCLog.cpp
 SRCS += POUtils.cpp
+SRCS += ProgressJob.cpp
 SRCS += RecentlyAddedJob.cpp
 SRCS += RegExp.cpp
 SRCS += RingBuffer.cpp
@@ -58,6 +58,7 @@ SRCS += ScraperUrl.cpp
 SRCS += Screenshot.cpp
 SRCS += SeekHandler.cpp
 SRCS += SortUtils.cpp
+SRCS += Speed.cpp
 SRCS += Splash.cpp
 SRCS += Stopwatch.cpp
 SRCS += StreamDetails.cpp
@@ -65,10 +66,10 @@ SRCS += StreamUtils.cpp
 SRCS += StringUtils.cpp
 SRCS += StringValidation.cpp
 SRCS += SystemInfo.cpp
+SRCS += Temperature.cpp
 SRCS += TextSearch.cpp
 SRCS += TimeSmoother.cpp
 SRCS += TimeUtils.cpp
-SRCS += TuxBoxUtil.cpp
 SRCS += URIUtils.cpp
 SRCS += UrlOptions.cpp
 SRCS += Variant.cpp
@@ -83,6 +84,10 @@ SRCS += SysfsUtils.cpp
 
 ifeq (@USE_OPENGLES@,1)
 SRCS += AMLUtils.cpp
+endif
+
+ifeq (@USE_LIBAMCODEC@,1)
+SRCS += ScreenshotAML.cpp
 endif
 
 LIB   = utils.a

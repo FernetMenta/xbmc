@@ -18,11 +18,9 @@
  *
  */
 
-#include "stdio.h"
 #include "Win32DllLoader.h"
 #include "DllLoader.h"
 #include "DllLoaderContainer.h"
-#include "Util.h"
 #include "utils/log.h"
 #include "utils/StringUtils.h"
 #include "filesystem/SpecialProtocol.h"
@@ -89,6 +87,7 @@ Export win32_exports[] =
   { "feof",                       -1, (void*)dll_feof,                      NULL },
   { "fgets",                      -1, (void*)dll_fgets,                     NULL },
   { "fopen",                      -1, (void*)dll_fopen,                     (void*)track_fopen},
+  { "fopen_s",                    -1, (void*)dll_fopen_s,                   NULL },
   { "putc",                       -1, (void*)dll_putc,                      NULL },
   { "fputc",                      -1, (void*)dll_fputc,                     NULL },
   { "fputs",                      -1, (void*)dll_fputs,                     NULL },

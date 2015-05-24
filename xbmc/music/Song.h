@@ -25,7 +25,8 @@
 
 #include "utils/ISerializable.h"
 #include "XBDateTime.h"
-#include "music/tags/MusicInfoTag.h" // for EmbeddedArt
+#include "music/EmbeddedArt.h"
+#include "music/tags/ReplayGain.h"
 #include "Artist.h"
 #include <map>
 #include <string>
@@ -92,6 +93,8 @@ public:
   MUSIC_INFO::EmbeddedArtInfo embeddedArt;
   std::string strMusicBrainzTrackID;
   std::string strComment;
+  std::string strMood;
+  std::string strCueSheet;
   char rating;
   int iTrack;
   int iDuration;
@@ -106,6 +109,7 @@ public:
   long       iKaraokeNumber;        //! Karaoke song number to "select by number". 0 for non-karaoke
   std::string strKaraokeLyrEncoding; //! Karaoke song lyrics encoding if known. Empty if unknown.
   int        iKaraokeDelay;         //! Karaoke song lyrics-music delay in 1/10 seconds.
+  ReplayGain replayGain;
 };
 
 /*!

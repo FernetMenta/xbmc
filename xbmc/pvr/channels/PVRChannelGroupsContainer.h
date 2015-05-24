@@ -163,13 +163,6 @@ namespace PVR
     CPVRChannelPtr GetByUniqueID(int iUniqueChannelId, int iClientID) const;
 
     /*!
-     * @brief Get a channel given it's channel ID from all containers.
-     * @param iChannelID The channel ID.
-     * @return The channel or NULL if it wasn't found.
-     */
-    CFileItemPtr GetByChannelIDFromAll(int iChannelID) const;
-
-    /*!
      * @brief Try to find missing channel icons automatically
      */
     void SearchMissingChannelIcons(void) const;
@@ -186,8 +179,6 @@ namespace PVR
      * @return The last watched group.
      */
     CPVRChannelGroupPtr GetLastPlayedGroup(int iChannelID = -1) const;
-
-    bool CreateChannel(const CPVRChannel &channel) const;
 
     /*!
      * @brief Create EPG tags for channels in all internal channel groups.

@@ -9,7 +9,7 @@
 	<include>dialogeffect</include>
 	<controls>
 		<control type="group">
-			<animation effect="fade" start="100" end="0" time="400" condition="Window.IsVisible(SliderDialog) | Window.IsVisible(FileBrowser)">Conditional</animation>
+			<animation effect="fade" start="100" end="0" time="300" condition="Window.IsVisible(SliderDialog) | Window.IsVisible(FileBrowser)">Conditional</animation>
 			<control type="image">
 				<description>background image</description>
 				<left>0</left>
@@ -132,6 +132,18 @@
 			<description>separator image</description>
 			<height>2</height>
 			<texture>separator2.png</texture>
+		</control>
+		<control type="label" id="14">
+			<description>Default Label</description>
+			<left>0</left>
+			<top>0</top>
+			<height>30</height>
+			<label>-</label>
+			<align>center</align>
+			<aligny>bottom</aligny>
+			<font>font13_title</font>
+			<textcolor>grey</textcolor>
+			<shadowcolor>black</shadowcolor>
 		</control>
 	</controls>
 </window>

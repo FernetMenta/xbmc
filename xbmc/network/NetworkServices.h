@@ -25,11 +25,15 @@
 #ifdef HAS_WEB_SERVER
 class CWebServer;
 class CHTTPImageHandler;
+class CHTTPImageTransformationHandler;
 class CHTTPVfsHandler;
 #ifdef HAS_JSONRPC
 class CHTTPJsonRpcHandler;
 #endif // HAS_JSONRPC
 #ifdef HAS_WEB_INTERFACE
+#ifdef HAS_PYTHON
+class CHTTPPythonHandler;
+#endif
 class CHTTPWebinterfaceHandler;
 class CHTTPWebinterfaceAddonsHandler;
 #endif // HAS_WEB_INTERFACE
@@ -72,6 +76,9 @@ public:
   bool StartUPnPClient();
   bool IsUPnPClientRunning();
   bool StopUPnPClient();
+  bool StartUPnPController();
+  bool IsUPnPControllerRunning();
+  bool StopUPnPController();
   bool StartUPnPRenderer();
   bool IsUPnPRendererRunning();
   bool StopUPnPRenderer();
@@ -98,11 +105,15 @@ private:
 #ifdef HAS_WEB_SERVER
   CWebServer& m_webserver;
   CHTTPImageHandler& m_httpImageHandler;
+  CHTTPImageTransformationHandler& m_httpImageTransformationHandler;
   CHTTPVfsHandler& m_httpVfsHandler;
 #ifdef HAS_JSONRPC
   CHTTPJsonRpcHandler& m_httpJsonRpcHandler;
 #endif
 #ifdef HAS_WEB_INTERFACE
+#ifdef HAS_PYTHON
+  CHTTPPythonHandler& m_httpPythonHandler;
+#endif
   CHTTPWebinterfaceHandler& m_httpWebinterfaceHandler;
   CHTTPWebinterfaceAddonsHandler& m_httpWebinterfaceAddonsHandler;
 #endif

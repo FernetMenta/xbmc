@@ -104,7 +104,7 @@ protected:
     CSettings::Get().AddString(sub, "subtitles.charset", 735, "DEFAULT",
                             SPIN_CONTROL_TEXT);
     */
-
+    CSettings::Get().Initialize();
     g_charsetConverter.reset();
     g_charsetConverter.clear();
   }
@@ -124,7 +124,7 @@ TEST_F(TestCharsetConverter, utf8ToW)
   refstra1 = "test utf8ToW";
   refstrw1 = L"test utf8ToW";
   varstrw1.clear();
-  g_charsetConverter.utf8ToW(refstra1, varstrw1, true, false, NULL);
+  g_charsetConverter.utf8ToW(refstra1, varstrw1, true, false, false);
   EXPECT_STREQ(refstrw1.c_str(), varstrw1.c_str());
 }
 

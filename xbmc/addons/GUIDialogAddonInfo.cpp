@@ -31,7 +31,7 @@
 #include "dialogs/GUIDialogTextViewer.h"
 #include "GUIUserMessages.h"
 #include "guilib/GUIWindowManager.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "utils/JobManager.h"
 #include "utils/FileOperationJob.h"
 #include "utils/StringUtils.h"
@@ -55,7 +55,9 @@ using namespace ADDON;
 using namespace XFILE;
 
 CGUIDialogAddonInfo::CGUIDialogAddonInfo(void)
-  : CGUIDialog(WINDOW_DIALOG_ADDON_INFO, "DialogAddonInfo.xml"), m_jobid(0)
+  : CGUIDialog(WINDOW_DIALOG_ADDON_INFO, "DialogAddonInfo.xml"),
+  m_jobid(0),
+  m_changelog(false)
 {
   m_item = CFileItemPtr(new CFileItem);
   m_loadType = KEEP_IN_MEMORY;
@@ -150,18 +152,14 @@ void CGUIDialogAddonInfo::OnInitWindow()
 
 void CGUIDialogAddonInfo::UpdateControls()
 {
-  std::string xbmcPath = CSpecialProtocol::TranslatePath("special://xbmc/addons");
   bool isInstalled = NULL != m_localAddon.get();
-  bool isSystem = isInstalled && StringUtils::StartsWith(m_localAddon->Path(), xbmcPath);
   bool isEnabled = isInstalled && m_item->GetProperty("Addon.Enabled").asBoolean();
   bool isUpdatable = isInstalled && m_item->GetProperty("Addon.UpdateAvail").asBoolean();
   bool isExecutable = isInstalled && (m_localAddon->Type() == ADDON_PLUGIN || m_localAddon->Type() == ADDON_SCRIPT);
   if (isInstalled)
     GrabRollbackVersions();
 
-  // TODO: System addons should be able to be disabled
-  bool isPVR = isInstalled && m_localAddon->Type() == ADDON_PVRDLL;
-  bool canDisable = isInstalled && (!isSystem || isPVR) && !m_localAddon->IsInUse();
+  bool canDisable = isInstalled && CAddonMgr::Get().CanAddonBeDisabled(m_localAddon->ID());
   bool canInstall = !isInstalled && m_item->GetProperty("Addon.Broken").empty();
   bool isRepo = (isInstalled && m_localAddon->Type() == ADDON_REPOSITORY) || (m_addon && m_addon->Type() == ADDON_REPOSITORY);
 
@@ -242,12 +240,8 @@ void CGUIDialogAddonInfo::OnUninstall()
   if (!CGUIDialogYesNo::ShowAndGetInput(24037, 750, 0, 0))
     return;
 
-  // ensure the addon isn't disabled in our database
-  CAddonMgr::Get().DisableAddon(m_localAddon->ID(), false);
-
   CJobManager::GetInstance().AddJob(new CAddonUnInstallJob(m_localAddon),
                                     &CAddonInstaller::Get());
-  CAddonMgr::Get().RemoveAddon(m_localAddon->ID());
   Close();
 }
 
@@ -262,7 +256,10 @@ void CGUIDialogAddonInfo::OnEnable(bool enable)
   if (!enable && PromptIfDependency(24075, 24091))
     return;
 
-  CAddonMgr::Get().DisableAddon(m_localAddon->ID(), !enable);
+  if (enable)
+    CAddonMgr::Get().EnableAddon(m_localAddon->ID());
+  else
+    CAddonMgr::Get().DisableAddon(m_localAddon->ID());
   SetItem(m_item);
   UpdateControls();
   g_windowManager.SendMessage(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_UPDATE);
@@ -334,10 +331,12 @@ void CGUIDialogAddonInfo::OnRollback()
       database.BlacklistAddon(m_localAddon->ID(),m_rollbackVersions[j]);
     std::string path = "special://home/addons/packages/";
     path += m_localAddon->ID()+"-"+m_rollbackVersions[choice]+".zip";
+
+    //FIXME: this is probably broken
     // needed as cpluff won't downgrade
     if (!m_localAddon->IsType(ADDON_SERVICE))
       //we will handle this for service addons in CAddonInstallJob::OnPostInstall
-      CAddonMgr::Get().RemoveAddon(m_localAddon->ID());
+      CAddonMgr::Get().UnregisterAddon(m_localAddon->ID());
     CAddonInstaller::Get().InstallFromZip(path);
     database.RemoveAddonFromBlacklist(m_localAddon->ID(),m_rollbackVersions[choice]);
     Close();

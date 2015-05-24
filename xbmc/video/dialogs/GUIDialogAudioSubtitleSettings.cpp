@@ -213,14 +213,7 @@ void CGUIDialogAudioSubtitleSettings::OnSettingAction(const CSetting *setting)
           strPath = URIUtils::ReplaceExtension(strPath, ".idx");
       }
       
-      int id = g_application.m_pPlayer->AddSubtitle(strPath);
-      if (id >= 0)
-      {
-        m_subtitleStream = id;
-        g_application.m_pPlayer->SetSubtitle(m_subtitleStream);
-        g_application.m_pPlayer->SetSubtitleVisible(true);
-      }
-      CMediaSettings::Get().GetCurrentVideoSettings().m_SubtitleCached = true;
+      g_application.m_pPlayer->AddSubtitle(strPath);
       Close();
     }
   }
@@ -300,9 +293,13 @@ void CGUIDialogAudioSubtitleSettings::InitializeSettings()
     g_application.m_pPlayer->GetSubtitleCapabilities(m_subCaps);
   }
 
+  // register IsPlayingPassthrough condition
+  m_settingsManager->AddCondition("IsPlayingPassthrough", IsPlayingPassthrough);
+
   CSettingDependency dependencyAudioOutputPassthroughDisabled(SettingDependencyTypeEnable, m_settingsManager);
-  dependencyAudioOutputPassthroughDisabled.And()
-    ->Add(CSettingDependencyConditionPtr(new CSettingDependencyCondition(SETTING_AUDIO_PASSTHROUGH, "false", SettingDependencyOperatorEquals, false, m_settingsManager)));
+  dependencyAudioOutputPassthroughDisabled.Or()
+    ->Add(CSettingDependencyConditionPtr(new CSettingDependencyCondition(SETTING_AUDIO_PASSTHROUGH, "false", SettingDependencyOperatorEquals, false, m_settingsManager)))
+    ->Add(CSettingDependencyConditionPtr(new CSettingDependencyCondition("IsPlayingPassthrough", "", "", true, m_settingsManager)));
   SettingDependencies depsAudioOutputPassthroughDisabled;
   depsAudioOutputPassthroughDisabled.push_back(dependencyAudioOutputPassthroughDisabled);
   
@@ -398,7 +395,7 @@ void CGUIDialogAudioSubtitleSettings::AddAudioStreams(CSettingGroup *group, cons
   if (m_audioStream < 0)
     m_audioStream = 0;
 
-  AddSpinner(group, settingId, 460, 0, m_audioStream, AudioStreamsOptionFiller);
+  AddList(group, settingId, 460, 0, m_audioStream, AudioStreamsOptionFiller, 460);
 }
 
 void CGUIDialogAudioSubtitleSettings::AddSubtitleStreams(CSettingGroup *group, const std::string &settingId)
@@ -410,7 +407,12 @@ void CGUIDialogAudioSubtitleSettings::AddSubtitleStreams(CSettingGroup *group, c
   if (m_subtitleStream < 0)
     m_subtitleStream = 0;
 
-  AddSpinner(group, settingId, 462, 0, m_subtitleStream, SubtitleStreamsOptionFiller);
+  AddList(group, settingId, 462, 0, m_subtitleStream, SubtitleStreamsOptionFiller, 462);
+}
+
+bool CGUIDialogAudioSubtitleSettings::IsPlayingPassthrough(const std::string &condition, const std::string &value, const CSetting *setting)
+{
+  return g_application.m_pPlayer->IsPassthrough();
 }
 
 void CGUIDialogAudioSubtitleSettings::AudioStreamsOptionFiller(const CSetting *setting, std::vector< std::pair<std::string, int> > &list, int &current, void *data)
@@ -426,7 +428,7 @@ void CGUIDialogAudioSubtitleSettings::AudioStreamsOptionFiller(const CSetting *s
     SPlayerAudioStreamInfo info;
     g_application.m_pPlayer->GetAudioStreamInfo(i, info);
 
-    if (!g_LangCodeExpander.Lookup(strLanguage, info.language))
+    if (!g_LangCodeExpander.Lookup(info.language, strLanguage))
       strLanguage = g_localizeStrings.Get(13205); // Unknown
 
     if (info.name.length() == 0)
@@ -458,7 +460,7 @@ void CGUIDialogAudioSubtitleSettings::SubtitleStreamsOptionFiller(const CSetting
     std::string strItem;
     std::string strLanguage;
 
-    if (!g_LangCodeExpander.Lookup(strLanguage, info.language))
+    if (!g_LangCodeExpander.Lookup(info.language, strLanguage))
       strLanguage = g_localizeStrings.Get(13205); // Unknown
 
     if (info.name.length() == 0)

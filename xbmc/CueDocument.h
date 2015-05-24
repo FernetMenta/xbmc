@@ -25,18 +25,18 @@
 
 #define MAX_PATH_SIZE 1024
 
+class CueReader;
+
 class CCueDocument
 {
   class CCueTrack
   {
   public:
     CCueTrack()
+      : iTrackNumber(0)
+      , iStartTime(0)
+      , iEndTime(0)
     {
-      iTrackNumber = 0;
-      iStartTime = 0;
-      iEndTime = 0;
-      replayGainTrackGain = 0.0f;
-      replayGainTrackPeak = 0.0f;
     }
     std::string strArtist;
     std::string strTitle;
@@ -44,25 +44,24 @@ class CCueDocument
     int iTrackNumber;
     int iStartTime;
     int iEndTime;
-    float replayGainTrackGain;
-    float replayGainTrackPeak;
+    ReplayGain::Info replayGain;
   };
-
 public:
   CCueDocument(void);
   ~CCueDocument(void);
   // USED
-  bool Parse(const std::string &strFile);
+  bool ParseFile(const std::string &strFilePath);
+  bool ParseTag(const std::string &strContent);
   void GetSongs(VECSONGS &songs);
+  bool GetSong(int aTrackNumber, CSong& aSong);
   std::string GetMediaPath();
   std::string GetMediaTitle();
   void GetMediaFiles(std::vector<std::string>& mediaFiles);
-
+  void UpdateMediaFile(const std::string& oldMediaFile, const std::string& mediaFile);
+  bool IsLoaded() const;
 private:
-
-  // USED for file access
-  XFILE::CFile m_file;
-  char m_szBuffer[1024];
+  void Clear();
+  bool Parse(CueReader& reader, const std::string& strFile = std::string());
 
   // Member variables
   std::string m_strArtist;  // album artist
@@ -70,15 +69,13 @@ private:
   std::string m_strGenre;  // album genre
   int m_iYear;            //album year
   int m_iTrack;   // current track
-  int m_iTotalTracks;  // total tracks
   int m_iDiscNumber;  // Disc number
-  float m_replayGainAlbumGain;
-  float m_replayGainAlbumPeak;
+  ReplayGain::Info m_albumReplayGain;
 
   // cuetrack array
-  std::vector<CCueTrack> m_Track;
+  typedef std::vector<CCueTrack> Tracks;
+  Tracks m_tracks;
 
-  bool ReadNextLine(std::string &strLine);
   std::string ExtractInfo(const std::string &line);
   int ExtractTimeFromIndex(const std::string &index);
   int ExtractNumericInfo(const std::string &info);

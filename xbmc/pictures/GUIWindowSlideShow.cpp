@@ -27,7 +27,7 @@
 #include "URL.h"
 #include "guilib/TextureManager.h"
 #include "guilib/GUILabelControl.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "GUIInfoManager.h"
 #include "filesystem/Directory.h"
 #include "GUIDialogPictureInfo.h"
@@ -45,6 +45,7 @@
 #include "utils/log.h"
 #include "utils/TimeUtils.h"
 #include "interfaces/AnnouncementManager.h"
+#include "pictures/GUIViewStatePictures.h"
 #include "pictures/PictureInfoTag.h"
 #include "pictures/PictureThumbLoader.h"
 
@@ -886,7 +887,15 @@ bool CGUIWindowSlideShow::OnAction(const CAction &action)
     break;
 
   case ACTION_ANALOG_MOVE:
+    // this action is used and works, when CAction object provides both x and y coordinates
     Move(action.GetAmount()*PICTURE_MOVE_AMOUNT_ANALOG, -action.GetAmount(1)*PICTURE_MOVE_AMOUNT_ANALOG);
+    break;
+  case ACTION_ANALOG_MOVE_X:
+    // this and following action are used and work, when CAction object provides either x of y coordinate
+    Move(action.GetAmount()*PICTURE_MOVE_AMOUNT_ANALOG, 0.0f);
+    break;
+  case ACTION_ANALOG_MOVE_Y:
+    Move(0.0f, action.GetAmount(0)*PICTURE_MOVE_AMOUNT_ANALOG);
     break;
 
   default:
@@ -1261,9 +1270,11 @@ void CGUIWindowSlideShow::AddItems(const std::string &strPath, path_set *recursi
     recursivePaths->insert(path);
   }
 
-  // fetch directory and sort accordingly
   CFileItemList items;
-  if (!CDirectory::GetDirectory(strPath, items, m_strExtensions.empty()?g_advancedSettings.m_pictureExtensions:m_strExtensions,DIR_FLAG_NO_FILE_DIRS,true))
+  CGUIViewStateWindowPictures viewState(items);
+
+  // fetch directory and sort accordingly
+  if (!CDirectory::GetDirectory(strPath, items, viewState.GetExtensions(), DIR_FLAG_NO_FILE_DIRS, true))
     return;
 
   items.Sort(method, order, sortAttributes);

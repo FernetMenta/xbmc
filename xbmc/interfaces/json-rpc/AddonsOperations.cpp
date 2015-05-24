@@ -106,7 +106,7 @@ JSONRPC_STATUS CAddonsOperations::GetAddons(const std::string &method, ITranspor
   {
     PluginPtr plugin;
     if (content != CPluginSource::UNKNOWN)
-      plugin = boost::dynamic_pointer_cast<CPluginSource>(addons.at(index));
+      plugin = std::dynamic_pointer_cast<CPluginSource>(addons.at(index));
 
     if ((addons.at(index)->Type() <= ADDON_UNKNOWN || addons.at(index)->Type() >= ADDON_MAX) ||
        ((content != CPluginSource::UNKNOWN && plugin == NULL) || (plugin != NULL && !plugin->Provides(content))))
@@ -152,10 +152,8 @@ JSONRPC_STATUS CAddonsOperations::SetAddonEnabled(const std::string &method, ITr
   else
     return InvalidParams;
 
-  if (!CAddonMgr::Get().DisableAddon(id, disabled))
-      return InvalidParams;
-
-  return ACK;
+  bool success = disabled ? CAddonMgr::Get().DisableAddon(id) : CAddonMgr::Get().EnableAddon(id);
+  return success ? ACK : InvalidParams;
 }
 
 JSONRPC_STATUS CAddonsOperations::ExecuteAddon(const std::string &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)

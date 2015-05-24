@@ -64,6 +64,7 @@ public:
   void PreviousWindow();
 
   void CloseDialogs(bool forceClose = false) const;
+  void CloseInternalModalDialogs(bool forceClose = false) const;
 
   // OnAction() runs through our active dialogs and windows and sends the message
   // off to the callbacks (application, python, playlist player) and to the
@@ -93,6 +94,8 @@ public:
    */
   bool Render();
 
+  void RenderEx() const;
+
   /*! \brief Do any post render activities.
    */
   void AfterRender();
@@ -110,13 +113,26 @@ public:
    */
   bool Initialized() const { return m_initialized; };
 
+  /*! \brief Create and initialize all windows and dialogs
+   */
+  void CreateWindows();
+
+  /*! \brief Destroy and remove all windows and dialogs
+  *
+  * \return true on success, false if destruction fails for any window
+  */
+  bool DestroyWindows();
+
   CGUIWindow* GetWindow(int id) const;
   void ProcessRenderLoop(bool renderOnly = false);
   void SetCallback(IWindowManagerCallback& callback);
   void DeInitialize();
 
-  void RouteToWindow(CGUIWindow* dialog);
-  void AddModeless(CGUIWindow* dialog);
+  /*! \brief Register a dialog as active dialog
+   *
+   * \param dialog The dialog to register as active dialog
+   */
+  void RegisterDialog(CGUIWindow* dialog);
   void RemoveDialog(int id);
   int GetTopMostModalDialogID(bool ignoreClosing = false) const;
 
@@ -127,6 +143,7 @@ public:
   int RemoveThreadMessageByMessageIds(int *pMessageIDList);
   void AddMsgTarget( IMsgTargetCallback* pMsgTarget );
   int GetActiveWindow() const;
+  int GetActiveWindowID();
   int GetFocusedWindow() const;
   bool HasModalDialog() const;
   bool HasDialogOnScreen() const;
@@ -137,6 +154,16 @@ public:
   bool IsWindowVisible(const std::string &xmlFile) const;
   bool IsWindowTopMost(const std::string &xmlFile) const;
   bool IsOverlayAllowed() const;
+  /*! \brief Checks if the given window is an addon window.
+   *
+   * \return true if the given window is an addon window, otherwise false.
+   */
+  bool IsAddonWindow(int id) const { return (id >= WINDOW_ADDON_START && id <= WINDOW_ADDON_END); };
+  /*! \brief Checks if the given window is a python window.
+   *
+   * \return true if the given window is a python window, otherwise false.
+   */
+  bool IsPythonWindow(int id) const { return (id >= WINDOW_PYTHON_START && id <= WINDOW_PYTHON_END); };
   void ShowOverlay(CGUIWindow::OVERLAY_STATE state);
   void GetActiveModelessWindows(std::vector<int> &ids);
 #ifdef _DEBUG
@@ -144,7 +171,6 @@ public:
 #endif
 private:
   void RenderPass() const;
-  void RenderEx() const;
 
   void LoadNotOnDemandWindows();
   void UnloadNotOnDemandWindows();

@@ -18,9 +18,7 @@
 *  <http://www.gnu.org/licenses/>.
 *
 */
-#include "boost/shared_ptr.hpp"
-
-#include <boost/enable_shared_from_this.hpp>
+#include <memory>
 
 #include <map>
 #include <set>
@@ -52,6 +50,10 @@ namespace ADDON
     ADDON_WEB_INTERFACE,
     ADDON_SERVICE,
     ADDON_AUDIOENCODER,
+    ADDON_CONTEXT_ITEM,
+    ADDON_AUDIODECODER,
+    ADDON_RESOURCE_LANGUAGE,
+    ADDON_RESOURCE_UISOUNDS,
     ADDON_VIDEO, // virtual addon types
     ADDON_AUDIO,
     ADDON_IMAGE,
@@ -64,13 +66,13 @@ namespace ADDON
   } TYPE;
 
   class IAddon;
-  typedef boost::shared_ptr<IAddon> AddonPtr;
+  typedef std::shared_ptr<IAddon> AddonPtr;
   class CVisualisation;
-  typedef boost::shared_ptr<CVisualisation> VizPtr;
+  typedef std::shared_ptr<CVisualisation> VizPtr;
   class CSkinInfo;
-  typedef boost::shared_ptr<CSkinInfo> SkinPtr;
+  typedef std::shared_ptr<CSkinInfo> SkinPtr;
   class CPluginSource;
-  typedef boost::shared_ptr<CPluginSource> PluginPtr;
+  typedef std::shared_ptr<CPluginSource> PluginPtr;
 
   class CAddonMgr;
   class AddonVersion;
@@ -78,7 +80,7 @@ namespace ADDON
   typedef std::map<std::string, std::string> InfoMap;
   class AddonProps;
 
-  class IAddon : public boost::enable_shared_from_this<IAddon>
+  class IAddon : public std::enable_shared_from_this<IAddon>
   {
   public:
     virtual ~IAddon() {};
@@ -118,8 +120,8 @@ namespace ADDON
     virtual void OnDisabled() =0;
     virtual void OnEnabled() =0;
     virtual AddonPtr GetRunningInstance() const=0;
-    virtual bool OnPreInstall() =0;
-    virtual void OnPostInstall(bool restart, bool update) =0;
+    virtual void OnPreInstall() =0;
+    virtual void OnPostInstall(bool update, bool modal) =0;
     virtual void OnPreUnInstall() =0;
     virtual void OnPostUnInstall() =0;
     virtual bool CanInstall(const std::string& referer) =0;
@@ -129,9 +131,6 @@ namespace ADDON
 
   private:
     friend class CAddonMgr;
-    virtual bool IsAddonLibrary() =0;
-    virtual void Enable() =0;
-    virtual void Disable() =0;
     virtual bool LoadStrings() =0;
     virtual void ClearStrings() =0;
   };

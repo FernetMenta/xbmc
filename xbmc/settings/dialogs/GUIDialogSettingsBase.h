@@ -49,13 +49,14 @@ class CGUIEditControl;
 class CGUIButtonControl;
 class CGUIRadioButtonControl;
 class CGUISettingsSliderControl;
+class CGUILabelControl;
 
 class CSetting;
 class CSettingAction;
 class CSettingCategory;
 class CSettingSection;
 
-typedef boost::shared_ptr<CGUIControlBaseSetting> BaseSettingControlPtr;
+typedef std::shared_ptr<CGUIControlBaseSetting> BaseSettingControlPtr;
 
 class CGUIDialogSettingsBase
   : public CGUIDialog,
@@ -101,7 +102,19 @@ protected:
   virtual void SetupView();
   virtual std::set<std::string> CreateSettings();
   virtual void UpdateSettings();
-  
+
+  /*!
+    \brief Get the name for the setting entry
+
+    Used as virtual to allow related settings dialog to give a std::string name of the setting.
+    If not used on own dialog class it handle the string from int CSetting::GetLabel(),
+    This must also be used if on related dialog no special entry is wanted.
+
+    \param pSetting Base settings class which need the name
+    \return Name used on settings dialog
+   */
+  virtual std::string GetSettingsLabel(CSetting *pSetting);
+
   virtual CGUIControl* AddSetting(CSetting *pSetting, float width, int &iControlID);
   virtual CGUIControl* AddSettingControl(CGUIControl *pControl, BaseSettingControlPtr pSettingControl, float width, int &iControlID);
   
@@ -136,6 +149,7 @@ protected:
   BaseSettingControlPtr GetSettingControl(int controlId);
   
   CGUIControl* AddSeparator(float width, int &iControlID);
+  CGUIControl* AddLabel(float width, int &iControlID, int label);
 
   std::vector<CSettingCategory*> m_categories;
   std::vector<BaseSettingControlPtr> m_settingControls;
@@ -152,6 +166,7 @@ protected:
   CGUIButtonControl *m_pOriginalButton;
   CGUIEditControl *m_pOriginalEdit;
   CGUIImage *m_pOriginalImage;
+  CGUILabelControl *m_pOriginalGroupTitle;
   bool m_newOriginalEdit;
   
   BaseSettingControlPtr m_delayedSetting; ///< Current delayed setting \sa CBaseSettingControl::SetDelayed()

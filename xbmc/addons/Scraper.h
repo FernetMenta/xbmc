@@ -54,7 +54,7 @@ class CScraperUrl;
 namespace ADDON
 {
 class CScraper;
-typedef boost::shared_ptr<CScraper> ScraperPtr;
+typedef std::shared_ptr<CScraper> ScraperPtr;
 
 std::string TranslateContent(const CONTENT_TYPE &content, bool pretty=false);
 CONTENT_TYPE TranslateContent(const std::string &string);
@@ -81,7 +81,10 @@ private:
 class CScraper : public CAddon
 {
 public:
-  CScraper(const AddonProps &props) : CAddon(props), m_fLoaded(false) {}
+  CScraper(const AddonProps &props) :
+    CAddon(props), m_fLoaded(false), m_requiressettings(false),
+    m_pathContent(CONTENT_NONE) {}
+
   CScraper(const cp_extension_t *ext);
   virtual ~CScraper() {}
   virtual AddonPtr Clone() const;
@@ -146,6 +149,7 @@ public:
     CAlbum &album);
   bool GetArtistDetails(XFILE::CCurlFile &fcurl, const CScraperUrl &scurl,
     const std::string &sSearch, CArtist &artist);
+  bool GetArtwork(XFILE::CCurlFile &fcurl, CVideoInfoTag &details);
 
 private:
   CScraper(const CScraper &rhs);

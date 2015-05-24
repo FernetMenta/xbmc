@@ -110,10 +110,12 @@ public:
   bool m_drain;
   bool m_empty;
   bool m_changeResampler;
+  bool m_forceResampler;
   double m_resampleRatio;
   AEQuality m_resampleQuality;
   bool m_stereoUpmix;
   bool m_normalize;
+  bool m_remap;
   int64_t m_lastSamplePts;
 };
 

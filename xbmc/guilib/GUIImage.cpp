@@ -23,6 +23,8 @@
 #include "utils/log.h"
 #include "utils/TimeUtils.h"
 
+#include <cassert>
+
 using namespace std;
 
 CGUIImage::CGUIImage(int parentID, int controlID, float posX, float posY, float width, float height, const CTextureInfo& texture)
@@ -118,6 +120,8 @@ void CGUIImage::Process(unsigned int currentTime, CDirtyRegionList &dirtyregions
     unsigned int frameTime = 0;
     if (m_lastRenderTime)
       frameTime = currentTime - m_lastRenderTime;
+    if (!frameTime)
+      frameTime = (unsigned int)(1000 / g_graphicsContext.GetFPS());
     m_lastRenderTime = currentTime;
 
     if (m_fadingTextures.size())  // have some fading images

@@ -29,6 +29,8 @@
 #include "video/VideoInfoTag.h"
 #include "guilib/LocalizeStrings.h"
 
+#include <cassert>
+
 namespace XFILE
 {
 
@@ -174,15 +176,13 @@ bool CBlurayDirectory::GetDirectory(const CURL& url, CFileItemList &items)
     return false;
   }
 
-  if(file == "")
+  if(file == "root")
     GetRoot(items);
-  else if(file == "titles")
+  else if(file == "root/titles")
     GetTitles(false, items);
   else
   {
     CURL url2 = GetUnderlyingCURL(url);
-    if (url2.GetFileName().empty())
-      return false;
     CDirectory::CHints hints;
     hints.flags = m_flags;
     if (!CDirectory::GetDirectory(url2, items, hints))
@@ -200,8 +200,6 @@ CURL CBlurayDirectory::GetUnderlyingCURL(const CURL& url)
   assert(url.IsProtocol("bluray"));
   std::string host = url.GetHostName();
   std::string filename = url.GetFileName();
-  if (host.empty() || filename.empty())
-    return CURL();
   return CURL(host.append(filename));
 }
 

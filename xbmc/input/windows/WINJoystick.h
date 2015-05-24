@@ -22,8 +22,9 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <list>
+#include <memory>
 #include <stdint.h>
-#include "settings/lib/ISettingCallback.h"
 #include "threads/CriticalSection.h"
 
 #define JACTIVE_BUTTON 0x00000001
@@ -52,22 +53,21 @@ struct AxisConfig {
 
 typedef std::vector<AxisConfig> AxesConfig; // [<axis, isTrigger, rest state value>]
 class CRegExp;
-namespace boost { template <typename T> class shared_ptr; }
 
 // Class to manage all connected joysticks
-class CJoystick : public ISettingCallback
+class CJoystick
 {
 public:
   CJoystick();
   ~CJoystick();
 
-  virtual void OnSettingChanged(const CSetting *setting);
   void Initialize();
   void Reset();
   void Update();
 
   bool GetButton(std::string &joyName, int &id, bool consider_repeat = true);
   bool GetAxis(std::string &joyName, int &id);
+  bool GetAxes(std::list<std::pair<std::string, int> >& axes, bool consider_still = false);
   bool GetHat(std::string &joyName, int &id, int &position, bool consider_repeat = true);
   float GetAmount(const std::string &joyName, int axisNum) const;
 
@@ -77,7 +77,6 @@ public:
   bool Reinitialize();
   void Acquire();
   typedef std::vector<AxisConfig> AxesConfig; // [<axis, isTrigger, rest state value>]
-  void LoadAxesConfigs(const std::map<boost::shared_ptr<CRegExp>, AxesConfig> &axesConfigs);
 
 private:
   bool IsButtonActive() const { return m_ButtonIdx != -1; }
@@ -115,7 +114,4 @@ private:
   std::vector<LPDIRECTINPUTDEVICE8> m_pJoysticks;
   std::vector<std::string> m_JoystickNames;
   std::vector<DIDEVCAPS> m_devCaps;
-  std::map<boost::shared_ptr<CRegExp>, AxesConfig> m_AxesConfigs; // <joy, <axis num, isTrigger, restState> >
 };
-
-extern CJoystick g_Joystick;

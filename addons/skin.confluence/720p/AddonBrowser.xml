@@ -8,11 +8,15 @@
 		<include>CommonBackground</include>
 		<include>ContentPanelBackgrounds</include>
 		<control type="group">
-			<include>Window_OpenClose_Animation</include>		
-			<include>CommonRootView</include> <!-- view id = 50 -->
-			<include>FullWidthList</include> <!-- view id = 51 -->
-			<include>AddonInfoListView1</include> <!-- view id = 550 -->
-			<include>AddonInfoThumbView1</include> <!-- view id = 551 -->
+			<include>Window_OpenClose_Animation</include>
+			<!-- view id = 50 -->
+			<include>CommonRootView</include>
+			<!-- view id = 51 -->
+			<include>FullWidthList</include>
+			<!-- view id = 550 -->
+			<include>AddonInfoListView1</include>
+			<!-- view id = 551 -->
+			<include>AddonInfoThumbView1</include>
 		</control>
 		<include>CommonPageCount</include>
 		<include>CommonNowPlaying</include>
@@ -119,7 +123,36 @@
 					<include>ButtonCommonValues</include>
 					<label>24999</label>
 				</control>
+				<control type="button" id="9">
+					<description>Check for updates</description>
+					<include>ButtonCommonValues</include>
+					<label>24034</label>
+				</control>
 				<include>CommonNowPlaying_Controls</include>
+			</control>
+			<control type="label">
+				<description>Last updated label</description>
+				<left>0</left>
+				<top>650</top>
+				<height>60</height>
+				<width>240</width>
+				<label>31301</label>
+				<align>right</align>
+				<aligny>top</aligny>
+				<font>font13caps</font>
+				<textcolor>selected</textcolor>
+			</control>
+			<control type="label">
+				<description>Last updated value</description>
+				<left>0</left>
+				<top>680</top>
+				<height>25</height>
+				<width>240</width>
+				<label>$INFO[Window.Property(Updated)]</label>
+				<font>font13_title</font>
+				<textcolor>white</textcolor>
+				<align>right</align>
+				<aligny>center</aligny>
 			</control>
 		</control>
 		<include>Clock</include>

@@ -130,6 +130,10 @@ JSONRPC_STATUS CAudioLibrary::GetAlbums(const std::string &method, ITransportLay
 
   CMusicDbUrl musicUrl;
   musicUrl.FromString("musicdb://albums/");
+
+  if (parameterObject["includesingles"].asBoolean())
+    musicUrl.AddOption("show_singles", true);
+
   int artistID = -1, genreID = -1;
   const CVariant &filter = parameterObject["filter"];
   if (filter.isMember("artistid"))
@@ -208,6 +212,10 @@ JSONRPC_STATUS CAudioLibrary::GetSongs(const std::string &method, ITransportLaye
 
   CMusicDbUrl musicUrl;
   musicUrl.FromString("musicdb://songs/");
+
+  if (!parameterObject["includesingles"].asBoolean())
+    musicUrl.AddOption("singles", false);
+
   int genreID = -1, albumID = -1, artistID = -1;
   const CVariant &filter = parameterObject["filter"];
   if (filter.isMember("artistid"))
@@ -508,6 +516,10 @@ JSONRPC_STATUS CAudioLibrary::SetSongDetails(const std::string &method, ITranspo
     song.strComment = parameterObject["comment"].asString();
   if (ParameterNotNull(parameterObject, "musicbrainztrackid"))
     song.strMusicBrainzTrackID = parameterObject["musicbrainztrackid"].asString();
+  if (ParameterNotNull(parameterObject, "playcount"))
+    song.iTimesPlayed = parameterObject["playcount"].asInteger();
+  if (ParameterNotNull(parameterObject, "lastplayed"))
+    song.lastPlayed.SetFromDBDateTime(parameterObject["lastplayed"].asString());
 
   if (musicdatabase.UpdateSong(id, song) <= 0)
     return InternalError;

@@ -72,6 +72,12 @@ public:
   static std::string GetParentPath(const std::string& strPath);
   static bool GetParentPath(const std::string& strPath, std::string& strParent);
 
+  /*! \brief Retrieve the base path, accounting for stacks and files in rars.
+   \param strPath path.
+   \return the folder that contains the item.
+   */
+  static std::string GetBasePath(const std::string& strPath);
+
   /* \brief Change the base path of a URL: fromPath/fromFile -> toPath/toFile
     Handles changes in path separator and filename URL encoding if necessary to derive toFile.
     \param fromPath the base path of the original URL
@@ -79,7 +85,7 @@ public:
     \param toPath the base path of the resulting URL
     \return the full path.
    */
-  static std::string ChangeBasePath(const std::string &fromPath, const std::string &fromFile, const std::string &toPath);
+  static std::string ChangeBasePath(const std::string &fromPath, const std::string &fromFile, const std::string &toPath, const bool &bAddPath = true);
 
   static CURL SubstitutePath(const CURL& url, bool reverse = false);
   static std::string SubstitutePath(const std::string& strPath, bool reverse = false);
@@ -116,17 +122,16 @@ public:
   static bool IsAddonsPath(const std::string& strFile);
   static bool IsSourcesPath(const std::string& strFile);
   static bool IsCDDA(const std::string& strFile);
-  static bool IsDAAP(const std::string& strFile);
   static bool IsDAV(const std::string& strFile);
   static bool IsDOSPath(const std::string &path);
   static bool IsDVD(const std::string& strFile);
   static bool IsFTP(const std::string& strFile);
+  static bool IsHTTP(const std::string& strFile);
   static bool IsUDP(const std::string& strFile);
   static bool IsTCP(const std::string& strFile);
   static bool IsHD(const std::string& strFileName);
   static bool IsHDHomeRun(const std::string& strFile);
   static bool IsSlingbox(const std::string& strFile);
-  static bool IsHTSP(const std::string& strFile);
   static bool IsInArchive(const std::string& strFile);
   static bool IsInRAR(const std::string& strFile);
   static bool IsInternetStream(const std::string& path, bool bStrictCheck = false);
@@ -138,9 +143,7 @@ public:
   static bool IsPVRRecording(const std::string& strFile);
   static bool IsMultiPath(const std::string& strPath);
   static bool IsMusicDb(const std::string& strFile);
-  static bool IsMythTV(const std::string& strFile);
   static bool IsNfs(const std::string& strFile);
-  static bool IsAfp(const std::string& strFile);
   static bool IsOnDVD(const std::string& strFile);
   static bool IsOnLAN(const std::string& strFile);
   static bool IsHostOnLAN(const std::string& hostName, bool offLineCheck = false);
@@ -151,11 +154,9 @@ public:
   static bool IsSmb(const std::string& strFile);
   static bool IsSpecial(const std::string& strFile);
   static bool IsStack(const std::string& strFile);
-  static bool IsTuxBox(const std::string& strFile);
   static bool IsUPnP(const std::string& strFile);
   static bool IsURL(const std::string& strFile);
   static bool IsVideoDb(const std::string& strFile);
-  static bool IsVTP(const std::string& strFile);
   static bool IsAPK(const std::string& strFile);
   static bool IsZIP(const std::string& strFile);
   static bool IsArchive(const std::string& strFile);

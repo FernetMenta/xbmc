@@ -143,7 +143,7 @@ std::string CDatabase::PrepareSQL(std::string strStmt, ...) const
   return strResult;
 }
 
-std::string CDatabase::GetSingleValue(const std::string &query, std::auto_ptr<Dataset> &ds)
+std::string CDatabase::GetSingleValue(const std::string &query, std::unique_ptr<Dataset> &ds)
 {
   std::string ret;
   try
@@ -455,8 +455,13 @@ bool CDatabase::Connect(const std::string &dbName, const DatabaseSettings &dbSet
   // database name is always required
   m_pDB->setDatabase(dbName.c_str());
 
-  // set SSL configuration regardless if any are empty (all empty means no SSL).
-  m_pDB->setSSLConfig(dbSettings.key.c_str(), dbSettings.cert.c_str(), dbSettings.ca.c_str(), dbSettings.capath.c_str(), dbSettings.ciphers.c_str());
+  // set configuration regardless if any are empty
+  m_pDB->setConfig(dbSettings.key.c_str(),
+                   dbSettings.cert.c_str(),
+                   dbSettings.ca.c_str(),
+                   dbSettings.capath.c_str(),
+                   dbSettings.ciphers.c_str(),
+                   dbSettings.compression);
 
   // create the datasets
   m_pDS.reset(m_pDB->CreateDataset());

@@ -22,7 +22,8 @@
 #include "input/XBMC_vkeys.h"
 #include "guilib/GUIEditControl.h"
 #include "guilib/GUIWindowManager.h"
-#include "guilib/Key.h"
+#include "input/KeyboardLayoutManager.h"
+#include "input/Key.h"
 #include "guilib/LocalizeStrings.h"
 #include "GUIUserMessages.h"
 #include "GUIDialogNumeric.h"
@@ -68,16 +69,13 @@ CGUIDialogKeyboardGeneric::CGUIDialogKeyboardGeneric()
   m_keyType = LOWER;
   m_currentLayout = 0;
   m_loadType = KEEP_IN_MEMORY;
+  m_isKeyboardNavigationMode = false;
+  m_previouslyFocusedButton = 0;
 }
 
 void CGUIDialogKeyboardGeneric::OnWindowLoaded()
 {
-  // show the cursor always
-  CGUIEditControl *edit = (CGUIEditControl *)GetControl(CTL_EDIT);
-  if (edit)
-    edit->SetShowCursorAlways(true);
   g_Windowing.EnableTextInput(false);
-
   CGUIDialog::OnWindowLoaded();
 }
 
@@ -86,19 +84,19 @@ void CGUIDialogKeyboardGeneric::OnInitWindow()
   CGUIDialog::OnInitWindow();
 
   m_bIsConfirmed = false;
+  m_isKeyboardNavigationMode = false;
 
   // fill in the keyboard layouts
   m_currentLayout = 0;
   m_layouts.clear();
-  std::vector<CKeyboardLayout> keyLayouts = CKeyboardLayout::LoadLayouts();
-  const CSetting *setting = CSettings::Get().GetSetting("locale.keyboardlayouts");
-  std::vector<std::string> layouts;
-  if (setting)
-    layouts = StringUtils::Split(setting->ToString(), '|');
-  for (std::vector<CKeyboardLayout>::const_iterator j = keyLayouts.begin(); j != keyLayouts.end(); ++j)
+  const KeyboardLayouts& keyboardLayouts = CKeyboardLayoutManager::Get().GetLayouts();
+  std::vector<CVariant> layoutNames = CSettings::Get().GetList("locale.keyboardlayouts");
+
+  for (std::vector<CVariant>::const_iterator layoutName = layoutNames.begin(); layoutName != layoutNames.end(); ++layoutName)
   {
-    if (std::find(layouts.begin(), layouts.end(), j->GetName()) != layouts.end())
-      m_layouts.push_back(*j);
+    KeyboardLayouts::const_iterator keyboardLayout = keyboardLayouts.find(layoutName->asString());
+    if (keyboardLayout != keyboardLayouts.end())
+      m_layouts.push_back(keyboardLayout->second);
   }
 
   // set alphabetic (capitals)
@@ -131,16 +129,17 @@ void CGUIDialogKeyboardGeneric::OnInitWindow()
 bool CGUIDialogKeyboardGeneric::OnAction(const CAction &action)
 {
   bool handled = true;
-  if (action.GetID() == ACTION_ENTER)
+  if (action.GetID() == ACTION_ENTER || (m_isKeyboardNavigationMode && action.GetID() == ACTION_SELECT_ITEM))
     OnOK();
   else if (action.GetID() == ACTION_SHIFT)
     OnShift();
   else if (action.GetID() == ACTION_SYMBOLS)
     OnSymbols();
   // don't handle move left/right and select in the edit control
-  else if (action.GetID() == ACTION_MOVE_LEFT ||
+  else if (!m_isKeyboardNavigationMode &&
+           (action.GetID() == ACTION_MOVE_LEFT ||
            action.GetID() == ACTION_MOVE_RIGHT ||
-           action.GetID() == ACTION_SELECT_ITEM)
+           action.GetID() == ACTION_SELECT_ITEM))
     handled = false;
   else
   {
@@ -149,6 +148,23 @@ bool CGUIDialogKeyboardGeneric::OnAction(const CAction &action)
     CGUIControl *edit = GetControl(CTL_EDIT);
     if (edit)
       handled = edit->OnAction(action);
+    if (!handled && action.GetID() >= KEY_VKEY && action.GetID() < KEY_ASCII)
+    {
+      BYTE b = action.GetID() & 0xFF;
+      if (b == XBMCVK_TAB)
+      {
+        // Toggle left/right key mode
+        m_isKeyboardNavigationMode = !m_isKeyboardNavigationMode;
+        if (m_isKeyboardNavigationMode)
+        {
+          m_previouslyFocusedButton = GetFocusedControlID();
+          SET_CONTROL_FOCUS(edit->GetID(), 0);
+        }
+        else
+          SET_CONTROL_FOCUS(m_previouslyFocusedButton, 0);
+        handled = true;
+      }
+    }
   }
 
   if (!handled) // unhandled by us - let's see if the baseclass wants it
@@ -318,14 +334,14 @@ void CGUIDialogKeyboardGeneric::UpdateButtons()
   CKeyboardLayout layout = m_layouts.empty() ? CKeyboardLayout() : m_layouts[m_currentLayout];
   SET_CONTROL_LABEL(CTL_BUTTON_LAYOUT, layout.GetName());
 
-  unsigned int modifiers = CKeyboardLayout::MODIFIER_KEY_NONE;
+  unsigned int modifiers = CKeyboardLayout::ModifierKeyNone;
   if ((m_keyType == CAPS && !m_bShift) || (m_keyType == LOWER && m_bShift))
-    modifiers |= CKeyboardLayout::MODIFIER_KEY_SHIFT;
+    modifiers |= CKeyboardLayout::ModifierKeyShift;
   if (m_keyType == SYMBOLS)
   {
-    modifiers |= CKeyboardLayout::MODIFIER_KEY_SYMBOL;
+    modifiers |= CKeyboardLayout::ModifierKeySymbol;
     if (m_bShift)
-      modifiers |= CKeyboardLayout::MODIFIER_KEY_SHIFT;
+      modifiers |= CKeyboardLayout::ModifierKeyShift;
   }
 
   for (unsigned int row = 0; row < BUTTONS_MAX_ROWS; row++)

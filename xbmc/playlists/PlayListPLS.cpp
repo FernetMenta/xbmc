@@ -24,6 +24,7 @@
 #include "utils/StringUtils.h"
 #include "filesystem/File.h"
 #include "settings/AdvancedSettings.h"
+#include "video/VideoInfoTag.h"
 #include "music/tags/MusicInfoTag.h"
 #include "utils/CharsetConverter.h"
 #include "utils/log.h"
@@ -275,6 +276,8 @@ bool CPlayListASX::LoadAsxIniInfo(istream &stream)
     CLog::Log(LOGINFO, "Adding element %s=%s", name.c_str(), value.c_str());
     CFileItemPtr newItem(new CFileItem(value));
     newItem->SetPath(value);
+    if (newItem->IsVideo() && !newItem->HasVideoInfoTag()) // File is a video and needs a VideoInfoTag
+      newItem->GetVideoInfoTag()->Reset(); // Force VideoInfoTag creation
     Add(newItem);
   }
 
@@ -379,7 +382,7 @@ bool CPlayListASX::LoadData(istream& stream)
         value = XMLUtils::GetAttribute(pElement, "href");
         if (!value.empty())
         { // found an entryref, let's try loading that url
-          auto_ptr<CPlayList> playlist(CPlayListFactory::Create(value));
+          unique_ptr<CPlayList> playlist(CPlayListFactory::Create(value));
           if (NULL != playlist.get())
             if (playlist->Load(value))
               Add(*playlist);

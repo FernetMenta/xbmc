@@ -221,7 +221,7 @@ double OMXPlayerVideo::NextOverlay(double pts)
     else if (delta_stop > 0.0 && (min_delta == DVD_NOPTS_VALUE || delta_stop < min_delta))
       min_delta = delta_stop;
   }
-  return min_delta == DVD_NOPTS_VALUE ? pts+DVD_MSEC_TO_TIME(500) : pts+min_delta;
+  return min_delta == DVD_NOPTS_VALUE ? pts+DVD_MSEC_TO_TIME(500) : pts+std::max(min_delta, DVD_MSEC_TO_TIME(100));
 }
 
 
@@ -295,7 +295,7 @@ void OMXPlayerVideo::Output(double pts, bool bDropPacket)
   const double preroll = DVD_MSEC_TO_TIME(100);
   double media_pts = m_av_clock->OMXMediaTime();
 
-  if (m_nextOverlay != DVD_NOPTS_VALUE && media_pts + preroll <= m_nextOverlay)
+  if (m_nextOverlay != DVD_NOPTS_VALUE && media_pts != 0.0 && media_pts + preroll <= m_nextOverlay)
     return;
 
   int buffer = g_renderManager.WaitForBuffer(CThread::m_bStop);
@@ -305,9 +305,9 @@ void OMXPlayerVideo::Output(double pts, bool bDropPacket)
   double subtitle_pts = m_nextOverlay;
   double time = subtitle_pts != DVD_NOPTS_VALUE ? subtitle_pts - media_pts : 0.0;
 
-  m_nextOverlay = NextOverlay(media_pts);
+  m_nextOverlay = NextOverlay(media_pts + preroll);
 
-  ProcessOverlays(media_pts);
+  ProcessOverlays(media_pts + preroll);
 
   time += m_av_clock->GetAbsoluteClock();
   g_renderManager.FlipPage(CThread::m_bStop, time/DVD_TIME_BASE);
@@ -618,12 +618,18 @@ void OMXPlayerVideo::SetSpeed(int speed)
 
 std::string OMXPlayerVideo::GetPlayerInfo()
 {
+  double match = 0.0f, phase = 0.0f, pll = 0.0f;
   std::ostringstream s;
   s << "fr:"     << fixed << setprecision(3) << m_fFrameRate;
   s << ", vq:"   << setw(2) << min(99,GetLevel()) << "%";
   s << ", dc:"   << m_codecname;
   s << ", Mb/s:" << fixed << setprecision(2) << (double)GetVideoBitrate() / (1024.0*1024.0);
-
+  if (m_omxVideo.GetPlayerInfo(match, phase, pll))
+  {
+     s << ", match:" << fixed << setprecision(2) << match;
+     s << ", phase:" << fixed << setprecision(2) << phase;
+     s << ", pll:"   << fixed << setprecision(5) << pll;
+  }
   return s.str();
 }
 

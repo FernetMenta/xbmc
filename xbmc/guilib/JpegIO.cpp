@@ -235,7 +235,6 @@ CJpegIO::CJpegIO()
   m_orientation = 0;
   m_inputBuffSize = 0;
   m_inputBuff = NULL;
-  m_texturePath = "";
   memset(&m_cinfo, 0, sizeof(m_cinfo));
   m_thumbnailbuffer = NULL;
 }
@@ -526,7 +525,7 @@ bool CJpegIO::CreateThumbnailFromSurface(unsigned char* buffer, unsigned int wid
     delete [] rgbbuf;
 
   XFILE::CFile file;
-  const bool ret = file.OpenForWrite(destFile, true) && file.Write(result, outBufSize) == outBufSize;
+  const bool ret = file.OpenForWrite(destFile, true) && file.Write(result, outBufSize) == static_cast<ssize_t>(outBufSize);
   free(result);
 
   return ret;

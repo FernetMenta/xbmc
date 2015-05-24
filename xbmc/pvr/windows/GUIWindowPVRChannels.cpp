@@ -20,6 +20,7 @@
 
 #include "GUIWindowPVRChannels.h"
 
+#include "ContextMenuManager.h"
 #include "dialogs/GUIDialogFileBrowser.h"
 #include "dialogs/GUIDialogNumeric.h"
 #include "dialogs/GUIDialogKaiToast.h"
@@ -28,7 +29,7 @@
 #include "guilib/GUIKeyboardFactory.h"
 #include "guilib/GUIRadioButtonControl.h"
 #include "guilib/GUIWindowManager.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "GUIInfoManager.h"
 #include "pvr/PVRManager.h"
 #include "pvr/channels/PVRChannelGroupsContainer.h"
@@ -39,6 +40,7 @@
 #include "epg/EpgContainer.h"
 #include "settings/Settings.h"
 #include "utils/log.h"
+#include "utils/StringUtils.h"
 #include "threads/SingleLock.h"
 
 using namespace PVR;
@@ -73,27 +75,21 @@ void CGUIWindowPVRChannels::GetContextButtons(int itemNumber, CContextButtons &b
   if (itemNumber < 0 || itemNumber >= m_vecItems->Size())
     return;
   CFileItemPtr pItem = m_vecItems->Get(itemNumber);
-  CPVRChannel *channel = pItem->GetPVRChannelInfoTag();
+  CPVRChannelPtr channel(pItem->GetPVRChannelInfoTag());
 
-  if (pItem->GetPath() == "pvr://channels/.add.channel")
-  {
-    /* If yes show only "New Channel" on context menu */
-    buttons.Add(CONTEXT_BUTTON_ADD, 19046);                                           /* add new channel */
-  }
-  else
-  {
-    buttons.Add(CONTEXT_BUTTON_INFO, 19047);                                          /* channel info */
-    buttons.Add(CONTEXT_BUTTON_FIND, 19003);                                          /* find similar program */
-    buttons.Add(CONTEXT_BUTTON_RECORD_ITEM, channel->IsRecording() ? 19256 : 19255);  /* start/stop recording on channel */
+  buttons.Add(CONTEXT_BUTTON_INFO, 19047);                                          /* channel info */
+  buttons.Add(CONTEXT_BUTTON_FIND, 19003);                                          /* find similar program */
+  buttons.Add(CONTEXT_BUTTON_RECORD_ITEM, channel->IsRecording() ? 19256 : 19255);  /* start/stop recording on channel */
 
-    if (g_PVRClients->HasMenuHooks(pItem->GetPVRChannelInfoTag()->ClientID(), PVR_MENUHOOK_CHANNEL))
-      buttons.Add(CONTEXT_BUTTON_MENU_HOOKS, 19195);                                  /* PVR client specific action */
+  if (g_PVRClients->HasMenuHooks(pItem->GetPVRChannelInfoTag()->ClientID(), PVR_MENUHOOK_CHANNEL))
+    buttons.Add(CONTEXT_BUTTON_MENU_HOOKS, 19195);                                  /* PVR client specific action */
 
-    // Add parent buttons before the Manage button
-    CGUIWindowPVRBase::GetContextButtons(itemNumber, buttons);
+  // Add parent buttons before the Manage button
+  CGUIWindowPVRBase::GetContextButtons(itemNumber, buttons);
     
-    buttons.Add(CONTEXT_BUTTON_EDIT, 16106);                                          /* "Manage" submenu */
-  }
+  buttons.Add(CONTEXT_BUTTON_EDIT, 16106);                                          /* "Manage" submenu */
+
+  CContextMenuManager::Get().AddVisibleItems(pItem, buttons);
 }
 
 std::string CGUIWindowPVRChannels::GetDirectoryPath(void)
@@ -336,7 +332,7 @@ bool CGUIWindowPVRChannels::OnContextButtonRecord(CFileItem *item, CONTEXT_BUTTO
   
   if (button == CONTEXT_BUTTON_RECORD_ITEM)
   {
-    CPVRChannel *channel = item->GetPVRChannelInfoTag();
+    CPVRChannelPtr channel(item->GetPVRChannelInfoTag());
 
     if (channel)
       return g_PVRManager.ToggleRecordingOnChannel(channel->ChannelID());
@@ -355,7 +351,8 @@ bool CGUIWindowPVRChannels::OnContextButtonUpdateEpg(CFileItem *item, CONTEXT_BU
     if (!pDialog)
       return bReturn;
 
-    CPVRChannel *channel = item->GetPVRChannelInfoTag();
+    CPVRChannelPtr channel(item->GetPVRChannelInfoTag());
+
     pDialog->SetHeading(19251);
     pDialog->SetLine(0, g_localizeStrings.Get(19252));
     pDialog->SetLine(1, channel->ChannelName());

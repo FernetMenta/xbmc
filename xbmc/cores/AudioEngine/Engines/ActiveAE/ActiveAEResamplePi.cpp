@@ -19,6 +19,7 @@
  */
 
 #include "system.h"
+#include <cassert>
 
 #if defined(TARGET_RASPBERRY_PI)
 
@@ -109,7 +110,7 @@ static int format_to_bits(AVSampleFormat fmt)
   return 0;
 }
 
-bool CActiveAEResamplePi::Init(uint64_t dst_chan_layout, int dst_channels, int dst_rate, AVSampleFormat dst_fmt, int dst_bits, int dst_dither, uint64_t src_chan_layout, int src_channels, int src_rate, AVSampleFormat src_fmt, int src_bits, int src_dither, bool upmix, bool normalize, CAEChannelInfo *remapLayout, AEQuality quality)
+bool CActiveAEResamplePi::Init(uint64_t dst_chan_layout, int dst_channels, int dst_rate, AVSampleFormat dst_fmt, int dst_bits, int dst_dither, uint64_t src_chan_layout, int src_channels, int src_rate, AVSampleFormat src_fmt, int src_bits, int src_dither, bool upmix, bool normalize, CAEChannelInfo *remapLayout, AEQuality quality, bool force_resample)
 {
   LOGTIMEINIT("x");
 
@@ -130,6 +131,7 @@ bool CActiveAEResamplePi::Init(uint64_t dst_chan_layout, int dst_channels, int d
   m_offset = 0;
   m_src_pitch = format_to_bits(m_src_fmt) >> 3;
   m_dst_pitch = format_to_bits(m_dst_fmt) >> 3;
+  m_force_resample = force_resample;
 
   // special handling for S24 formats which are carried in S32 (S24NE3)
   if ((m_dst_fmt == AV_SAMPLE_FMT_S32 || m_dst_fmt == AV_SAMPLE_FMT_S32P) && m_dst_bits == 24 && m_dst_dither_bits == -8)
@@ -279,7 +281,7 @@ bool CActiveAEResamplePi::Init(uint64_t dst_chan_layout, int dst_channels, int d
 
   LOGTIME(3);
 
-  if (CSettings::Get().GetBool("videoplayer.usedisplayasclock") && CSettings::Get().GetInt("videoplayer.synctype") == SYNC_RESAMPLE)
+  if (m_force_resample)
   {
     OMX_PARAM_U32TYPE scaleType;
     OMX_INIT_STRUCTURE(scaleType);
@@ -498,6 +500,7 @@ int CActiveAEResamplePi::Resample(uint8_t **dst_buffer, int dst_samples, uint8_t
     if (omx_err != OMX_ErrorNone)
     {
       CLog::Log(LOGERROR, "%s::%s OMX_EmptyThisBuffer() failed with result(0x%x)", CLASSNAME, __func__, omx_err);
+      m_omx_mixer.DecoderEmptyBufferDone(m_omx_mixer.GetComponent(), omx_buffer);
       return false;
     }
 
@@ -510,8 +513,11 @@ int CActiveAEResamplePi::Resample(uint8_t **dst_buffer, int dst_samples, uint8_t
     }
     omx_err = m_omx_mixer.FillThisBuffer(m_encoded_buffer);
     if (omx_err != OMX_ErrorNone)
+    {
+      CLog::Log(LOGERROR, "%s::%s m_omx_mixer.FillThisBuffer result(0x%x)", CLASSNAME, __func__, omx_err);
+      m_omx_mixer.DecoderFillBufferDone(m_omx_mixer.GetComponent(), m_encoded_buffer);
       return false;
-
+    }
     omx_err = m_omx_mixer.WaitForOutputDone(1000);
     if (omx_err != OMX_ErrorNone)
     {
@@ -530,7 +536,7 @@ int CActiveAEResamplePi::Resample(uint8_t **dst_buffer, int dst_samples, uint8_t
   }
   #ifdef DEBUG_VERBOSE
   CLog::Log(LOGINFO, "%s::%s format:%d->%d rate:%d->%d chan:%d->%d samples %d->%d (%f) %d", CLASSNAME, __func__,
-    (int)m_src_fmt, (int)m_dst_fmt, m_src_rate, m_dst_rate, m_src_channels, m_dst_channels, src_samples, dst_samples, ratio, m_Initialized, received);
+    (int)m_src_fmt, (int)m_dst_fmt, m_src_rate, m_dst_rate, m_src_channels, m_dst_channels, src_samples, dst_samples, ratio, received);
   #endif
   assert(received <= dst_samples);
   return received;
@@ -538,9 +544,10 @@ int CActiveAEResamplePi::Resample(uint8_t **dst_buffer, int dst_samples, uint8_t
 
 int64_t CActiveAEResamplePi::GetDelay(int64_t base)
 {
-  int ret = m_dst_rate ? 1000 * GetBufferedSamples() / m_dst_rate : 0;
+  int64_t ret = av_rescale_rnd(GetBufferedSamples(), m_dst_rate, base, AV_ROUND_UP);
+
   #ifdef DEBUG_VERBOSE
-  CLog::Log(LOGINFO, "%s::%s = %d", CLASSNAME, __func__, ret);
+  CLog::Log(LOGINFO, "%s::%s = %" PRId64, CLASSNAME, __func__, ret);
   #endif
   return ret;
 }
@@ -561,7 +568,7 @@ int CActiveAEResamplePi::GetBufferedSamples()
 
 int CActiveAEResamplePi::CalcDstSampleCount(int src_samples, int dst_rate, int src_rate)
 {
-  int ret = ((long long)src_samples * dst_rate + src_rate-1) / src_rate;
+  int ret = av_rescale_rnd(src_samples, dst_rate, src_rate, AV_ROUND_UP);
   #ifdef DEBUG_VERBOSE
   CLog::Log(LOGINFO, "%s::%s = %d", CLASSNAME, __func__, ret);
   #endif
@@ -570,7 +577,7 @@ int CActiveAEResamplePi::CalcDstSampleCount(int src_samples, int dst_rate, int s
 
 int CActiveAEResamplePi::GetSrcBufferSize(int samples)
 {
-  int ret = 0;
+  int ret = av_samples_get_buffer_size(NULL, m_src_channels, samples, m_src_fmt, 1);
   #ifdef DEBUG_VERBOSE
   CLog::Log(LOGINFO, "%s::%s = %d", CLASSNAME, __func__, ret);
   #endif
@@ -579,7 +586,7 @@ int CActiveAEResamplePi::GetSrcBufferSize(int samples)
 
 int CActiveAEResamplePi::GetDstBufferSize(int samples)
 {
-  int ret = CalcDstSampleCount(samples, m_dst_rate, m_src_rate);
+  int ret = av_samples_get_buffer_size(NULL, m_dst_channels, samples, m_dst_fmt, 1);
   #ifdef DEBUG_VERBOSE
   CLog::Log(LOGINFO, "%s::%s = %d", CLASSNAME, __func__, ret);
   #endif

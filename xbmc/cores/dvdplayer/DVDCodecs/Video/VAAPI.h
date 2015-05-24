@@ -35,6 +35,7 @@
 #include "utils/ActorProtocol.h"
 #include <list>
 #include <map>
+#include <memory>
 #include <va/va.h>
 #include "linux/sse4/DllLibSSE4.h"
 
@@ -405,7 +406,7 @@ public:
   CDecoder();
   virtual ~CDecoder();
 
-  virtual bool Open      (AVCodecContext* avctx, const enum PixelFormat, unsigned int surfaces = 0);
+  virtual bool Open      (AVCodecContext* avctx, AVCodecContext* mainctx, const enum PixelFormat, unsigned int surfaces = 0);
   virtual int  Decode    (AVCodecContext* avctx, AVFrame* frame);
   virtual bool GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* picture);
   virtual void Reset();
@@ -449,6 +450,7 @@ protected:
   CVideoSurfaces m_videoSurfaces;
   vaapi_context m_hwContext;
   AVCodecContext* m_avctx;
+  bool m_getBufferError;
 
   COutput m_vaapiOutput;
   CVaapiBufferStats m_bufferStats;

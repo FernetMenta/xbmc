@@ -91,6 +91,7 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
     else if (field == FieldLastPlayed) return "songview.lastPlayed";
     else if (field == FieldRating) return "songview.rating";
     else if (field == FieldComment) return "songview.comment";
+    else if (field == FieldMoods) return "songview.mood";
     else if (field == FieldAlbum) return "songview.strAlbum";
     else if (field == FieldPath) return "songview.strPath";
     else if (field == FieldArtist || field == FieldAlbumArtist) return "songview.strArtists";
@@ -352,7 +353,7 @@ bool DatabaseUtils::GetFieldValue(const dbiplus::field_value &fieldValue, CVaria
   return false;
 }
 
-bool DatabaseUtils::GetDatabaseResults(const MediaType &mediaType, const FieldList &fields, const std::auto_ptr<dbiplus::Dataset> &dataset, DatabaseResults &results)
+bool DatabaseUtils::GetDatabaseResults(const MediaType &mediaType, const FieldList &fields, const std::unique_ptr<dbiplus::Dataset> &dataset, DatabaseResults &results)
 {
   if (dataset->num_rows() == 0)
     return true;
@@ -502,6 +503,7 @@ int DatabaseUtils::GetField(Field field, const MediaType &mediaType, bool asInde
     else if (field == FieldLastPlayed) return CMusicDatabase::song_lastplayed;
     else if (field == FieldRating) return CMusicDatabase::song_rating;
     else if (field == FieldComment) return CMusicDatabase::song_comment;
+    else if (field == FieldMoods) return CMusicDatabase::song_mood;
     else if (field == FieldAlbum) return CMusicDatabase::song_strAlbum;
     else if (field == FieldPath) return CMusicDatabase::song_strPath;
     else if (field == FieldGenre) return CMusicDatabase::song_strGenres;

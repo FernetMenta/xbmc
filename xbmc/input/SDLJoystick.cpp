@@ -20,7 +20,7 @@
 
 #include "system.h"
 #include "SDLJoystick.h"
-#include "peripherals/devices/PeripheralImon.h"
+#include "input/ButtonTranslator.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/lib/Setting.h"
 #include "utils/log.h"
@@ -28,7 +28,6 @@
 #include "utils/RegExp.h"
 
 #include <math.h>
-#include <boost/shared_ptr.hpp>
 
 #ifdef HAS_SDL_JOYSTICK
 #include <SDL2/SDL.h>
@@ -40,16 +39,6 @@ CJoystick::CJoystick()
   m_joystickEnabled = false;
   SetDeadzone(0);
   Reset();
-}
-
-void CJoystick::OnSettingChanged(const CSetting *setting)
-{
-  if (setting == NULL)
-    return;
-
-  const std::string &settingId = setting->GetId();
-  if (settingId == "input.enablejoystick")
-    SetEnabled(((CSettingBool*)setting)->GetValue() && PERIPHERALS::CPeripheralImon::GetCountOfImonsConflictWithDInput() == 0);
 }
 
 void CJoystick::Reset()
@@ -317,6 +306,29 @@ bool CJoystick::GetAxis(std::string &joyName, int& id) const
   return true;
 }
 
+bool CJoystick::GetAxes(std::list<std::pair<std::string, int> >& axes, bool consider_still)
+{
+  std::list<std::pair<std::string, int> > ret;
+  if (!IsEnabled() || !IsAxisActive())
+    return false;
+
+  SDL_Joystick *joy;
+  int axisId;
+
+  for (size_t i = 0; i < m_Axes.size(); ++i)
+  {
+    int deadzone = m_Axes[i].trigger ? 0 : m_DeadzoneRange;
+    int amount = m_Axes[i].val - m_Axes[i].rest;
+    if (consider_still || abs(amount) > deadzone)
+    {
+      MapAxis(i, joy, axisId);
+      ret.push_back(std::pair<std::string, int>(SDL_JoystickName(joy), axisId));
+    }
+  }
+  axes = ret;
+  return true;
+}
+
 int CJoystick::GetAxisWithMaxAmount() const
 {
   int maxAmount= 0, axis = -1;
@@ -406,12 +418,6 @@ bool CJoystick::Reinitialize()
   return true;
 }
 
-void CJoystick::LoadAxesConfigs(const std::map<boost::shared_ptr<CRegExp>, AxesConfig> &axesConfigs)
-{
-  m_AxesConfigs.clear();
-  m_AxesConfigs.insert(axesConfigs.begin(), axesConfigs.end());
-}
-
 void CJoystick::ApplyAxesConfigs()
 {
   // load axes configuration from keymap
@@ -419,15 +425,10 @@ void CJoystick::ApplyAxesConfigs()
   for (std::map<int, SDL_Joystick*>::const_iterator it = m_Joysticks.begin(); it != m_Joysticks.end(); ++it)
   {
     std::string joyName(SDL_JoystickName(it->second));
-    std::map<boost::shared_ptr<CRegExp>, AxesConfig>::const_iterator axesCfg;
-    for (axesCfg = m_AxesConfigs.begin(); axesCfg != m_AxesConfigs.end(); ++axesCfg)
+    const AxesConfig* axesCfg = CButtonTranslator::GetInstance().GetAxesConfigFor(joyName);
+    if (axesCfg != NULL)
     {
-      if (axesCfg->first->RegFind(joyName) >= 0)
-        break;
-    }
-    if (axesCfg != m_AxesConfigs.end())
-    {
-      for (AxesConfig::const_iterator it = axesCfg->second.begin(); it != axesCfg->second.end(); ++it)
+      for (AxesConfig::const_iterator it = axesCfg->begin(); it != axesCfg->end(); ++it)
       {
         int axis = axesCount + it->axis - 1;
         m_Axes[axis].trigger = it->isTrigger;

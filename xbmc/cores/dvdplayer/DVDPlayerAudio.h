@@ -24,15 +24,11 @@
 #include "DVDAudio.h"
 #include "DVDClock.h"
 #include "DVDMessageQueue.h"
-#include "DVDDemuxers/DVDDemuxUtils.h"
 #include "DVDStreamInfo.h"
 #include "utils/BitstreamStats.h"
 #include "IDVDPlayer.h"
 
-#include "cores/AudioEngine/Utils/AEAudioFormat.h"
-
 #include <list>
-#include <queue>
 
 class CDVDPlayer;
 class CDVDAudioCodec;
@@ -63,20 +59,20 @@ public:
   {
     Flush();
   }
-  void    Add(double error)
+  void Add(double error)
   {
     m_buffer += error;
     m_count++;
   }
 
-  void    Flush()
+  void Flush(int interval = 100)
   {
     m_buffer = 0.0f;
     m_count  = 0;
-    m_timer.Set(2000);
+    m_timer.Set(interval);
   }
 
-  double  Get()
+  double Get()
   {
     if(m_count)
       return m_buffer / m_count;
@@ -84,20 +80,20 @@ public:
       return 0.0;
   }
 
-  bool    Get(double& error)
+  bool Get(double& error, int interval = 100)
   {
     if(m_timer.IsTimePast())
     {
       error = Get();
-      Flush();
+      Flush(interval);
       return true;
     }
     else
       return false;
   }
 
-  double               m_buffer; //place to store average errors
-  int                  m_count;  //number of errors stored
+  double m_buffer; //place to store average errors
+  int m_count;  //number of errors stored
   XbmcThreads::EndTime m_timer;
 };
 
@@ -120,6 +116,7 @@ public:
   int  GetLevel() const                                 { return m_messageQueue.GetLevel(); }
   bool IsInited() const                                 { return m_messageQueue.IsInited(); }
   void SendMessage(CDVDMsg* pMsg, int priority = 0)     { m_messageQueue.Put(pMsg, priority); }
+  void FlushMessages()                                  { m_messageQueue.Flush(); }
 
   void SetVolume(float fVolume)                         { m_dvdAudio.SetVolume(fVolume); }
   void SetMute(bool bOnOff)                             { }

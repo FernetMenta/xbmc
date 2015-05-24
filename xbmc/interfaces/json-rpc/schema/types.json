@@ -407,7 +407,8 @@
                 "theme", "mood", "style", "type", "albumlabel",
                 "rating", "year", "musicbrainzalbumid",
                 "musicbrainzalbumartistid", "fanart", "thumbnail",
-                "playcount", "genreid", "artistid", "displayartist" ]
+                "playcount", "genreid", "artistid", "displayartist",
+                "compilation", "releasetype" ]
     }
   },
   "Audio.Fields.Song": {
@@ -420,8 +421,13 @@
                 "musicbrainzalbumid", "musicbrainzalbumartistid",
                 "playcount", "fanart", "thumbnail", "file", "albumid",
                 "lastplayed", "disc", "genreid", "artistid", "displayartist",
-                "albumartistid" ]
+                "albumartistid", "albumreleasetype" ]
     }
+  },
+  "Audio.Album.ReleaseType": {
+    "type": "string",
+    "enum": [ "album", "single" ],
+    "default": "album"
   },
   "Audio.Details.Base": {
     "extends": "Media.Details.Base",
@@ -471,7 +477,9 @@
       "style": { "$ref": "Array.String" },
       "type": { "type": "string" },
       "albumlabel": { "type": "string" },
-      "playcount": { "type": "integer" }
+      "playcount": { "type": "integer" },
+      "compilation": { "type": "boolean" },
+      "releasetype": { "$ref": "Audio.Album.ReleaseType" }
     }
   },
   "Audio.Details.Song": {
@@ -491,7 +499,8 @@
       "albumid": { "$ref": "Library.Id" },
       "lastplayed": { "type": "string" },
       "disc": { "type": "integer" },
-      "albumartistid": { "$ref": "Array.Integer" }
+      "albumartistid": { "$ref": "Array.Integer" },
+      "albumreleasetype": { "$ref": "Audio.Album.ReleaseType" }
     }
   },
   "Video.Fields.Movie": {
@@ -521,7 +530,7 @@
                 "imdbnumber", "premiered", "votes", "lastplayed",
                 "fanart", "thumbnail", "file", "originaltitle",
                 "sorttitle", "episodeguide", "season", "watchedepisodes",
-                "dateadded", "tag", "lastplayed", "art" ]
+                "dateadded", "tag", "art" ]
     }
   },
   "Video.Fields.Season": {
@@ -1230,7 +1239,10 @@
       "style": { "$ref": "Array.String" },
       "albumlabel": { "type": "string" },
       "specialsortseason": { "type": "integer" },
-      "specialsortepisode": { "type": "integer" }
+      "specialsortepisode": { "type": "integer" },
+      "compilation": { "type": "boolean" },
+      "releasetype": { "$ref": "Audio.Album.ReleaseType" },
+      "albumreleasetype": { "$ref": "Audio.Album.ReleaseType" }
     }
   },
   "List.Fields.All": {
@@ -1249,7 +1261,7 @@
                 "description", "theme", "mood", "style", "albumlabel", "sorttitle",
                 "episodeguide", "uniqueid", "dateadded", "channel", "channeltype", "hidden",
                 "locked", "channelnumber", "starttime", "endtime", "specialsortseason",
-                "specialsortepisode" ]
+                "specialsortepisode", "compilation", "releasetype", "albumreleasetype" ]
     }
   },
   "List.Item.All": {
@@ -1300,16 +1312,6 @@
         "file": { "type": "string", "required": true }
       }
     }
-  },
-  "Addon.Types": {
-    "type": "string",
-    "enum": [ "unknown", "xbmc.metadata.scraper.albums", "xbmc.metadata.scraper.artists", "xbmc.metadata.scraper.movies",
-              "xbmc.metadata.scraper.musicvideos", "xbmc.metadata.scraper.tvshows", "xbmc.ui.screensaver",
-              "xbmc.player.musicviz", "xbmc.python.pluginsource", "xbmc.python.script", "xbmc.python.weather",
-              "xbmc.python.subtitles", "xbmc.python.lyrics", "xbmc.gui.skin", "xbmc.gui.webinterface",
-              "xbmc.pvrclient", "xbmc.addon.video", "xbmc.addon.audio", "xbmc.addon.image", "xbmc.addon.executable",
-              "xbmc.service", "xbmc.subtitle.module" ],
-    "default": "unknown"
   },
   "Addon.Content": {
     "type": "string",
@@ -1390,7 +1392,7 @@
   "GUI.Stereoscopy.Mode": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "required": true, "enum": [ "off", "split_vertical", "split_horizontal", "row_interleaved", "hardware_based", "anaglyph_cyan_red", "anaglyph_green_magenta", "monoscopic" ] },
+      "mode": { "type": "string", "required": true, "enum": [ "off", "split_vertical", "split_horizontal", "row_interleaved", "hardware_based", "anaglyph_cyan_red", "anaglyph_green_magenta", "anaglyph_yellow_blue", "monoscopic" ] },
       "label": { "type": "string", "required": true }
     }
   },

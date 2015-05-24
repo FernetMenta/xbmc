@@ -41,7 +41,7 @@
 using namespace std;
 using namespace XFILE;
 
-boost::shared_ptr<ADDON::CSkinInfo> g_SkinInfo;
+std::shared_ptr<ADDON::CSkinInfo> g_SkinInfo;
 
 namespace ADDON
 {
@@ -276,20 +276,15 @@ const INFO::CSkinVariableString* CSkinInfo::CreateSkinVariable(const std::string
   return m_includes.CreateSkinVariable(name, context);
 }
 
-bool CSkinInfo::OnPreInstall()
+void CSkinInfo::OnPreInstall()
 {
-  // check whether this is an active skin - we need to unload it if so
   if (IsInUse())
-  {
     CApplicationMessenger::Get().ExecBuiltIn("UnloadSkin", true);
-    return true;
-  }
-  return false;
 }
 
-void CSkinInfo::OnPostInstall(bool restart, bool update)
+void CSkinInfo::OnPostInstall(bool update, bool modal)
 {
-  if (restart || (!update && CGUIDialogYesNo::ShowAndGetInput(Name(), g_localizeStrings.Get(24099),"","")))
+  if (IsInUse() || (!update && !modal && CGUIDialogYesNo::ShowAndGetInput(Name(), g_localizeStrings.Get(24099),"","")))
   {
     CGUIDialogKaiToast *toast = (CGUIDialogKaiToast *)g_windowManager.GetWindow(WINDOW_DIALOG_KAI_TOAST);
     if (toast)
@@ -399,12 +394,20 @@ void CSkinInfo::SettingOptionsSkinSoundFiller(const CSetting *setting, std::vect
   std::string settingValue = ((const CSettingString*)setting)->GetValue();
   current = "SKINDEFAULT";
 
-  //find skins...
+  list.push_back(make_pair(g_localizeStrings.Get(474), "OFF"));
+  list.push_back(make_pair(g_localizeStrings.Get(15109), "SKINDEFAULT"));
+
+  ADDON::VECADDONS addons;
+  if (ADDON::CAddonMgr::Get().GetAddons(ADDON::ADDON_RESOURCE_UISOUNDS, addons))
+  {
+    for (const auto& addon : addons)
+      list.push_back(make_pair(addon->Name(), addon->ID()));
+  }
+
+  //Add sounds from special directories
   CFileItemList items;
   CDirectory::GetDirectory("special://xbmc/sounds/", items);
   CDirectory::GetDirectory("special://home/sounds/", items);
-
-  vector<string> vecSoundSkins;
   for (int i = 0; i < items.Size(); i++)
   {
     CFileItemPtr pItem = items[i];
@@ -414,17 +417,11 @@ void CSkinInfo::SettingOptionsSkinSoundFiller(const CSetting *setting, std::vect
           StringUtils::EqualsNoCase(pItem->GetLabel(), "fonts") ||
           StringUtils::EqualsNoCase(pItem->GetLabel(), "media"))
         continue;
-
-      vecSoundSkins.push_back(pItem->GetLabel());
+      list.push_back(make_pair(pItem->GetLabel(), pItem->GetLabel()));
     }
   }
 
-  list.push_back(make_pair(g_localizeStrings.Get(474), "OFF"));
-  list.push_back(make_pair(g_localizeStrings.Get(15109), "SKINDEFAULT"));
-
-  sort(vecSoundSkins.begin(), vecSoundSkins.end(), sortstringbyname());
-  for (unsigned int i = 0; i < vecSoundSkins.size(); i++)
-    list.push_back(make_pair(vecSoundSkins[i], vecSoundSkins[i]));
+  sort(list.begin() + 2, list.end());
 
   // try to find the best matching value
   for (vector< pair<string, string> >::const_iterator it = list.begin(); it != list.end(); ++it)

@@ -20,6 +20,12 @@
 
 #include "Atomics.h"
 #include "system.h"
+
+#if defined(__mips__)
+#include "MipsAtomics.h"
+pthread_mutex_t cmpxchg_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 ///////////////////////////////////////////////////////////////////////////
 // 32-bit atomic compare-and-swap
 // Returns previous value of *pAddr
@@ -44,7 +50,7 @@ long cas(volatile long *pAddr, long expectedVal, long swapVal)
   return prev;
 
 #elif defined(__arm__)
-  register long prev;
+  long prev;
   asm volatile (
     "dmb      ish            \n" // Memory barrier. Make sure all memory accesses appearing before this complete before any that appear after
     "1:                      \n"
@@ -63,10 +69,7 @@ long cas(volatile long *pAddr, long expectedVal, long swapVal)
   return prev;
 
 #elif defined(__mips__)
-// TODO:
-  unsigned int prev;
-  #error atomic cas undefined for mips
-  return prev;
+  return cmpxchg32(pAddr, expectedVal, swapVal);
 
 #elif defined(TARGET_WINDOWS)
   long prev;
@@ -103,10 +106,13 @@ long cas(volatile long *pAddr, long expectedVal, long swapVal)
 ///////////////////////////////////////////////////////////////////////////
 long long cas2(volatile long long* pAddr, long long expectedVal, long long swapVal)
 {
-#if defined(__ppc__) || defined(__powerpc__) || defined(__arm__) || defined(__mips__) // PowerPC, ARM, and MIPS
+#if defined(__ppc__) || defined(__powerpc__) || defined(__arm__)// PowerPC and ARM
 // Not available/required
 // Hack to allow compilation
   throw "cas2 is not implemented";
+
+#elif defined(__mips__)
+  return cmpxchg64(pAddr, expectedVal, swapVal);
 
 #elif defined(TARGET_WINDOWS)
   long long prev;
@@ -166,7 +172,7 @@ long AtomicIncrement(volatile long* pAddr)
   return val;
 
 #elif defined(__arm__) && !defined(__ARM_ARCH_5__)
-  register long val;
+  long val;
   asm volatile (
     "dmb      ish            \n" // Memory barrier. Make sure all memory accesses appearing before this complete before any that appear after
     "1:                     \n" 
@@ -183,10 +189,7 @@ long AtomicIncrement(volatile long* pAddr)
   return val;
 
 #elif defined(__mips__)
-// TODO:
-  long val;
-  #error AtomicIncrement undefined for mips
-  return val;
+  return atomic_add(1, pAddr);
 
 #elif defined(TARGET_WINDOWS)
   long val;
@@ -200,7 +203,7 @@ long AtomicIncrement(volatile long* pAddr)
   return val;
 
 #elif defined(__x86_64__)
-  register long result;
+  long result;
   __asm__ __volatile__ (
     "lock/xaddq %q0, %1"
     : "=r" (result), "=m" (*pAddr)
@@ -208,7 +211,7 @@ long AtomicIncrement(volatile long* pAddr)
   return *pAddr;
 
 #else // Linux / OSX86 (GCC)
-  register long reg __asm__ ("eax") = 1;
+  long reg __asm__ ("eax") = 1;
   __asm__ __volatile__ (
     "lock/xadd %0, %1 \n"
     "inc %%eax"
@@ -244,7 +247,7 @@ long AtomicAdd(volatile long* pAddr, long amount)
   return val;
 
 #elif defined(__arm__) && !defined(__ARM_ARCH_5__)
-  register long val;
+  long val;
   asm volatile (
     "dmb      ish           \n" // Memory barrier. Make sure all memory accesses appearing before this complete before any that appear after
   "1:                       \n" 
@@ -261,10 +264,7 @@ long AtomicAdd(volatile long* pAddr, long amount)
   return val;
 
 #elif defined(__mips__)
-// TODO:
-  long val;
-  #error AtomicAdd undefined for mips
-  return val;
+  return atomic_add(amount, pAddr);
 
 #elif defined(TARGET_WINDOWS)
   __asm
@@ -278,7 +278,7 @@ long AtomicAdd(volatile long* pAddr, long amount)
   return amount;
 
 #elif defined(__x86_64__)
-  register long result;
+  long result;
   __asm__ __volatile__ (
     "lock/xaddq %q0, %1"
     : "=r" (result), "=m" (*pAddr)
@@ -286,7 +286,7 @@ long AtomicAdd(volatile long* pAddr, long amount)
   return *pAddr;
 
 #else // Linux / OSX86 (GCC)
-  register long reg __asm__ ("eax") = amount;
+  long reg __asm__ ("eax") = amount;
   __asm__ __volatile__ (
     "lock/xadd %0, %1 \n"
     "dec %%eax"
@@ -322,7 +322,7 @@ long AtomicDecrement(volatile long* pAddr)
   return val;
 
 #elif defined(__arm__)
-  register long val;
+  long val;
   asm volatile (
     "dmb      ish           \n" // Memory barrier. Make sure all memory accesses appearing before this complete before any that appear after
     "1:                     \n" 
@@ -339,10 +339,7 @@ long AtomicDecrement(volatile long* pAddr)
   return val;
 
 #elif defined(__mips__)
-// TODO:
-  long val;
-  #error AtomicDecrement undefined for mips
-  return val;
+  return atomic_sub(1, pAddr);
 
 #elif defined(TARGET_WINDOWS)
   long val;
@@ -356,7 +353,7 @@ long AtomicDecrement(volatile long* pAddr)
   return val;
 
 #elif defined(__x86_64__)
-  register long result;
+  long result;
   __asm__ __volatile__ (
     "lock/xaddq %q0, %1"
     : "=r" (result), "=m" (*pAddr)
@@ -364,7 +361,7 @@ long AtomicDecrement(volatile long* pAddr)
   return *pAddr;
 
 #else // Linux / OSX86 (GCC)
-  register long reg __asm__ ("eax") = -1;
+  long reg __asm__ ("eax") = -1;
   __asm__ __volatile__ (
     "lock/xadd %0, %1 \n"
     "dec %%eax"
@@ -401,7 +398,7 @@ long AtomicSubtract(volatile long* pAddr, long amount)
   return val;
 
 #elif defined(__arm__)
-  register long val;
+  long val;
   asm volatile (
     "dmb     ish            \n" // Memory barrier. Make sure all memory accesses appearing before this complete before any that appear after
     "1:                     \n" 
@@ -418,9 +415,7 @@ long AtomicSubtract(volatile long* pAddr, long amount)
   return val;
 
 #elif defined(__mips__)
-// TODO:
-  #error AtomicSubtract undefined for mips
-  return val;
+  return atomic_sub(amount, pAddr);
 
 #elif defined(TARGET_WINDOWS)
   amount *= -1;
@@ -435,7 +430,7 @@ long AtomicSubtract(volatile long* pAddr, long amount)
   return amount;
 
 #elif defined(__x86_64__)
-  register long result;
+  long result;
   __asm__ __volatile__ (
     "lock/xaddq %q0, %1"
     : "=r" (result), "=m" (*pAddr)
@@ -443,7 +438,7 @@ long AtomicSubtract(volatile long* pAddr, long amount)
   return *pAddr;
 
 #else // Linux / OSX86 (GCC)
-  register long reg __asm__ ("eax") = -1 * amount;
+  long reg __asm__ ("eax") = -1 * amount;
   __asm__ __volatile__ (
     "lock/xadd %0, %1 \n"
     "dec %%eax"

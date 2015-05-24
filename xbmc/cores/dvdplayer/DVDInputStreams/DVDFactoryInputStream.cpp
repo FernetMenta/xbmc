@@ -23,7 +23,6 @@
 #include "DVDInputStream.h"
 #include "DVDInputStreamFile.h"
 #include "DVDInputStreamNavigator.h"
-#include "DVDInputStreamHttp.h"
 #include "DVDInputStreamFFmpeg.h"
 #include "DVDInputStreamPVRManager.h"
 #include "DVDInputStreamTV.h"
@@ -31,21 +30,32 @@
 #ifdef HAVE_LIBBLURAY
 #include "DVDInputStreamBluray.h"
 #endif
-#ifdef HAS_FILESYSTEM_HTSP
-#include "DVDInputStreamHTSP.h"
-#endif
 #ifdef ENABLE_DVDINPUTSTREAM_STACK
 #include "DVDInputStreamStack.h"
 #endif
+#include "DVDInputStreamMultiFiles.h"
 #include "FileItem.h"
 #include "storage/MediaManager.h"
 #include "URL.h"
 #include "filesystem/File.h"
 #include "utils/URIUtils.h"
+#include "Util.h"
 
 
-CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IDVDPlayer* pPlayer, const std::string& file, const std::string& content)
+CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IDVDPlayer* pPlayer, const std::string& file, const std::string& content, bool scanforextaudio)
 {
+  if (scanforextaudio)
+  {
+    // find any available external audio tracks
+    std::vector<std::string> filenames;
+    filenames.push_back(file);
+    CUtil::ScanForExternalAudio(file, filenames);
+    if (filenames.size() >= 2)
+    {
+      return CreateInputStream(pPlayer, filenames);
+    }
+  }
+
   CFileItem item(file.c_str(), false);
 
   if(item.IsDiscImage())
@@ -90,11 +100,7 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IDVDPlayer* pPlayer, 
        || file.substr(0, 7) == "mmst://"
        || file.substr(0, 7) == "mmsh://")
     return new CDVDInputStreamFFmpeg();
-  else if(file.substr(0, 8) == "sling://"
-       || file.substr(0, 7) == "myth://"
-       || file.substr(0, 8) == "cmyth://"
-       || file.substr(0, 8) == "gmyth://"
-       || file.substr(0, 6) == "vtp://")
+  else if(file.substr(0, 8) == "sling://")
     return new CDVDInputStreamTV();
 #ifdef ENABLE_DVDINPUTSTREAM_STACK
   else if(file.substr(0, 8) == "stack://")
@@ -108,10 +114,6 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IDVDPlayer* pPlayer, 
        || file.substr(0, 8) == "rtmps://")
     return new CDVDInputStreamRTMP();
 #endif
-#ifdef HAS_FILESYSTEM_HTSP
-  else if(file.substr(0, 7) == "htsp://")
-    return new CDVDInputStreamHTSP();
-#endif
   else if (item.IsInternetStream())
   {
     if (item.IsType(".m3u8"))
@@ -123,4 +125,9 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IDVDPlayer* pPlayer, 
 
   // our file interface handles all these types of streams
   return (new CDVDInputStreamFile());
+}
+
+CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IDVDPlayer* pPlayer, const std::vector<std::string>& filenames)
+{
+  return (new CDVDInputStreamMultiFiles(pPlayer, filenames));
 }

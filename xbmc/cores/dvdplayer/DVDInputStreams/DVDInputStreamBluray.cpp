@@ -20,6 +20,8 @@
 #include "system.h"
 #ifdef HAVE_LIBBLURAY
 
+#include <functional>
+
 #include "DVDInputStreamBluray.h"
 #include "IDVDPlayer.h"
 #include "DVDCodecs/Overlay/DVDOverlay.h"
@@ -27,14 +29,12 @@
 #include "settings/Settings.h"
 #include "LangInfo.h"
 #include "utils/log.h"
-#include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
 #include "filesystem/File.h"
 #include "filesystem/Directory.h"
 #include "DllLibbluray.h"
 #include "URL.h"
 #include "guilib/Geometry.h"
-#include "utils/StringUtils.h"
 #include "dialogs/GUIDialogKaiToast.h"
 #include "guilib/LocalizeStrings.h"
 #include "settings/DiscSettings.h"
@@ -931,6 +931,17 @@ bool CDVDInputStreamBluray::SeekChapter(int ch)
     return false;
   else
     return true;
+}
+
+int64_t CDVDInputStreamBluray::GetChapterPos(int ch)
+{
+  if (ch == -1 || ch > GetChapterCount())
+    ch = GetChapter();
+
+  if (m_title && m_title->chapters)
+    return m_title->chapters[ch - 1].start / 90000;
+  else
+    return 0;
 }
 
 int64_t CDVDInputStreamBluray::Seek(int64_t offset, int whence)

@@ -30,9 +30,12 @@
 
 
 #include "StringUtils.h"
+#include "CharsetConverter.h"
 #include "utils/fstrcmp.h"
 #include "Util.h"
+#include "LangInfo.h"
 #include <locale>
+#include <functional>
 
 #include <assert.h>
 #include <math.h>
@@ -370,6 +373,31 @@ void StringUtils::ToLower(string &str)
 void StringUtils::ToLower(wstring &str)
 {
   transform(str.begin(), str.end(), str.begin(), tolowerUnicode);
+}
+
+void StringUtils::ToCapitalize(string &str)
+{
+  std::wstring wstr;
+  g_charsetConverter.utf8ToW(str, wstr);
+  ToCapitalize(wstr);
+  g_charsetConverter.wToUTF8(wstr, str);
+}
+
+void StringUtils::ToCapitalize(std::wstring &str)
+{
+  const std::locale& loc = g_langInfo.GetSystemLocale();
+  bool isFirstLetter = true;
+  for (std::wstring::iterator it = str.begin(); it < str.end(); ++it)
+  {
+    // capitalize after spaces and punctuation characters (except apostrophes)
+    if (std::isspace(*it, loc) || (std::ispunct(*it, loc) && *it != '\''))
+      isFirstLetter = true;
+    else if (isFirstLetter)
+    {
+      *it = std::toupper(*it, loc);
+      isFirstLetter = false;
+    }
+  }
 }
 
 bool StringUtils::EqualsNoCase(const std::string &str1, const std::string &str2)
@@ -739,7 +767,7 @@ int64_t StringUtils::AlphaNumericCompare(const wchar_t *left, const wchar_t *rig
   wchar_t *ld, *rd;
   wchar_t lc, rc;
   int64_t lnum, rnum;
-  const collate<wchar_t>& coll = use_facet< collate<wchar_t> >( locale() );
+  const collate<wchar_t>& coll = use_facet< collate<wchar_t> >(g_langInfo.GetSystemLocale());
   int cmp_res = 0;
   while (*l != 0 && *r != 0)
   {
@@ -913,7 +941,7 @@ void StringUtils::RemoveCRLF(std::string& strLine)
 std::string StringUtils::SizeToString(int64_t size)
 {
   std::string strLabel;
-  const char prefixes[] = {' ','k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
+  const char prefixes[] = {' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
   unsigned int i = 0;
   double s = (double)size;
   while (i < ARRAY_SIZE(prefixes) && s >= 1000.0)
@@ -923,7 +951,7 @@ std::string StringUtils::SizeToString(int64_t size)
   }
 
   if (!i)
-    strLabel = StringUtils::Format("%.0lf %cB ", s, prefixes[i]);
+    strLabel = StringUtils::Format("%.0lf B", s);
   else if (s >= 100.0)
     strLabel = StringUtils::Format("%.1lf %cB", s, prefixes[i]);
   else

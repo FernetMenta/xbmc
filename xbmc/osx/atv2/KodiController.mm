@@ -57,7 +57,7 @@
 #include "osx/DarwinUtils.h"
 #include "threads/Event.h"
 #include "Application.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #undef BOOL
 
 #import <Foundation/Foundation.h>
@@ -323,13 +323,6 @@ static void KodiController$deinitDisplayLink(KodiController* self, SEL _cmd)
   //NSLog(@"%s", __PRETTY_FUNCTION__);
 
   [[self glView] deinitDisplayLink];
-}
-
-static double KodiController$getDisplayLinkFPS(KodiController* self, SEL _cmd) 
-{
-  //NSLog(@"%s", __PRETTY_FUNCTION__);
-
-  return [[self glView] getDisplayLinkFPS];
 }
 
 static void KodiController$setFramebuffer(KodiController* self, SEL _cmd) 
@@ -1373,8 +1366,6 @@ static __attribute__((constructor)) void initControllerRuntimeClasses()
   class_addMethod(KodiControllerCls, @selector(initDisplayLink), (IMP)&KodiController$initDisplayLink, "v@:");
   // KodiController::deinitDisplayLink
   class_addMethod(KodiControllerCls, @selector(deinitDisplayLink), (IMP)&KodiController$deinitDisplayLink, "v@:");
-  // KodiController::getDisplayLinkFPS
-  class_addMethod(KodiControllerCls, @selector(getDisplayLinkFPS), (IMP)&KodiController$getDisplayLinkFPS, "d@:");
   // KodiController::setFramebuffer
   class_addMethod(KodiControllerCls, @selector(setFramebuffer), (IMP)&KodiController$setFramebuffer, "v@:");
   // KodiController::presentFramebuffer

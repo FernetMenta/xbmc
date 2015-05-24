@@ -50,8 +50,8 @@
 						<bordertexture border="8">ThumbBorder.png</bordertexture>
 						<bordersize>8</bordersize>
 						<texture background="true">$VAR[PosterThumb]</texture>
-						<animation reversible="false" effect="zoom" start="-2,36,222,318" end="-28,0,284,390" time="200">focus</animation>
-						<animation reversible="false" effect="zoom" end="-2,36,222,318" start="-28,0,284,390" time="200">unfocus</animation>
+						<animation reversible="false" effect="zoom" start="-2,36,222,318" end="-28,0,284,390" time="150">focus</animation>
+						<animation reversible="false" effect="zoom" end="-2,36,222,318" start="-28,0,284,390" time="150">unfocus</animation>
 					</control>
 					<control type="image">
 						<left>6</left>
@@ -60,8 +60,8 @@
 						<height>180</height>
 						<aspectratio>stretch</aspectratio>
 						<texture>GlassOverlay.png</texture>
-						<animation reversible="false" effect="zoom" start="6,44,170,180" end="-24,4,240,250" time="200">focus</animation>
-						<animation reversible="false" effect="zoom" end="6,44,170,180" start="-24,4,240,250" time="200">unfocus</animation>
+						<animation reversible="false" effect="zoom" start="6,44,170,180" end="-24,4,240,250" time="150">focus</animation>
+						<animation reversible="false" effect="zoom" end="6,44,170,180" start="-24,4,240,250" time="150">unfocus</animation>
 					</control>
 					<control type="image">
 						<left>185</left>
@@ -71,12 +71,12 @@
 						<aspectratio>keep</aspectratio>
 						<texture>$INFO[ListItem.Overlay]</texture>
 						<animation type="focus">
-							<effect type="fade" start="0" end="100" time="200"/>
-							<effect type="slide" start="0,0" end="40,40" time="200"/>
+							<effect type="fade" start="0" end="100" time="150" />
+							<effect type="slide" start="0,0" end="40,40" time="150" />
 						</animation>
 						<animation type="unfocus">
-							<effect type="fade" start="100" end="0" time="200"/>
-							<effect type="slide" end="0,0" start="40,40" time="200"/>
+							<effect type="fade" start="100" end="0" time="150" />
+							<effect type="slide" end="0,0" start="40,40" time="150" />
 						</animation>
 					</control>
 				</focusedlayout>
@@ -300,7 +300,7 @@
 				<align>center</align>
 				<aligny>center</aligny>
 				<label>$INFO[ListItem.Label]</label>
-				<animation effect="slide" start="0,0" end="0,25" time="200" condition="!Control.HasFocus(508)">conditional</animation>
+				<animation effect="slide" start="0,0" end="0,25" time="150" condition="!Control.HasFocus(508)">conditional</animation>
 			</control>
 		</control>
 		<control type="group">
@@ -310,7 +310,7 @@
 			<top>460</top>
 			<control type="fixedlist" id="508">
 				<visible>Container.Content(Movies) | Container.Content(TVShows) | Container.Content(Sets)</visible>
-				<hitrect x="0" y="-10" w="1280" h="190"/>
+				<hitrect x="0" y="-10" w="1280" h="190" />
 				<left>-20</left>
 				<top>0</top>
 				<width>1320</width>
@@ -370,8 +370,8 @@
 						<bordersize>8</bordersize>
 						<fadetime>200</fadetime>
 						<texture background="true">$VAR[PosterThumb]</texture>
-						<animation reversible="false" effect="zoom" start="-2,16,128,168" end="-12,-10,148,198" time="200">focus</animation>
-						<animation reversible="false" effect="zoom" end="-2,16,128,168" start="-12,-10,148,198" time="200">unfocus</animation>
+						<animation reversible="false" effect="zoom" start="-2,16,128,168" end="-12,-10,148,198" time="150">focus</animation>
+						<animation reversible="false" effect="zoom" end="-2,16,128,168" start="-12,-10,148,198" time="150">unfocus</animation>
 					</control>
 					<control type="image">
 						<left>2</left>
@@ -392,12 +392,12 @@
 						<aspectratio>keep</aspectratio>
 						<texture>$INFO[ListItem.Overlay]</texture>
 						<animation type="focus">
-							<effect type="fade" start="0" end="100" time="200"/>
-							<effect type="slide" start="0,0" end="10,5" time="200"/>
+							<effect type="fade" start="0" end="100" time="150" />
+							<effect type="slide" start="0,0" end="10,5" time="150" />
 						</animation>
 						<animation type="unfocus">
-							<effect type="fade" start="100" end="0" time="200"/>
-							<effect type="slide" end="0,0" start="10,5" time="200"/>
+							<effect type="fade" start="100" end="0" time="150" />
+							<effect type="slide" end="0,0" start="10,5" time="150" />
 						</animation>
 					</control>
 				</focusedlayout>
@@ -718,9 +718,9 @@
 				<control type="textbox">
 					<description>Description Value The Movie</description>
 					<left>0</left>
-					<top>30</top>
+					<top>32</top>
 					<width>850</width>
-					<height>100</height>
+					<height>98</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -811,9 +811,9 @@
 						<top>8</top>
 						<width>40</width>
 						<height>26</height>
-						<texture>$VAR[ResolutionOverlayVar]</texture>
+						<texture>$VAR[MediaInfoOverlayVar]</texture>
 						<aspectratio>keep</aspectratio>
-						<visible>Container.Content(Movies) | Container.Content(Episodes) | Container.Content(MusicVideos)</visible>
+						<visible>Container.Content(Movies) | Container.Content(Sets) | Container.Content(Episodes) | Container.Content(MusicVideos)</visible>
 					</control>
 					<control type="image">
 						<left>555</left>
@@ -845,9 +845,9 @@
 					</control>
 					<control type="image">
 						<left>380</left>
-						<top>4</top>
+						<top>5</top>
 						<width>200</width>
-						<height>33</height>
+						<height>31</height>
 						<texture border="0,0,14,0">MediaItemDetailBG.png</texture>
 						<visible>Control.HasFocus(503) + !IsEmpty(ListItem.Label2)</visible>
 					</control>
@@ -882,9 +882,9 @@
 						<top>8</top>
 						<width>40</width>
 						<height>26</height>
-						<texture>$VAR[ResolutionOverlayVar]</texture>
+						<texture>$VAR[MediaInfoOverlayVar]</texture>
 						<aspectratio>keep</aspectratio>
-						<visible>Container.Content(Movies) | Container.Content(Episodes) | Container.Content(MusicVideos)</visible>
+						<visible>Container.Content(Movies) | Container.Content(Sets) | Container.Content(Episodes) | Container.Content(MusicVideos)</visible>
 					</control>
 					<control type="image">
 						<left>555</left>
@@ -1010,9 +1010,9 @@
 				<control type="textbox">
 					<description>Description Value for TVShows</description>
 					<left>10</left>
-					<top>210</top>
+					<top>212</top>
 					<width>510</width>
-					<height>190</height>
+					<height>188</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -1074,9 +1074,9 @@
 				<control type="textbox">
 					<description>Description Value for TVShows</description>
 					<left>10</left>
-					<top>280</top>
+					<top>282</top>
 					<width>510</width>
-					<height>120</height>
+					<height>118</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -1102,9 +1102,9 @@
 				<control type="textbox">
 					<description>Description Value for Seasons</description>
 					<left>270</left>
-					<top>0</top>
+					<top>2</top>
 					<width>250</width>
-					<height>355</height>
+					<height>353</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -1159,9 +1159,9 @@
 				<control type="textbox">
 					<description>Description Value for Movie</description>
 					<left>270</left>
-					<top>0</top>
+					<top>2</top>
 					<width>250</width>
-					<height>355</height>
+					<height>353</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -1227,9 +1227,9 @@
 						<top>8</top>
 						<width>40</width>
 						<height>26</height>
-						<texture>$VAR[ResolutionOverlayVar]</texture>
+						<texture>$VAR[MediaInfoOverlayVar]</texture>
 						<aspectratio>keep</aspectratio>
-						<visible>Container.Content(Movies) | Container.Content(Episodes) | Container.Content(MusicVideos)</visible>
+						<visible>Container.Content(Movies) | Container.Content(Sets) | Container.Content(Episodes) | Container.Content(MusicVideos)</visible>
 					</control>
 					<control type="image">
 						<left>555</left>
@@ -1261,9 +1261,9 @@
 					</control>
 					<control type="image">
 						<left>380</left>
-						<top>4</top>
+						<top>5</top>
 						<width>200</width>
-						<height>33</height>
+						<height>31</height>
 						<texture border="0,0,14,0">MediaItemDetailBG.png</texture>
 						<visible>Control.HasFocus(504) + !IsEmpty(ListItem.Label2)</visible>
 					</control>
@@ -1298,9 +1298,9 @@
 						<top>8</top>
 						<width>40</width>
 						<height>26</height>
-						<texture>$VAR[ResolutionOverlayVar]</texture>
+						<texture>$VAR[MediaInfoOverlayVar]</texture>
 						<aspectratio>keep</aspectratio>
-						<visible>Container.Content(Movies) | Container.Content(Episodes) | Container.Content(MusicVideos)</visible>
+						<visible>Container.Content(Movies) | Container.Content(Sets) | Container.Content(Episodes) | Container.Content(MusicVideos)</visible>
 					</control>
 					<control type="image">
 						<left>555</left>
@@ -1437,9 +1437,9 @@
 				<control type="textbox">
 					<description>Description Value for Video</description>
 					<left>10</left>
-					<top>395</top>
+					<top>397</top>
 					<width>490</width>
-					<height>170</height>
+					<height>168</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -1543,9 +1543,9 @@
 				<control type="textbox">
 					<description>Description Value for Video</description>
 					<left>10</left>
-					<top>395</top>
+					<top>397</top>
 					<width>490</width>
-					<height>170</height>
+					<height>168</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -1704,9 +1704,9 @@
 				<control type="textbox">
 					<description>Description Value for Video</description>
 					<left>10</left>
-					<top>430</top>
+					<top>432</top>
 					<width>540</width>
-					<height>100</height>
+					<height>98</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -1768,9 +1768,9 @@
 				<control type="textbox">
 					<description>Description Value for Video</description>
 					<left>10</left>
-					<top>430</top>
+					<top>432</top>
 					<width>540</width>
-					<height>145</height>
+					<height>143</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -1817,9 +1817,9 @@
 				<control type="textbox">
 					<description>Description Value for Video</description>
 					<left>10</left>
-					<top>430</top>
+					<top>432</top>
 					<width>540</width>
-					<height>145</height>
+					<height>143</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>
@@ -1866,9 +1866,9 @@
 				<control type="textbox">
 					<description>Description Value for Video</description>
 					<left>10</left>
-					<top>430</top>
+					<top>432</top>
 					<width>400</width>
-					<height>100</height>
+					<height>98</height>
 					<font>font13</font>
 					<align>justify</align>
 					<textcolor>white</textcolor>

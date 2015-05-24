@@ -36,7 +36,7 @@
 #include "interfaces/AnnouncementManager.h"
 #include "input/touch/generic/GenericTouchActionHandler.h"
 #include "guilib/GUIControl.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "windowing/WindowingFactory.h"
 #include "video/VideoReferenceClock.h"
 #include "utils/log.h"
@@ -346,6 +346,7 @@ AnnounceReceiver *AnnounceReceiver::g_announceReceiver = NULL;
         break;
       case UIInterfaceOrientationLandscapeLeft:
       case UIInterfaceOrientationLandscapeRight:
+      case UIInterfaceOrientationUnknown:
         break;//just leave the rect as is
     }
     m_glView.frame = rect;
@@ -886,21 +887,6 @@ AnnounceReceiver *AnnounceReceiver::g_announceReceiver = NULL;
 	[super viewDidUnload];	
 }
 //--------------------------------------------------------------
-- (void) initDisplayLink
-{
-	[m_glView initDisplayLink];
-}
-//--------------------------------------------------------------
-- (void) deinitDisplayLink
-{
-  [m_glView deinitDisplayLink];
-}
-//--------------------------------------------------------------
-- (double) getDisplayLinkFPS;
-{
-  return [m_glView getDisplayLinkFPS];
-}
-//--------------------------------------------------------------
 - (void) setFramebuffer
 {
   [m_glView setFramebuffer];
@@ -1000,6 +986,7 @@ AnnounceReceiver *AnnounceReceiver::g_announceReceiver = NULL;
   UIView *view = [m_window.subviews objectAtIndex:0];
   switch(newOrientation)
   {
+    case UIInterfaceOrientationUnknown:
     case UIInterfaceOrientationPortrait:
       angle = 0;
       break;

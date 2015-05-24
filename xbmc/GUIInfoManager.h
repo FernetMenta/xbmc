@@ -26,12 +26,12 @@
  *
  */
 
-#include "Temperature.h"
 #include "threads/CriticalSection.h"
 #include "guilib/IMsgTargetCallback.h"
 #include "inttypes.h"
 #include "XBDateTime.h"
 #include "utils/Observer.h"
+#include "utils/Temperature.h"
 #include "interfaces/info/InfoBool.h"
 #include "interfaces/info/SkinVariable.h"
 #include "cores/IPlayer.h"
@@ -111,6 +111,7 @@ namespace INFO
 #define PLAYER_TITLE                 53
 #define PLAYER_ISINTERNETSTREAM      54
 #define PLAYER_FILENAME              55
+#define PLAYER_SEEKSTEPSIZE          56
 
 #define WEATHER_CONDITIONS          100
 #define WEATHER_TEMPERATURE         101
@@ -217,6 +218,7 @@ namespace INFO
 #define MUSICPLAYER_CHANNEL_GROUP   231
 #define MUSICPLAYER_SUB_CHANNEL_NUMBER 232
 #define MUSICPLAYER_CHANNEL_NUMBER_LBL 233
+#define MUSICPLAYER_CONTENT         234
 
 #define VIDEOPLAYER_TITLE             250
 #define VIDEOPLAYER_GENRE             251
@@ -283,6 +285,9 @@ namespace INFO
 #define VIDEOPLAYER_AUDIO_LANG        313
 #define VIDEOPLAYER_SUB_CHANNEL_NUMBER 314
 #define VIDEOPLAYER_CHANNEL_NUMBER_LBL 315
+#define VIDEOPLAYER_CAN_RESUME_LIVE_TV 316
+#define VIDEOPLAYER_IMDBNUMBER        317
+#define VIDEOPLAYER_EPISODENAME       318
 
 #define CONTAINER_CAN_FILTER         342
 #define CONTAINER_CAN_FILTERADVANCED 343
@@ -400,9 +405,11 @@ namespace INFO
 #define LIBRARY_HAS_MOVIE_SETS      723
 #define LIBRARY_HAS_TVSHOWS         724
 #define LIBRARY_HAS_MUSICVIDEOS     725
-#define LIBRARY_IS_SCANNING         726
-#define LIBRARY_IS_SCANNING_VIDEO   727
-#define LIBRARY_IS_SCANNING_MUSIC   728
+#define LIBRARY_HAS_SINGLES         726
+#define LIBRARY_HAS_COMPILATIONS    727
+#define LIBRARY_IS_SCANNING         728
+#define LIBRARY_IS_SCANNING_VIDEO   729
+#define LIBRARY_IS_SCANNING_MUSIC   730
 
 #define SYSTEM_PLATFORM_LINUX       741
 #define SYSTEM_PLATFORM_WINDOWS     742
@@ -464,29 +471,30 @@ namespace INFO
 #define PVR_BACKEND_CHANNELS        (PVR_STRINGS_START + 12)
 #define PVR_BACKEND_TIMERS          (PVR_STRINGS_START + 13)
 #define PVR_BACKEND_RECORDINGS      (PVR_STRINGS_START + 14)
-#define PVR_BACKEND_NUMBER          (PVR_STRINGS_START + 15)
-#define PVR_TOTAL_DISKSPACE         (PVR_STRINGS_START + 16)
-#define PVR_NEXT_TIMER              (PVR_STRINGS_START + 17)
-#define PVR_PLAYING_DURATION        (PVR_STRINGS_START + 18)
-#define PVR_PLAYING_TIME            (PVR_STRINGS_START + 19)
-#define PVR_PLAYING_PROGRESS        (PVR_STRINGS_START + 20)
-#define PVR_ACTUAL_STREAM_CLIENT    (PVR_STRINGS_START + 21)
-#define PVR_ACTUAL_STREAM_DEVICE    (PVR_STRINGS_START + 22)
-#define PVR_ACTUAL_STREAM_STATUS    (PVR_STRINGS_START + 23)
-#define PVR_ACTUAL_STREAM_SIG       (PVR_STRINGS_START + 24)
-#define PVR_ACTUAL_STREAM_SNR       (PVR_STRINGS_START + 25)
-#define PVR_ACTUAL_STREAM_SIG_PROGR (PVR_STRINGS_START + 26)
-#define PVR_ACTUAL_STREAM_SNR_PROGR (PVR_STRINGS_START + 27)
-#define PVR_ACTUAL_STREAM_BER       (PVR_STRINGS_START + 28)
-#define PVR_ACTUAL_STREAM_UNC       (PVR_STRINGS_START + 29)
-#define PVR_ACTUAL_STREAM_VIDEO_BR  (PVR_STRINGS_START + 30)
-#define PVR_ACTUAL_STREAM_AUDIO_BR  (PVR_STRINGS_START + 31)
-#define PVR_ACTUAL_STREAM_DOLBY_BR  (PVR_STRINGS_START + 32)
-#define PVR_ACTUAL_STREAM_CRYPTION  (PVR_STRINGS_START + 33)
-#define PVR_ACTUAL_STREAM_SERVICE   (PVR_STRINGS_START + 34)
-#define PVR_ACTUAL_STREAM_MUX       (PVR_STRINGS_START + 35)
-#define PVR_ACTUAL_STREAM_PROVIDER  (PVR_STRINGS_START + 36)
-#define PVR_BACKEND_DISKSPACE_PROGR (PVR_STRINGS_START + 37)
+#define PVR_BACKEND_DELETED_RECORDINGS (PVR_STRINGS_START + 15)
+#define PVR_BACKEND_NUMBER          (PVR_STRINGS_START + 16)
+#define PVR_TOTAL_DISKSPACE         (PVR_STRINGS_START + 17)
+#define PVR_NEXT_TIMER              (PVR_STRINGS_START + 18)
+#define PVR_PLAYING_DURATION        (PVR_STRINGS_START + 19)
+#define PVR_PLAYING_TIME            (PVR_STRINGS_START + 20)
+#define PVR_PLAYING_PROGRESS        (PVR_STRINGS_START + 21)
+#define PVR_ACTUAL_STREAM_CLIENT    (PVR_STRINGS_START + 22)
+#define PVR_ACTUAL_STREAM_DEVICE    (PVR_STRINGS_START + 23)
+#define PVR_ACTUAL_STREAM_STATUS    (PVR_STRINGS_START + 24)
+#define PVR_ACTUAL_STREAM_SIG       (PVR_STRINGS_START + 25)
+#define PVR_ACTUAL_STREAM_SNR       (PVR_STRINGS_START + 26)
+#define PVR_ACTUAL_STREAM_SIG_PROGR (PVR_STRINGS_START + 27)
+#define PVR_ACTUAL_STREAM_SNR_PROGR (PVR_STRINGS_START + 28)
+#define PVR_ACTUAL_STREAM_BER       (PVR_STRINGS_START + 29)
+#define PVR_ACTUAL_STREAM_UNC       (PVR_STRINGS_START + 30)
+#define PVR_ACTUAL_STREAM_VIDEO_BR  (PVR_STRINGS_START + 31)
+#define PVR_ACTUAL_STREAM_AUDIO_BR  (PVR_STRINGS_START + 32)
+#define PVR_ACTUAL_STREAM_DOLBY_BR  (PVR_STRINGS_START + 33)
+#define PVR_ACTUAL_STREAM_CRYPTION  (PVR_STRINGS_START + 34)
+#define PVR_ACTUAL_STREAM_SERVICE   (PVR_STRINGS_START + 35)
+#define PVR_ACTUAL_STREAM_MUX       (PVR_STRINGS_START + 36)
+#define PVR_ACTUAL_STREAM_PROVIDER  (PVR_STRINGS_START + 37)
+#define PVR_BACKEND_DISKSPACE_PROGR (PVR_STRINGS_START + 38)
 #define PVR_STRINGS_END             PVR_ACTUAL_STREAM_PROVIDER
 
 #define WINDOW_PROPERTY             9993
@@ -654,6 +662,9 @@ namespace INFO
 #define LISTITEM_HASRECORDING       (LISTITEM_START + 143)
 #define LISTITEM_SUB_CHANNEL_NUMBER (LISTITEM_START + 144)
 #define LISTITEM_CHANNEL_NUMBER_LBL (LISTITEM_START + 145)
+#define LISTITEM_IMDBNUMBER         (LISTITEM_START + 146)
+#define LISTITEM_EPISODENAME        (LISTITEM_START + 147)
+#define LISTITEM_IS_COLLECTION      (LISTITEM_START + 148)
 
 #define LISTITEM_PROPERTY_START     (LISTITEM_START + 200)
 #define LISTITEM_PROPERTY_END       (LISTITEM_PROPERTY_START + 1000)
@@ -675,7 +686,7 @@ class CGUIWindow;
 namespace EPG
 {
   class CEpgInfoTag;
-  typedef boost::shared_ptr<EPG::CEpgInfoTag> CEpgInfoTagPtr;
+  typedef std::shared_ptr<EPG::CEpgInfoTag> CEpgInfoTagPtr;
 }
 
 // Info Flags
@@ -792,6 +803,7 @@ public:
   std::string GetCurrentSeekTime(TIME_FORMAT format = TIME_FORMAT_GUESS) const;
   int GetPlayTimeRemaining() const;
   int GetTotalPlayTime() const;
+  float GetSeekPercent() const;
   std::string GetCurrentPlayTimeRemaining(TIME_FORMAT format) const;
   std::string GetVersionShort(void);
   std::string GetAppName();
@@ -800,13 +812,11 @@ public:
 
   bool GetDisplayAfterSeek();
   void SetDisplayAfterSeek(unsigned int timeOut = 2500, int seekOffset = 0);
-  void SetSeeking(bool seeking) { m_playerSeeking = seeking; };
   void SetShowTime(bool showtime) { m_playerShowTime = showtime; };
   void SetShowCodec(bool showcodec) { m_playerShowCodec = showcodec; };
   void SetShowInfo(bool showinfo) { m_playerShowInfo = showinfo; };
   void ToggleShowCodec() { m_playerShowCodec = !m_playerShowCodec; };
   bool ToggleShowInfo() { m_playerShowInfo = !m_playerShowInfo; return m_playerShowInfo; };
-  bool m_performingSeek;
 
   std::string GetSystemHeatInfo(int info);
   CTemperature GetGPUTemperature();
@@ -822,9 +832,6 @@ public:
   bool GetItemInt(int &value, const CGUIListItem *item, int info) const;
   std::string GetItemLabel(const CFileItem *item, int info, std::string *fallback = NULL);
   std::string GetItemImage(const CFileItem *item, int info, std::string *fallback = NULL);
-
-  // Called from tuxbox service thread to update current status
-  void UpdateFromTuxBox();
 
   /*! \brief containers call here to specify that the focus is changing
    \param id control id
@@ -930,7 +937,6 @@ protected:
   //Fullscreen OSD Stuff
   unsigned int m_AfterSeekTimeout;
   int m_seekOffset;
-  bool m_playerSeeking;
   bool m_playerShowTime;
   bool m_playerShowCodec;
   bool m_playerShowInfo;
@@ -952,6 +958,8 @@ protected:
   int m_libraryHasTVShows;
   int m_libraryHasMusicVideos;
   int m_libraryHasMovieSets;
+  int m_libraryHasSingles;
+  int m_libraryHasCompilations;
 
   SPlayerVideoStreamInfo m_videoInfo;
   SPlayerAudioStreamInfo m_audioInfo;

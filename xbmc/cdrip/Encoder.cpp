@@ -21,8 +21,9 @@
 #include "Encoder.h"
 #include "filesystem/File.h"
 #include "utils/log.h"
+#include <string.h>
 
-CEncoder::CEncoder(boost::shared_ptr<IEncoder> encoder)
+CEncoder::CEncoder(std::shared_ptr<IEncoder> encoder)
 {
   m_file = NULL;
   m_dwWriteBufferPointer = 0;

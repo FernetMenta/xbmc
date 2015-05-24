@@ -2,14 +2,13 @@
 <addon
   id="webinterface.default"
   version="2.2.21"
-  name="Default"
+  name="Default webinterface"
   provider-name="Team-Kodi">
   <requires>
-    <import addon="xbmc.gui" version="4.0.0"/>
     <import addon="xbmc.json" version="6.0.0"/>
   </requires>
   <extension
-    point="xbmc.gui.webinterface"/>
+    point="xbmc.webinterface"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="af">Span Kodi Web Koppelvlak. (Kodi se verstek web koppelvlak)</summary>
     <summary lang="am">የ Kodi የዌብ ገጽታዎች (የ Kodi ነባር የዌብ ገጽታዎች)</summary>

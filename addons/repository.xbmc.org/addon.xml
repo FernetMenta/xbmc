@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="repository.xbmc.org"
 		name="Kodi Add-on repository"
-		version="2.1.30"
+		version="2.2.30"
 		provider-name="XBMC Foundation">
   <requires>
     <import addon="xbmc.addon" version="12.0.0"/>
@@ -14,16 +14,18 @@
 			<datadir zip="true">http://mirrors.kodi.tv/addons/gotham</datadir>
 			<hashes>true</hashes>
 		</dir>
-		<dir minversion="13.9.0">
+		<dir minversion="14.0.0">
 			<info compressed="true">http://mirrors.kodi.tv/addons/helix/addons.xml</info>
 			<checksum>http://mirrors.kodi.tv/addons/helix/addons.xml.md5</checksum>
 			<datadir zip="true">http://mirrors.kodi.tv/addons/helix</datadir>
 			<hashes>true</hashes>
 		</dir>
-		<info compressed="true">http://mirrors.kodi.tv/addons/frodo/addons.xml</info>
-		<checksum>http://mirrors.kodi.tv/addons/frodo/addons.xml.md5</checksum>
-		<datadir zip="true">http://mirrors.kodi.tv/addons/frodo</datadir>
-		<hashes>true</hashes>
+		<dir minversion="14.9.0">
+			<info compressed="true">http://mirrors.kodi.tv/addons/isengard/addons.xml</info>
+			<checksum>http://mirrors.kodi.tv/addons/isengard/addons.xml.md5</checksum>
+			<datadir zip="true">http://mirrors.kodi.tv/addons/isengard</datadir>
+			<hashes>true</hashes>
+		</dir>
 	</extension>
 	<extension point="xbmc.addon.metadata">
 		<summary lang="af">Installeer Byvoegsels vanaf Kodi.tv</summary>

@@ -18,7 +18,6 @@
  *  <http://www.gnu.org/licenses/>.
  *
  */
-#include "threads/Thread.h"
 #include "VideoDatabase.h"
 #include "addons/Scraper.h"
 #include "NfoFile.h"
@@ -48,7 +47,7 @@ namespace VIDEO
                   INFO_NOT_FOUND,
                   INFO_ADDED };
 
-  class CVideoInfoScanner : CThread
+  class CVideoInfoScanner
   {
   public:
     CVideoInfoScanner();
@@ -59,9 +58,7 @@ namespace VIDEO
      \param scanAll whether to scan everything not already scanned (regardless of whether the user normally doesn't want a folder scanned.) Defaults to false.
      */
     void Start(const std::string& strDirectory, bool scanAll = false);
-    void StartCleanDatabase();
-    bool IsScanning();
-    void CleanDatabase(CGUIDialogProgressBarHandle* handle=NULL, const std::set<int>* paths=NULL, bool showProgress=true);
+    bool IsScanning() const { return m_bRunning; }
     void Stop();
 
     //! \brief Set whether or not to show a progress dialog
@@ -237,16 +234,11 @@ namespace VIDEO
 
     std::string GetnfoFile(CFileItem *item, bool bGrabAny=false) const;
 
-    /*! \brief Retrieve the parent folder of an item, accounting for stacks and files in rars.
-     \param item a media item.
-     \return the folder that contains the item.
-     */
-    std::string GetParentDir(const CFileItem &item) const;
-
     bool m_showDialog;
     CGUIDialogProgressBarHandle* m_handle;
     int m_currentItem;
     int m_itemCount;
+    bool m_bStop;
     bool m_bRunning;
     bool m_bCanInterrupt;
     bool m_bClean;

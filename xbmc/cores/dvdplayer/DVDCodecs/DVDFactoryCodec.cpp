@@ -32,6 +32,7 @@
 #endif
 #if defined(HAVE_VIDEOTOOLBOXDECODER)
 #include "Video/DVDVideoCodecVideoToolBox.h"
+#include "utils/SystemInfo.h"
 #endif
 #include "Video/DVDVideoCodecFFmpeg.h"
 #include "Video/DVDVideoCodecOpenMax.h"
@@ -61,7 +62,6 @@
 #include "settings/AdvancedSettings.h"
 #include "settings/Settings.h"
 #include "settings/VideoSettings.h"
-#include "utils/SystemInfo.h"
 #include "utils/StringUtils.h"
 
 CDVDVideoCodec* CDVDFactoryCodec::OpenCodec(CDVDVideoCodec* pCodec, CDVDStreamInfo &hints, CDVDCodecOptions &options )
@@ -192,6 +192,11 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInfo &hint, unsigne
 #else
   hwSupport += "iMXVPU:no ";
 #endif
+#if defined(HAS_MMAL)
+  hwSupport += "MMAL:yes ";
+#else
+  hwSupport += "MMAL:no ";
+#endif
   CLog::Log(LOGDEBUG, "CDVDFactoryCodec: compiled in hardware support: %s", hwSupport.c_str());
 
   if (hint.stills && (hint.codec == AV_CODEC_ID_MPEG2VIDEO || hint.codec == AV_CODEC_ID_MPEG1VIDEO))
@@ -200,80 +205,78 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInfo &hint, unsigne
      if ( (pCodec = OpenCodec(new CDVDVideoCodecLibMpeg2(), hint, options)) ) return pCodec;
   }
 
-  if ((EDECODEMETHOD) CSettings::Get().GetInt("videoplayer.decodingmethod") == VS_DECODEMETHOD_HARDWARE)
-  {
 #if defined(HAS_LIBAMCODEC)
-    // amcodec can handle dvd playback.
-    if (!hint.software && CSettings::Get().GetBool("videoplayer.useamcodec"))
+  // amcodec can handle dvd playback.
+  if (!hint.software && CSettings::Get().GetBool("videoplayer.useamcodec"))
+  {
+    switch(hint.codec)
     {
-      switch(hint.codec)
-      {
-        case AV_CODEC_ID_MPEG4:
-        case AV_CODEC_ID_MSMPEG4V2:
-        case AV_CODEC_ID_MSMPEG4V3:
-          // Avoid h/w decoder for SD; Those files might use features
-          // not supported and can easily be soft-decoded
-          if (hint.width <= 800)
-            break;
-        default:
-          if ( (pCodec = OpenCodec(new CDVDVideoCodecAmlogic(), hint, options)) ) return pCodec;
-      }
+      case AV_CODEC_ID_MPEG4:
+      case AV_CODEC_ID_MSMPEG4V2:
+      case AV_CODEC_ID_MSMPEG4V3:
+        // Avoid h/w decoder for SD; Those files might use features
+        // not supported and can easily be soft-decoded
+        if (hint.width <= 800)
+          break;
+      default:
+        if ( (pCodec = OpenCodec(new CDVDVideoCodecAmlogic(), hint, options)) ) return pCodec;
     }
+  }
 #endif
 
 #if defined(HAS_IMXVPU)
-    if (!hint.software)
-    {
-      if ( (pCodec = OpenCodec(new CDVDVideoCodecIMX(), hint, options)) ) return pCodec;
-    }
+  if (!hint.software)
+  {
+    if ( (pCodec = OpenCodec(new CDVDVideoCodecIMX(), hint, options)) ) return pCodec;
+  }
 #endif
 
 #if defined(TARGET_DARWIN_OSX)
-    if (!hint.software && CSettings::Get().GetBool("videoplayer.usevda") && !g_advancedSettings.m_useFfmpegVda)
+  if (!hint.software && CSettings::Get().GetBool("videoplayer.usevda") && !g_advancedSettings.m_useFfmpegVda)
+  {
+    if (hint.codec == AV_CODEC_ID_H264 && !hint.ptsinvalid)
     {
-      if (hint.codec == AV_CODEC_ID_H264 && !hint.ptsinvalid)
-      {
-        if ( (pCodec = OpenCodec(new CDVDVideoCodecVDA(), hint, options)) ) return pCodec;
-      }
+      if ( (pCodec = OpenCodec(new CDVDVideoCodecVDA(), hint, options)) ) return pCodec;
     }
+  }
 #endif
 
 #if defined(HAVE_VIDEOTOOLBOXDECODER)
-    if (!hint.software && CSettings::Get().GetBool("videoplayer.usevideotoolbox"))
-    {
-      if (g_sysinfo.HasVideoToolBoxDecoder())
-      {
-        switch(hint.codec)
-        {
-          case AV_CODEC_ID_H264:
-            if (hint.codec == AV_CODEC_ID_H264 && hint.ptsinvalid)
-              break;
-            if ( (pCodec = OpenCodec(new CDVDVideoCodecVideoToolBox(), hint, options)) ) return pCodec;
-            break;
-          default:
-            break;
-        }
-      }
-    }
-#endif
-
-#if defined(TARGET_ANDROID)
-    if (!hint.software && CSettings::Get().GetBool("videoplayer.usemediacodec"))
+  if (!hint.software && CSettings::Get().GetBool("videoplayer.usevideotoolbox"))
+  {
+    if (g_sysinfo.HasVideoToolBoxDecoder())
     {
       switch(hint.codec)
       {
-        case AV_CODEC_ID_MPEG4:
-        case AV_CODEC_ID_MSMPEG4V2:
-        case AV_CODEC_ID_MSMPEG4V3:
-          // Avoid h/w decoder for SD; Those files might use features
-          // not supported and can easily be soft-decoded
-          if (hint.width <= 800)
+        case AV_CODEC_ID_H264:
+          if (hint.codec == AV_CODEC_ID_H264 && hint.ptsinvalid)
             break;
+          if ( (pCodec = OpenCodec(new CDVDVideoCodecVideoToolBox(), hint, options)) ) return pCodec;
+          break;
         default:
-          CLog::Log(LOGINFO, "MediaCodec Video Decoder...");
-          if ( (pCodec = OpenCodec(new CDVDVideoCodecAndroidMediaCodec(), hint, options)) ) return pCodec;
+          break;
       }
     }
+  }
+#endif
+
+#if defined(TARGET_ANDROID)
+  if (!hint.software && CSettings::Get().GetBool("videoplayer.usemediacodec"))
+  {
+    switch(hint.codec)
+    {
+      case AV_CODEC_ID_MPEG4:
+      case AV_CODEC_ID_MSMPEG4V2:
+      case AV_CODEC_ID_MSMPEG4V3:
+        // Avoid h/w decoder for SD; Those files might use features
+        // not supported and can easily be soft-decoded
+        if (hint.width <= 800)
+          break;
+      default:
+        CLog::Log(LOGINFO, "MediaCodec Video Decoder...");
+        if ( (pCodec = OpenCodec(new CDVDVideoCodecAndroidMediaCodec(), hint, options)) ) return pCodec;
+    }
+  }
 #endif
 
 #if defined(HAVE_LIBOPENMAX)
@@ -316,7 +319,7 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInfo &hint, unsigne
       }
     }
 #endif
-  }
+
 
   // try to decide if we want to try halfres decoding
 #if !defined(TARGET_POSIX) && !defined(TARGET_WINDOWS)

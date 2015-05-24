@@ -80,7 +80,6 @@
     <joystick name="/Sony PLAYSTATION\(R\)3 Controller.*">
       <altname>PLAYSTATION(R)3 Controller</altname>
       <altname>PS3 Controller</altname>
-      <altname>Sony Computer Entertainment Wireless Controller</altname>      
       <button id="15">Select</button>
       <button id="14">Back</button>
       <button id="16">ContextMenu</button>
@@ -157,7 +156,7 @@
       <button id="16">OSD</button>
       <button id="11">AspectRatio</button>
       <button id="12">ShowSubtitles</button>
-      <button id="1">SmallStepBack</button>
+      <button id="1">Seek(-7)</button><!-- Replaces smallstepback -->
       <button id="4">Info</button>
       <button id="17">ActivateWindow(Home)</button>
       <button id="2">ActivateWindow(ShutdownMenu)</button>
@@ -268,8 +267,8 @@
       <button id="13">ZoomNormal</button>
       <button id="11">Rotate</button>
       <button id="12">CodecInfo</button>
-      <axis id="1">AnalogMove</axis>
-      <axis id="2">AnalogMove</axis>
+      <axis id="1">AnalogMoveX</axis>
+      <axis id="2">AnalogMoveY</axis>
       <axis id="13">ZoomOut</axis>
       <axis id="14">ZoomIn</axis>
       <button id="5">ZoomIn</button>

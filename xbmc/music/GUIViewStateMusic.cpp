@@ -57,7 +57,7 @@ std::string CGUIViewStateWindowMusic::GetLockType()
 
 std::string CGUIViewStateWindowMusic::GetExtensions()
 {
-  return g_advancedSettings.m_musicExtensions;
+  return g_advancedSettings.GetMusicExtensions();
 }
 
 VECSOURCES& CGUIViewStateWindowMusic::GetSources()
@@ -161,7 +161,7 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
     break;
   case NODE_TYPE_YEAR:
     {
-      AddSortMethod(SortByLabel, 551, LABEL_MASKS("%F", "", "%Y", ""));  // Filename, empty | Year, empty
+      AddSortMethod(SortByLabel, 562, LABEL_MASKS("%F", "", "%Y", ""));  // Filename, empty | Year, empty
       SetSortMethod(SortByLabel);
 
       SetViewAsControl(DEFAULT_VIEW_LIST);
@@ -218,7 +218,7 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
     break;
   case NODE_TYPE_ALBUM_RECENTLY_PLAYED:
     {
-      AddSortMethod(SortByNone, 551, LABEL_MASKS("%F", "", strAlbumLeft, strAlbumRight));  // Filename, empty | Userdefined, Userdefined
+      AddSortMethod(SortByNone, 568, LABEL_MASKS("%F", "", strAlbumLeft, strAlbumRight));  // Filename, empty | Userdefined, Userdefined
       SetSortMethod(SortByNone);
 
       SetViewAsControl(CViewStateSettings::Get().Get("musicnavalbums")->m_viewMode);
@@ -228,7 +228,7 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
     break;
   case NODE_TYPE_ALBUM_RECENTLY_PLAYED_SONGS:
     {
-      AddSortMethod(SortByNone, 551, LABEL_MASKS(strTrackLeft, strTrackRight));  // Userdefined, Userdefined | empty, empty
+      AddSortMethod(SortByNone, 568, LABEL_MASKS(strTrackLeft, strTrackRight));  // Userdefined, Userdefined | empty, empty
       SetSortMethod(SortByNone);
 
       SetViewAsControl(CViewStateSettings::Get().Get("musicnavalbums")->m_viewMode);
@@ -499,48 +499,21 @@ VECSOURCES& CGUIViewStateWindowMusicNav::GetSources()
 {
   //  Setup shares we want to have
   m_sources.clear();
-  //  Musicdb shares
   CFileItemList items;
-  CDirectory::GetDirectory("musicdb://", items, "");
+
+  CDirectory::GetDirectory("library://music/", items, "");
   for (int i=0; i<items.Size(); ++i)
   {
     CFileItemPtr item=items[i];
     CMediaSource share;
-    share.strName=item->GetLabel();
+    share.strName = item->GetLabel();
     share.strPath = item->GetPath();
     share.m_strThumbnailImage = item->GetIconImage();
     share.m_iDriveType = CMediaSource::SOURCE_TYPE_LOCAL;
     m_sources.push_back(share);
   }
 
-  //  Playlists share
-  CMediaSource share;
-  share.strName=g_localizeStrings.Get(136); // Playlists
-  share.strPath = "special://musicplaylists/";
-  share.m_strThumbnailImage = CUtil::GetDefaultFolderThumb("DefaultMusicPlaylists.png");
-  share.m_iDriveType = CMediaSource::SOURCE_TYPE_LOCAL;
-  m_sources.push_back(share);
-
   AddOnlineShares();
-
-  // Search share
-  share.strName=g_localizeStrings.Get(137); // Search
-  share.strPath = "musicsearch://";
-  share.m_strThumbnailImage = CUtil::GetDefaultFolderThumb("DefaultMusicSearch.png");
-  share.m_iDriveType = CMediaSource::SOURCE_TYPE_LOCAL;
-  m_sources.push_back(share);
-
-  // music video share
-  CVideoDatabase database;
-  database.Open();
-  if (database.HasContent(VIDEODB_CONTENT_MUSICVIDEOS))
-  {
-    share.strName = g_localizeStrings.Get(20389);
-    share.strPath = "videodb://musicvideos/";
-    share.m_strThumbnailImage = CUtil::GetDefaultFolderThumb("DefaultMusicVideos.png");
-    share.m_iDriveType = CMediaSource::SOURCE_TYPE_LOCAL;
-    m_sources.push_back(share);
-  }
 
   return CGUIViewStateWindowMusic::GetSources();
 }

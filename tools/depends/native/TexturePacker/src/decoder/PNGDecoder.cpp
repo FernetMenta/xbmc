@@ -161,11 +161,22 @@ bool PNGDecoder::LoadFile(const std::string &filename, DecodedFrames &frames)
   if (color_type == PNG_COLOR_TYPE_RGB ||
       color_type == PNG_COLOR_TYPE_RGB_ALPHA)
     png_set_bgr(png_ptr);
+
+  // convert indexed color to rgb
+  if (color_type == PNG_COLOR_TYPE_PALETTE)
+    png_set_palette_to_rgb(png_ptr);
   
   /* swap the RGBA or GA data to ARGB or AG (or BGRA to ABGR) */
   //png_set_swap_alpha(png_ptr);
   
-  
+  //libsquish only eats 32bit RGBA, must convert grayscale into this format
+  if (color_type == PNG_COLOR_TYPE_GRAY ||
+      color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+  {
+    png_set_expand_gray_1_2_4_to_8(png_ptr);
+    png_set_gray_to_rgb(png_ptr);
+  }
+
   // Update the png info struct.
   png_read_update_info(png_ptr, info_ptr);
   

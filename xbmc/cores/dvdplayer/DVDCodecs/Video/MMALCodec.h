@@ -35,14 +35,14 @@
 
 #include <queue>
 #include <semaphore.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 #include "guilib/Geometry.h"
 #include "rendering/RenderSystem.h"
 #include "cores/VideoRenderers/BaseRenderer.h"
 
 class CMMALVideo;
-typedef boost::shared_ptr<CMMALVideo> MMALVideoPtr;
+typedef std::shared_ptr<CMMALVideo> MMALVideoPtr;
 
 // a mmal video frame
 class CMMALVideoBuffer
@@ -55,7 +55,6 @@ public:
   int width;
   int height;
   float m_aspect_ratio;
-  int index;
   double dts;
   uint32_t m_changed_count;
   // reference counting
@@ -86,10 +85,11 @@ public:
   virtual void Reset(void);
   virtual bool GetPicture(DVDVideoPicture *pDvdVideoPicture);
   virtual bool ClearPicture(DVDVideoPicture* pDvdVideoPicture);
-  virtual unsigned GetAllowedReferences() { return NUM_BUFFERS; }
+  virtual unsigned GetAllowedReferences() { return 3; }
   virtual void SetDropState(bool bDrop);
   virtual const char* GetName(void) { return (const char*)m_pFormatName; }
   virtual bool GetCodecStats(double &pts, int &droppedPics);
+  virtual void SetSpeed(int iSpeed);
 
   // MMAL decoder callback routines.
   void ReleaseBuffer(CMMALVideoBuffer *buffer);
@@ -98,12 +98,12 @@ public:
   // MMAL decoder callback routines.
   void dec_output_port_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
   void dec_control_port_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
+  void dec_input_port_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
   uint32_t          m_changed_count;
   uint32_t          m_changed_count_dec;
 
 protected:
   void QueryCodec(void);
-  void ReturnBuffer(CMMALVideoBuffer *buffer);
   bool CreateDeinterlace(EINTERLACEMETHOD interlace_method);
   bool DestroyDeinterlace();
 
@@ -125,7 +125,6 @@ protected:
   pthread_mutex_t   m_output_mutex;
   int m_output_busy;
   std::queue<CMMALVideoBuffer*> m_output_ready;
-  std::vector<CMMALVideoBuffer*> m_output_buffers;
 
   // initialize mmal and get decoder component
   bool Initialize( const std::string &decoder_name);
@@ -137,9 +136,10 @@ protected:
   MMAL_INTERLACETYPE_T m_interlace_mode;
   EINTERLACEMETHOD  m_interlace_method;
   bool              m_startframe;
-  unsigned int      m_decode_frame_number;
   double            m_decoderPts;
   unsigned int      m_droppedPics;
+  int               m_speed;
+  bool              m_preroll;
 
   MMAL_COMPONENT_T *m_dec;
   MMAL_PORT_T *m_dec_input;

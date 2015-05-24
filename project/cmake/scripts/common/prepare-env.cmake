@@ -12,6 +12,7 @@ if(EXISTS "${APP_ROOT}/version.txt")
       set(${name} "${value}")
     endif()
   endforeach()
+  string(TOLOWER ${APP_NAME} APP_NAME_LC)
 endif()
 
 # bail if we can't parse versions
@@ -41,13 +42,29 @@ if(NOT EXISTS "${XBMC_INCLUDE_DIR}/")
   file(MAKE_DIRECTORY ${XBMC_INCLUDE_DIR})
 endif()
 
-# kodi-config.cmake.in (further down) expects a "prefix" variable
+# make sure C++11 is always set
+if(NOT WIN32)
+  string(REGEX MATCH "-std=(gnu|c)\\+\\+11" cxx11flag "${CMAKE_CXX_FLAGS}")
+  if(NOT cxx11flag)
+    set(CXX11_SWITCH "-std=c++11")
+  endif()
+endif()
+
+# kodi-config.cmake.in (further down) expects "prefix" and "APP_LIBDIR" variables
 get_filename_component(prefix "${DEPENDS_PATH}" ABSOLUTE)
+set(APP_LIBDIR "${prefix}/lib")
 
 # generate the proper kodi-config.cmake file
 configure_file(${APP_ROOT}/project/cmake/kodi-config.cmake.in ${KODI_LIB_DIR}/kodi-config.cmake @ONLY)
+
 # copy cmake helpers to lib/kodi
-file(COPY ${APP_ROOT}/project/cmake/scripts/common/addon-helpers.cmake ${APP_ROOT}/project/cmake/scripts/common/addoptions.cmake DESTINATION ${KODI_LIB_DIR})
+file(COPY ${APP_ROOT}/project/cmake/scripts/common/addon-helpers.cmake
+          ${APP_ROOT}/project/cmake/scripts/common/addoptions.cmake
+     DESTINATION ${KODI_LIB_DIR})
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  file(COPY ${APP_ROOT}/project/cmake/scripts/linux/UseMultiArch.cmake DESTINATION ${KODI_LIB_DIR})
+endif()
 
 # generate xbmc-config.cmake for backwards compatibility to xbmc
 configure_file(${APP_ROOT}/project/cmake/xbmc-config.cmake.in ${XBMC_LIB_DIR}/xbmc-config.cmake @ONLY)
@@ -63,9 +80,11 @@ foreach(binding ${bindings})
   # copy the header file to include/kodi
   file(COPY ${APP_ROOT}/${header} DESTINATION ${KODI_INCLUDE_DIR})
 
-  # auto-generate header files for backwards comaptibility to xbmc with deprecation warning
+  # auto-generate header files for backwards compatibility to xbmc with deprecation warning
+  # but only do it if the file doesn't already exist
   get_filename_component(headerfile ${header} NAME)
-  file(WRITE ${XBMC_INCLUDE_DIR}/${headerfile}
+  if (NOT EXISTS "${XBMC_INCLUDE_DIR}/${headerfile}")
+    file(WRITE ${XBMC_INCLUDE_DIR}/${headerfile}
 "#pragma once
 #define DEPRECATION_WARNING \"Including xbmc/${headerfile} has been deprecated, please use kodi/${headerfile}\"
 #ifdef _MSC_VER
@@ -74,4 +93,46 @@ foreach(binding ${bindings})
   #warning DEPRECATION_WARNING
 #endif
 #include \"kodi/${headerfile}\"")
+  endif()
 endforeach()
+
+### on windows we need a "patch" binary to be able to patch 3rd party sources
+if(WIN32)
+  find_program(PATCH_FOUND NAMES patch patch.exe)
+  if(PATCH_FOUND)
+    message(STATUS "patch utility found at ${PATCH_FOUND}")
+  else()
+    set(PATCH_ARCHIVE_NAME "patch-2.5.9-7-bin-1")
+    set(PATCH_ARCHIVE "${PATCH_ARCHIVE_NAME}.zip")
+    set(PATCH_URL "http://mirrors.xbmc.org/build-deps/win32/${PATCH_ARCHIVE}")
+    set(PATCH_DOWNLOAD ${BUILD_DIR}/download/${PATCH_ARCHIVE})
+
+    # download the archive containing patch.exe
+    message(STATUS "Downloading patch utility from ${PATCH_URL}...")
+    file(DOWNLOAD "${PATCH_URL}" "${PATCH_DOWNLOAD}" STATUS PATCH_DL_STATUS LOG PATCH_LOG SHOW_PROGRESS)
+    list(GET PATCH_DL_STATUS 0 PATCH_RETCODE)
+    if(NOT ${PATCH_RETCODE} EQUAL 0)
+      message(FATAL_ERROR "ERROR downloading ${PATCH_URL} - status: ${PATCH_DL_STATUS} log: ${PATCH_LOG}")
+    endif()
+
+    # extract the archive containing patch.exe
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzvf ${PATCH_DOWNLOAD}
+                    WORKING_DIRECTORY ${BUILD_DIR})
+
+    # make sure the extraction worked and that patch.exe is there
+    set(PATCH_PATH ${BUILD_DIR}/${PATCH_ARCHIVE_NAME})
+    set(PATCH_BINARY_PATH ${PATCH_PATH}/bin/patch.exe)
+    if(NOT EXISTS ${PATCH_PATH} OR NOT EXISTS ${PATCH_BINARY_PATH})
+      message(FATAL_ERROR "ERROR extracting patch utility from ${PATCH_DOWNLOAD_DIR}")
+    endif()
+
+    # copy patch.exe into the output directory
+    file(INSTALL ${PATCH_BINARY_PATH} DESTINATION ${DEPENDS_PATH}/bin)
+
+    # make sure that cmake can find the copied patch.exe
+    find_program(PATCH_FOUND NAMES patch patch.exe)
+    if(NOT PATCH_FOUND)
+      message(FATAL_ERROR "ERROR installing patch utility from ${PATCH_BINARY_PATH} to ${DEPENDS_PATH}/bin")
+    endif()
+  endif()
+endif()

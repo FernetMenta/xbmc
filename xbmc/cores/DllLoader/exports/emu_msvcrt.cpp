@@ -20,6 +20,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <math.h>
 #ifndef TARGET_POSIX
 #include <io.h>
@@ -530,10 +531,7 @@ extern "C"
     if (bWrite)
       bResult = pFile->OpenForWrite(CUtil::ValidatePath(str), bOverwrite);
     else
-      bResult = pFile->Open(CUtil::ValidatePath(str), 0 /* READ_TRUNCATED */); // Disabled READ_TRUNCATED for release
-    /* Looks that libdvdnav / libdvdread / libdvdcss have bugs and do not process correctly partial reads */
-    /* All found bug were eliminated but for safety READ_TRUNCATED is disabled for Helix release */
-    /* TODO: enable READ_TRUNCATED after release of Helix */
+      bResult = pFile->Open(CUtil::ValidatePath(str), READ_TRUNCATED);
 
     if (bResult)
     {
@@ -1242,6 +1240,18 @@ extern "C"
     return file;
   }
 
+  int dll_fopen_s(FILE** pFile, const char * filename, const char * mode)
+  {
+    if (pFile == NULL || filename == NULL || mode == NULL)
+      return EINVAL;
+
+    *pFile = dll_fopen(filename, mode);
+    if (*pFile == NULL)
+      return errno;
+
+    return 0;
+  }
+
   int dll_putc(int c, FILE *stream)
   {
     if (g_emuFileWrapper.StreamIsEmulatedFile(stream) || IS_STD_STREAM(stream))
@@ -1303,7 +1313,8 @@ extern "C"
     {
       if (g_emuFileWrapper.StreamIsEmulatedFile(stream))
       {
-        not_implement("msvcrt.dll fake function dll_fputs() called\n");
+        size_t len = strlen(szLine);
+        return dll_fwrite(static_cast<const void*>(szLine), sizeof(char), len, stream);
       }
       else if (!IS_STD_STREAM(stream))
       {

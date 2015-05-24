@@ -2,8 +2,8 @@
 <window>
 	<defaultcontrol>1</defaultcontrol>
 	<visible>Player.Seeking | Player.DisplayAfterSeek | Player.Paused | Player.Forwarding | Player.Rewinding</visible>
-	<animation effect="fade" start="0" end="100" time="200">WindowOpen</animation>
-	<animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
+	<animation effect="fade" start="0" end="100" time="150">WindowOpen</animation>
+	<animation effect="fade" start="100" end="0" time="150">WindowClose</animation>
 	<controls>
 		<control type="group">
 			<visible>player.chaptercount + Window.IsVisible(FullScreenVideo)</visible>
@@ -98,7 +98,6 @@
 					<texture>OSDPlay.png</texture>
 					<visible>Player.Playing</visible>
 				</control>
-
 				<control type="image">
 					<left>28</left>
 					<top>4</top>
@@ -139,7 +138,6 @@
 					<texture>OSD32x.png</texture>
 					<visible>Player.Rewinding32x</visible>
 				</control>
-
 				<control type="image">
 					<left>34</left>
 					<top>4</top>
@@ -181,9 +179,8 @@
 					<visible>Player.Forwarding32x</visible>
 				</control>
 			</control>
-
 			<control type="label">
-				<description>Playing Label</description>
+				<description>Seekbar Label</description>
 				<left>20</left>
 				<top>7</top>
 				<width>240</width>
@@ -192,86 +189,7 @@
 				<aligny>center</aligny>
 				<font>font10_title</font>
 				<textcolor>blue</textcolor>
-				<label>$LOCALIZE[31042]</label>
-				<visible>Player.Playing + !Player.Seeking + !Player.DisplayAfterSeek</visible>
-			</control>
-			<control type="label">
-				<description>Paused Label</description>
-				<left>20</left>
-				<top>7</top>
-				<width>240</width>
-				<height>20</height>
-				<align>left</align>
-				<aligny>center</aligny>
-				<font>font10_title</font>
-				<textcolor>blue</textcolor>
-				<label>31043</label>
-				<visible>[Player.Paused + !Player.Caching] + !Player.Seeking + !Player.DisplayAfterSeek</visible>
-			</control>
-			<control type="label">
-				<description>Cache Label</description>
-				<left>20</left>
-				<top>7</top>
-				<width>240</width>
-				<height>20</height>
-				<align>left</align>
-				<aligny>center</aligny>
-				<font>font10_title</font>
-				<textcolor>blue</textcolor>
-				<label>$LOCALIZE[15107] $INFO[Player.CacheLevel]%</label>
-				<visible>[Player.Paused + Player.Caching] + !Player.Seeking</visible>
-			</control>
-			<control type="label">
-				<description>Seeking Label</description>
-				<left>20</left>
-				<top>7</top>
-				<width>240</width>
-				<height>20</height>
-				<align>left</align>
-				<aligny>center</aligny>
-				<font>font10_title</font>
-				<textcolor>blue</textcolor>
-				<label>$LOCALIZE[31046]</label>
-				<visible>Player.Seeking</visible>
-			</control>
-			<control type="label">
-				<description>Final Seek amount Label</description>
-				<left>20</left>
-				<top>7</top>
-				<width>240</width>
-				<height>20</height>
-				<align>left</align>
-				<aligny>center</aligny>
-				<font>font10_title</font>
-				<textcolor>blue</textcolor>
-				<label>$LOCALIZE[31046][COLOR=grey] $INFO[Player.SeekOffset][/COLOR]</label>
-				<visible>Player.DisplayAfterSeek + ![player.forwarding | player.rewinding]</visible>
-			</control>
-			<control type="label">
-				<description>FF Label</description>
-				<left>20</left>
-				<top>7</top>
-				<width>240</width>
-				<height>20</height>
-				<align>left</align>
-				<aligny>center</aligny>
-				<font>font10_title</font>
-				<textcolor>blue</textcolor>
-				<label>31044</label>
-				<visible>Player.Forwarding</visible>
-			</control>
-			<control type="label">
-				<description>RW Label</description>
-				<left>20</left>
-				<top>7</top>
-				<width>240</width>
-				<height>20</height>
-				<align>left</align>
-				<aligny>center</aligny>
-				<font>font10_title</font>
-				<textcolor>blue</textcolor>
-				<label>31045</label>
-				<visible>Player.Rewinding</visible>
+				<label>$VAR[SeekLabel]</label>
 			</control>
 			<control type="label">
 				<description>Elapsed Time Label</description>

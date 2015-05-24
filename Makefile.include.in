@@ -39,7 +39,7 @@ LDFLAGS+=@LDFLAGS@
 LDFLAGS_FOR_BUILD+=@LDFLAGS_FOR_BUILD@
 INCLUDES+=-I@abs_top_srcdir@/lib
 INCLUDES+=-I@abs_top_srcdir@/xbmc
-INCLUDES+=-I@abs_top_srcdir@/addons/library.xbmc.gui
+INCLUDES+=-I@abs_top_srcdir@/addons/library.kodi.guilib
 INCLUDES+=-I@abs_top_srcdir@/addons/library.xbmc.addon
 INCLUDES+=-I@abs_top_srcdir@/addons/library.xbmc.pvr
 INCLUDES+=-I@abs_top_srcdir@/addons/library.xbmc.codec
@@ -119,7 +119,7 @@ GEN_DEPS=\
 
 %.o: %.m
 	@rm -f $@
-	$(SILENT_MM) $(CXX) -MF $*.d -MD -c $(CXXFLAGS) $(DEFINES) $(INCLUDES) $< -o $@ \
+	$(SILENT_MM) $(CC) -MF $*.d -MD -c $(CFLAGS) $(DEFINES) $(INCLUDES) $< -o $@ \
 	&& $(GEN_DEPS)
 
 %.o: %.mm

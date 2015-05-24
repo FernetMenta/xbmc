@@ -24,9 +24,6 @@
 #include "GUIWindowMusicBase.h"
 #include "music/dialogs/GUIDialogMusicInfo.h"
 #include "filesystem/ZipManager.h"
-#ifdef HAS_FILESYSTEM_DAAP
-#include "filesystem/DAAPDirectory.h"
-#endif
 #include "playlists/PlayListFactory.h"
 #include "Util.h"
 #include "playlists/PlayListM3U.h"
@@ -46,7 +43,7 @@
 #include "dialogs/GUIDialogSmartPlaylistEditor.h"
 #include "music/tags/MusicInfoTag.h"
 #include "guilib/GUIWindowManager.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "dialogs/GUIDialogOK.h"
 #include "dialogs/GUIDialogYesNo.h"
 #include "guilib/GUIKeyboardFactory.h"
@@ -67,6 +64,8 @@
 #include "URL.h"
 #include "music/infoscanner/MusicInfoScanner.h"
 #include "cores/IPlayer.h"
+#include "CueDocument.h"
+
 
 using namespace std;
 using namespace XFILE;
@@ -519,6 +518,38 @@ void CGUIWindowMusicBase::RetrieveMusicInfo()
 
   OnRetrieveMusicInfo(*m_vecItems);
 
+  // \todo Scan for multitrack items here...
+  vector<string> itemsForRemove;
+  CFileItemList itemsForAdd;
+  for (int i = 0; i < m_vecItems->Size(); ++i)
+  {
+    CFileItemPtr pItem = (*m_vecItems)[i];
+    if (pItem->m_bIsFolder || pItem->IsPlayList() || pItem->IsPicture() || pItem->IsLyrics())
+      continue;
+
+    CMusicInfoTag& tag = *pItem->GetMusicInfoTag();
+    if (tag.Loaded() && !tag.GetCueSheet().empty())
+      pItem->LoadEmbeddedCue();
+
+    if (pItem->HasCueDocument()
+      && pItem->LoadTracksFromCueDocument(itemsForAdd))
+    {
+      itemsForRemove.push_back(pItem->GetPath());
+    }
+  }
+  for (size_t i = 0; i < itemsForRemove.size(); ++i)
+  {
+    for (int j = 0; j < m_vecItems->Size(); ++j)
+    {
+      if ((*m_vecItems)[j]->GetPath() == itemsForRemove[i])
+      {
+        m_vecItems->Remove(j);
+        break;
+      }
+    }
+  }
+  m_vecItems->Append(itemsForAdd);
+
   CLog::Log(LOGDEBUG, "RetrieveMusicInfo() took %u msec",
             XbmcThreads::SystemClockMillis() - startTick);
 }
@@ -527,10 +558,17 @@ void CGUIWindowMusicBase::RetrieveMusicInfo()
 /// \param iItem Selected Item in list/thumb control
 void CGUIWindowMusicBase::OnQueueItem(int iItem)
 {
+  // Determine the proper list to queue this element
+  int playlist = g_playlistPlayer.GetCurrentPlaylist();
+  if (playlist == PLAYLIST_NONE)
+    playlist = g_application.m_pPlayer->GetPreferredPlaylist();
+  if (playlist == PLAYLIST_NONE)
+    playlist = PLAYLIST_MUSIC;
+
   // don't re-queue items from playlist window
   if ( iItem < 0 || iItem >= m_vecItems->Size() || GetID() == WINDOW_MUSIC_PLAYLIST) return ;
 
-  int iOldSize=g_playlistPlayer.GetPlaylist(PLAYLIST_MUSIC).size();
+  int iOldSize=g_playlistPlayer.GetPlaylist(playlist).size();
 
   // add item 2 playlist (make a copy as we alter the queuing state)
   CFileItemPtr item(new CFileItem(*m_vecItems->Get(iItem)));
@@ -557,14 +595,14 @@ void CGUIWindowMusicBase::OnQueueItem(int iItem)
     return;
   }
 
-  g_playlistPlayer.Add(PLAYLIST_MUSIC, queuedItems);
-  if (g_playlistPlayer.GetPlaylist(PLAYLIST_MUSIC).size() && !g_application.m_pPlayer->IsPlaying())
+  g_playlistPlayer.Add(playlist, queuedItems);
+  if (g_playlistPlayer.GetPlaylist(playlist).size() && !g_application.m_pPlayer->IsPlaying())
   {
     if (m_guiState.get())
       m_guiState->SetPlaylistDirectory("playlistmusic://");
 
     g_playlistPlayer.Reset();
-    g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_MUSIC);
+    g_playlistPlayer.SetCurrentPlaylist(playlist);
     g_playlistPlayer.Play(iOldSize); // start playing at the first new item
   }
 }
@@ -619,7 +657,7 @@ void CGUIWindowMusicBase::AddItemToPlayList(const CFileItemPtr &pItem, CFileItem
   {
     if (pItem->IsPlayList())
     {
-      auto_ptr<CPlayList> pPlayList (CPlayListFactory::Create(*pItem));
+      unique_ptr<CPlayList> pPlayList (CPlayListFactory::Create(*pItem));
       if (pPlayList.get())
       {
         // load it
@@ -646,7 +684,7 @@ void CGUIWindowMusicBase::AddItemToPlayList(const CFileItemPtr &pItem, CFileItem
       // python files can be played
       queuedItems.Add(pItem);
     }
-    else if (!pItem->IsNFO() && pItem->IsAudio())
+    else if (!pItem->IsNFO() && (pItem->IsAudio() || pItem->IsVideo()))
     {
       CFileItemPtr itemCheck = queuedItems.Get(pItem->GetPath());
       if (!itemCheck || itemCheck->m_lStartOffset != pItem->m_lStartOffset)
@@ -672,7 +710,10 @@ void CGUIWindowMusicBase::UpdateButtons()
   msg2.SetLabel(g_localizeStrings.Get(744)); // Files
   g_windowManager.SendMessage(msg2);
 
-  msg2.SetLabel(g_localizeStrings.Get(15100)); // Library
+  msg2.SetLabel(g_localizeStrings.Get(14022)); // Library
+  g_windowManager.SendMessage(msg2);
+
+  msg2.SetLabel(g_localizeStrings.Get(20389)); // Music Videos
   g_windowManager.SendMessage(msg2);
 
   // Select the current window as default item
@@ -848,16 +889,6 @@ void CGUIWindowMusicBase::PlayItem(int iItem)
 
   const CFileItemPtr pItem = m_vecItems->Get(iItem);
 
-  // special case for DAAP playlist folders
-  bool bIsDAAPplaylist = false;
-#ifdef HAS_FILESYSTEM_DAAP
-  if (pItem->IsDAAP() && pItem->m_bIsFolder)
-  {
-    CDAAPDirectory dirDAAP;
-    if (dirDAAP.GetCurrLevel(pItem->GetPath()) == 0)
-      bIsDAAPplaylist = true;
-  }
-#endif
   // if its a folder, build a playlist
   if ((pItem->m_bIsFolder && !pItem->IsPlugin()) || (g_windowManager.GetActiveWindow() == WINDOW_MUSIC_NAV && pItem->IsPlayList()))
   {
@@ -891,10 +922,6 @@ void CGUIWindowMusicBase::PlayItem(int iItem)
     g_playlistPlayer.Add(PLAYLIST_MUSIC, queuedItems);
     g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_MUSIC);
 
-    // activate the playlist window if its not activated yet
-    if (bIsDAAPplaylist && GetID() == g_windowManager.GetActiveWindow())
-      g_windowManager.ActivateWindow(WINDOW_MUSIC_PLAYLIST);
-
     // play!
     g_playlistPlayer.Play();
   }
@@ -919,7 +946,7 @@ void CGUIWindowMusicBase::LoadPlayList(const std::string& strPlayList)
 
   // load a playlist like .m3u, .pls
   // first get correct factory to load playlist
-  auto_ptr<CPlayList> pPlayList (CPlayListFactory::Create(strPlayList));
+  unique_ptr<CPlayList> pPlayList (CPlayListFactory::Create(strPlayList));
   if (pPlayList.get())
   {
     // load it
@@ -1091,7 +1118,7 @@ void CGUIWindowMusicBase::OnRetrieveMusicInfo(CFileItemList& items)
 
 bool CGUIWindowMusicBase::GetDirectory(const std::string &strDirectory, CFileItemList &items)
 {
-  items.SetArt("thumb", "");
+  items.ClearArt();
   bool bResult = CGUIMediaWindow::GetDirectory(strDirectory, items);
   if (bResult)
   {
@@ -1100,14 +1127,18 @@ bool CGUIWindowMusicBase::GetDirectory(const std::string &strDirectory, CFileIte
   }
 
   CQueryParams params;
-  map<string, string> art;
   CDirectoryNode::GetDatabaseInfo(items.GetPath(), params);
 
-  if (params.GetAlbumId() && m_musicdatabase.GetArtistArtForItem(params.GetAlbumId(), MediaTypeAlbum, art))
-    items.AppendArt(art, MediaTypeAlbum);
+  if (params.GetAlbumId())
+  {
+    map<string, string> artistArt;
+    if (m_musicdatabase.GetArtistArtForItem(params.GetAlbumId(), MediaTypeAlbum, artistArt))
+      items.AppendArt(artistArt, MediaTypeArtist);
 
-  if (params.GetArtistId() && m_musicdatabase.GetArtForItem(params.GetArtistId(), MediaTypeArtist, art))
-    items.AppendArt(art, MediaTypeArtist);
+    map<string, string> albumArt;
+    if (m_musicdatabase.GetArtForItem(params.GetAlbumId(), MediaTypeAlbum, albumArt))
+      items.AppendArt(albumArt, MediaTypeAlbum);
+  }
 
   // add in the "New Playlist" item if we're in the playlists folder
   if ((items.GetPath() == "special://musicplaylists/") && !items.Contains("newplaylist://"))

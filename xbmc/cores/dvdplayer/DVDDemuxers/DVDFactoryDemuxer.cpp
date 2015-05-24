@@ -27,14 +27,12 @@
 
 #include "DVDDemuxFFmpeg.h"
 #include "DVDDemuxShoutcast.h"
-#ifdef HAS_FILESYSTEM_HTSP
-#include "DVDDemuxHTSP.h"
-#endif
 #include "DVDDemuxBXA.h"
 #include "DVDDemuxCDDA.h"
 #include "DVDDemuxPVRClient.h"
 #include "pvr/PVRManager.h"
 #include "pvr/addons/PVRClients.h"
+#include "DVDDemuxMultiFiles.h"
 
 using namespace std;
 using namespace PVR;
@@ -49,7 +47,7 @@ CDVDDemux* CDVDFactoryDemuxer::CreateDemuxer(CDVDInputStream* pInputStream, bool
   {
     // audio/x-xbmc-pcm this is the used codec for AirTunes
     // (apples audio only streaming)
-    auto_ptr<CDVDDemuxBXA> demuxer(new CDVDDemuxBXA());
+    unique_ptr<CDVDDemuxBXA> demuxer(new CDVDDemuxBXA());
     if(demuxer->Open(pInputStream))
       return demuxer.release();
     else
@@ -64,7 +62,7 @@ CDVDDemux* CDVDFactoryDemuxer::CreateDemuxer(CDVDInputStream* pInputStream, bool
     {
       CLog::Log(LOGDEBUG, "DVDFactoryDemuxer: Stream is probably CD audio. Creating CDDA demuxer.");
 
-      auto_ptr<CDVDDemuxCDDA> demuxer(new CDVDDemuxCDDA());
+      unique_ptr<CDVDDemuxCDDA> demuxer(new CDVDDemuxCDDA());
       if (demuxer->Open(pInputStream))
       {
         return demuxer.release();
@@ -80,24 +78,13 @@ CDVDDemux* CDVDFactoryDemuxer::CreateDemuxer(CDVDInputStream* pInputStream, bool
     /* check so we got the meta information as requested in our http header */
     if( header->GetValue("icy-metaint").length() > 0 )
     {
-      auto_ptr<CDVDDemuxShoutcast> demuxer(new CDVDDemuxShoutcast());
+      unique_ptr<CDVDDemuxShoutcast> demuxer(new CDVDDemuxShoutcast());
       if(demuxer->Open(pInputStream))
         return demuxer.release();
       else
         return NULL;
     }
   }
-
-#ifdef HAS_FILESYSTEM_HTSP
-  if (pInputStream->IsStreamType(DVDSTREAM_TYPE_HTSP))
-  {
-    auto_ptr<CDVDDemuxHTSP> demuxer(new CDVDDemuxHTSP());
-    if(demuxer->Open(pInputStream))
-      return demuxer.release();
-    else
-      return NULL;
-  }
-#endif
 
   bool streaminfo = true; /* Look for streams before playback */
   if (pInputStream->IsStreamType(DVDSTREAM_TYPE_PVRMANAGER))
@@ -114,7 +101,7 @@ CDVDDemux* CDVDFactoryDemuxer::CreateDemuxer(CDVDInputStream* pInputStream, bool
       /* Used for MediaPortal PVR addon (uses PVR otherstream for playback of rtsp streams) */
       if (pOtherStream->IsStreamType(DVDSTREAM_TYPE_FFMPEG))
       {
-        auto_ptr<CDVDDemuxFFmpeg> demuxer(new CDVDDemuxFFmpeg());
+        unique_ptr<CDVDDemuxFFmpeg> demuxer(new CDVDDemuxFFmpeg());
         if(demuxer->Open(pOtherStream, streaminfo))
           return demuxer.release();
         else
@@ -125,11 +112,11 @@ CDVDDemux* CDVDFactoryDemuxer::CreateDemuxer(CDVDInputStream* pInputStream, bool
     /* Use PVR demuxer only for live streams */
     if (URIUtils::IsPVRChannel(pInputStream->GetFileName()))
     {
-      boost::shared_ptr<CPVRClient> client;
+      std::shared_ptr<CPVRClient> client;
       if (g_PVRClients->GetPlayingClient(client) &&
           client->HandlesDemuxing())
       {
-        auto_ptr<CDVDDemuxPVRClient> demuxer(new CDVDDemuxPVRClient());
+        unique_ptr<CDVDDemuxPVRClient> demuxer(new CDVDDemuxPVRClient());
         if(demuxer->Open(pInputStream))
           return demuxer.release();
         else
@@ -144,7 +131,17 @@ CDVDDemux* CDVDFactoryDemuxer::CreateDemuxer(CDVDInputStream* pInputStream, bool
     streaminfo = !useFastswitch;
   }
 
-  auto_ptr<CDVDDemuxFFmpeg> demuxer(new CDVDDemuxFFmpeg());
+  // Try to open the MultiFiles demuxer
+  if (pInputStream->IsStreamType(DVDSTREAM_TYPE_MULTIFILES))
+  {
+    unique_ptr<CDVDDemuxMultiFiles> demuxer(new CDVDDemuxMultiFiles());
+    if (demuxer->Open(pInputStream))
+      return demuxer.release();
+    else
+      return NULL;
+  }
+
+  unique_ptr<CDVDDemuxFFmpeg> demuxer(new CDVDDemuxFFmpeg());
   if(demuxer->Open(pInputStream, streaminfo, fileinfo))
     return demuxer.release();
   else

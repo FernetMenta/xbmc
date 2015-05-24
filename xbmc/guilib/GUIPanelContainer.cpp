@@ -21,7 +21,9 @@
 #include "GUIPanelContainer.h"
 #include "GUIListItem.h"
 #include "GUIInfoManager.h"
-#include "Key.h"
+#include "input/Key.h"
+
+#include <cassert>
 
 using namespace std;
 

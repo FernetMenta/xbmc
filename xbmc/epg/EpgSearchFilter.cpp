@@ -176,7 +176,7 @@ bool EpgSearchFilter::MatchChannelNumber(const CEpgInfoTag &tag) const
     if (!group)
       group = CPVRManager::Get().ChannelGroups()->GetGroupAllTV();
 
-    bReturn = (m_iChannelNumber == (int) group->GetChannelNumber(*tag.ChannelTag()));
+    bReturn = (m_iChannelNumber == (int) group->GetChannelNumber(tag.ChannelTag()));
   }
 
   return bReturn;
@@ -189,7 +189,7 @@ bool EpgSearchFilter::MatchChannelGroup(const CEpgInfoTag &tag) const
   if (m_iChannelGroup != EPG_SEARCH_UNSET && g_PVRManager.IsStarted())
   {
     CPVRChannelGroupPtr group = g_PVRChannelGroups->GetByIdFromAll(m_iChannelGroup);
-    bReturn = (group && group->IsGroupMember(*tag.ChannelTag()));
+    bReturn = (group && group->IsGroupMember(tag.ChannelTag()));
   }
 
   return bReturn;
@@ -205,9 +205,10 @@ int EpgSearchFilter::FilterRecordings(CFileItemList &results)
   g_PVRRecordings->GetAll(recordings);
 
   // TODO inefficient!
+  CPVRRecordingPtr recording;
   for (int iRecordingPtr = 0; iRecordingPtr < recordings.Size(); iRecordingPtr++)
   {
-    CPVRRecording *recording = recordings.Get(iRecordingPtr)->GetPVRRecordingInfoTag();
+    recording = recordings.Get(iRecordingPtr)->GetPVRRecordingInfoTag();
     if (!recording)
       continue;
 
@@ -244,7 +245,7 @@ int EpgSearchFilter::FilterTimers(CFileItemList &results)
     if (!fileItem || !fileItem->HasPVRTimerInfoTag())
       continue;
 
-    CPVRTimerInfoTag *timer = fileItem->GetPVRTimerInfoTag();
+    CPVRTimerInfoTagPtr timer = fileItem->GetPVRTimerInfoTag();
     if (!timer)
       continue;
 

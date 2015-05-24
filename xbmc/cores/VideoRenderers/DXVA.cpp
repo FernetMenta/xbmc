@@ -23,22 +23,21 @@
 #include <windows.h>
 #include <d3d9.h>
 #include <Initguid.h>
-#include <dxva.h>
 #include <dxva2api.h>
 
 #include "DXVA.h"
 #include "windowing/WindowingFactory.h"
-#include "WinRenderer.h"
 #include "settings/Settings.h"
 #include "settings/MediaSettings.h"
-#include "boost/shared_ptr.hpp"
 #include "utils/AutoPtrHandle.h"
 #include "utils/StringUtils.h"
 #include "settings/AdvancedSettings.h"
-#include "settings/MediaSettings.h"
 #include "cores/VideoRenderers/RenderManager.h"
+#include "RenderFlags.h"
 #include "win32/WIN32Util.h"
 #include "utils/Log.h"
+
+#include <memory>
 
 using namespace DXVA;
 using namespace AUTOPTR;
@@ -138,7 +137,7 @@ static const dxva2_deinterlacetech_t *dxva2_find_deinterlacetech(unsigned flags)
     return NULL;
 }
 
-#define SCOPE(type, var) boost::shared_ptr<type> var##_holder(var, CoTaskMemFree);
+#define SCOPE(type, var) std::shared_ptr<type> var##_holder(var, CoTaskMemFree);
 
 CCriticalSection CProcessor::m_dlSection;
 HMODULE CProcessor::m_dlHandle = NULL;

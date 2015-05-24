@@ -20,14 +20,13 @@
 
 #include "WINJoystick.h"
 #include "input/ButtonTranslator.h"
-#include "peripherals/devices/PeripheralImon.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/lib/Setting.h"
 #include "utils/log.h"
 #include "utils/RegExp.h"
 
 #include <math.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <dinput.h>
 #include <dinputd.h>
@@ -63,16 +62,6 @@ CJoystick::CJoystick()
 CJoystick::~CJoystick()
 {
   ReleaseJoysticks();
-}
-
-void CJoystick::OnSettingChanged(const CSetting *setting)
-{
-  if (setting == NULL)
-    return;
-
-  const std::string &settingId = setting->GetId();
-  if (settingId == "input.enablejoystick")
-    SetEnabled(((CSettingBool*)setting)->GetValue() && PERIPHERALS::CPeripheralImon::GetCountOfImonsConflictWithDInput() == 0);
 }
 
 void CJoystick::Reset()
@@ -139,15 +128,10 @@ BOOL CALLBACK CJoystick::EnumJoysticksCallback( const DIDEVICEINSTANCE* pdidInst
           p_this->m_devCaps.push_back(diDevCaps);
 
           // load axes configuration from keymap
-          std::map<boost::shared_ptr<CRegExp>, AxesConfig>::const_iterator axesCfg;
-          for (axesCfg = p_this->m_AxesConfigs.begin(); axesCfg != p_this->m_AxesConfigs.end(); ++axesCfg)
+          const AxesConfig* axesCfg = CButtonTranslator::GetInstance().GetAxesConfigFor(joyName);
+          if (axesCfg != NULL)
           {
-            if (axesCfg->first->RegFind(joyName) >= 0)
-              break;
-          }
-          if (axesCfg != p_this->m_AxesConfigs.end())
-          {
-            for (AxesConfig::const_iterator it = axesCfg->second.begin(); it != axesCfg->second.end(); ++it)
+            for (AxesConfig::const_iterator it = axesCfg->begin(); it != axesCfg->end(); ++it)
             {
               int axis = p_this->MapAxis(pJoystick, it->axis - 1);
               p_this->m_Axes[axis].trigger = it->isTrigger;
@@ -443,6 +427,30 @@ bool CJoystick::GetAxis(std::string &joyName, int &id)
   return true;
 }
 
+bool CJoystick::GetAxes(std::list<std::pair<std::string, int> >& axes, bool consider_still)
+{
+  std::list<std::pair<std::string, int> > ret;
+  if (!IsEnabled() || !IsAxisActive())
+    return false;
+
+  LPDIRECTINPUTDEVICE8 joy;
+  int axisId;
+
+  for (size_t i = 0; i < m_Axes.size(); ++i)
+  {
+    int deadzone = m_Axes[i].trigger ? 0 : m_DeadzoneRange;
+    int amount = m_Axes[i].val - m_Axes[i].rest;
+    if (consider_still || abs(amount) > deadzone)
+    {
+      MapAxis(i, joy, axisId);
+      ret.push_back(std::pair<std::string, int>(m_JoystickNames[JoystickIndex(joy)], axisId));
+    }
+  }
+  axes = ret;
+
+  return true;
+}
+
 int CJoystick::GetAxisWithMaxAmount() const
 {
   int maxAmount = 0, axis = -1;
@@ -519,12 +527,6 @@ void CJoystick::Acquire()
         (*it)->Acquire();
     }
   }
-}
-
-void CJoystick::LoadAxesConfigs(const std::map<boost::shared_ptr<CRegExp>, AxesConfig> &axesConfigs)
-{
-  m_AxesConfigs.clear();
-  m_AxesConfigs.insert(axesConfigs.begin(), axesConfigs.end());
 }
 
 int CJoystick::JoystickIndex(const std::string &joyName) const

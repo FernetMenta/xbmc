@@ -12,15 +12,14 @@ DEPENDS = \
 	libogg libvorbis libflac fribidi libmpeg2 \
 	libass libsquish \
 	libmodplug librtmp libxml2 yajl libmicrohttpd mysql libffi \
-	python26 afpfs-ng libshairplay \
+	python26 libshairplay \
 	libplist libcec libbluray boost tinyxml dummy-libxbmc \
 	libamplayer libssh taglib libusb libnfs libmp3lame \
-	xbmc-pvr-addons xbmc-audioencoder-addons \
-	pythonmodule-pil libxslt ffmpeg
+	pythonmodule-pil libxslt ffmpeg platform
 
 FFMPEG_DEPENDS = gnutls
 
-ifeq ($(ENABLE_GPLV3),1)
+ifeq ($(ENABLE_GPLV3),yes)
   DEPENDS+=samba-gplv3 libcdio-gplv3
 else
   DEPENDS+=samba libcdio
@@ -37,7 +36,7 @@ ifeq ($(OS),osx)
 endif
 
 ifeq ($(OS),android)
-  DEPENDS += mdnsresponder android-sources-ics
+  DEPENDS += mdnsresponder android-sources-ics google-breakpad
 endif
 
 DEPENDS := $(filter-out $(EXCLUDED_DEPENDS),$(DEPENDS))
@@ -81,15 +80,12 @@ libvorbis: libogg
 libflac: libogg gettext
 libass: fontconfig libpng freetype2 expat $(ICONV)
 librtmp: openssl
-libmicrohttpd: openssl libgpg-error libgcrypt
+libmicrohttpd: gnutls libgcrypt libgpg-error
 python26: expat gettext libxml2 sqlite3 openssl libffi
 libcdio: $(ICONV)
-afpfs-ng: libgcrypt $(ICONV)
 libplist: libxml2 $(ZLIB)
 libbluray: $(ICONV) libxml2
 libssh: openssl
-xbmc-pvr-addons: boost mysql
-xbmc-audioencoder-addons: libvorbis libflac libmp3lame libogg
 mysql: openssl
 libzip: $(ZLIB)
 libmp3lame: $(ICONV)
@@ -101,6 +97,7 @@ pythonmodule-pil: $(ZLIB) libjpeg-turbo libpng freetype2 python26
 libsdl2: $(LINUX_SYSTEM_LIBS)
 libxslt: libgcrypt
 ffmpeg: $(ICONV) $(ZLIB) bzip2 libvorbis $(FFMPEG_DEPENDS)
+libcec: platform
 
 .installed-$(PLATFORM): $(DEPENDS)
 	touch $@

@@ -35,7 +35,7 @@
 #include "profiles/dialogs/GUIDialogLockSettings.h"
 #include "storage/MediaManager.h"
 #include "guilib/GUIWindowManager.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "GUIDialogYesNo.h"
 #include "addons/AddonManager.h"
 #include "FileItem.h"
@@ -80,6 +80,8 @@ CGUIDialogContextMenu::CGUIDialogContextMenu(void)
   m_clickedButton = -1;
   m_backgroundImageSize = 0;
   m_loadType = KEEP_IN_MEMORY;
+  m_coordX = 0.0f;
+  m_coordY = 0.0f;
 }
 
 CGUIDialogContextMenu::~CGUIDialogContextMenu(void)
@@ -100,7 +102,8 @@ bool CGUIDialogContextMenu::OnMessage(CGUIMessage &message)
 
 bool CGUIDialogContextMenu::OnAction(const CAction& action)
 {
-  if (action.GetID() == ACTION_CONTEXT_MENU)
+  if (action.GetID() == ACTION_CONTEXT_MENU ||
+      action.GetID() == ACTION_SWITCH_PLAYER)
   {
     Close();
     return true;
@@ -208,7 +211,7 @@ float CGUIDialogContextMenu::GetWidth() const
     return CGUIDialog::GetWidth();
 }
 
-bool CGUIDialogContextMenu::SourcesMenu(const std::string &strType, const CFileItemPtr item, float posX, float posY)
+bool CGUIDialogContextMenu::SourcesMenu(const std::string &strType, const CFileItemPtr& item, float posX, float posY)
 {
   // TODO: This should be callable even if we don't have any valid items
   if (!item)
@@ -224,7 +227,7 @@ bool CGUIDialogContextMenu::SourcesMenu(const std::string &strType, const CFileI
   return false;
 }
 
-void CGUIDialogContextMenu::GetContextButtons(const std::string &type, const CFileItemPtr item, CContextButtons &buttons)
+void CGUIDialogContextMenu::GetContextButtons(const std::string &type, const CFileItemPtr& item, CContextButtons &buttons)
 {
   // Add buttons to the ContextMenu that should be visible for both sources and autosourced items
   if (item && item->IsRemovable())
@@ -301,7 +304,7 @@ void CGUIDialogContextMenu::GetContextButtons(const std::string &type, const CFi
     buttons.Add(CONTEXT_BUTTON_REACTIVATE_LOCK, 12353);
 }
 
-bool CGUIDialogContextMenu::OnContextButton(const std::string &type, const CFileItemPtr item, CONTEXT_BUTTON button)
+bool CGUIDialogContextMenu::OnContextButton(const std::string &type, const CFileItemPtr& item, CONTEXT_BUTTON button)
 {
   // Add Source doesn't require a valid share
   if (button == CONTEXT_BUTTON_ADD_SOURCE)
@@ -679,9 +682,6 @@ int CGUIDialogContextMenu::ShowAndGetChoice(const CContextButtons &choices)
   CGUIDialogContextMenu *pMenu = (CGUIDialogContextMenu *)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
   if (pMenu)
   {
-    if (pMenu->IsDialogRunning())
-      return -1;
-
     pMenu->m_buttons = choices;
     pMenu->Initialize();
     pMenu->SetInitialVisibility();

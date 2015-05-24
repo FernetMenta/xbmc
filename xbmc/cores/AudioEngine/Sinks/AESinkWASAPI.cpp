@@ -20,17 +20,13 @@
 
 #include "AESinkWASAPI.h"
 #include <Audioclient.h>
-#include <avrt.h>
-#include <initguid.h>
 #include <stdint.h>
+#include <algorithm>
 
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include "settings/AdvancedSettings.h"
 #include "utils/log.h"
 #include "utils/TimeUtils.h"
-#include "threads/SingleLock.h"
-#include "threads/SystemClock.h"
-#include "utils/CharsetConverter.h"
 #include "cores/AudioEngine/Utils/AEDeviceInfo.h"
 #include <Mmreg.h>
 #include "utils/StringUtils.h"

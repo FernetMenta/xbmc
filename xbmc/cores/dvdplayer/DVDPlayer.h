@@ -27,18 +27,12 @@
 
 #include "DVDMessageQueue.h"
 #include "DVDClock.h"
-#include "DVDPlayerAudio.h"
 #include "DVDPlayerVideo.h"
 #include "DVDPlayerSubtitle.h"
 #include "DVDPlayerTeletext.h"
 
-//#include "DVDChapterReader.h"
-#include "DVDSubtitles/DVDFactorySubtitle.h"
-#include "utils/BitstreamStats.h"
-
 #include "Edl.h"
 #include "FileItem.h"
-#include "threads/SingleLock.h"
 #include "utils/StreamDetails.h"
 #include "threads/SystemClock.h"
 
@@ -68,6 +62,7 @@ public:
   bool OMXStateExecute(bool lock = true) { return false; }
   void OMXStateIdle(bool lock = true) {}
   bool HDMIClockSync(bool lock = true) { return false; }
+  void OMXSetSpeedAdjust(double adjust, bool lock = true) {}
 };
 #endif
 
@@ -93,6 +88,7 @@ class CDemuxStreamVideo;
 class CDemuxStreamAudio;
 class CStreamInfo;
 class CDVDDemuxCC;
+class CDVDPlayer;
 
 namespace PVR
 {
@@ -255,7 +251,7 @@ public:
   virtual void SetSubtitle(int iStream);
   virtual bool GetSubtitleVisible();
   virtual void SetSubtitleVisible(bool bVisible);
-  virtual int  AddSubtitle(const std::string& strSubPath);
+  virtual void AddSubtitle(const std::string& strSubPath);
 
   virtual int GetAudioStreamCount();
   virtual int GetAudioStream();
@@ -266,11 +262,14 @@ public:
 
   virtual int  GetChapterCount();
   virtual int  GetChapter();
-  virtual void GetChapterName(std::string& strChapterName);
+  virtual void GetChapterName(std::string& strChapterName, int chapterIdx=-1);
+  virtual int64_t GetChapterPos(int chapterIdx=-1);
   virtual int  SeekChapter(int iChapter);
 
   virtual void SeekTime(int64_t iTime);
+  virtual bool SeekTimeRelative(int64_t iTime);
   virtual int64_t GetTime();
+  virtual int64_t GetDisplayTime();
   virtual int64_t GetTotalTime();
   virtual void ToFFRW(int iSpeed);
   virtual bool OnAction(const CAction &action);
@@ -286,7 +285,7 @@ public:
 
   virtual std::string GetPlayingTitle();
 
-  virtual bool SwitchChannel(PVR::CPVRChannel &channel);
+  virtual bool SwitchChannel(const PVR::CPVRChannelPtr &channel);
   virtual bool CachePVRStream(void) const;
 
   enum ECacheState
@@ -338,7 +337,7 @@ protected:
 
   bool ShowPVRChannelInfo();
 
-  int  AddSubtitleFile(const std::string& filename, const std::string& subfilename = "", CDemuxStream::EFlags flags = CDemuxStream::FLAG_NONE);
+  int  AddSubtitleFile(const std::string& filename, const std::string& subfilename = "");
   void SetSubtitleVisibleInternal(bool bVisible);
 
   /**
@@ -355,6 +354,7 @@ protected:
 
 
   void FlushBuffers(bool queued, double pts = DVD_NOPTS_VALUE, bool accurate = true, bool sync = true);
+  void TriggerResync();
 
   void HandleMessages();
   void HandlePlaySpeed();
@@ -412,6 +412,7 @@ protected:
     int64_t lasttime;
     int lastseekpts;
     double  lastabstime;
+    bool needsync;
   } m_SpeedState;
 
   int m_errorCount;
@@ -472,14 +473,14 @@ protected:
       player        = 0;
       timestamp     = 0;
       time          = 0;
+      disptime      = 0;
       time_total    = 0;
       time_offset   = 0;
       time_src      = ETIMESOURCE_CLOCK;
       dts           = DVD_NOPTS_VALUE;
       player_state  = "";
       chapter       = 0;
-      chapter_name  = "";
-      chapter_count = 0;
+      chapters.clear();
       canrecord     = false;
       recording     = false;
       canpause      = false;
@@ -498,15 +499,15 @@ protected:
     double time_offset;       // difference between time and pts
 
     double time;              // current playback time
+    double disptime;          // current time of frame on screen
     double time_total;        // total playback time
     ETimeSource time_src;     // current time source
     double dts;               // last known dts
 
     std::string player_state;  // full player state
 
-    int         chapter;      // current chapter
-    std::string chapter_name; // name of current chapter
-    int         chapter_count;// number of chapter
+    int         chapter;      		   // current chapter
+    std::vector<std::pair<std::string, int64_t>> chapters; // name and position for chapters
 
     bool canrecord;           // can input stream record
     bool recording;           // are we currently recording

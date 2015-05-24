@@ -33,16 +33,12 @@
 #include "DVDCodecs/Video/DVDVideoPPFFmpeg.h"
 #include "DVDCodecs/Video/DVDVideoCodecFFmpeg.h"
 #include "DVDDemuxers/DVDDemux.h"
-#include "DVDDemuxers/DVDDemuxUtils.h"
 #include "DVDOverlayRenderer.h"
-#include "DVDCodecs/DVDCodecs.h"
-#include "DVDCodecs/Overlay/DVDOverlaySSA.h"
 #include "guilib/GraphicContext.h"
 #include <sstream>
 #include <iomanip>
 #include <numeric>
 #include <iterator>
-#include "guilib/GraphicContext.h"
 #include "utils/log.h"
 
 using namespace std;
@@ -139,6 +135,7 @@ CDVDPlayerVideo::CDVDPlayerVideo( CDVDClock* pClock
   m_iVideoDelay = 0;
   m_iSubtitleDelay = 0;
   m_FlipTimeStamp = 0.0;
+  m_FlipTimePts = 0.0f; //silence coverity uninitialized warning, is set elsewhere
   m_iLateFrames = 0;
   m_iDroppedRequest = 0;
   m_fForcedAspectRatio = 0;
@@ -200,10 +197,7 @@ bool CDVDPlayerVideo::OpenStream( CDVDStreamInfo &hint )
     return false;
   }
 
-  if(CSettings::Get().GetBool("videoplayer.usedisplayasclock") && !g_VideoReferenceClock.IsRunning())
-  {
-    g_VideoReferenceClock.Create();
-  }
+  g_VideoReferenceClock.Start();
 
   if(m_messageQueue.IsInited())
     m_messageQueue.Put(new CDVDMsgVideoCodecChange(hint, codec), 0);
@@ -374,10 +368,6 @@ void CDVDPlayerVideo::Process()
       }
       else
         m_messageQueue.Put(pMsg->Acquire(), 1); /* push back as prio message, to process other prio messages */
-
-      pMsg->Release();
-
-      continue;
     }
     else if (pMsg->IsType(CDVDMsg::GENERAL_RESYNC))
     {
@@ -475,7 +465,13 @@ void CDVDPlayerVideo::Process()
       CDVDPlayer::SPlayerState& state = ((CDVDMsgType<CDVDPlayer::SPlayerState>*)pMsg)->m_value;
 
       if(state.time_src == CDVDPlayer::ETIMESOURCE_CLOCK)
-        state.time      = DVD_TIME_TO_MSEC(m_pClock->GetClock(state.timestamp) + state.time_offset);
+      {
+        double pts = GetCurrentPts();
+        if (pts == DVD_NOPTS_VALUE)
+          pts = m_pClock->GetClock();
+        state.time = DVD_TIME_TO_MSEC(pts + state.time_offset);
+        state.timestamp = CDVDClock::GetAbsoluteClock();
+      }
       else
         state.timestamp = CDVDClock::GetAbsoluteClock();
       state.player    = DVDPLAYER_VIDEO;
@@ -591,7 +587,6 @@ void CDVDPlayerVideo::Process()
       // loop while no error
       while (!m_bStop)
       {
-
         // if decoder was flushed, we need to seek back again to resume rendering
         if (iDecoderState & VC_FLUSHED)
         {
@@ -608,6 +603,23 @@ void CDVDPlayerVideo::Process()
           }
 
           m_pVideoCodec->Reset();
+          m_packets.clear();
+          picture.iFlags &= ~DVP_FLAG_ALLOCATED;
+          g_renderManager.DiscardBuffer();
+          break;
+        }
+
+        if (iDecoderState & VC_REOPEN)
+        {
+          while(!m_packets.empty())
+          {
+            CDVDMsgDemuxerPacket* msg = (CDVDMsgDemuxerPacket*)m_packets.front().message->Acquire();
+            msg->m_drop = false;
+            m_packets.pop_front();
+            m_messageQueue.Put(msg, iPriority + 10);
+          }
+
+          m_pVideoCodec->Reopen();
           m_packets.clear();
           picture.iFlags &= ~DVP_FLAG_ALLOCATED;
           g_renderManager.DiscardBuffer();
@@ -811,7 +823,7 @@ int CDVDPlayerVideo::GetLevel() const
     int datasize = m_messageQueue.GetDataSize();
     if (m_pVideoCodec)
       datasize += m_pVideoCodec->GetDataSize();
-    return min(100, (int)(100 * datasize / (m_messageQueue.GetMaxDataSize() * m_messageQueue.GetMaxTimeSize())));
+    return min(100, MathUtils::round_int((100.0 * datasize) / m_messageQueue.GetMaxDataSize()));
   }
   else
   {
@@ -985,13 +997,17 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   double render_framerate = g_graphicsContext.GetFPS();
   if (CSettings::Get().GetInt("videoplayer.adjustrefreshrate") == ADJUST_REFRESHRATE_OFF)
     render_framerate = config_framerate;
+  bool changerefresh = !m_bFpsInvalid &&
+                       (m_output.framerate == 0.0 || fmod(m_output.framerate, config_framerate) != 0.0) &&
+                       (render_framerate != config_framerate);
+
   /* check so that our format or aspect has changed. if it has, reconfigure renderer */
   if (!g_renderManager.IsConfigured()
    || ( m_output.width           != pPicture->iWidth )
    || ( m_output.height          != pPicture->iHeight )
    || ( m_output.dwidth          != pPicture->iDisplayWidth )
    || ( m_output.dheight         != pPicture->iDisplayHeight )
-   || (!m_bFpsInvalid && fmod(m_output.framerate, config_framerate) != 0.0 && render_framerate != config_framerate)
+   || changerefresh
    || ( m_output.color_format    != (unsigned int)pPicture->format )
    || ( m_output.extended_format != pPicture->extended_format )
    || ( m_output.color_matrix    != pPicture->color_matrix    && pPicture->color_matrix    != 0 ) // don't reconfigure on unspecified
@@ -1075,6 +1091,9 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   //try to calculate the framerate
   CalcFrameRate();
 
+  // remember original pts, we need it later for overlaying subtitles
+  double pts_org = pts;
+
   // signal to clock what our framerate is, it may want to adjust it's
   // speed to better match with our video renderer's output speed
   double interval;
@@ -1088,20 +1107,6 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   {
     // Correct pts by user set delay and rendering delay
     pts += m_iVideoDelay - DVD_SEC_TO_TIME(g_renderManager.GetDisplayLatency());
-  }
-
-  if (m_speed < 0)
-  {
-    double inputPts = m_droppingStats.m_lastPts;
-    double renderPts = m_droppingStats.m_lastRenderPts;
-    if (pts > renderPts)
-    {
-      if (inputPts >= renderPts)
-      {
-        Sleep(50);
-      }
-      return result | EOS_DROPPED;
-    }
   }
 
   // calculate the time we need to delay this picture before displaying
@@ -1127,6 +1132,42 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
     iSleepTime = iFrameSleep;
   else
     iSleepTime = iClockSleep;
+
+  if (m_speed < 0)
+  {
+    double sleepTime, renderPts;
+    int bufferLevel;
+    double inputPts = m_droppingStats.m_lastPts;
+    g_renderManager.GetStats(sleepTime, renderPts, bufferLevel);
+    if (pts_org > renderPts || bufferLevel > 0)
+    {
+      if (inputPts >= renderPts)
+      {
+        Sleep(50);
+      }
+      return result | EOS_DROPPED;
+    }
+
+    if (iSleepTime > 0.05)
+      iSleepTime = 0.05;
+  }
+  else if (m_speed > DVD_PLAYSPEED_NORMAL)
+  {
+    double sleepTime, renderPts;
+    int bufferLevel;
+    g_renderManager.GetStats(sleepTime, renderPts, bufferLevel);
+
+    double diff = pts_org - renderPts;
+    double mindiff = DVD_SEC_TO_TIME(1/m_fFrameRate * m_speed / DVD_PLAYSPEED_NORMAL) * (bufferLevel +1);
+    if (diff < mindiff)
+    {
+      m_droppingStats.AddOutputDropGain(pts, 1/m_fFrameRate);
+      return result | EOS_DROPPED;
+    }
+
+    if (iSleepTime > 0.05)
+      iSleepTime = 0.05;
+  }
 
   // sync clock if we are master
   if(m_pClock->GetMaster() == MASTER_CLOCK_VIDEO)
@@ -1159,11 +1200,14 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
       mDisplayField = FS_BOT;
   }
 
-  int buffer = g_renderManager.WaitForBuffer(m_bStop, std::max(DVD_TIME_TO_MSEC(iSleepTime) + 500, 1));
+  int buffer = g_renderManager.WaitForBuffer(m_bStop, std::max(DVD_TIME_TO_MSEC(iSleepTime) + 500, 50));
   if (buffer < 0)
+  {
+    m_droppingStats.AddOutputDropGain(pts, 1/m_fFrameRate);
     return EOS_DROPPED;
+  }
 
-  ProcessOverlays(pPicture, pts);
+  ProcessOverlays(pPicture, pts_org);
 
   int index = g_renderManager.AddVideoPicture(*pPicture);
 
@@ -1176,9 +1220,12 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   }
 
   if (index < 0)
+  {
+    m_droppingStats.AddOutputDropGain(pts, 1/m_fFrameRate);
     return EOS_DROPPED;
+  }
 
-  g_renderManager.FlipPage(CThread::m_bStop, (iCurrentClock + iSleepTime) / DVD_TIME_BASE, pts, -1, mDisplayField);
+  g_renderManager.FlipPage(CThread::m_bStop, (iCurrentClock + iSleepTime) / DVD_TIME_BASE, pts_org, -1, mDisplayField);
 
   return result;
 #else

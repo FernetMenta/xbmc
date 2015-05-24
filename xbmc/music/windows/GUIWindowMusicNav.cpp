@@ -38,7 +38,7 @@
 #include "guilib/GUIWindowManager.h"
 #include "dialogs/GUIDialogOK.h"
 #include "guilib/GUIKeyboardFactory.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "dialogs/GUIDialogYesNo.h"
 #include "guilib/GUIEditControl.h"
 #include "GUIUserMessages.h"
@@ -55,6 +55,7 @@
 #include "TextureCache.h"
 #include "Util.h"
 #include "URL.h"
+#include "ContextMenuManager.h"
 
 using namespace std;
 using namespace XFILE;
@@ -307,7 +308,7 @@ bool CGUIWindowMusicNav::GetDirectory(const std::string &strDirectory, CFileItem
   }
 
   // update our content in the info manager
-  if (StringUtils::StartsWithNoCase(strDirectory, "videodb://"))
+  if (StringUtils::StartsWithNoCase(strDirectory, "videodb://") || items.IsVideoDb())
   {
     CVideoDatabaseDirectory dir;
     VIDEODATABASEDIRECTORY::NODE_TYPE node = dir.GetDirectoryChildType(strDirectory);
@@ -331,7 +332,7 @@ bool CGUIWindowMusicNav::GetDirectory(const std::string &strDirectory, CFileItem
     else if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_TAGS)
       items.SetContent("tags");
   }
-  else if (StringUtils::StartsWithNoCase(strDirectory, "musicdb://"))
+  else if (StringUtils::StartsWithNoCase(strDirectory, "musicdb://") || items.IsMusicDb())
   {
     CMusicDatabaseDirectory dir;
     NODE_TYPE node = dir.GetDirectoryChildType(strDirectory);
@@ -572,6 +573,8 @@ void CGUIWindowMusicNav::GetContextButtons(int itemNumber, CContextButtons &butt
   // noncontextual buttons
 
   CGUIWindowMusicBase::GetNonContextButtons(buttons);
+
+  CContextMenuManager::Get().AddVisibleItems(item, buttons);
 }
 
 bool CGUIWindowMusicNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
@@ -714,7 +717,7 @@ bool CGUIWindowMusicNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
         ADDON::AddonPtr defaultScraper;
         if (ADDON::CAddonMgr::Get().GetDefault(ADDON::ScraperTypeFromContent(content), defaultScraper))
         {
-          scraper = boost::dynamic_pointer_cast<ADDON::CScraper>(defaultScraper->Clone());
+          scraper = std::dynamic_pointer_cast<ADDON::CScraper>(defaultScraper->Clone());
         }
       }
 
@@ -751,7 +754,7 @@ bool CGUIWindowMusicNav::GetSongsFromPlayList(const std::string& strPlayList, CF
   items.SetPath(strPlayList);
   CLog::Log(LOGDEBUG,"CGUIWindowMusicNav, opening playlist [%s]", strPlayList.c_str());
 
-  auto_ptr<CPlayList> pPlayList (CPlayListFactory::Create(strPlayList));
+  unique_ptr<CPlayList> pPlayList (CPlayListFactory::Create(strPlayList));
   if ( NULL != pPlayList.get())
   {
     // load it

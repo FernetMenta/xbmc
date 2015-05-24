@@ -30,6 +30,10 @@
 #define SETTING_XML_ELM_CONTROL_MULTISELECT  "multiselect"
 #define SETTING_XML_ELM_CONTROL_POPUP        "popup"
 #define SETTING_XML_ELM_CONTROL_FORMATVALUE  "value"
+#define SETTING_XML_ATTR_SHOW_MORE           "more"
+#define SETTING_XML_ATTR_SHOW_DETAILS        "details"
+#define SETTING_XML_ATTR_SEPARATOR_POSITION  "separatorposition"
+#define SETTING_XML_ATTR_HIDE_SEPARATOR      "hideseparator"
 
 class CVariant;
 
@@ -120,7 +124,11 @@ class CSettingControlButton : public ISettingControl
 public:
   CSettingControlButton()
     : m_heading(-1),
-      m_hideValue(false)
+      m_hideValue(false),
+      m_showAddonDetails(true),
+      m_showInstalledAddons(true),
+      m_showInstallableAddons(false),
+      m_showMoreAddons(true)
   { }
   virtual ~CSettingControlButton() { }
 
@@ -134,9 +142,23 @@ public:
   bool HideValue() const { return m_hideValue; }
   void SetHideValue(bool hideValue) { m_hideValue = hideValue; }
 
+  bool ShowAddonDetails() const { return m_showAddonDetails; }
+  void SetShowAddonDetails(bool showAddonDetails) { m_showAddonDetails = showAddonDetails; }
+  bool ShowInstalledAddons() const { return m_showInstalledAddons; }
+  void SetShowInstalledAddons(bool showInstalledAddons) { m_showInstalledAddons = showInstalledAddons; }
+  bool ShowInstallableAddons() const { return m_showInstallableAddons; }
+  void SetShowInstallableAddons(bool showInstallableAddons) { m_showInstallableAddons = showInstallableAddons; }
+  bool ShowMoreAddons() const { return !m_showInstallableAddons && m_showMoreAddons; }
+  void SetShowMoreAddons(bool showMoreAddons) { m_showMoreAddons = showMoreAddons; }
+
 protected:
   int m_heading;
   bool m_hideValue;
+
+  bool m_showAddonDetails;
+  bool m_showInstalledAddons;
+  bool m_showInstallableAddons;
+  bool m_showMoreAddons;
 };
 
 class CSettingControlList : public ISettingControl
@@ -233,4 +255,28 @@ protected:
   int m_formatLabel;
   int m_valueFormatLabel;
   std::string m_valueFormat;
+};
+
+class CSettingControlTitle : public ISettingControl
+{
+public:
+  CSettingControlTitle()
+    : m_separatorHidden(false),
+      m_separatorBelowLabel(true)
+  { }
+  virtual ~CSettingControlTitle() { }
+
+  // implementation of ISettingControl
+  virtual std::string GetType() const { return "title"; }
+  virtual bool Deserialize(const TiXmlNode *node, bool update = false);
+  virtual bool SetFormat(const std::string &format) { return true; }
+
+  bool IsSeparatorHidden() const { return m_separatorHidden; }
+  void SetSeparatorHidden(bool hidden) { m_separatorHidden = hidden; }
+  bool IsSeparatorBelowLabel() const { return m_separatorBelowLabel; }
+  void SetSeparatorBelowLabel(bool below) { m_separatorBelowLabel = below; }
+
+protected:
+  bool m_separatorHidden;
+  bool m_separatorBelowLabel;
 };

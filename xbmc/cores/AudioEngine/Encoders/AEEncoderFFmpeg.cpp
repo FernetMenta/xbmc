@@ -24,9 +24,9 @@
 #include "cores/AudioEngine/Encoders/AEEncoderFFmpeg.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include "utils/log.h"
-#include "settings/AdvancedSettings.h"
 #include "settings/Settings.h"
 #include <string.h>
+#include <cassert>
 
 CAEEncoderFFmpeg::CAEEncoderFFmpeg():
   m_BitRate       (0    ),

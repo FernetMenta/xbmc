@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <string>
 #include <vector>
 #include "utils/Job.h"
@@ -76,12 +77,12 @@ public:
    */
   bool CacheTexture(CBaseTexture **texture = NULL);
 
+  static bool ResizeTexture(const std::string &url, uint8_t* &result, size_t &result_size);
+
   std::string m_url;
   std::string m_oldHash;
   CTextureDetails m_details;
 private:
-  friend class CEdenVideoArtUpdater;
-
   /*! \brief retrieve a hash for the given image
    Combines the size, ctime and mtime of the image file into a "unique" hash
    \param url location of the image

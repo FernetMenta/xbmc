@@ -21,10 +21,12 @@
  */
 
 #include "system.h" // until we get sane int types used here
-#include "IAudioCallback.h"
+#include <memory>
 #include "IPlayerCallback.h"
 #include "guilib/Geometry.h"
 #include <string>
+
+#define CURRENT_STREAM -1
 
 struct TextCacheStruct_t;
 class TiXmlElement;
@@ -34,6 +36,7 @@ class CAction;
 namespace PVR
 {
   class CPVRChannel;
+  typedef std::shared_ptr<PVR::CPVRChannel> CPVRChannelPtr;
 }
 
 class CPlayerOptions
@@ -149,9 +152,9 @@ public:
   virtual void SetVolume(float volume){}
   virtual bool ControlsVolume(){ return false;}
   virtual void SetDynamicRangeCompression(long drc){}
-  virtual void GetAudioInfo( std::string& strAudioInfo) = 0;
-  virtual void GetVideoInfo( std::string& strVideoInfo) = 0;
-  virtual void GetGeneralInfo( std::string& strVideoInfo) = 0;
+  virtual void GetAudioInfo(std::string& strAudioInfo) = 0;
+  virtual void GetVideoInfo(std::string& strVideoInfo) = 0;
+  virtual void GetGeneralInfo(std::string& strGeneralInfo) = 0;
   virtual bool CanRecord() { return false;};
   virtual bool IsRecording() { return false;};
   virtual bool Record(bool bOnOff) { return false;};
@@ -167,7 +170,12 @@ public:
   virtual void SetSubtitle(int iStream){};
   virtual bool GetSubtitleVisible(){ return false;};
   virtual void SetSubtitleVisible(bool bVisible){};
-  virtual int  AddSubtitle(const std::string& strSubPath) {return -1;};
+
+  /** \brief Adds the subtitle(s) provided by the given file to the available player streams
+  *          and actives the first of the added stream(s). E.g., vob subs can contain multiple streams.
+  *   \param[in] strSubPath The full path of the subtitle file.
+  */
+  virtual void  AddSubtitle(const std::string& strSubPath) {};
 
   virtual int  GetAudioStreamCount()  { return 0; }
   virtual int  GetAudioStream()       { return -1; }
@@ -179,16 +187,27 @@ public:
 
   virtual int  GetChapterCount()                               { return 0; }
   virtual int  GetChapter()                                    { return -1; }
-  virtual void GetChapterName(std::string& strChapterName)     { return; }
+  virtual void GetChapterName(std::string& strChapterName, int chapterIdx = -1) { return; }
+  virtual int64_t GetChapterPos(int chapterIdx=-1)             { return 0; }
   virtual int  SeekChapter(int iChapter)                       { return -1; }
 //  virtual bool GetChapterInfo(int chapter, SChapterInfo &info) { return false; }
 
   virtual float GetActualFPS() { return 0.0f; };
   virtual void SeekTime(int64_t iTime = 0){};
+  /*
+   \brief seek relative to current time, returns false if not implemented by player
+   \param iTime The time in milliseconds to seek. A positive value will seek forward, a negative backward.
+   \return True if the player supports relative seeking, otherwise false
+   */
+  virtual bool SeekTimeRelative(int64_t iTime) { return false; }
   /*!
    \brief current time in milliseconds
    */
   virtual int64_t GetTime() { return 0; }
+  /*!
+   \brief time of frame on screen in milliseconds
+   */
+  virtual int64_t GetDisplayTime() { return GetTime(); }
   /*!
    \brief total time in milliseconds
    */
@@ -217,7 +236,7 @@ public:
   
   virtual std::string GetPlayingTitle() { return ""; };
 
-  virtual bool SwitchChannel(PVR::CPVRChannel &channel) { return false; }
+  virtual bool SwitchChannel(const PVR::CPVRChannelPtr &channel) { return false; }
 
   // Note: the following "OMX" methods are deprecated and will be removed in the future
   // They should be handled by the video renderer, not the player

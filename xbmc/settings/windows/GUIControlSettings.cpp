@@ -31,6 +31,7 @@
 #include "dialogs/GUIDialogSlider.h"
 #include "guilib/GUIEditControl.h"
 #include "guilib/GUIImage.h"
+#include "guilib/GUILabelControl.h"
 #include "guilib/GUIRadioButtonControl.h"
 #include "guilib/GUISettingsSliderControl.h"
 #include "guilib/GUISpinControlEx.h"
@@ -531,12 +532,15 @@ bool CGUIControlButtonSetting::OnClick()
   const std::string &controlFormat = control->GetFormat();
   if (controlType == "button")
   {
+    const CSettingControlButton *buttonControl = static_cast<const CSettingControlButton*>(control);
     if (controlFormat == "addon")
     {
       // prompt for the addon
       CSettingAddon *setting = (CSettingAddon *)m_pSetting;
       std::string addonID = setting->GetValue();
-      if (CGUIWindowAddonBrowser::SelectAddonID(setting->GetAddonType(), addonID, setting->AllowEmpty()) != 1)
+      if (CGUIWindowAddonBrowser::SelectAddonID(setting->GetAddonType(), addonID, setting->AllowEmpty(),
+                                                buttonControl->ShowAddonDetails(), buttonControl->ShowInstalledAddons(),
+                                                buttonControl->ShowInstallableAddons(), buttonControl->ShowMoreAddons()) != 1)
         return false;
 
       SetValid(setting->SetValue(addonID));
@@ -613,6 +617,12 @@ void CGUIControlButtonSetting::Update(bool updateDisplayOnly /* = false */)
         std::string shortPath;
         if (CUtil::MakeShortenPath(strValue, shortPath, 30))
           strText = shortPath;
+      }
+      else if (controlFormat == "infolabel")
+      {
+        strText = strValue;
+        if (strText.empty())
+          strText = g_localizeStrings.Get(231); // None
       }
     }
   }
@@ -1135,4 +1145,17 @@ CGUIControlSeparatorSetting::CGUIControlSeparatorSetting(CGUIImage *pImage, int 
 }
 
 CGUIControlSeparatorSetting::~CGUIControlSeparatorSetting()
+{ }
+
+CGUIControlGroupTitleSetting::CGUIControlGroupTitleSetting(CGUILabelControl *pLabel, int id)
+  : CGUIControlBaseSetting(id, NULL)
+{
+  m_pLabel = pLabel;
+  if (m_pLabel == NULL)
+    return;
+
+  m_pLabel->SetID(id);
+}
+
+CGUIControlGroupTitleSetting::~CGUIControlGroupTitleSetting()
 { }

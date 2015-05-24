@@ -20,6 +20,8 @@
 
 #include "Addon.h"
 #include "AddonManager.h"
+#include "addons/Service.h"
+#include "ContextMenuManager.h"
 #include "settings/Settings.h"
 #include "filesystem/Directory.h"
 #include "filesystem/File.h"
@@ -80,8 +82,9 @@ static const TypeMapping types[] =
    {"xbmc.python.library",               ADDON_SCRIPT_LIBRARY,      24081, "DefaultAddonHelper.png" },
    {"xbmc.python.module",                ADDON_SCRIPT_MODULE,       24082, "DefaultAddonLibrary.png" },
    {"xbmc.subtitle.module",              ADDON_SUBTITLE_MODULE,     24012, "DefaultAddonSubtitles.png" },
+   {"kodi.context.item",                 ADDON_CONTEXT_ITEM,        24025, "DefaultAddonContextItem.png" },
    {"xbmc.gui.skin",                     ADDON_SKIN,                  166, "DefaultAddonSkin.png" },
-   {"xbmc.gui.webinterface",             ADDON_WEB_INTERFACE,         199, "DefaultAddonWebSkin.png" },
+   {"xbmc.webinterface",                 ADDON_WEB_INTERFACE,         199, "DefaultAddonWebSkin.png" },
    {"xbmc.addon.repository",             ADDON_REPOSITORY,          24011, "DefaultAddonRepository.png" },
    {"xbmc.pvrclient",                    ADDON_PVRDLL,              24019, "DefaultAddonPVRClient.png" },
    {"xbmc.addon.video",                  ADDON_VIDEO,                1037, "DefaultAddonVideo.png" },
@@ -89,7 +92,11 @@ static const TypeMapping types[] =
    {"xbmc.addon.image",                  ADDON_IMAGE,                1039, "DefaultAddonPicture.png" },
    {"xbmc.addon.executable",             ADDON_EXECUTABLE,           1043, "DefaultAddonProgram.png" },
    {"xbmc.audioencoder",                 ADDON_AUDIOENCODER,         200,  "DefaultAddonAudioEncoder.png" },
-   {"xbmc.service",                      ADDON_SERVICE,             24018, "DefaultAddonService.png" }};
+   {"kodi.audiodecoder",                 ADDON_AUDIODECODER,         201,  "DefaultAddonAudioDecoder.png" },
+   {"xbmc.service",                      ADDON_SERVICE,             24018, "DefaultAddonService.png" },
+   {"kodi.resource.language",            ADDON_RESOURCE_LANGUAGE,   24026, "DefaultAddonLanguage.png" },
+   {"kodi.resource.uisounds",            ADDON_RESOURCE_UISOUNDS,   24006, "DefaultAddonUISounds.png" },
+  };
 
 const std::string TranslateType(const ADDON::TYPE &type, bool pretty/*=false*/)
 {
@@ -115,6 +122,7 @@ TYPE TranslateType(const std::string &string)
     if (string == map.name)
       return map.type;
   }
+
   return ADDON_UNKNOWN;
 }
 
@@ -154,7 +162,9 @@ AddonProps::AddonProps(const cp_extension_t *ext)
   fanart = URIUtils::AddFileToFolder(path, "fanart.jpg");
   changelog = URIUtils::AddFileToFolder(path, "changelog.txt");
   // Grab more detail from the props...
-  const cp_extension_t *metadata = CAddonMgr::Get().GetExtension(ext->plugin, "xbmc.addon.metadata");
+  const cp_extension_t *metadata = CAddonMgr::Get().GetExtension(ext->plugin, "xbmc.addon.metadata"); //<! backword compatibilty
+  if (!metadata)
+    metadata = CAddonMgr::Get().GetExtension(ext->plugin, "kodi.addon.metadata");
   if (metadata)
   {
     summary = CAddonMgr::Get().GetTranslatedString(metadata->configuration, "summary");
@@ -260,7 +270,6 @@ CAddon::CAddon(const cp_extension_t *ext)
   Props().libname = m_strLibName;
   BuildProfilePath();
   m_userSettingsPath = URIUtils::AddFileToFolder(Profile(), "settings.xml");
-  m_enabled = true;
   m_hasSettings = true;
   m_hasStrings = false;
   m_checkedStrings = false;
@@ -271,7 +280,6 @@ CAddon::CAddon(const cp_extension_t *ext)
 CAddon::CAddon(const cp_plugin_info_t *plugin)
   : m_props(plugin)
 {
-  m_enabled = true;
   m_hasSettings = false;
   m_hasStrings = false;
   m_checkedStrings = true;
@@ -286,7 +294,6 @@ CAddon::CAddon(const AddonProps &props)
   else m_strLibName = props.libname;
   BuildProfilePath();
   m_userSettingsPath = URIUtils::AddFileToFolder(Profile(), "settings.xml");
-  m_enabled = true;
   m_hasSettings = true;
   m_hasStrings = false;
   m_checkedStrings = false;
@@ -305,7 +312,6 @@ CAddon::CAddon(const CAddon &rhs)
   BuildProfilePath();
   m_userSettingsPath = URIUtils::AddFileToFolder(Profile(), "settings.xml");
   m_strLibName  = rhs.m_strLibName;
-  m_enabled = rhs.Enabled();
   m_hasStrings  = false;
   m_checkedStrings  = false;
 }
@@ -317,12 +323,6 @@ AddonPtr CAddon::Clone() const
 
 bool CAddon::MeetsVersion(const AddonVersion &version) const
 {
-  // if the addon is one of xbmc's extension point definitions (addonid starts with "xbmc.")
-  // and the minversion is "0.0.0" i.e. no <backwards-compatibility> tag has been specified
-  // we need to assume that the current version is not backwards-compatible and therefore check against the actual version
-  if (StringUtils::StartsWithNoCase(m_props.id, "xbmc.") && m_props.minversion.empty())
-    return m_props.version == version;
-
   return m_props.minversion <= version && version <= m_props.version;
 }
 
@@ -363,6 +363,7 @@ void CAddon::BuildLibName(const cp_extension_t *extension)
     case ADDON_SUBTITLE_MODULE:        
     case ADDON_PLUGIN:
     case ADDON_SERVICE:
+    case ADDON_CONTEXT_ITEM:
       ext = ADDON_PYTHON_EXT;
       break;
     default:
@@ -393,9 +394,12 @@ void CAddon::BuildLibName(const cp_extension_t *extension)
       case ADDON_SCRAPER_LIBRARY:
       case ADDON_PVRDLL:
       case ADDON_PLUGIN:
+      case ADDON_WEB_INTERFACE:
       case ADDON_SERVICE:
       case ADDON_REPOSITORY:
       case ADDON_AUDIOENCODER:
+      case ADDON_CONTEXT_ITEM:
+      case ADDON_AUDIODECODER:
         {
           std::string temp = CAddonMgr::Get().GetExtValue(extension->configuration, "@library");
           m_strLibName = temp;
@@ -617,6 +621,79 @@ AddonVersion CAddon::GetDependencyVersion(const std::string &dependencyID) const
     return it->second.first;
   return AddonVersion("0.0.0");
 }
+
+void OnEnabled(const std::string& id)
+{
+  // If the addon is a special, call enabled handler
+  AddonPtr addon;
+  if (CAddonMgr::Get().GetAddon(id, addon, ADDON_PVRDLL))
+    return addon->OnEnabled();
+
+  if (CAddonMgr::Get().GetAddon(id, addon, ADDON_SERVICE))
+    std::static_pointer_cast<CService>(addon)->Start();
+
+  if (CAddonMgr::Get().GetAddon(id, addon, ADDON_CONTEXT_ITEM))
+    CContextMenuManager::Get().Register(std::static_pointer_cast<CContextItemAddon>(addon));
+}
+
+void OnDisabled(const std::string& id)
+{
+  AddonPtr addon;
+  if (CAddonMgr::Get().GetAddon(id, addon, ADDON_PVRDLL, false))
+    return addon->OnDisabled();
+
+  if (CAddonMgr::Get().GetAddon(id, addon, ADDON_SERVICE, false))
+    std::static_pointer_cast<CService>(addon)->Stop();
+
+  if (CAddonMgr::Get().GetAddon(id, addon, ADDON_CONTEXT_ITEM, false))
+    CContextMenuManager::Get().Unregister(std::static_pointer_cast<CContextItemAddon>(addon));
+}
+
+void OnPreInstall(const AddonPtr& addon)
+{
+  //Before installing we need to stop/unregister any local addon
+  //that have this id, regardless of what the 'new' addon is.
+  AddonPtr localAddon;
+  if (CAddonMgr::Get().GetAddon(addon->ID(), localAddon, ADDON_SERVICE))
+    std::static_pointer_cast<CService>(localAddon)->Stop();
+
+  if (CAddonMgr::Get().GetAddon(addon->ID(), localAddon, ADDON_CONTEXT_ITEM))
+    CContextMenuManager::Get().Unregister(std::static_pointer_cast<CContextItemAddon>(localAddon));
+
+  //Fallback to the pre-install callback in the addon.
+  //BUG: If primary extension point have changed we're calling the wrong method.
+  addon->OnPreInstall();
+}
+
+void OnPostInstall(const AddonPtr& addon, bool update, bool modal)
+{
+  AddonPtr localAddon;
+  if (CAddonMgr::Get().GetAddon(addon->ID(), localAddon, ADDON_SERVICE))
+    std::static_pointer_cast<CService>(localAddon)->Start();
+
+  if (CAddonMgr::Get().GetAddon(addon->ID(), localAddon, ADDON_CONTEXT_ITEM))
+    CContextMenuManager::Get().Register(std::static_pointer_cast<CContextItemAddon>(localAddon));
+
+  addon->OnPostInstall(update, modal);
+}
+
+void OnPreUnInstall(const AddonPtr& addon)
+{
+  AddonPtr localAddon;
+  if (CAddonMgr::Get().GetAddon(addon->ID(), localAddon, ADDON_SERVICE))
+    std::static_pointer_cast<CService>(localAddon)->Stop();
+
+  if (CAddonMgr::Get().GetAddon(addon->ID(), localAddon, ADDON_CONTEXT_ITEM))
+    CContextMenuManager::Get().Unregister(std::static_pointer_cast<CContextItemAddon>(localAddon));
+
+  addon->OnPreUnInstall();
+}
+
+void OnPostUnInstall(const AddonPtr& addon)
+{
+  addon->OnPostUnInstall();
+}
+
 
 /**
  * CAddonLibrary

@@ -100,7 +100,7 @@
       <Y>AspectRatio</Y>
       <black>CodecInfo</black>
       <white>Info</white>
-      <back>SmallStepBack</back>
+      <back>Seek(-7)</back><!-- Replaces smallstepback -->
       <start>OSD</start>
       <leftanalogtrigger>AnalogRewind</leftanalogtrigger>
       <rightanalogtrigger>AnalogFastForward</rightanalogtrigger>
@@ -151,10 +151,10 @@
       <back>LockPreset</back>
       <leftanalogtrigger>AnalogRewind</leftanalogtrigger>
       <rightanalogtrigger>AnalogFastForward</rightanalogtrigger>
-      <dpadleft>SkipPrevious</dpadleft>
-      <dpadright>SkipNext</dpadright>
-      <dpadup>NextPreset</dpadup>
-      <dpaddown>PreviousPreset</dpaddown>
+      <dpadleft>StepBack</dpadleft>
+      <dpadright>StepForward</dpadright>
+      <dpadup>SkipNext</dpadup>
+      <dpaddown>SkipPrevious</dpaddown>
     </gamepad>
   </Visualisation>
   <MusicOSD>

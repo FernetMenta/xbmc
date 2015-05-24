@@ -93,7 +93,7 @@ namespace ADDON
     bool GetAddon(const std::string &id, AddonPtr &addon, const TYPE &type = ADDON_UNKNOWN, bool enabledOnly = true);
     bool HasAddons(const TYPE &type, bool enabled = true);
     bool GetAddons(const TYPE &type, VECADDONS &addons, bool enabled = true);
-    bool GetAllAddons(VECADDONS &addons, bool enabled = true, bool allowRepos = false);
+    bool GetAllAddons(VECADDONS &addons, bool enabled = true);
     void AddToUpdateableAddons(AddonPtr &pAddon);
     void RemoveFromUpdateableAddons(AddonPtr &pAddon);    
     bool ReloadSettings(const std::string &id);
@@ -112,15 +112,13 @@ namespace ADDON
     std::string GetTranslatedString(const cp_cfg_element_t *root, const char *tag);
     static AddonPtr AddonFromProps(AddonProps& props);
     void FindAddons();
-    void RemoveAddon(const std::string& ID);
+    void UnregisterAddon(const std::string& ID);
 
-    /* \brief Disable an addon
-     Triggers the database routine and saves the current addon state to cache.
-     \param ID id of the addon
-     \param disable whether to enable or disable. Defaults to true (disable)
-     \sa IsAddonDisabled,
-     */
-    bool DisableAddon(const std::string& ID, bool disable = true);
+    /*! \brief Disable an addon. Returns true on success, false on failure. */
+    bool DisableAddon(const std::string& ID);
+
+    /*! \brief Enable an addon. Returns true on success, false on failure. */
+    bool EnableAddon(const std::string& ID);
 
     /* \brief Check whether an addon has been disabled via DisableAddon.
      In case the disabled cache does not know about the current state the database routine will be used.
@@ -129,8 +127,37 @@ namespace ADDON
      */
     bool IsAddonDisabled(const std::string& ID);
 
+    /* \brief Checks whether an addon can be disabled via DisableAddon.
+     \param ID id of the addon
+     \sa DisableAddon
+     */
+    bool CanAddonBeDisabled(const std::string& ID);
+
+    /* \brief Checks whether an addon is installed.
+     \param ID id of the addon
+    */
+    bool IsAddonInstalled(const std::string& ID);
+
+    /* \brief Checks whether an addon can be installed. Broken addons can't be installed.
+     \param ID id of the addon
+     */
+    bool CanAddonBeInstalled(const std::string& ID);
+
+    /* \brief Checks whether an addon can be installed. Broken addons can't be installed.
+    \param addon addon to be checked
+    */
+    bool CanAddonBeInstalled(const AddonPtr& addon);
+
     /* libcpluff */
     std::string GetExtValue(cp_cfg_element_t *base, const char *path);
+
+    /*! \brief Retrieve an element from a given configuration element
+     \param base the base configuration element.
+     \param path the path to the configuration element from the base element.
+     \param element [out] returned element.
+     \return true if the configuration element is present
+     */
+    cp_cfg_element_t *GetExtElement(cp_cfg_element_t *base, const char *path);
 
     /*! \brief Retrieve a vector of repeated elements from a given configuration element
      \param base the base configuration element.
@@ -188,7 +215,6 @@ namespace ADDON
                     std::map<std::string, AddonPtr>& unresolved);
 
     /* libcpluff */
-    const cp_cfg_element_t *GetExtElement(cp_cfg_element_t *base, const char *path);
     cp_context_t *m_cp_context;
     DllLibCPluff *m_cpluff;
     VECADDONS    m_updateableAddons;
@@ -217,7 +243,7 @@ namespace ADDON
     CAddonMgr const& operator=(CAddonMgr const&);
     virtual ~CAddonMgr();
 
-    std::map<std::string, bool> m_disabled;
+    std::set<std::string> m_disabled;
     static std::map<TYPE, IAddonMgrCallback*> m_managers;
     CCriticalSection m_critSection;
     CAddonDatabase m_database;

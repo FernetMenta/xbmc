@@ -31,10 +31,22 @@
 				<onright>101</onright>
 				<onup>10</onup>
 				<ondown>10</ondown>
-				<onback>101</onback> 
+				<onback>101</onback>
 				<rulerlayout height="35" width="40">
 					<control type="label" id="2">
-						<left>10</left>
+						<left>0</left>
+						<top>0</top>
+						<width>34</width>
+						<height>29</height>
+						<font>font12</font>
+						<aligny>center</aligny>
+						<selectedcolor>selected</selectedcolor>
+						<align>center</align>
+						<label>$INFO[ListItem.Label]</label>
+						<visible>!ListItem.Property(DateLabel)</visible>
+					</control>
+					<control type="label" id="2">
+						<left>0</left>
 						<top>0</top>
 						<width>34</width>
 						<height>29</height>
@@ -43,6 +55,7 @@
 						<selectedcolor>selected</selectedcolor>
 						<align>left</align>
 						<label>$INFO[ListItem.Label]</label>
+						<visible>ListItem.Property(DateLabel)</visible>
 					</control>
 				</rulerlayout>
 				<channellayout height="48" width="280">
@@ -268,9 +281,9 @@
 				<control type="textbox">
 					<description>Plot value</description>
 					<left>280</left>
-					<top>55</top>
+					<top>57</top>
 					<width>840</width>
-					<height>65</height>
+					<height>63</height>
 					<font>font12</font>
 					<align>justify</align>
 					<textcolor>grey</textcolor>
@@ -280,7 +293,6 @@
 			</control>
 		</control>
 	</include>
-	
 	<!-- ID: 11 -->
 	<include name="PVRGuideViewNow">
 		<control type="group">
@@ -573,9 +585,9 @@
 						<control type="textbox">
 							<description>Plot Value for TVShow</description>
 							<left>50</left>
-							<top>35</top>
+							<top>37</top>
 							<width>1000</width>
-							<height>60</height>
+							<height>58</height>
 							<font>font12</font>
 							<align>justify</align>
 							<textcolor>grey2</textcolor>
@@ -659,7 +671,6 @@
 			</control>
 		</control>
 	</include>
-	
 	<!-- ID: 12 -->
 	<include name="PVRGuideViewNext">
 		<control type="group">
@@ -952,9 +963,9 @@
 						<control type="textbox">
 							<description>Plot Value for TVShow</description>
 							<left>50</left>
-							<top>35</top>
+							<top>37</top>
 							<width>1000</width>
-							<height>60</height>
+							<height>58</height>
 							<font>font12</font>
 							<align>justify</align>
 							<textcolor>grey2</textcolor>
@@ -1038,7 +1049,6 @@
 			</control>
 		</control>
 	</include>
-	
 	<!-- ID: 13 -->
 	<include name="PVRGuideViewChannel">
 		<control type="group">
@@ -1278,9 +1288,9 @@
 						<control type="textbox">
 							<description>Plot Value for TVShow</description>
 							<left>50</left>
-							<top>40</top>
+							<top>42</top>
 							<width>1000</width>
-							<height>60</height>
+							<height>58</height>
 							<font>font12</font>
 							<align>justify</align>
 							<textcolor>grey2</textcolor>

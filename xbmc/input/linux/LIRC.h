@@ -21,14 +21,18 @@
 #ifndef LIRC_H
 #define LIRC_H
 
-#include "system.h"
 #include <string>
+#include <atomic>
 
-class CRemoteControl
+#include "system.h"
+#include "threads/Thread.h"
+#include "threads/Event.h"
+
+class CRemoteControl :  CThread
 {
 public:
   CRemoteControl();
-  ~CRemoteControl();
+  virtual ~CRemoteControl();
   void Initialize();
   void Disconnect();
   void Reset();
@@ -38,33 +42,37 @@ public:
    \return time in milliseconds the button has been down
    */
   unsigned int GetHoldTime() const;
-  void setDeviceName(const std::string& value);
-  void setUsed(bool value);
+  void SetDeviceName(const std::string& value);
+  void SetEnabled(bool value);
   bool IsInUse() const { return m_used; }
   bool IsInitialized() const { return m_bInitialized; }
   void AddSendCommand(const std::string& command);
+
+protected:
+  virtual void Process();
+
+  bool Connect(struct sockaddr_un addr, bool logMessages);
 
 private:
   int     m_fd;
   int     m_inotify_fd;
   int     m_inotify_wd;
-  int     m_lastInitAttempt;
-  int     m_initRetryPeriod;
   FILE*   m_file;
   unsigned int m_holdTime;
   int32_t m_button;
-  char    m_buf[128];
-  bool    m_bInitialized;
+
+  std::atomic<bool> m_bInitialized;
+  std::atomic<bool> m_inReply;
+  std::atomic<int>  m_nrSending;
+
   bool    m_used;
-  bool    m_bLogConnectFailure;
   uint32_t    m_firstClickTime;
   std::string  m_deviceName;
   bool        CheckDevice();
   std::string  m_sendData;
-  bool        m_inReply;
-  int         m_nrSending;
-};
+  CEvent      m_event;
+  CCriticalSection m_CS;
 
-extern CRemoteControl g_RemoteControl;
+};
 
 #endif

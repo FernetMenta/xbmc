@@ -20,12 +20,12 @@
  */
 
 #include "guilib/GUIDialog.h"
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace EPG
 {
   class CEpgInfoTag;
-  typedef boost::shared_ptr<EPG::CEpgInfoTag> CEpgInfoTagPtr;
+  typedef std::shared_ptr<EPG::CEpgInfoTag> CEpgInfoTagPtr;
 }
 
 namespace PVR
@@ -51,7 +51,7 @@ namespace PVR
 
     bool OnClickButtonOK(CGUIMessage &message);
     bool OnClickButtonRecord(CGUIMessage &message);
-    bool OnClickButtonSwitch(CGUIMessage &message);
+    bool OnClickButtonPlay(CGUIMessage &message);
     bool OnClickButtonFind(CGUIMessage &message);
 
     CFileItemPtr m_progItem;

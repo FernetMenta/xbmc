@@ -278,9 +278,11 @@ CUPnPServer::Build(CFileItemPtr                  item,
             object->m_ObjectID = "0";
             object->m_ParentID = "-1";
             // root has 5 children
-            if (with_count) {
-                ((PLT_MediaContainer*)object)->m_ChildrenCount = 5;
-            }
+            
+            //This is dead code because of the HACK a few lines up setting with_count to false
+            //if (with_count) {
+            //    ((PLT_MediaContainer*)object)->m_ChildrenCount = 5;
+            //}
         } else {
             goto failure;
         }
@@ -675,7 +677,7 @@ CUPnPServer::OnBrowseDirectChildren(PLT_ActionReference&          action,
             // request came from
             string supported = g_advancedSettings.m_pictureExtensions + "|"
                              + g_advancedSettings.m_videoExtensions + "|"
-                             + g_advancedSettings.m_musicExtensions + "|"
+                             + g_advancedSettings.GetMusicExtensions() + "|"
                              + g_advancedSettings.m_discStubExtensions;
             CDirectory::GetDirectory((const char*)parent_id, items, supported);
             DefaultSortItems(items);
@@ -1192,6 +1194,20 @@ CUPnPServer::ServeFile(const NPT_HttpRequest&              request,
       response.GetHeaders().SetHeader("Content-Disposition", disp.c_str());
     }
 
+    // set getCaptionInfo.sec - sets subtitle uri for Samsung devices
+    const NPT_String* captionInfoHeader = request.GetHeaders().GetHeaderValue("getCaptionInfo.sec");
+    if (captionInfoHeader) 
+    {
+      NPT_String *sub_uri, movie;
+      movie = "subtitle://" + md5;
+
+      NPT_AutoLock lock(m_FileMutex);
+      if (NPT_SUCCEEDED(m_FileMap.Get(movie, sub_uri))) 
+      {
+        response.GetHeaders().SetHeader("CaptionInfo.sec", sub_uri->GetChars(), false);
+      }
+    }
+
     return PLT_HttpServer::ServeFile(request,
                                        context,
                                        response,
@@ -1287,6 +1303,19 @@ CUPnPServer::DefaultSortItems(CFileItemList& items)
     items.Sort(sorting.sortBy, sorting.sortOrder, sorting.sortAttributes);
     delete viewState;
   }
+}
+
+NPT_Result
+CUPnPServer::AddSubtitleUriForSecResponse(NPT_String movie_md5, NPT_String subtitle_uri)
+{
+  /* using existing m_FileMap to store subtitle uri for movie,
+     adding subtitle:// prefix, because there is already entry for movie md5 with movie path */
+  NPT_String movie = "subtitle://" + movie_md5;
+
+  NPT_AutoLock lock(m_FileMutex);
+  NPT_CHECK(m_FileMap.Put(movie, subtitle_uri));
+
+  return NPT_SUCCESS;
 }
 
 } /* namespace UPNP */

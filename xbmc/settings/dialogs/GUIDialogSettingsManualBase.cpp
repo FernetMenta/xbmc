@@ -89,7 +89,7 @@ CSettingCategory* CGUIDialogSettingsManualBase::AddCategory(const std::string &i
   return category;
 }
 
-CSettingGroup* CGUIDialogSettingsManualBase::AddGroup(CSettingCategory *category)
+CSettingGroup* CGUIDialogSettingsManualBase::AddGroup(CSettingCategory *category, int label /* = -1 */, int help /* = -1 */, bool separatorBelowLabel /* = true */, bool hideSeparator /* = false */)
 {
   if (category == NULL)
     return NULL;
@@ -99,6 +99,12 @@ CSettingGroup* CGUIDialogSettingsManualBase::AddGroup(CSettingCategory *category
   CSettingGroup *group = new CSettingGroup(StringUtils::Format("%zu", groups + 1), m_settingsManager);
   if (group == NULL)
     return NULL;
+
+  if (label >= 0)
+    group->SetLabel(label);
+  if (help >= 0)
+    group->SetHelp(help);
+  group->SetControl(GetTitleControl(separatorBelowLabel, hideSeparator));
 
   category->AddGroup(group);
   return group;
@@ -239,8 +245,27 @@ CSettingAction* CGUIDialogSettingsManualBase::AddButton(CSettingGroup *group, co
   return setting;
 }
 
+CSettingString* CGUIDialogSettingsManualBase::AddInfoLabelButton(CSettingGroup *group, const std::string &id, int label, int level, std::string info,
+                                                                 bool visible /* = true */, int help /* = -1 */)
+{
+  if (group == NULL || id.empty() || label < 0 ||
+      GetSetting(id) != NULL)
+    return NULL;
+
+  CSettingString *setting = new CSettingString(id, label, info, m_settingsManager);
+  if (setting == NULL)
+    return NULL;
+
+  setting->SetControl(GetButtonControl("infolabel", false));
+  setSettingDetails(setting, level, visible, help);
+
+  group->AddSetting(setting);
+  return setting;
+}
+
 CSettingAddon* CGUIDialogSettingsManualBase::AddAddon(CSettingGroup *group, const std::string &id, int label, int level, std::string value, ADDON::TYPE addonType,
-                                                      bool allowEmpty /* = false */, int heading /* = -1 */, bool hideValue /* = false */, bool delayed /* = false */,
+                                                      bool allowEmpty /* = false */, int heading /* = -1 */, bool hideValue /* = false */, bool showInstalledAddons /* = true */,
+                                                      bool showInstallableAddons /* = false */, bool showMoreAddons /* = true */, bool delayed /* = false */,
                                                       bool visible /* = true */, int help /* = -1 */)
 {
   if (group == NULL || id.empty() || label < 0 ||
@@ -251,7 +276,7 @@ CSettingAddon* CGUIDialogSettingsManualBase::AddAddon(CSettingGroup *group, cons
   if (setting == NULL)
     return NULL;
 
-  setting->SetControl(GetButtonControl("addon", delayed, heading, hideValue));
+  setting->SetControl(GetButtonControl("addon", delayed, heading, hideValue, showInstalledAddons, showInstallableAddons, showMoreAddons));
   setting->SetAddonType(addonType);
   setting->SetAllowEmpty(allowEmpty);
   setSettingDetails(setting, level, visible, help);
@@ -933,6 +958,15 @@ ISettingControl* CGUIDialogSettingsManualBase::GetCheckmarkControl(bool delayed 
   return control;
 }
 
+ISettingControl* CGUIDialogSettingsManualBase::GetTitleControl(bool separatorBelowLabel /* = true */, bool hideSeparator /* = false */)
+{
+  CSettingControlTitle *control = new CSettingControlTitle();
+  control->SetSeparatorBelowLabel(separatorBelowLabel);
+  control->SetSeparatorHidden(hideSeparator);
+
+  return control;
+}
+
 ISettingControl* CGUIDialogSettingsManualBase::GetEditControl(const std::string &format, bool delayed /* = false */, bool hidden /* = false */, bool verifyNewValue /* = false */, int heading /* = -1 */)
 {
   CSettingControlEdit *control = new CSettingControlEdit();
@@ -950,7 +984,8 @@ ISettingControl* CGUIDialogSettingsManualBase::GetEditControl(const std::string 
   return control;
 }
 
-ISettingControl* CGUIDialogSettingsManualBase::GetButtonControl(const std::string &format, bool delayed /* = false */, int heading /* = -1 */, bool hideValue /* = false */)
+ISettingControl* CGUIDialogSettingsManualBase::GetButtonControl(const std::string &format, bool delayed /* = false */, int heading /* = -1 */, bool hideValue /* = false */,
+                                                                bool showInstalledAddons /* = true */, bool showInstallableAddons /* = false */, bool showMoreAddons /* = true */)
 {
   CSettingControlButton *control = new CSettingControlButton();
   if (!control->SetFormat(format))
@@ -962,6 +997,9 @@ ISettingControl* CGUIDialogSettingsManualBase::GetButtonControl(const std::strin
   control->SetDelayed(delayed);
   control->SetHeading(heading);
   control->SetHideValue(hideValue);
+  control->SetShowInstalledAddons(showInstalledAddons);
+  control->SetShowInstallableAddons(showInstallableAddons);
+  control->SetShowMoreAddons(showMoreAddons);
 
   return control;
 }

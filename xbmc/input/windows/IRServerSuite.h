@@ -20,14 +20,17 @@
  */
 
 #include <winsock2.h>
+#include <string>
+
 #include "IrssMessage.h"
 #include "threads/Thread.h"
+#include "threads/Event.h"
 
 class CRemoteControl : CThread
 {
 public:
   CRemoteControl();
-  ~CRemoteControl();
+  virtual ~CRemoteControl();
   void Initialize();
   void Disconnect();
   void Reset();
@@ -38,8 +41,9 @@ public:
 
   //lirc stuff, not implemented
   bool IsInUse() {return false;}
-  void setUsed(bool value);
-  void AddSendCommand(const std::string& command) {}
+  void SetEnabled(bool) { }
+  void SetDeviceName(const std::string&) { }
+  void AddSendCommand(const std::string&) {}
 
 protected:
   virtual void Process();
@@ -49,18 +53,16 @@ private:
   bool  m_bInitialized;
   SOCKET m_socket;
   bool m_isConnecting;
-  int  m_iAttempt;
   std::string m_deviceName;
   std::string m_keyCode;
+  CEvent m_event;
 
   bool SendPacket(CIrssMessage& message);
   bool ReadPacket(CIrssMessage& message);
   int  ReadN(char *buffer, int n);
   bool WriteN(const char *buffer, int n);
-  bool Connect();
+  bool Connect(bool logMessages);
   void Close();
 
   bool HandleRemoteEvent(CIrssMessage& message);
 };
-
-extern CRemoteControl g_RemoteControl;

@@ -35,7 +35,7 @@
 #include "guilib/GUIFontManager.h"
 #include "guilib/GUITextLayout.h"
 #include "guilib/GUIWindowManager.h"
-#include "guilib/Key.h"
+#include "input/Key.h"
 #include "video/dialogs/GUIDialogFullScreenInfo.h"
 #include "dialogs/GUIDialogNumeric.h"
 #include "settings/DisplaySettings.h"
@@ -56,6 +56,7 @@
 #include "windowing/WindowingFactory.h"
 #include "cores/IPlayer.h"
 #include "filesystem/File.h"
+#include "utils/SeekHandler.h"
 
 #include <stdio.h>
 #include <algorithm>
@@ -156,46 +157,24 @@ bool CGUIWindowFullScreen::OnAction(const CAction &action)
     }
     break;
 
+  case ACTION_SMALL_STEP_BACK:
   case ACTION_STEP_BACK:
-    if (m_timeCodePosition > 0)
-      SeekToTimeCodeStamp(SEEK_RELATIVE, SEEK_BACKWARD);
-    else
-      g_application.m_pPlayer->Seek(false, false);
-    return true;
-
-  case ACTION_STEP_FORWARD:
-    if (m_timeCodePosition > 0)
-      SeekToTimeCodeStamp(SEEK_RELATIVE, SEEK_FORWARD);
-    else
-      g_application.m_pPlayer->Seek(true, false);
-    return true;
-
   case ACTION_BIG_STEP_BACK:
   case ACTION_CHAPTER_OR_BIG_STEP_BACK:
     if (m_timeCodePosition > 0)
+    {
       SeekToTimeCodeStamp(SEEK_RELATIVE, SEEK_BACKWARD);
-    else
-      g_application.m_pPlayer->Seek(false, true, action.GetID() == ACTION_CHAPTER_OR_BIG_STEP_BACK);
-    return true;
-
+      return true;
+    }
+    break;
+  case ACTION_STEP_FORWARD:
   case ACTION_BIG_STEP_FORWARD:
   case ACTION_CHAPTER_OR_BIG_STEP_FORWARD:
     if (m_timeCodePosition > 0)
+    {
       SeekToTimeCodeStamp(SEEK_RELATIVE, SEEK_FORWARD);
-    else
-      g_application.m_pPlayer->Seek(true, true, action.GetID() == ACTION_CHAPTER_OR_BIG_STEP_FORWARD);
-    return true;
-
-  case ACTION_NEXT_SCENE:
-    if (g_application.m_pPlayer->SeekScene(true))
-      g_infoManager.SetDisplayAfterSeek();
-    return true;
-    break;
-
-  case ACTION_PREV_SCENE:
-    if (g_application.m_pPlayer->SeekScene(false))
-      g_infoManager.SetDisplayAfterSeek();
-    return true;
+      return true;
+    }
     break;
 
   case ACTION_SHOW_OSD_TIME:
@@ -250,18 +229,6 @@ bool CGUIWindowFullScreen::OnAction(const CAction &action)
     }
     return true;
     break;
-  case ACTION_SMALL_STEP_BACK:
-    if (m_timeCodePosition > 0)
-      SeekToTimeCodeStamp(SEEK_RELATIVE, SEEK_BACKWARD);
-    else
-    {
-      int orgpos = (int)g_application.GetTime();
-      int jumpsize = g_advancedSettings.m_videoSmallStepBackSeconds; // secs
-      int setpos = (orgpos > jumpsize) ? orgpos - jumpsize : 0;
-      g_application.SeekTime((double)setpos);
-    }
-    return true;
-    break;
   case ACTION_SHOW_PLAYLIST:
     {
       CFileItem item(g_application.CurrentFileItem());
@@ -284,7 +251,11 @@ bool CGUIWindowFullScreen::OnAction(const CAction &action)
 void CGUIWindowFullScreen::ClearBackground()
 {
   if (g_renderManager.IsVideoLayer())
+#ifdef HAS_IMXVPU
+    g_graphicsContext.Clear((16 << 16)|(8 << 8)|16);
+#else
     g_graphicsContext.Clear(0);
+#endif
 }
 
 void CGUIWindowFullScreen::OnWindowLoaded()
@@ -356,20 +327,8 @@ bool CGUIWindowFullScreen::OnMessage(CGUIMessage& message)
     }
   case GUI_MSG_WINDOW_DEINIT:
     {
-      CGUIDialog *pDialog = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_OSD_TELETEXT);
-      if (pDialog) pDialog->Close(true);
-      pDialog = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_SLIDER);
-      if (pDialog) pDialog->Close(true);
-      pDialog = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_VIDEO_OSD);
-      if (pDialog) pDialog->Close(true);
-      pDialog = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_FULLSCREEN_INFO);
-      if (pDialog) pDialog->Close(true);
-      pDialog = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_PVR_OSD_CHANNELS);
-      if (pDialog) pDialog->Close(true);
-      pDialog = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_PVR_OSD_GUIDE);
-      if (pDialog) pDialog->Close(true);
-      pDialog = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_SUBTITLES);
-      if (pDialog) pDialog->Close(true);
+      // close all active modal dialogs
+      g_windowManager.CloseInternalModalDialogs(true);
 
       CGUIWindow::OnMessage(message);
 
