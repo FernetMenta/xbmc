@@ -104,6 +104,7 @@
 			<control type="group" id="1">
 				<left>330</left>
 				<top>185r</top>
+				<animation effect="slide" start="0,0" end="0,-40" time="200" condition="PVR.IsTimeshift">conditional</animation>
 				<control type="label" id="1">
 					<description>Heading label</description>
 					<left>0</left>
@@ -323,6 +324,21 @@
 					<scroll>true</scroll>
 					<visible>!Window.IsVisible(VideoOSD) + VideoPlayer.Content(LiveTV)</visible>
 					<animation effect="fade" time="150">VisibleChange</animation>
+					<animation effect="slide" start="0,0" end="0,40" time="200" condition="PVR.IsTimeshift">conditional</animation>
+				</control>
+				<control type="label" id="1">
+					<left>0</left>
+					<top>120</top>
+					<width>910</width>
+					<height>25</height>
+					<label>$INFO[PVR.TimeshiftCur]</label>
+					<align>center</align>
+					<aligny>center</aligny>
+					<font>font12</font>
+					<textcolor>grey</textcolor>
+					<scroll>true</scroll>
+					<visible>VideoPlayer.Content(LiveTV) + PVR.IsTimeshift</visible>
+					<animation effect="fade" time="150">VisibleChange</animation>
 				</control>
 			</control>
 			<control type="group" id="1">
@@ -351,6 +367,19 @@
 					<aligny>center</aligny>
 					<label>$INFO[Player.StartTime(hh:mm)]</label>
 				</control>
+				<control type="label" id="1">
+					<visible>VideoPlayer.Content(LiveTV)</visible>
+					<left>0</left>
+					<top>-40</top>
+					<width>100</width>
+					<height>40</height>
+					<font>font13</font>
+					<align>left</align>
+					<aligny>center</aligny>
+					<label>$INFO[PVR.TimeshiftStart(hh:mm)]</label>
+					<include>VisibleFadeEffect</include>
+					<visible>PVR.IsTimeshift</visible>
+				</control>
 				<control type="progress" id="1">
 					<description>ProgressbarCache</description>
 					<left>100</left>
@@ -368,6 +397,16 @@
 					<width>720</width>
 					<height>16</height>
 					<info>Player.Progress</info>
+				</control>
+				<control type="progress" id="1">
+					<description>Progressbar</description>
+					<left>100</left>
+					<top>-25</top>
+					<width>720</width>
+					<height>16</height>
+					<info>PVR.TimeshiftProgress</info>
+					<include>VisibleFadeEffect</include>
+					<visible>PVR.IsTimeshift</visible>
 				</control>
 				<control type="label" id="1">
 					<visible>!VideoPlayer.Content(LiveTV)</visible>
@@ -390,6 +429,19 @@
 					<align>right</align>
 					<aligny>center</aligny>
 					<label>$INFO[Player.FinishTime(hh:mm)]</label>
+				</control>
+				<control type="label" id="1">
+					<visible>VideoPlayer.Content(LiveTV)</visible>
+					<left>820</left>
+					<top>-40</top>
+					<width>100</width>
+					<height>40</height>
+					<font>font13</font>
+					<align>right</align>
+					<aligny>center</aligny>
+					<label>$INFO[PVR.TimeshiftEnd(hh:mm)]</label>
+					<include>VisibleFadeEffect</include>
+					<visible>PVR.IsTimeshift</visible>
 				</control>
 			</control>
 		</control>
