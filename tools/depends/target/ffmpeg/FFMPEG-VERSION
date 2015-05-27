@@ -1,5 +1,6 @@
 LIBNAME=ffmpeg
-BASE_URL=https://github.com/xbmc/FFmpeg/archive
-VERSION=2.7.2-Jarvis-alpha1
+BASE_URL=https://github.com/FernetMenta/FFmpeg/archive
+BRANCH=release/2.7-kodi
+VERSION=release-2.7-kodi
 ARCHIVE=$(LIBNAME)-$(VERSION).tar.gz
 
