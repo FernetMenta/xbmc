@@ -25,6 +25,7 @@ FFMPEG_PREFIX=${MYDIR}/ffmpeg-install
 
 BASE_URL=$(grep "BASE_URL=" FFMPEG-VERSION | sed 's/BASE_URL=//g')
 VERSION=$(grep "VERSION=" FFMPEG-VERSION | sed 's/VERSION=//g')
+BRANCH=$(grep "BRANCH=" FFMPEG-VERSION | sed 's/BRANCH=//g')
 ARCHIVE=ffmpeg-${VERSION}.tar.gz
 
 function usage {
@@ -110,7 +111,7 @@ then
   [ "$VERSION" == "$CURVER" ] && exit 0
 fi
 
-[ -f ${ARCHIVE} ] || curl -Ls --create-dirs -f -o ${ARCHIVE} ${BASE_URL}/${VERSION}.tar.gz
+[ -f ${ARCHIVE} ] || curl -Ls --create-dirs -f -o ${ARCHIVE} ${BASE_URL}/${BRANCH}.tar.gz
 [ $downloadonly ] && exit 0
 
 [ -d ffmpeg-${VERSION} ] && rm -rf ffmpeg-${VERSION} && rm .ffmpeg-installed >/dev/null 2>&1
