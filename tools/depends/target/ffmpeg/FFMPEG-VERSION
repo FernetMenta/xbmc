@@ -1,5 +1,6 @@
 LIBNAME=ffmpeg
-BASE_URL=https://github.com/xbmc/FFmpeg/archive
-VERSION=2.8.4-Jarvis-rc1-mp3
+BASE_URL=https://github.com/FernetMenta/FFmpeg/archive
+BRANCH=master-kodi
+VERSION=master-kodi
 ARCHIVE=$(LIBNAME)-$(VERSION).tar.gz
 
