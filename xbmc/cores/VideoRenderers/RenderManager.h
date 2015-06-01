@@ -53,7 +53,7 @@ public:
   CXBMCRenderManager();
   ~CXBMCRenderManager();
 
-  // Functions called from the GUI
+  // Functions called from render thread
   void GetVideoRect(CRect &source, CRect &dest, CRect &view);
   float GetAspectRatio();
   void Update();
@@ -64,14 +64,32 @@ public:
   void Render(bool clear, DWORD flags = 0, DWORD alpha = 255, bool gui = true);
   bool IsGuiLayer();
   bool IsVideoLayer();
-  void SetupScreenshot();
+  RESOLUTION GetResolution();
+  void UpdateResolution();
+  void SetViewMode(int iViewMode);
+  void Recover(); // called after resolution switch if something special is needed
+  void PreInit();
+  void UnInit();
+  bool Flush();
+  bool IsConfigured() const;
 
+  void SetupScreenshot();
   CRenderCapture* AllocRenderCapture();
   void ReleaseRenderCapture(CRenderCapture* capture);
   void Capture(CRenderCapture *capture, unsigned int width, unsigned int height, int flags);
   void ManageCaptures();
 
-  void SetViewMode(int iViewMode);
+  // Functions called from GUI
+  bool Supports(ERENDERFEATURE feature);
+  bool Supports(EDEINTERLACEMODE method);
+  bool Supports(EINTERLACEMETHOD method);
+  bool Supports(ESCALINGMETHOD method);
+  EINTERLACEMETHOD AutoInterlaceMethod(EINTERLACEMETHOD mInt);
+
+  static float GetMaximumFPS();
+  double GetDisplayLatency() { return m_displayLatency; }
+  int GetSkippedFrames()  { return m_QueueSkip; }
+  std::string GetVSyncState();
 
   // Functions called from mplayer
   /**
@@ -88,7 +106,6 @@ public:
    * @param numbers of kept buffer references
    */
   bool Configure(unsigned int width, unsigned int height, unsigned int d_width, unsigned int d_height, float fps, unsigned flags, ERenderFormat format, unsigned extended_format,  unsigned int orientation, int buffers = 0);
-  bool IsConfigured() const;
 
   int AddVideoPicture(DVDVideoPicture& picture);
 
@@ -107,9 +124,6 @@ public:
    * @param sync signals frame, top, or bottom field
    */
   void FlipPage(volatile bool& bStop, double timestamp = 0.0, double pts = 0.0, int source = -1, EFIELDSYNC sync = FS_NONE);
-  unsigned int PreInit();
-  void UnInit();
-  bool Flush();
 
   void AddOverlay(CDVDOverlay* o, double pts)
   {
@@ -127,40 +141,8 @@ public:
     m_overlays.AddCleanup(o);
   }
 
-  void Reset();
-
-  RESOLUTION GetResolution();
-
-  static float GetMaximumFPS();
-  inline bool IsStarted() { return m_bIsStarted;}
-  double GetDisplayLatency() { return m_displayLatency; }
-  int    GetSkippedFrames()  { return m_QueueSkip; }
-
-  bool Supports(ERENDERFEATURE feature);
-  bool Supports(EDEINTERLACEMODE method);
-  bool Supports(EINTERLACEMETHOD method);
-  bool Supports(ESCALINGMETHOD method);
-
-  EINTERLACEMETHOD AutoInterlaceMethod(EINTERLACEMETHOD mInt);
-
-  static double GetPresentTime();
-  void  WaitPresentTime(double presenttime);
-
-  std::string GetVSyncState();
-
-  void UpdateResolution();
-
-  CBaseRenderer *m_pRenderer;
-
   // Get renderer info, can be called before configure
   CRenderInfo GetRenderInfo();
-
-  void Recover(); // called after resolution switch if something special is needed
-
-  CSharedSection& GetSection() { return m_sharedSection; };
-
-  void RegisterRenderUpdateCallBack(const void *ctx, RenderUpdateCallBackFn fn);
-  void RegisterRenderFeaturesCallBack(const void *ctx, RenderFeaturesCallBackFn fn);
 
   /**
    * If player uses buffering it has to wait for a buffer before it calls
@@ -183,6 +165,10 @@ public:
    */
   void DiscardBuffer();
 
+  // TODO: trash those
+  void RegisterRenderUpdateCallBack(const void *ctx, RenderUpdateCallBackFn fn);
+  void RegisterRenderFeaturesCallBack(const void *ctx, RenderFeaturesCallBackFn fn);
+
 protected:
 
   void PresentSingle(bool clear, DWORD flags, DWORD alpha);
@@ -190,17 +176,22 @@ protected:
   void PresentBlend(bool clear, DWORD flags, DWORD alpha);
 
   void PrepareNextRender();
+  static double GetPresentTime();
+  void  WaitPresentTime(double presenttime);
 
   EINTERLACEMETHOD AutoInterlaceMethodInternal(EINTERLACEMETHOD mInt);
+  bool Configure();
+  void CreateRenderer();
+  void DeleteRenderer();
 
+  CBaseRenderer *m_pRenderer;
+  OVERLAY::CRenderer m_overlays;
   CSharedSection m_sharedSection;
-
-  bool m_bIsStarted;
   bool m_bReconfigured;
   bool m_bRenderGUI;
   int m_waitForBufferCount;
-
   int m_rendermethod;
+  bool m_renderedOverlay;
 
   enum EPRESENTSTEP
   {
@@ -218,6 +209,15 @@ protected:
     PRESENT_METHOD_WEAVE,
     PRESENT_METHOD_BOB,
   };
+
+  enum ERENDERSTATE
+  {
+    STATE_UNCONFIGURED = 0,
+    STATE_CONFIGURING,
+    STATE_CONFIGURED,
+  };
+  ERENDERSTATE m_renderState;
+  CEvent m_stateEvent;
 
   double m_displayLatency;
   void UpdateDisplayLatency();
@@ -238,6 +238,12 @@ protected:
   std::deque<int> m_discard;
 
   ERenderFormat m_format;
+  unsigned int m_width, m_height, m_dwidth, m_dheight;
+  unsigned int m_flags;
+  float m_fps;
+  unsigned int m_extended_format;
+  unsigned int m_orientation;
+  int m_NumberBuffers;
 
   double m_sleeptime;
   double m_presentpts;
@@ -251,9 +257,6 @@ protected:
   CCriticalSection m_presentlock;
   CEvent m_flushEvent;
   double m_clock_framefinish;
-
-  OVERLAY::CRenderer m_overlays;
-  bool m_renderedOverlay;
 
   void RenderCapture(CRenderCapture* capture);
   void RemoveCapture(CRenderCapture* capture);

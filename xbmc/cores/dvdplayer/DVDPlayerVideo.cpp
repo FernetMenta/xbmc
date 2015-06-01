@@ -1001,8 +1001,7 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
                        (render_framerate != config_framerate);
 
   /* check so that our format or aspect has changed. if it has, reconfigure renderer */
-  if (!g_renderManager.IsConfigured()
-   || ( m_output.width           != pPicture->iWidth )
+  if (( m_output.width           != pPicture->iWidth )
    || ( m_output.height          != pPicture->iHeight )
    || ( m_output.dwidth          != pPicture->iDisplayWidth )
    || ( m_output.dheight         != pPicture->iDisplayHeight )
@@ -1074,11 +1073,6 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   }
 
   int    result  = 0;
-
-  if (!g_renderManager.IsStarted()) {
-    CLog::Log(LOGERROR, "%s - renderer not started", __FUNCTION__);
-    return EOS_ABORT;
-  }
 
   //correct any pattern in the timestamps
   if (m_output.color_format != RENDER_FMT_BYPASS)
