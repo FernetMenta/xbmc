@@ -2922,7 +2922,7 @@ void COutput::Process()
 
 bool COutput::Init()
 {
-  if (!CreateGlxContext())
+  if (!CreateEGLContext())
     return false;
 
   if (!GLInit())
@@ -2944,7 +2944,7 @@ bool COutput::Uninit()
   }
   GLUnmapSurfaces();
   ReleaseBufferPool();
-  DestroyGlxContext();
+  DestroyEGLContext();
   return true;
 }
 
@@ -3413,7 +3413,7 @@ bool COutput::GLInit()
 #endif
 
 #ifdef GL_ARB_sync
-  bool hasfence = glewIsSupported("GL_ARB_sync");
+  bool hasfence = g_Windowing.IsExtSupported("GL_ARB_sync");
   for (unsigned int i = 0; i < m_bufferPool.allRenderPics.size(); i++)
   {
     m_bufferPool.allRenderPics[i]->usefence = hasfence;
@@ -3564,79 +3564,58 @@ bool COutput::CheckStatus(VdpStatus vdp_st, int line)
   return false;
 }
 
-bool COutput::CreateGlxContext()
+bool COutput::CreateEGLContext()
 {
-  GLXContext   glContext;
-
   m_Display = g_Windowing.GetDisplay();
-  glContext = g_Windowing.GetGlxContext();
-  m_Window = g_Windowing.GetWindow();
+  EGLDisplay eglDisplay = g_Windowing.GetEGLDisplay();
+  EGLContext eglMainContext = g_Windowing.GetEGLContext();
+  EGLConfig eglMainConfig = g_Windowing.GetEGLConfig();
 
-  // Get our window attribs.
-  XWindowAttributes wndattribs;
-  XGetWindowAttributes(m_Display, m_Window, &wndattribs);
-
-  // Get visual Info
-  XVisualInfo visInfo;
-  visInfo.visualid = wndattribs.visual->visualid;
-  int nvisuals = 0;
-  XVisualInfo* visuals = XGetVisualInfo(m_Display, VisualIDMask, &visInfo, &nvisuals);
-  if (nvisuals != 1)
+  EGLint pbufferAttribs[] =
   {
-    CLog::Log(LOGERROR, "VDPAU::COutput::CreateGlxContext - could not find visual");
+    EGL_WIDTH, 8,
+    EGL_HEIGHT, 8,
+    EGL_TEXTURE_TARGET, EGL_NO_TEXTURE,
+    EGL_TEXTURE_FORMAT, EGL_NO_TEXTURE,
+    EGL_NONE
+  };
+  EGLint contextAttributes[] =
+  {
+    EGL_CONTEXT_CLIENT_VERSION, 2,
+    EGL_NONE
+  };
+  if (!eglBindAPI(EGL_OPENGL_API))
+  {
+    CLog::Log(LOGERROR, "VAAPI::COutput::CreateEGLContext -failed to bind egl API");
     return false;
   }
-  visInfo = visuals[0];
-  XFree(visuals);
+  m_eglSurface = eglCreatePbufferSurface(eglDisplay, eglMainConfig, pbufferAttribs);
+  m_eglContext = eglCreateContext(eglDisplay, eglMainConfig, eglMainContext, contextAttributes);
+  m_eglDisplay = eglDisplay;
 
-  m_pixmap = XCreatePixmap(m_Display,
-                           m_Window,
-                           192,
-                           108,
-                           visInfo.depth);
-  if (!m_pixmap)
+  if (!eglMakeCurrent(eglDisplay, m_eglSurface, m_eglSurface, m_eglContext))
   {
-    CLog::Log(LOGERROR, "VDPAU::COutput::CreateGlxContext - Unable to create XPixmap");
+    CLog::Log(LOGERROR, "VAAPI::COutput::CreateEGLContext - Could not make surface current");
     return false;
   }
-
-  // create gl pixmap
-  m_glPixmap = glXCreateGLXPixmap(m_Display, &visInfo, m_pixmap);
-
-  if (!m_glPixmap)
-  {
-    CLog::Log(LOGINFO, "VDPAU::COutput::CreateGlxContext - Could not create glPixmap");
-    return false;
-  }
-
-  m_glContext = glXCreateContext(m_Display, &visInfo, glContext, True);
-
-  if (!glXMakeCurrent(m_Display, m_glPixmap, m_glContext))
-  {
-    CLog::Log(LOGINFO, "VDPAU::COutput::CreateGlxContext - Could not make Pixmap current");
-    return false;
-  }
-
-  CLog::Log(LOGNOTICE, "VDPAU::COutput::CreateGlxContext - created context");
+  if (g_advancedSettings.CanLogComponent(LOGVIDEO))
+    CLog::Log(LOGDEBUG, "VAAPI::COutput::CreateEGLContext - created context");
   return true;
 }
 
-bool COutput::DestroyGlxContext()
+bool COutput::DestroyEGLContext()
 {
-  if (m_glContext)
+  if (m_eglContext)
   {
-    glXMakeCurrent(m_Display, None, NULL);
-    glXDestroyContext(m_Display, m_glContext);
+    glFinish();
+    eglMakeCurrent(m_eglContext, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroyContext(m_eglDisplay, m_eglContext);
   }
-  m_glContext = 0;
+  m_eglContext = EGL_NO_CONTEXT;
 
-  if (m_glPixmap)
-    glXDestroyPixmap(m_Display, m_glPixmap);
-  m_glPixmap = 0;
-
-  if (m_pixmap)
-    XFreePixmap(m_Display, m_pixmap);
-  m_pixmap = 0;
+  if (m_eglSurface)
+    eglDestroySurface(m_eglDisplay, m_eglSurface);
+  m_eglSurface = EGL_NO_SURFACE;
 
   return true;
 }

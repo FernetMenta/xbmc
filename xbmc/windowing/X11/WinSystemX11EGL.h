@@ -20,17 +20,22 @@
 
 #pragma once
 
-#if defined(HAS_GLES) && defined(HAVE_X11)
+#if defined(HAVE_X11)
 
 #include "WinSystemX11.h"
-#include "rendering/gles/RenderSystemGLES.h"
 #include "utils/GlobalsHandling.h"
 
-class CWinSystemX11GLES : public CWinSystemX11, public CRenderSystemGLES
+#if defined (HAS_GLES)
+#include "rendering/gles/RenderSystemGLES.h"
+class CWinSystemX11EGL : public CWinSystemX11, public CRenderSystemGLES
+#elif defined (HAS_GL)
+#include "rendering/gl/RenderSystemGL.h"
+class CWinSystemX11EGL : public CWinSystemX11, public CRenderSystemGL
+#endif
 {
 public:
-  CWinSystemX11GLES();
-  virtual ~CWinSystemX11GLES();
+  CWinSystemX11EGL();
+  virtual ~CWinSystemX11EGL();
   virtual bool CreateNewWindow(const std::string& name, bool fullScreen, RESOLUTION_INFO& res, PHANDLE_EVENT_FUNC userFunction);
   virtual bool ResizeWindow(int newWidth, int newHeight, int newLeft, int newTop);
   virtual bool SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays);
@@ -44,7 +49,7 @@ protected:
   std::string m_eglext;
 };
 
-XBMC_GLOBAL_REF(CWinSystemX11GLES,g_Windowing);
-#define g_Windowing XBMC_GLOBAL_USE(CWinSystemX11GLES)
+XBMC_GLOBAL_REF(CWinSystemX11EGL,g_Windowing);
+#define g_Windowing XBMC_GLOBAL_USE(CWinSystemX11EGL)
 
-#endif // HAS_GLES && HAVE_X11
+#endif //HAVE_X11

@@ -19,26 +19,26 @@
  */
 #include "system.h"
 
-#if defined(HAS_EGL) && defined(HAVE_X11)
+#if defined(HAVE_X11)
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include "WinSystemX11GLES.h"
+#include "WinSystemX11EGL.h"
 #include "utils/log.h"
 #include "utils/StringUtils.h"
 #include "Application.h"
 #include "windowing/egl/EGLWrapper.h"
 
-CWinSystemX11GLES::CWinSystemX11GLES()
+CWinSystemX11EGL::CWinSystemX11EGL()
 {
 }
 
-CWinSystemX11GLES::~CWinSystemX11GLES()
+CWinSystemX11EGL::~CWinSystemX11EGL()
 {
 }
 
-bool CWinSystemX11GLES::PresentRenderImpl(const CDirtyRegionList& dirty)
+bool CWinSystemX11EGL::PresentRenderImpl(const CDirtyRegionList& dirty)
 {
   if ((m_eglDisplay == EGL_NO_DISPLAY) || (m_eglSurface == EGL_NO_SURFACE))
     return false;
@@ -48,15 +48,15 @@ bool CWinSystemX11GLES::PresentRenderImpl(const CDirtyRegionList& dirty)
   return true;
 }
 
-void CWinSystemX11GLES::SetVSyncImpl(bool enable)
+void CWinSystemX11EGL::SetVSyncImpl(bool enable)
 {
   eglSwapInterval(m_eglDisplay, enable ? 1 : 0);
 }
 
-bool CWinSystemX11GLES::IsExtSupported(const char* extension)
+bool CWinSystemX11EGL::IsExtSupported(const char* extension)
 {
   if(strncmp(extension, "EGL_", 4) != 0)
-    return CRenderSystemGLES::IsExtSupported(extension);
+    return CRenderSystemGL::IsExtSupported(extension);
 
   std::string name;
 
@@ -67,7 +67,7 @@ bool CWinSystemX11GLES::IsExtSupported(const char* extension)
   return m_eglext.find(name) != std::string::npos;
 }
 
-bool CWinSystemX11GLES::CreateNewWindow(const std::string& name, bool fullScreen, RESOLUTION_INFO& res, PHANDLE_EVENT_FUNC userFunction)
+bool CWinSystemX11EGL::CreateNewWindow(const std::string& name, bool fullScreen, RESOLUTION_INFO& res, PHANDLE_EVENT_FUNC userFunction)
 {
   if(!CWinSystemX11::CreateNewWindow(name, fullScreen, res, userFunction))
     return false;
@@ -80,11 +80,11 @@ bool CWinSystemX11GLES::CreateNewWindow(const std::string& name, bool fullScreen
   return true;
 }
 
-bool CWinSystemX11GLES::ResizeWindow(int newWidth, int newHeight, int newLeft, int newTop)
+bool CWinSystemX11EGL::ResizeWindow(int newWidth, int newHeight, int newLeft, int newTop)
 {
   m_newGlContext = false;
   CWinSystemX11::ResizeWindow(newWidth, newHeight, newLeft, newTop);
-  CRenderSystemGLES::ResetRenderSystem(newWidth, newHeight, false, 0);
+  CRenderSystemGL::ResetRenderSystem(newWidth, newHeight, false, 0);
 
   if (m_newGlContext)
     g_application.ReloadSkin();
@@ -92,11 +92,11 @@ bool CWinSystemX11GLES::ResizeWindow(int newWidth, int newHeight, int newLeft, i
   return true;
 }
 
-bool CWinSystemX11GLES::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
+bool CWinSystemX11EGL::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
   m_newGlContext = false;
   CWinSystemX11::SetFullScreen(fullScreen, res, blankOtherDisplays);
-  CRenderSystemGLES::ResetRenderSystem(res.iWidth, res.iHeight, fullScreen, res.fRefreshRate);
+  CRenderSystemGL::ResetRenderSystem(res.iWidth, res.iHeight, fullScreen, res.fRefreshRate);
 
   if (m_newGlContext)
     g_application.ReloadSkin();

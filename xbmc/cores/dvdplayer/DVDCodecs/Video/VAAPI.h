@@ -20,8 +20,8 @@
 #pragma once
 
 #include "system_gl.h"
-#define GLX_GLXEXT_PROTOTYPES
-#include <GL/glx.h>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 
 #include "DVDVideoCodec.h"
 #include "DVDVideoCodecFFmpeg.h"
@@ -118,7 +118,6 @@ struct CVaapiConfig
   int upscale;
   CVideoSurfaces *videoSurfaces;
   uint32_t maxReferences;
-  bool useInteropYuv;
   CVAAPIContext *context;
   VADisplay dpy;
   VAProfile profile;
@@ -155,17 +154,21 @@ struct CVaapiProcessedPicture
   bool crop;
 };
 
-struct VaapiGlx
+/**
+ *
+ */
+struct CVaapiGLSurface
 {
-  Display *x11dsp;
-  VADisplay vadsp;
-  Pixmap pixmap;
-  GLXPixmap glPixmap;
-  GLenum textureTarget;
-  PFNGLXBINDTEXIMAGEEXTPROC glXBindTexImageEXT;
-  PFNGLXRELEASETEXIMAGEEXTPROC glXReleaseTexImageEXT;
   CVaapiProcessedPicture procPic;
-  bool bound;
+  VADisplay vadsp;
+  VAImage vaImage;
+  VABufferInfo vBufInfo;
+  EGLImageKHR eglImage;
+  GLenum textureTarget;
+  EGLDisplay eglDisplay;
+  PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR;
+  PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
+  bool mapped;
 };
 
 /**
@@ -183,11 +186,11 @@ public:
     : texWidth(0), texHeight(0), texture(None), valid(false), vaapi(NULL), avFrame(NULL),
       usefence(false), refCount(0), renderPicSection(section) { fence = None; }
   void Sync();
-  bool CopyGlx();
   DVDVideoPicture DVDPic;
   int texWidth, texHeight;
   CRect crop;
   GLuint texture;
+  GLuint textureY, textureVU;
   bool valid;
   CDecoder *vaapi;
   AVFrame *avFrame;
@@ -195,10 +198,12 @@ public:
   long Release();
 private:
   void ReturnUnused();
+  bool GLMapSurface();
+  void GLUnMapSurface();
   bool usefence;
   GLsync fence;
   int refCount;
-  VaapiGlx glx;
+  CVaapiGLSurface glInterop;
   CCriticalSection &renderPicSection;
 };
 
@@ -301,14 +306,14 @@ protected:
   bool Init();
   bool Uninit();
   void Flush();
-  bool CreateGlxContext();
-  bool DestroyGlxContext();
+  bool CreateEGLContext();
+  bool DestroyEGLContext();
   bool EnsureBufferPool();
   void ReleaseBufferPool(bool precleanup = false);
   bool GLInit();
   bool CheckSuccess(VAStatus status);
-  PFNGLXBINDTEXIMAGEEXTPROC glXBindTexImageEXT;
-  PFNGLXRELEASETEXIMAGEEXTPROC glXReleaseTexImageEXT;
+  PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR;
+  PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
   CEvent m_outMsgEvent;
   CEvent *m_inMsgEvent;
   int m_state;
@@ -319,12 +324,10 @@ protected:
   bool m_vaError;
   CVaapiConfig m_config;
   VaapiBufferPool m_bufferPool;
+  EGLDisplay m_eglDisplay;
+  EGLSurface m_eglSurface;
+  EGLContext m_eglContext;
   Display *m_Display;
-  Window m_Window;
-  GLXContext m_glContext;
-  GLXWindow m_glWindow;
-  Pixmap    m_pixmap;
-  GLXPixmap m_glPixmap;
   CVaapiDecodedPicture m_currentPicture;
   GLenum m_textureTarget;
   CPostproc *m_pp;
