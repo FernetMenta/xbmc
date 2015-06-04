@@ -1,8 +1,3 @@
-#ifndef WINDOW_SYSTEM_X11_H
-#define WINDOW_SYSTEM_X11_H
-
-#pragma once
-
 /*
  *      Copyright (C) 2005-2013 Team XBMC
  *      http://xbmc.org
@@ -23,16 +18,13 @@
  *
  */
 
+#pragma once
+
 #include "system_gl.h"
 
-#if defined(HAS_GLX)
 #include <GL/glx.h>
-#endif
 
-#if defined(HAS_EGL)
 #include <EGL/egl.h>
-#endif
-
 #include "windowing/WinSystem.h"
 #include "utils/Stopwatch.h"
 #include "threads/CriticalSection.h"
@@ -76,13 +68,14 @@ public:
   Display*  GetDisplay() { return m_dpy; }
 #if defined(HAS_GLX)
   GLXWindow GetWindow() { return m_glWindow; }
-  GLXContext GetGlxContext() { return m_glContext; }
+  GLXContext GetGlxContext() { return None; }
 #endif
-#if defined(HAS_EGL)
+
   EGLDisplay GetEGLDisplay() const { return m_eglDisplay;}
   EGLSurface GetEGLSurface() const { return m_eglSurface;}
   EGLContext GetEGLContext() const { return m_eglContext;}
-#endif
+  EGLConfig GetEGLConfig() const { return m_eglConfig;}
+
   void NotifyXRREvent();
   void GetConnectedOutputs(std::vector<std::string> *outputs);
   bool IsCurrentOutput(std::string output);
@@ -90,20 +83,15 @@ public:
   int GetCrtc() { return m_crtc; }
 
 protected:
-  bool RefreshGlxContext(bool force);
+  bool RefreshEGLContext(bool force);
   void OnLostDevice();
   bool SetWindow(int width, int height, bool fullscreen, const std::string &output);
 
   Window       m_glWindow, m_mainWindow;
-#if defined(HAS_GLX)
-  GLXContext   m_glContext;
-#endif
-#if defined(HAS_EGL)
-  EGLDisplay            m_eglDisplay;
-  EGLSurface            m_eglSurface;
-  EGLContext            m_eglContext;
-  EGLConfig             m_eglConfig;
-#endif
+  EGLDisplay   m_eglDisplay;
+  EGLSurface   m_eglSurface;
+  EGLContext   m_eglContext;
+  EGLConfig    m_eglConfig;
   Display*     m_dpy;
   Cursor       m_invisibleCursor;
   Pixmap       m_icon;
@@ -130,6 +118,3 @@ private:
 
   CStopWatch m_screensaverReset;
 };
-
-#endif // WINDOW_SYSTEM_H
-

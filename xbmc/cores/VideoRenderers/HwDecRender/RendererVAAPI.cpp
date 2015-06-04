@@ -225,9 +225,6 @@ bool CRendererVAAPI::UploadTexture(int index)
     return false;
   }
 
-  if (!vaapi->CopyGlx())
-    return false;
-
   plane.id = vaapi->texture;
 
   // in stereoscopic mode sourceRect may only

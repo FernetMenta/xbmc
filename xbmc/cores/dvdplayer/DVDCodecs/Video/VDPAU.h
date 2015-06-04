@@ -39,13 +39,12 @@
 #pragma once
 
 #include "system_gl.h"
+#include <EGL/egl.h>
 
 #include "DVDVideoCodec.h"
 #include "DVDVideoCodecFFmpeg.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#define GLX_GLXEXT_PROTOTYPES
-#include <GL/glx.h>
 
 #include "DVDVideoCodec.h"
 #include "DVDVideoCodecFFmpeg.h"
@@ -436,8 +435,8 @@ protected:
   bool Init();
   bool Uninit();
   void Flush();
-  bool CreateGlxContext();
-  bool DestroyGlxContext();
+  bool CreateEGLContext();
+  bool DestroyEGLContext();
   bool EnsureBufferPool();
   void ReleaseBufferPool();
   void PreCleanup();
@@ -459,10 +458,10 @@ protected:
   CMixer m_mixer;
   Display *m_Display;
   Window m_Window;
-  GLXContext m_glContext;
-  GLXWindow m_glWindow;
   Pixmap    m_pixmap;
-  GLXPixmap m_glPixmap;
+  EGLDisplay m_eglDisplay;
+  EGLSurface m_eglSurface;
+  EGLContext m_eglContext;
 
   // gl functions
 #ifdef GL_NV_vdpau_interop
