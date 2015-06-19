@@ -266,8 +266,8 @@ bool CGLContextEGL::IsSuitableVisual(XVisualInfo *vInfo)
     return false;
   if (!eglGetConfigAttrib(m_eglDisplay, config, EGL_BLUE_SIZE, &value) || value < 8)
     return false;
-//  if (!eglGetConfigAttrib(m_eglDisplay, config, EGL_ALPHA_SIZE, &value) || value < 8)
-//    return false;
+  if (!eglGetConfigAttrib(m_eglDisplay, config, EGL_ALPHA_SIZE, &value) || value < 8)
+    return false;
   if (!eglGetConfigAttrib(m_eglDisplay, config, EGL_DEPTH_SIZE, &value) || value < 24)
     return false;
 
@@ -279,6 +279,10 @@ EGLConfig CGLContextEGL::getEGLConfig(EGLDisplay eglDisplay, XVisualInfo *vInfo)
   EGLint attributes[] =
   {
     EGL_DEPTH_SIZE, 24,
+    EGL_ALPHA_SIZE, 8,
+    EGL_RED_SIZE, 8,
+    EGL_BLUE_SIZE, 8,
+    EGL_GREEN_SIZE, 8,
     EGL_NONE
   };
   EGLint numConfigs;
