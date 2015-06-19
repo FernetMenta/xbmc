@@ -30,6 +30,11 @@ CGLContextEGL::CGLContextEGL(Display *dpy) : CGLContext(dpy)
   m_extPrefix = "EGL_";
 }
 
+CGLContextEGL::~CGLContextEGL()
+{
+  Destroy();
+}
+
 bool CGLContextEGL::Refresh(bool force, int screen, Window glWindow, bool &newContext)
 {
   // refresh context
@@ -142,7 +147,7 @@ bool CGLContextEGL::Refresh(bool force, int screen, Window glWindow, bool &newCo
     m_eglDisplay = eglGetDisplay((EGLNativeDisplayType)m_dpy);
     if (m_eglDisplay == EGL_NO_DISPLAY)
     {
-      CLog::Log(LOGERROR, "failed to get egl display\n");
+      CLog::Log(LOGERROR, "failed to get egl display");
       return false;
     }
     if (!eglInitialize(m_eglDisplay, NULL, NULL))
@@ -154,7 +159,8 @@ bool CGLContextEGL::Refresh(bool force, int screen, Window glWindow, bool &newCo
 #if defined (HAS_GL)
     if (!eglBindAPI(EGL_OPENGL_API))
     {
-      CLog::Log(LOGERROR, "failed to initialize egl\n");
+      CLog::Log(LOGERROR, "failed to initialize egl");
+      XFree(vInfo);
       return false;
     }
 #endif
@@ -163,7 +169,8 @@ bool CGLContextEGL::Refresh(bool force, int screen, Window glWindow, bool &newCo
 
     if (m_eglConfig == EGL_NO_CONFIG)
     {
-      CLog::Log(LOGERROR, "failed to get eglconfig for visual id\n");
+      CLog::Log(LOGERROR, "failed to get eglconfig for visual id");
+      XFree(vInfo);
       return false;
     }
 
@@ -172,7 +179,8 @@ bool CGLContextEGL::Refresh(bool force, int screen, Window glWindow, bool &newCo
       m_eglSurface = eglCreateWindowSurface(m_eglDisplay, m_eglConfig, glWindow, NULL);
       if (m_eglSurface == EGL_NO_SURFACE)
       {
-        CLog::Log(LOGERROR, "failed to create EGL window surface %d\n", eglGetError());
+        CLog::Log(LOGERROR, "failed to create EGL window surface %d", eglGetError());
+        XFree(vInfo);
         return false;
       }
     }
@@ -218,6 +226,12 @@ void CGLContextEGL::Destroy()
   {
     eglDestroySurface(m_eglDisplay, m_eglSurface);
     m_eglSurface = EGL_NO_SURFACE;
+  }
+
+  if (m_eglDisplay)
+  {
+    eglTerminate(m_eglDisplay);
+    m_eglDisplay = EGL_NO_DISPLAY;
   }
 }
 

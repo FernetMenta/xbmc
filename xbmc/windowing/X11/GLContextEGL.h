@@ -28,6 +28,7 @@ class CGLContextEGL : public CGLContext
 {
 public:
   CGLContextEGL(Display *dpy);
+  virtual ~CGLContextEGL();
   virtual bool Refresh(bool force, int screen, Window glWindow, bool &newContext);
   virtual void Destroy();
   virtual void Detach();
