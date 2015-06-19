@@ -30,7 +30,7 @@
 #include "windows/WinSystemWin32DX.h"
 
 #elif defined(TARGET_LINUX)   && defined(HAVE_X11)
-#include "X11/WinSystemX11EGL.h"
+#include "X11/WinSystemX11GLContext.h"
 
 #elif defined(TARGET_LINUX)   && defined(HAS_GLES) && defined(HAS_EGL) && !defined(HAVE_X11)
 #include "egl/WinSystemEGL.h"

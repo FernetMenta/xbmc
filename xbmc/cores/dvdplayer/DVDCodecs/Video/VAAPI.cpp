@@ -19,8 +19,8 @@
  */
 #include "system.h"
 #ifdef HAVE_LIBVA
-#include "windowing/WindowingFactory.h"
 #include "VAAPI.h"
+#include "windowing/WindowingFactory.h"
 #include "DVDVideoCodec.h"
 #include "cores/dvdplayer/DVDCodecs/DVDCodecUtils.h"
 #include "cores/dvdplayer/DVDClock.h"

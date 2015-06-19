@@ -39,13 +39,14 @@
 #pragma once
 
 #include "system_gl.h"
-#include <EGL/egl.h>
+#define GLX_GLXEXT_PROTOTYPES
+#include <GL/glx.h>
+#include <GL/glext.h>
 
 #include "DVDVideoCodec.h"
 #include "DVDVideoCodecFFmpeg.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-
 #include "DVDVideoCodec.h"
 #include "DVDVideoCodecFFmpeg.h"
 #include "threads/CriticalSection.h"
@@ -55,6 +56,7 @@
 #include "threads/Event.h"
 #include "threads/Thread.h"
 #include "utils/ActorProtocol.h"
+#include "guilib/Geometry.h"
 #include <list>
 #include <map>
 
@@ -435,8 +437,8 @@ protected:
   bool Init();
   bool Uninit();
   void Flush();
-  bool CreateEGLContext();
-  bool DestroyEGLContext();
+  bool CreateGlxContext();
+  bool DestroyGlxContext();
   bool EnsureBufferPool();
   void ReleaseBufferPool();
   void PreCleanup();
@@ -458,10 +460,10 @@ protected:
   CMixer m_mixer;
   Display *m_Display;
   Window m_Window;
+  GLXContext m_glContext;
+  GLXWindow m_glWindow;
   Pixmap    m_pixmap;
-  EGLDisplay m_eglDisplay;
-  EGLSurface m_eglSurface;
-  EGLContext m_eglContext;
+  GLXPixmap m_glPixmap;
 
   // gl functions
 #ifdef GL_NV_vdpau_interop

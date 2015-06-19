@@ -23,33 +23,45 @@
 #if defined(HAVE_X11)
 
 #include "WinSystemX11.h"
-#include "utils/GlobalsHandling.h"
-
-#if defined (HAS_GLES)
-#include "rendering/gles/RenderSystemGLES.h"
-class CWinSystemX11EGL : public CWinSystemX11, public CRenderSystemGLES
-#elif defined (HAS_GL)
+#include "GLContext.h"
 #include "rendering/gl/RenderSystemGL.h"
-class CWinSystemX11EGL : public CWinSystemX11, public CRenderSystemGL
-#endif
+#include "utils/GlobalsHandling.h"
+#include "GL/glx.h"
+#include "EGL/egl.h"
+
+class CWinSystemX11GLContext : public CWinSystemX11, public CRenderSystemGL
 {
 public:
-  CWinSystemX11EGL();
-  virtual ~CWinSystemX11EGL();
+  CWinSystemX11GLContext();
+  virtual ~CWinSystemX11GLContext();
   virtual bool CreateNewWindow(const std::string& name, bool fullScreen, RESOLUTION_INFO& res, PHANDLE_EVENT_FUNC userFunction);
   virtual bool ResizeWindow(int newWidth, int newHeight, int newLeft, int newTop);
   virtual bool SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays);
+  virtual bool DestroyWindowSystem();
+  virtual bool DestroyWindow();
 
   virtual bool IsExtSupported(const char* extension);
 
+  GLXWindow GetWindow() { return m_pGLContext->m_glxWindow; }
+  GLXContext GetGlxContext() { return m_pGLContext->m_glxContext; }
+  EGLDisplay GetEGLDisplay() const { return m_pGLContext->m_eglDisplay; }
+  EGLSurface GetEGLSurface() const { return m_pGLContext->m_eglSurface; }
+  EGLContext GetEGLContext() const { return m_pGLContext->m_eglContext; }
+  EGLConfig GetEGLConfig() const { return m_pGLContext->m_eglConfig; }
+
 protected:
+  virtual bool SetWindow(int width, int height, bool fullscreen, const std::string &output, int *winstate = NULL);
   virtual bool PresentRenderImpl(const CDirtyRegionList& dirty);
   virtual void SetVSyncImpl(bool enable);
+  virtual bool RefreshGLContext(bool force);
+  virtual bool DestroyGLContext();
+  virtual XVisualInfo* GetVisual();
 
-  std::string m_eglext;
+  CGLContext *m_pGLContext;
+  bool m_newGlContext;
 };
 
-XBMC_GLOBAL_REF(CWinSystemX11EGL,g_Windowing);
-#define g_Windowing XBMC_GLOBAL_USE(CWinSystemX11EGL)
+XBMC_GLOBAL_REF(CWinSystemX11GLContext,g_Windowing);
+#define g_Windowing XBMC_GLOBAL_USE(CWinSystemX11GLContext)
 
 #endif //HAVE_X11

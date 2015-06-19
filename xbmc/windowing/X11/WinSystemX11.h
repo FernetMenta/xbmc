@@ -20,15 +20,12 @@
 
 #pragma once
 
-#include "system_gl.h"
-
-#include <GL/glx.h>
-
-#include <EGL/egl.h>
 #include "windowing/WinSystem.h"
 #include "utils/Stopwatch.h"
 #include "threads/CriticalSection.h"
 #include "settings/lib/ISettingCallback.h"
+#include "X11/Xlib.h"
+#include "X11/Xutil.h"
 
 class IDispResource;
 
@@ -66,16 +63,6 @@ public:
 
   // Local to WinSystemX11 only
   Display*  GetDisplay() { return m_dpy; }
-#if defined(HAS_GLX)
-  GLXWindow GetWindow() { return m_glWindow; }
-  GLXContext GetGlxContext() { return None; }
-#endif
-
-  EGLDisplay GetEGLDisplay() const { return m_eglDisplay;}
-  EGLSurface GetEGLSurface() const { return m_eglSurface;}
-  EGLContext GetEGLContext() const { return m_eglContext;}
-  EGLConfig GetEGLConfig() const { return m_eglConfig;}
-
   void NotifyXRREvent();
   void GetConnectedOutputs(std::vector<std::string> *outputs);
   bool IsCurrentOutput(std::string output);
@@ -83,29 +70,25 @@ public:
   int GetCrtc() { return m_crtc; }
 
 protected:
-  bool RefreshEGLContext(bool force);
-  void OnLostDevice();
-  bool SetWindow(int width, int height, bool fullscreen, const std::string &output);
+  virtual bool SetWindow(int width, int height, bool fullscreen, const std::string &output, int *winstate = NULL) = 0;
+  virtual XVisualInfo* GetVisual() = 0;
 
-  Window       m_glWindow, m_mainWindow;
-  EGLDisplay   m_eglDisplay;
-  EGLSurface   m_eglSurface;
-  EGLContext   m_eglContext;
-  EGLConfig    m_eglConfig;
-  Display*     m_dpy;
-  Cursor       m_invisibleCursor;
-  Pixmap       m_icon;
-  bool         m_bIsRotated;
-  bool         m_bWasFullScreenBeforeMinimize;
-  bool         m_minimized;
-  bool         m_bIgnoreNextFocusMessage;
-  CCriticalSection             m_resourceSection;
+  void OnLostDevice();
+
+  Window m_glWindow, m_mainWindow;
+  Display *m_dpy;
+  Cursor m_invisibleCursor;
+  Pixmap m_icon;
+  bool m_bIsRotated;
+  bool m_bWasFullScreenBeforeMinimize;
+  bool m_minimized;
+  bool m_bIgnoreNextFocusMessage;
+  CCriticalSection m_resourceSection;
   std::vector<IDispResource*>  m_resources;
-  std::string                  m_currentOutput;
-  std::string                  m_userOutput;
-  bool                         m_windowDirty;
-  bool                         m_bIsInternalXrr;
-  bool                         m_newGlContext;
+  std::string m_currentOutput;
+  std::string m_userOutput;
+  bool m_windowDirty;
+  bool m_bIsInternalXrr;
   int m_MouseX, m_MouseY;
   int m_crtc;
 
