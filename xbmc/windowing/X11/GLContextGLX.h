@@ -31,12 +31,19 @@ public:
   virtual bool Refresh(bool force, int screen, Window glWindow, bool &newContext);
   virtual void Destroy();
   virtual void Detach();
-  virtual void SetVSync(bool enable);
-  virtual bool SwapBuffers(const CDirtyRegionList& dirty);
+  virtual void SetVSync(bool enable, int &mode);
+  virtual bool SwapBuffers(const CDirtyRegionList& dirty, int &mode);
   virtual void QueryExtensions();
   virtual bool IsExtSupported(const char* extension);
 protected:
   bool IsSuitableVisual(XVisualInfo *vInfo);
+
+  int (*m_glXGetVideoSyncSGI)(unsigned int*);
+  int (*m_glXWaitVideoSyncSGI)(int, int, unsigned int*);
+  int (*m_glXSwapIntervalMESA)(int);
+  PFNGLXSWAPINTERVALEXTPROC m_glXSwapIntervalEXT;
+  int m_nScreen;
+  int m_iVSyncErrors;
 };
 
 #endif
