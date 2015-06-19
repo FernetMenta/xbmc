@@ -162,7 +162,14 @@ bool CWinSystemX11GLContext::RefreshGLContext(bool force)
   }
   bool ret = m_pGLContext->Refresh(force, m_nScreen, m_glWindow, m_newGlContext);
 
-  std::string gpuvendor = m_RenderVendor;
+  if (ret && !firstrun)
+    return ret;
+
+  std::string gpuvendor = "";
+  if (ret)
+  {
+    gpuvendor = (const char*) glGetString(GL_VENDOR);
+  }
   std::transform(gpuvendor.begin(), gpuvendor.end(), gpuvendor.begin(), ::tolower);
   if (firstrun && (!ret || gpuvendor.compare(0, 5, "intel") != 0))
   {
