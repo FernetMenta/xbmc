@@ -35,8 +35,8 @@ public:
   {
     m_dpy = dpy;
     m_extensions = "";
-    m_glxWindow = None;
-    m_glxContext = None;
+    m_glxWindow = 0;
+    m_glxContext = 0;
     m_eglDisplay = EGL_NO_DISPLAY;
     m_eglSurface = EGL_NO_SURFACE;
     m_eglContext = EGL_NO_CONTEXT;
@@ -45,8 +45,8 @@ public:
   virtual bool Refresh(bool force, int screen, Window glWindow, bool &newContext) = 0;
   virtual void Destroy() = 0;
   virtual void Detach() = 0;
-  virtual void SetVSync(bool enable) = 0;
-  virtual bool SwapBuffers(const CDirtyRegionList& dirty) = 0;
+  virtual void SetVSync(bool enable, int &mode) = 0;
+  virtual bool SwapBuffers(const CDirtyRegionList& dirty, int &mode) = 0;
   virtual void QueryExtensions() = 0;
   virtual bool IsExtSupported(const char* extension) = 0;
 

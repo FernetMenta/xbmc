@@ -33,6 +33,7 @@
 #include <vector>
 #include "Application.h"
 #include "GLContextEGL.h"
+#include "GLContextGLX.h"
 
 CWinSystemX11GLContext::CWinSystemX11GLContext()
 {
@@ -46,12 +47,12 @@ CWinSystemX11GLContext::~CWinSystemX11GLContext()
 
 bool CWinSystemX11GLContext::PresentRenderImpl(const CDirtyRegionList& dirty)
 {
-  m_pGLContext->SwapBuffers(dirty);
+  m_pGLContext->SwapBuffers(dirty, m_iVSyncMode);
 }
 
 void CWinSystemX11GLContext::SetVSyncImpl(bool enable)
 {
-  m_pGLContext->SetVSync(enable);
+  m_pGLContext->SetVSync(enable, m_iVSyncMode);
 }
 
 bool CWinSystemX11GLContext::IsExtSupported(const char* extension)
@@ -153,11 +154,23 @@ XVisualInfo* CWinSystemX11GLContext::GetVisual()
 
 bool CWinSystemX11GLContext::RefreshGLContext(bool force)
 {
+  bool firstrun = false;
   if (!m_pGLContext)
   {
     m_pGLContext = new CGLContextEGL(m_dpy);
+    firstrun = true;
   }
-  m_pGLContext->Refresh(force, m_nScreen, m_glWindow, m_newGlContext);
+  bool ret = m_pGLContext->Refresh(force, m_nScreen, m_glWindow, m_newGlContext);
+
+  std::string gpuvendor = m_RenderVendor;
+  std::transform(gpuvendor.begin(), gpuvendor.end(), gpuvendor.begin(), ::tolower);
+  if (firstrun && (!ret || gpuvendor.compare(0, 5, "intel") != 0))
+  {
+    delete m_pGLContext;
+    m_pGLContext = new CGLContextGLX(m_dpy);
+    ret = m_pGLContext->Refresh(force, m_nScreen, m_glWindow, m_newGlContext);
+  }
+  return ret;
 }
 
 bool CWinSystemX11GLContext::DestroyGLContext()
