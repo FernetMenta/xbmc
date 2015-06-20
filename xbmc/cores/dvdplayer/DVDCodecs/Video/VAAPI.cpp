@@ -2797,6 +2797,32 @@ bool CVppPostproc::Filter(CVaapiProcessedPicture &outPic)
   inputRegion.width = outputRegion.width = m_config.surfaceWidth;
   inputRegion.height = outputRegion.height = m_config.surfaceHeight;
 
+  VAProcColorStandardType colorStandard;
+  switch(outPic.DVDPic.color_matrix)
+  {
+      case AVCOL_SPC_BT709:
+        colorStandard = VAProcColorStandardBT709;
+        break;
+      case AVCOL_SPC_BT470BG:
+      case AVCOL_SPC_SMPTE170M:
+        colorStandard = VAProcColorStandardSMPTE170M;
+        break;
+      case AVCOL_SPC_SMPTE240M:
+        colorStandard = VAProcColorStandardSMPTE240M;
+        break;
+      case AVCOL_SPC_FCC:
+      case AVCOL_SPC_UNSPECIFIED:
+      case AVCOL_SPC_RGB:
+      default:
+        if(m_config.outWidth > 1000)
+          colorStandard = VAProcColorStandardBT709;
+        else
+          colorStandard = VAProcColorStandardBT601;
+  }
+
+  pipelineParams->output_color_standard = colorStandard;
+  pipelineParams->surface_color_standard = colorStandard;
+
   pipelineParams->output_region = &outputRegion;
   pipelineParams->surface_region = &inputRegion;
   pipelineParams->output_background_color = 0xff000000;
