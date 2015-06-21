@@ -154,7 +154,7 @@ bool CRendererVAAPI::RenderHook(int idx)
   if (m_format == RENDER_FMT_VAAPINV12)
     return false;
 
-  UpdateVideoFilter();
+  UpdateVideoFilter(m_iFlags);
   RenderRGB(idx, m_currentField);
   YUVBUFFER &buf = m_buffers[idx];
   if (buf.hwDec)

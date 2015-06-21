@@ -30,6 +30,7 @@
 #include "utils/GLUtils.h"
 #include "ConvolutionKernels.h"
 #include "windowing/WindowingFactory.h"
+#include "cores/VideoRenderers/RenderFlags.h"
 
 #if defined(HAS_GL)
   #define USE1DTEXTURE
@@ -54,31 +55,10 @@ BaseVideoFilterShader::BaseVideoFilterShader()
   m_stepY = 0;
   m_sourceTexUnit = 0;
   m_hSourceTex = 0;
-
   m_stretch = 0.0f;
-
-  string shaderv =
-    "varying vec2 cord;"
-    "void main()"
-    "{"
-    "cord = vec2(gl_TextureMatrix[0] * gl_MultiTexCoord0);"
-    "gl_Position = ftransform();"
-    "gl_FrontColor = gl_Color;"
-    "}";
-  VertexShader()->SetSource(shaderv);
-
-  string shaderp =
-    "uniform sampler2D img;"
-    "varying vec2 cord;"
-    "void main()"
-    "{"
-    "gl_FragColor.rgb = texture2D(img, cord).rgb;"
-    "gl_FragColor.a = gl_Color.a;"
-    "}";
-  PixelShader()->SetSource(shaderp);
 }
 
-ConvolutionFilterShader::ConvolutionFilterShader(ESCALINGMETHOD method, bool stretch)
+ConvolutionFilterShader::ConvolutionFilterShader(ESCALINGMETHOD method, bool stretch, int flags)
 {
   m_method = method;
   m_kernelTex1 = 0;
@@ -134,6 +114,9 @@ ConvolutionFilterShader::ConvolutionFilterShader(ESCALINGMETHOD method, bool str
 #else
   defines += "#define USE1DTEXTURE 0\n";
 #endif
+
+  if (!(flags & CONF_FLAGS_YUV_FULLRANGE) && !g_Windowing.UseLimitedColor())
+    defines += "#define TO_FULL_RANGE 1\n";
 
   CLog::Log(LOGDEBUG, "GL: ConvolutionFilterShader: using %s defines:\n%s", shadername.c_str(), defines.c_str());
   PixelShader()->LoadSource(shadername, defines);
@@ -222,8 +205,12 @@ void ConvolutionFilterShader::Free()
   BaseVideoFilterShader::Free();
 }
 
-StretchFilterShader::StretchFilterShader()
+StretchFilterShader::StretchFilterShader(int flags)
 {
+  std::string defines;
+  if (!(flags & CONF_FLAGS_YUV_FULLRANGE) && !g_Windowing.UseLimitedColor())
+    defines += "#define TO_FULL_RANGE 1\n";
+
   PixelShader()->LoadSource("stretch.glsl");
 }
 
@@ -239,6 +226,39 @@ bool StretchFilterShader::OnEnabled()
   glUniform1f(m_hStretch, m_stretch);
   VerifyGLState();
   return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// DefaultFilterShader - base class for video filter shaders
+//////////////////////////////////////////////////////////////////////
+
+DefaultFilterShader::DefaultFilterShader(int flags)
+{
+  m_width = 1;
+  m_height = 1;
+  m_hStepXY = 0;
+  m_stepX = 0;
+  m_stepY = 0;
+  m_sourceTexUnit = 0;
+  m_hSourceTex = 0;
+
+  m_stretch = 0.0f;
+
+  string shaderv =
+    "varying vec2 cord;"
+    "void main()"
+    "{"
+    "cord = vec2(gl_TextureMatrix[0] * gl_MultiTexCoord0);"
+    "gl_Position = ftransform();"
+    "gl_FrontColor = gl_Color;"
+    "}";
+  VertexShader()->SetSource(shaderv);
+
+  std::string defines;
+  if (!(flags & CONF_FLAGS_YUV_FULLRANGE) && !g_Windowing.UseLimitedColor())
+    defines += "#define TO_FULL_RANGE 1\n";
+
+  PixelShader()->LoadSource("basic.glsl", defines);
 }
 
 void DefaultFilterShader::OnCompiledAndLinked()

@@ -150,7 +150,7 @@ protected:
   virtual bool ValidateRenderTarget();
   virtual void LoadShaders(int field=FIELD_FULL);
   void SetTextureFilter(GLenum method);
-  void UpdateVideoFilter();
+  void UpdateVideoFilter(int flags = 0);
 
   // textures
   virtual bool UploadTexture(int index);

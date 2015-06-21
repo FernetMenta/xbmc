@@ -102,6 +102,10 @@ void main()
     line(xystart.y + stepxy.y * 2.0, xpos, linetaps) * columntaps.b +
     line(xystart.y + stepxy.y * 3.0, xpos, linetaps) * columntaps.a;
 
+#if (TO_FULL_RANGE)
+  gl_FragColor.rgb = (gl_FragColor.rgb  -0.0627) * 1.1644;
+#endif
+
   gl_FragColor.a = gl_Color.a;
 }
 

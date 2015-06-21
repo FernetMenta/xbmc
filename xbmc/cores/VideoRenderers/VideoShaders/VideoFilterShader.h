@@ -60,7 +60,7 @@ namespace Shaders {
   class ConvolutionFilterShader : public BaseVideoFilterShader
   {
   public:
-    ConvolutionFilterShader(ESCALINGMETHOD method, bool stretch);
+    ConvolutionFilterShader(ESCALINGMETHOD method, bool stretch, int flags);
     void OnCompiledAndLinked();
     bool OnEnabled();
     void Free();
@@ -82,7 +82,7 @@ namespace Shaders {
   class StretchFilterShader : public BaseVideoFilterShader
   {
     public:
-      StretchFilterShader();
+      StretchFilterShader(int flags);
       void  OnCompiledAndLinked();
       bool  OnEnabled();
   };
@@ -90,6 +90,7 @@ namespace Shaders {
   class DefaultFilterShader : public BaseVideoFilterShader
   {
     public:
+      DefaultFilterShader(int flags);
       void  OnCompiledAndLinked();
       bool  OnEnabled();
   };

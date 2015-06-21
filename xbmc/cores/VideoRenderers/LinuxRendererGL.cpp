@@ -722,7 +722,7 @@ void CLinuxRendererGL::PreInit()
   m_clearColour = (float)(g_advancedSettings.m_videoBlackBarColour & 0xff) / 0xff;
 }
 
-void CLinuxRendererGL::UpdateVideoFilter()
+void CLinuxRendererGL::UpdateVideoFilter(int flags)
 {
   bool pixelRatioChanged    = (CDisplaySettings::Get().GetPixelRatio() > 1.001f || CDisplaySettings::Get().GetPixelRatio() < 0.999f) !=
                               (m_pixelRatio > 1.001f || m_pixelRatio < 0.999f);
@@ -793,7 +793,7 @@ void CLinuxRendererGL::UpdateVideoFilter()
     m_renderQuality = RQ_SINGLEPASS;
     if (Supports(RENDERFEATURE_NONLINSTRETCH) && m_nonLinStretch)
     {
-      m_pVideoFilterShader = new StretchFilterShader();
+      m_pVideoFilterShader = new StretchFilterShader(flags);
       if (!m_pVideoFilterShader->CompileAndLink())
       {
         CLog::Log(LOGERROR, "GL: Error compiling and linking video filter shader");
@@ -802,7 +802,7 @@ void CLinuxRendererGL::UpdateVideoFilter()
     }
     else
     {
-      m_pVideoFilterShader = new DefaultFilterShader();
+      m_pVideoFilterShader = new DefaultFilterShader(flags);
       if (!m_pVideoFilterShader->CompileAndLink())
       {
         CLog::Log(LOGERROR, "GL: Error compiling and linking video filter shader");
@@ -832,7 +832,7 @@ void CLinuxRendererGL::UpdateVideoFilter()
       }
     }
 
-    m_pVideoFilterShader = new ConvolutionFilterShader(m_scalingMethod, m_nonLinStretch);
+    m_pVideoFilterShader = new ConvolutionFilterShader(m_scalingMethod, m_nonLinStretch, flags);
     if (!m_pVideoFilterShader->CompileAndLink())
     {
       CLog::Log(LOGERROR, "GL: Error compiling and linking video filter shader");
