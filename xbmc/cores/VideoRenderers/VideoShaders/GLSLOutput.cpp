@@ -20,10 +20,14 @@
  *
  */
 
+#include "system.h"
+#include "GLSLOutput.h"
 #include "windowing/WindowingFactory.h"
 #include "utils/log.h"
+#if defined(HAS_GL) || defined(HAS_GLES)
+#include "utils/GLUtils.h"
+#endif
 
-#include "GLSLOutput.h"
 #include "dither.h"
 
 using namespace Shaders;
