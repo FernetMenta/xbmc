@@ -14903,7 +14903,12 @@ msgctxt "#36043"
 msgid "Dither depth"
 msgstr ""
 
-#empty strings from id 36044 to 36100
+#: system/settings/settings.xml
+msgctxt "#36044"
+msgid "Dithering"
+msgstr ""
+
+#empty strings from id 36045 to 36100
 #strings from 36100 to 36999 are reserved for settings descriptions
 
 #. Description of settings section "Appearance"
@@ -17120,13 +17125,19 @@ msgctxt "#36549"
 msgid "Use iOS8 compatible AirPlay support. If you have trouble with older iOS devices detecting this application as a valid target try switching this off. This option requires a restart to take effect!"
 msgstr ""
 
-#. Description of setting "System -> Video output -> Dither depth" with label #36045
+#. Description of setting "System -> Video output -> Dither depth" with label #36043
 #: system/settings/settings.xml
 msgctxt "#36550"
 msgid "Video dithering depth in bits"
 msgstr ""
 
-#empty strings from id 36551 to 36599
+#. Description of setting "System -> Video output -> Dither" with label #36044
+#: system/settings/settings.xml
+msgctxt "#36551"
+msgid "Dither video output to eliminate banding and allow greater than 8bit precision."
+msgstr ""
+
+#empty strings from id 36552 to 36599
 #reserved strings 365XX
 
 #. Description of settings category "Music -> Library" with label #14022

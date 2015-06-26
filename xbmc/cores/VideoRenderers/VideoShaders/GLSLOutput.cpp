@@ -46,7 +46,7 @@ GLSLOutput::GLSLOutput(int texunit)
   m_hDitherQuant = -1;
   m_hDitherSize  = -1;
 
-  m_dither = true; // hardcode dithering for now
+  m_dither = g_Windowing.UseDithering();
   m_ditherDepth = g_Windowing.DitherDepth();
   m_fullRange = !g_Windowing.UseLimitedColor();
 }
