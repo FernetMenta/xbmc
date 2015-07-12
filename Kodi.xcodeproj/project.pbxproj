@@ -1018,6 +1018,22 @@
 		DFDE5D521AE5658200EE53AD /* PictureScalingAlgorithm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFDE5D4F1AE5658200EE53AD /* PictureScalingAlgorithm.cpp */; };
 		DFDE5D531AE5658200EE53AD /* PictureScalingAlgorithm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFDE5D4F1AE5658200EE53AD /* PictureScalingAlgorithm.cpp */; };
 		DFE4095B17417FDF00473BD9 /* LegacyPathTranslation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFE4095917417FDF00473BD9 /* LegacyPathTranslation.cpp */; };
+		DFEA4B4E1B5271A900562321 /* AddonCallbacksAudioDSP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CE31B50378E0002A874 /* AddonCallbacksAudioDSP.cpp */; };
+		DFEA4B4F1B5271AA00562321 /* AddonCallbacksAudioDSP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CE31B50378E0002A874 /* AddonCallbacksAudioDSP.cpp */; };
+		DFEA4B501B5271EB00562321 /* ActiveAEDSP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CE71B5037EF0002A874 /* ActiveAEDSP.cpp */; };
+		DFEA4B511B5271EB00562321 /* ActiveAEDSP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CE71B5037EF0002A874 /* ActiveAEDSP.cpp */; };
+		DFEA4B521B5271EE00562321 /* ActiveAEDSPAddon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CE91B5037EF0002A874 /* ActiveAEDSPAddon.cpp */; };
+		DFEA4B531B5271EF00562321 /* ActiveAEDSPAddon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CE91B5037EF0002A874 /* ActiveAEDSPAddon.cpp */; };
+		DFEA4B541B5271F200562321 /* ActiveAEDSPDatabase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CEB1B5037EF0002A874 /* ActiveAEDSPDatabase.cpp */; };
+		DFEA4B551B5271F300562321 /* ActiveAEDSPDatabase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CEB1B5037EF0002A874 /* ActiveAEDSPDatabase.cpp */; };
+		DFEA4B561B5271F600562321 /* ActiveAEDSPMode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CED1B5037EF0002A874 /* ActiveAEDSPMode.cpp */; };
+		DFEA4B571B5271F600562321 /* ActiveAEDSPMode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CED1B5037EF0002A874 /* ActiveAEDSPMode.cpp */; };
+		DFEA4B581B5271FA00562321 /* ActiveAEDSPProcess.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CEF1B5037EF0002A874 /* ActiveAEDSPProcess.cpp */; };
+		DFEA4B591B5271FA00562321 /* ActiveAEDSPProcess.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CEF1B5037EF0002A874 /* ActiveAEDSPProcess.cpp */; };
+		DFEA4B5A1B52721300562321 /* GUIDialogAudioDSPManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CF61B5038580002A874 /* GUIDialogAudioDSPManager.cpp */; };
+		DFEA4B5B1B52721300562321 /* GUIDialogAudioDSPManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CF61B5038580002A874 /* GUIDialogAudioDSPManager.cpp */; };
+		DFEA4B5C1B52721700562321 /* GUIDialogAudioDSPSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CF81B5038580002A874 /* GUIDialogAudioDSPSettings.cpp */; };
+		DFEA4B5D1B52721800562321 /* GUIDialogAudioDSPSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CF81B5038580002A874 /* GUIDialogAudioDSPSettings.cpp */; };
 		DFEB902819E9337200728978 /* AEResampleFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFEB902619E9337200728978 /* AEResampleFactory.cpp */; };
 		DFEB902919E9337200728978 /* AEResampleFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFEB902619E9337200728978 /* AEResampleFactory.cpp */; };
 		DFEB902A19E9337200728978 /* AEResampleFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFEB902619E9337200728978 /* AEResampleFactory.cpp */; };
@@ -6996,6 +7012,7 @@
 				7C973CF01B5037EF0002A874 /* ActiveAEDSPProcess.h */,
 			);
 			name = DSPAddons;
+			path = Engines;
 			sourceTree = "<group>";
 		};
 		7CAA468D19427AED00008885 /* posix */ = {
@@ -7922,6 +7939,7 @@
 		DFB65F6315373AE7006B8FF1 /* AudioEngine */ = {
 			isa = PBXGroup;
 			children = (
+				7C973CE61B5037B80002A874 /* DSPAddons */,
 				DFB65F6915373AE7006B8FF1 /* Encoders */,
 				DFB65F6C15373AE7006B8FF1 /* Engines */,
 				DFB65F8815373AE7006B8FF1 /* Interfaces */,
@@ -7949,7 +7967,6 @@
 		DFB65F6C15373AE7006B8FF1 /* Engines */ = {
 			isa = PBXGroup;
 			children = (
-				7C973CE61B5037B80002A874 /* DSPAddons */,
 				F5CC22D21814FF3B006B5E91 /* ActiveAE */,
 			);
 			path = Engines;
@@ -11414,6 +11431,7 @@
 				DFF0F1E417528350002DA3A4 /* GUIDialogVolumeBar.cpp in Sources */,
 				DFF0F1E517528350002DA3A4 /* GUIDialogYesNo.cpp in Sources */,
 				DFF0F1E617528350002DA3A4 /* AddonsDirectory.cpp in Sources */,
+				DFEA4B551B5271F300562321 /* ActiveAEDSPDatabase.cpp in Sources */,
 				DFF0F1EA17528350002DA3A4 /* BlurayDirectory.cpp in Sources */,
 				DFF0F1EB17528350002DA3A4 /* CacheStrategy.cpp in Sources */,
 				DFF0F1EC17528350002DA3A4 /* CDDADirectory.cpp in Sources */,
@@ -11526,6 +11544,7 @@
 				DFF0F26617528350002DA3A4 /* DirectoryNodeTvShowsOverview.cpp in Sources */,
 				DFF0F26717528350002DA3A4 /* QueryParams.cpp in Sources */,
 				DFF0F26817528350002DA3A4 /* VideoDatabaseDirectory.cpp in Sources */,
+				DFEA4B511B5271EB00562321 /* ActiveAEDSP.cpp in Sources */,
 				DFF0F26917528350002DA3A4 /* VirtualDirectory.cpp in Sources */,
 				395C29C31A98A0A000EBC7AD /* Webinterface.cpp in Sources */,
 				DFF0F26D17528350002DA3A4 /* ZeroconfDirectory.cpp in Sources */,
@@ -11535,6 +11554,7 @@
 				DFF0F27117528350002DA3A4 /* AnimatedGif.cpp in Sources */,
 				DFF0F27217528350002DA3A4 /* cximage.cpp in Sources */,
 				DFF0F27317528350002DA3A4 /* D3DResource.cpp in Sources */,
+				DFEA4B591B5271FA00562321 /* ActiveAEDSPProcess.cpp in Sources */,
 				DFF0F27417528350002DA3A4 /* DDSImage.cpp in Sources */,
 				DFF0F27517528350002DA3A4 /* DirectXGraphics.cpp in Sources */,
 				DFF0F27617528350002DA3A4 /* DirtyRegionSolvers.cpp in Sources */,
@@ -11705,6 +11725,7 @@
 				DFF0F31917528350002DA3A4 /* GUIWindowVisualisation.cpp in Sources */,
 				DFF0F31A17528350002DA3A4 /* Album.cpp in Sources */,
 				DFF0F31B17528350002DA3A4 /* Artist.cpp in Sources */,
+				DFEA4B571B5271F600562321 /* ActiveAEDSPMode.cpp in Sources */,
 				DFF0F31C17528350002DA3A4 /* GUIViewStateMusic.cpp in Sources */,
 				DFF0F31D17528350002DA3A4 /* MusicDatabase.cpp in Sources */,
 				DFF0F31E17528350002DA3A4 /* MusicDbUrl.cpp in Sources */,
@@ -11785,6 +11806,7 @@
 				DFF0F36217528350002DA3A4 /* PlayListPLS.cpp in Sources */,
 				DFF0F36317528350002DA3A4 /* PlayListURL.cpp in Sources */,
 				DFF0F36417528350002DA3A4 /* PlayListWPL.cpp in Sources */,
+				DFEA4B5B1B52721300562321 /* GUIDialogAudioDSPManager.cpp in Sources */,
 				DFF0F36517528350002DA3A4 /* PlayListXML.cpp in Sources */,
 				DFF0F36617528350002DA3A4 /* SmartPlayList.cpp in Sources */,
 				DFF0F36717528350002DA3A4 /* CocoaPowerSyscall.cpp in Sources */,
@@ -11908,6 +11930,7 @@
 				DFF0F3E917528350002DA3A4 /* RssReader.cpp in Sources */,
 				DFF0F3EA17528350002DA3A4 /* ScraperParser.cpp in Sources */,
 				DFF0F3EB17528350002DA3A4 /* ScraperUrl.cpp in Sources */,
+				DFEA4B4F1B5271AA00562321 /* AddonCallbacksAudioDSP.cpp in Sources */,
 				DFF0F3EC17528350002DA3A4 /* Screenshot.cpp in Sources */,
 				DFF0F3ED17528350002DA3A4 /* SeekHandler.cpp in Sources */,
 				DFF0F3EE17528350002DA3A4 /* SortUtils.cpp in Sources */,
@@ -11952,6 +11975,7 @@
 				395C2A161A9F072400EBC7AD /* ResourceFile.cpp in Sources */,
 				DFF0F41517528350002DA3A4 /* VideoInfoTag.cpp in Sources */,
 				DFF0F41617528350002DA3A4 /* VideoReferenceClock.cpp in Sources */,
+				DFEA4B531B5271EF00562321 /* ActiveAEDSPAddon.cpp in Sources */,
 				DFF0F41717528350002DA3A4 /* VideoThumbLoader.cpp in Sources */,
 				399442701A8DD920006C39E9 /* VideoLibraryCleaningJob.cpp in Sources */,
 				DFF0F41817528350002DA3A4 /* GUIViewControl.cpp in Sources */,
@@ -12174,6 +12198,7 @@
 				7CCDA7D2192756250074CF51 /* NptHttp.cpp in Sources */,
 				7CCDA7DB192756250074CF51 /* NptJson.cpp in Sources */,
 				7CCDA7DE192756250074CF51 /* NptList.cpp in Sources */,
+				DFEA4B5D1B52721800562321 /* GUIDialogAudioDSPSettings.cpp in Sources */,
 				7CCDA7E7192756250074CF51 /* NptLogging.cpp in Sources */,
 				DF6A0D831A4584E80075BBFC /* OverrideDirectory.cpp in Sources */,
 				7CCDA7EA192756250074CF51 /* NptMessaging.cpp in Sources */,
@@ -12274,6 +12299,7 @@
 				E4991176174E5CC300741B6D /* unicode.cpp in Sources */,
 				E4991177174E5CC300741B6D /* unpack.cpp in Sources */,
 				E4991178174E5CC300741B6D /* volume.cpp in Sources */,
+				DFEA4B5C1B52721700562321 /* GUIDialogAudioDSPSettings.cpp in Sources */,
 				E4991179174E5CE000741B6D /* Addon.cpp in Sources */,
 				E499117A174E5CE000741B6D /* AddonCallbacks.cpp in Sources */,
 				E499117B174E5CE000741B6D /* AddonCallbacksAddon.cpp in Sources */,
@@ -12298,6 +12324,7 @@
 				E499118E174E5CE400741B6D /* CDDARipJob.cpp in Sources */,
 				E499118F174E5CE400741B6D /* CDDARipper.cpp in Sources */,
 				E4991190174E5CE400741B6D /* Encoder.cpp in Sources */,
+				DFEA4B561B5271F600562321 /* ActiveAEDSPMode.cpp in Sources */,
 				E4991191174E5CE400741B6D /* EncoderFFmpeg.cpp in Sources */,
 				E4991196174E5CEB00741B6D /* Exception.cpp in Sources */,
 				E4991197174E5CEB00741B6D /* ilog.cpp in Sources */,
@@ -12373,6 +12400,7 @@
 				E49911F0174E5D3E00741B6D /* DVDSubtitleParserSubrip.cpp in Sources */,
 				E49911F1174E5D3E00741B6D /* DVDSubtitleParserVplayer.cpp in Sources */,
 				E49911F2174E5D3E00741B6D /* DVDSubtitleStream.cpp in Sources */,
+				DFEA4B581B5271FA00562321 /* ActiveAEDSPProcess.cpp in Sources */,
 				E49911F3174E5D3E00741B6D /* DVDSubtitleTagMicroDVD.cpp in Sources */,
 				E49911F4174E5D3E00741B6D /* DVDSubtitleTagSami.cpp in Sources */,
 				E49911F5174E5D4500741B6D /* DVDAudio.cpp in Sources */,
@@ -12558,6 +12586,7 @@
 				E49912C4174E5DA000741B6D /* DirectoryNodeMoviesOverview.cpp in Sources */,
 				E49912C5174E5DA000741B6D /* DirectoryNodeMusicVideosOverview.cpp in Sources */,
 				E49912C6174E5DA000741B6D /* DirectoryNodeOverview.cpp in Sources */,
+				DFEA4B5A1B52721300562321 /* GUIDialogAudioDSPManager.cpp in Sources */,
 				DFED5AC71AB23388001F080D /* ReplayGain.cpp in Sources */,
 				E49912C7174E5DA000741B6D /* DirectoryNodeRecentlyAddedEpisodes.cpp in Sources */,
 				E49912C8174E5DA000741B6D /* DirectoryNodeRecentlyAddedMovies.cpp in Sources */,
@@ -12673,6 +12702,7 @@
 				E499132E174E5DAD00741B6D /* TextureManager.cpp in Sources */,
 				E499132F174E5DAD00741B6D /* VisibleEffect.cpp in Sources */,
 				E4991330174E5DAD00741B6D /* XBTF.cpp in Sources */,
+				DFEA4B541B5271F200562321 /* ActiveAEDSPDatabase.cpp in Sources */,
 				DFC6F4B71AFF7CB10039A7FA /* kiss_fft.c in Sources */,
 				E4991331174E5DAD00741B6D /* XBTFReader.cpp in Sources */,
 				E4991345174E5E5C00741B6D /* GenericTouchActionHandler.cpp in Sources */,
@@ -12960,6 +12990,7 @@
 				E4991474174E605900741B6D /* Stopwatch.cpp in Sources */,
 				E4991475174E605900741B6D /* StreamDetails.cpp in Sources */,
 				E4991476174E605900741B6D /* StreamUtils.cpp in Sources */,
+				DFEA4B4E1B5271A900562321 /* AddonCallbacksAudioDSP.cpp in Sources */,
 				E4991477174E605900741B6D /* StringUtils.cpp in Sources */,
 				E4991478174E605900741B6D /* SystemInfo.cpp in Sources */,
 				E4991479174E605900741B6D /* TextSearch.cpp in Sources */,
@@ -13058,6 +13089,7 @@
 				E4991555174E656E00741B6D /* CallbackHandler.cpp in Sources */,
 				E4991556174E656E00741B6D /* Control.cpp in Sources */,
 				E4991557174E656E00741B6D /* Dialog.cpp in Sources */,
+				DFEA4B521B5271EE00562321 /* ActiveAEDSPAddon.cpp in Sources */,
 				E4991558174E656E00741B6D /* File.cpp in Sources */,
 				E4991559174E656E00741B6D /* InfoTagMusic.cpp in Sources */,
 				E499155A174E656E00741B6D /* InfoTagVideo.cpp in Sources */,
@@ -13160,6 +13192,7 @@
 				7CCDA100192753E30074CF51 /* PltCtrlPointTask.cpp in Sources */,
 				7CCDA109192753E30074CF51 /* PltDatagramStream.cpp in Sources */,
 				7CCDA112192753E30074CF51 /* PltDeviceData.cpp in Sources */,
+				DFEA4B501B5271EB00562321 /* ActiveAEDSP.cpp in Sources */,
 				7CCDA11B192753E30074CF51 /* PltDeviceHost.cpp in Sources */,
 				7CCDA124192753E30074CF51 /* PltEvent.cpp in Sources */,
 				7CCDA12D192753E30074CF51 /* PltHttp.cpp in Sources */,
