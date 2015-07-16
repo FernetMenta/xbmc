@@ -13679,7 +13679,17 @@ msgctxt "#24136"
 msgid "Audio DSP..."
 msgstr ""
 
-#empty strings from id 24137 to 24991
+#: xbmc/cores/AudioEngine/DSPAddons/ActiveAEDSP.cpp
+msgctxt "#24137"
+msgid "Not allowed"
+msgstr ""
+
+#: xbmc/cores/AudioEngine/DSPAddons/ActiveAEDSP.cpp
+msgctxt "#24138"
+msgid "DSP add-on is currently in use and can't be removed."
+msgstr ""
+
+#empty strings from id 24139 to 24991
 
 #: xbmc/addons/CGUIViewStateAddonBrowser.cpp
 #: xbmc/filesystem/AddonsDirectory.cpp
