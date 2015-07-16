@@ -20,6 +20,7 @@
 
 #include "ApplicationMessenger.h"
 #include "Application.h"
+#include "guilib/GUIWindowManager.h"
 
 #include "threads/SingleLock.h"
 #include "guilib/GraphicContext.h"

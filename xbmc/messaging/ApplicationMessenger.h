@@ -114,8 +114,6 @@
 
 
 #define TMSG_CALLBACK             800
-//#define TMSG_MEDIA_STOP           201
-//#define TMSG_MEDIA_RESTART        203
 
 class CGUIMessage;
 
