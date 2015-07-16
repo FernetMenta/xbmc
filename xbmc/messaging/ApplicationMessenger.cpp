@@ -209,6 +209,41 @@ void CApplicationMessenger::ProcessMessage(ThreadMessage *pMsg)
     callback->callback(callback->userptr);
     return;
   }
+  else if(pMsg->dwMessage == TMSG_SETAUDIODSPSTATE)
+  {
+    if(pMsg->param1 != 0)
+      g_application.StartAudioDSPEngine();
+    else
+      g_application.StopAudioDSPEngine();
+  }
+  else if(pMsg->dwMessage == TMSG_MEDIA_RESTART)
+  {
+    g_application.Restart(true);
+  }
+  else if(pMsg->dwMessage == TMSG_MEDIA_STOP)
+  {
+    // restore to previous window if needed
+    bool stopSlideshow = true;
+    bool stopVideo = true;
+    bool stopMusic = true;
+    if(pMsg->param1 >= PLAYLIST_MUSIC && pMsg->param1 <= PLAYLIST_PICTURE)
+    {
+      stopSlideshow = (pMsg->param1 == PLAYLIST_PICTURE);
+      stopVideo = (pMsg->param1 == PLAYLIST_VIDEO);
+      stopMusic = (pMsg->param1 == PLAYLIST_MUSIC);
+    }
+
+    if((stopSlideshow && g_windowManager.GetActiveWindow() == WINDOW_SLIDESHOW) ||
+      (stopVideo && g_windowManager.GetActiveWindow() == WINDOW_FULLSCREEN_VIDEO) ||
+      (stopMusic && g_windowManager.GetActiveWindow() == WINDOW_VISUALISATION))
+      g_windowManager.PreviousWindow();
+
+    g_application.ResetScreenSaver();
+    g_application.WakeUpScreenSaverAndDPMS();
+
+    // stop playing file
+    if(g_application.m_pPlayer->IsPlaying()) g_application.StopPlaying();
+  }
 
   CSingleLock lock(m_critSection);
   int mask = pMsg->dwMessage & TMSG_MASK_MESSAGE;
@@ -257,6 +292,26 @@ void CApplicationMessenger::RegisterReceveiver(IMessageTarget* target)
 {
   CSingleLock lock(m_critSection);
   m_mapTargets.insert(std::make_pair(target->GetMessageMask(), target));
+}
+
+void CApplicationMessenger::SetAudioDSPEngineState(bool onOff)
+{
+  ThreadMessage tMsg(TMSG_SETAUDIODSPSTATE);
+  tMsg.param1 = onOff ? 1 : 0;
+  SendMsg(std::move(tMsg), false);
+}
+
+void CApplicationMessenger::MediaRestart(bool bWait)
+{
+  ThreadMessage tMsg(TMSG_MEDIA_RESTART);
+  SendMsg(std::move(tMsg), bWait);
+}
+
+void CApplicationMessenger::MediaStop(bool bWait /* = true */, int playlistid /* = -1 */)
+{
+  ThreadMessage tMsg(TMSG_MEDIA_STOP);
+  tMsg.param1 = playlistid;
+  SendMsg(std::move(tMsg), bWait);
 }
 
 }

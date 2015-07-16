@@ -90,6 +90,7 @@
 #define TMSG_PICTURE_SLIDESHOW      TMSG_MASK_APPLICATION + 27
 #define TMSG_LOADPROFILE            TMSG_MASK_APPLICATION + 28
 #define TMSG_VIDEORESIZE            TMSG_MASK_APPLICATION + 29
+#define TMSG_SETAUDIODSPSTATE       TMSG_MASK_APPLICATION + 30
 
 #define TMSG_GUI_INFOLABEL          TMSG_MASK_GUIINFOMANAGER + 0
 #define TMSG_GUI_INFOBOOL           TMSG_MASK_GUIINFOMANAGER + 1
@@ -113,8 +114,8 @@
 
 
 #define TMSG_CALLBACK             800
-
-
+//#define TMSG_MEDIA_STOP           201
+//#define TMSG_MEDIA_RESTART        203
 
 class CGUIMessage;
 
@@ -175,6 +176,13 @@ public:
   void SendGUIMessage(const CGUIMessage &msg, int windowID = WINDOW_INVALID, bool waitResult=false);
 
   void RegisterReceveiver(IMessageTarget* target);
+
+  /*! \brief Used to enable/disable audio DSP system without waiting.
+      \param onOff if true it becomes switched on otherwise off
+  */
+  void SetAudioDSPEngineState(bool onOff);
+  void MediaRestart(bool bWait);
+  void MediaStop(bool bWait = true, int playlistid = -1);
 
 private:
   // private construction, and no assignements; use the provided singleton methods

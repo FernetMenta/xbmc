@@ -31,7 +31,7 @@ extern "C" {
 #include "cores/AudioEngine/Utils/AEUtil.h"
 
 #include "Application.h"
-#include "ApplicationMessenger.h"
+#include "messaging/ApplicationMessenger.h"
 #include "GUIInfoManager.h"
 #include "GUIUserMessages.h"
 #include "addons/AddonInstaller.h"
@@ -52,6 +52,8 @@ extern "C" {
 using namespace std;
 using namespace ADDON;
 using namespace ActiveAE;
+using namespace KODI;
+using namespace KODI::MESSAGING;
 
 #define MIN_DSP_ARRAY_SIZE 4096
 
@@ -289,7 +291,7 @@ void CActiveAEDSP::OnSettingAction(const CSetting *setting)
     {
       CGUIDialogAudioDSPManager *dialog = (CGUIDialogAudioDSPManager *)g_windowManager.GetWindow(WINDOW_DIALOG_AUDIO_DSP_MANAGER);
       if (dialog)
-        dialog->DoModal();
+        dialog->Open();
     }
   }
   else if (settingId == "audiooutput.dspresetdb")
