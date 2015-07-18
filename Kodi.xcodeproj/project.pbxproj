@@ -382,7 +382,6 @@
 		7C973CF51B5037EF0002A874 /* ActiveAEDSPProcess.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CEF1B5037EF0002A874 /* ActiveAEDSPProcess.cpp */; };
 		7C973CFA1B5038580002A874 /* GUIDialogAudioDSPManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CF61B5038580002A874 /* GUIDialogAudioDSPManager.cpp */; };
 		7C973CFB1B5038580002A874 /* GUIDialogAudioDSPSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CF81B5038580002A874 /* GUIDialogAudioDSPSettings.cpp */; };
-		7C973CFE1B5038680002A874 /* AudioDSPSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CFC1B5038680002A874 /* AudioDSPSettings.cpp */; };
 		7C99B6A4133D342100FC2B16 /* CircularCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C99B6A2133D342100FC2B16 /* CircularCache.cpp */; };
 		7C99B7951340723F00FC2B16 /* GUIDialogPlayEject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C99B7931340723F00FC2B16 /* GUIDialogPlayEject.cpp */; };
 		7CAA20511079C8160096DE39 /* BaseRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CAA204F1079C8160096DE39 /* BaseRenderer.cpp */; };
@@ -709,6 +708,9 @@
 		7CDAEA7D1001CD6E0040B25F /* karaokelyricstextustar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CDAEA7B1001CD6E0040B25F /* karaokelyricstextustar.cpp */; };
 		7CEBD8A80F33A0D800CAF6AD /* SpecialProtocolDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CEBD8A60F33A0D800CAF6AD /* SpecialProtocolDirectory.cpp */; };
 		7CEE2E5B13D6B71E000ABF2A /* TimeSmoother.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CEE2E5913D6B71E000ABF2A /* TimeSmoother.cpp */; };
+		7CEE587D1B5A3FFB007C2B5A /* AudioDSPSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CEE587C1B5A3FFB007C2B5A /* AudioDSPSettings.cpp */; };
+		7CEE587E1B5A3FFB007C2B5A /* AudioDSPSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CEE587C1B5A3FFB007C2B5A /* AudioDSPSettings.cpp */; };
+		7CEE587F1B5A3FFB007C2B5A /* AudioDSPSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CEE587C1B5A3FFB007C2B5A /* AudioDSPSettings.cpp */; };
 		7CF0504B190A1D7200222135 /* FFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CF05049190A1D7200222135 /* FFmpeg.cpp */; };
 		7CF0504C190A1D7200222135 /* FFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CF05049190A1D7200222135 /* FFmpeg.cpp */; };
 		7CF0504D190A1D7200222135 /* FFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CF05049190A1D7200222135 /* FFmpeg.cpp */; };
@@ -3794,7 +3796,6 @@
 		7C973CF71B5038580002A874 /* GUIDialogAudioDSPManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GUIDialogAudioDSPManager.h; path = dialogs/GUIDialogAudioDSPManager.h; sourceTree = "<group>"; };
 		7C973CF81B5038580002A874 /* GUIDialogAudioDSPSettings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GUIDialogAudioDSPSettings.cpp; path = dialogs/GUIDialogAudioDSPSettings.cpp; sourceTree = "<group>"; };
 		7C973CF91B5038580002A874 /* GUIDialogAudioDSPSettings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GUIDialogAudioDSPSettings.h; path = dialogs/GUIDialogAudioDSPSettings.h; sourceTree = "<group>"; };
-		7C973CFC1B5038680002A874 /* AudioDSPSettings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioDSPSettings.cpp; sourceTree = "<group>"; };
 		7C973CFD1B5038680002A874 /* AudioDSPSettings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioDSPSettings.h; sourceTree = "<group>"; };
 		7C99B6A2133D342100FC2B16 /* CircularCache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CircularCache.cpp; sourceTree = "<group>"; };
 		7C99B6A3133D342100FC2B16 /* CircularCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CircularCache.h; sourceTree = "<group>"; };
@@ -4179,6 +4180,7 @@
 		7CEBD8A70F33A0D800CAF6AD /* SpecialProtocolDirectory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialProtocolDirectory.h; sourceTree = "<group>"; };
 		7CEE2E5913D6B71E000ABF2A /* TimeSmoother.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimeSmoother.cpp; sourceTree = "<group>"; };
 		7CEE2E5A13D6B71E000ABF2A /* TimeSmoother.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimeSmoother.h; sourceTree = "<group>"; };
+		7CEE587C1B5A3FFB007C2B5A /* AudioDSPSettings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioDSPSettings.cpp; sourceTree = "<group>"; };
 		7CF05049190A1D7200222135 /* FFmpeg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FFmpeg.cpp; sourceTree = "<group>"; };
 		7CF0504A190A1D7200222135 /* FFmpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FFmpeg.h; sourceTree = "<group>"; };
 		7CF05051191195DA00222135 /* MediaType.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MediaType.cpp; sourceTree = "<group>"; };
@@ -9173,7 +9175,7 @@
 				F56352A016E53FF300D21BAD /* windows */,
 				18B7C3A612942132009E7A26 /* AdvancedSettings.cpp */,
 				7C973CFD1B5038680002A874 /* AudioDSPSettings.h */,
-				7C973CFC1B5038680002A874 /* AudioDSPSettings.cpp */,
+				7CEE587C1B5A3FFB007C2B5A /* AudioDSPSettings.cpp */,
 				18B7C3A712942132009E7A26 /* AdvancedSettings.h */,
 				DF28EE01170E1E51005FA9D2 /* DisplaySettings.cpp */,
 				DF28EE02170E1E51005FA9D2 /* DisplaySettings.h */,
@@ -10183,7 +10185,6 @@
 				E38E1F750D25F9FD00618676 /* mmap_anon.c in Sources */,
 				E38E1F760D25F9FD00618676 /* SoLoader.cpp in Sources */,
 				E38E1F770D25F9FD00618676 /* DummyVideoPlayer.cpp in Sources */,
-				7C973CFE1B5038680002A874 /* AudioDSPSettings.cpp in Sources */,
 				E38E1F790D25F9FD00618676 /* DVDAudio.cpp in Sources */,
 				395C29DE1A98A11C00EBC7AD /* WsgiResponseBody.cpp in Sources */,
 				E38E1F7A0D25F9FD00618676 /* DVDClock.cpp in Sources */,
@@ -11065,6 +11066,7 @@
 				7C1409A1183224B8009F9411 /* SettingsManager.cpp in Sources */,
 				7C1409A4183224B8009F9411 /* SettingUpdate.cpp in Sources */,
 				DF0ABB73183A94A30018445D /* Utf8Utils.cpp in Sources */,
+				7CEE587D1B5A3FFB007C2B5A /* AudioDSPSettings.cpp in Sources */,
 				7C1409A9184015C9009F9411 /* InfoExpression.cpp in Sources */,
 				AE32174218313ADF0003FAFC /* XSLTUtils.cpp in Sources */,
 				7C15DCBC1892481400FCE564 /* InfoBool.cpp in Sources */,
@@ -11692,6 +11694,7 @@
 				DFF0F2F317528350002DA3A4 /* GUIDialogMusicOSD.cpp in Sources */,
 				DFF0F2F417528350002DA3A4 /* GUIDialogMusicOverlay.cpp in Sources */,
 				DFF0F2F517528350002DA3A4 /* GUIDialogSongInfo.cpp in Sources */,
+				7CEE587F1B5A3FFB007C2B5A /* AudioDSPSettings.cpp in Sources */,
 				DFF0F2F617528350002DA3A4 /* GUIDialogVisualisationPresetList.cpp in Sources */,
 				DFF0F2F717528350002DA3A4 /* MusicAlbumInfo.cpp in Sources */,
 				DFF0F2F817528350002DA3A4 /* MusicArtistInfo.cpp in Sources */,
@@ -13093,6 +13096,7 @@
 				E4991558174E656E00741B6D /* File.cpp in Sources */,
 				E4991559174E656E00741B6D /* InfoTagMusic.cpp in Sources */,
 				E499155A174E656E00741B6D /* InfoTagVideo.cpp in Sources */,
+				7CEE587E1B5A3FFB007C2B5A /* AudioDSPSettings.cpp in Sources */,
 				E499155B174E656E00741B6D /* Keyboard.cpp in Sources */,
 				E499155C174E656E00741B6D /* LanguageHook.cpp in Sources */,
 				E499155D174E656E00741B6D /* ListItem.cpp in Sources */,
