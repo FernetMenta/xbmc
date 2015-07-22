@@ -759,7 +759,11 @@ void CDVDPlayerVideo::Process()
           break;
 
         // update dropping stats
-        CalcDropRequirement(pts, true);
+        int ret = CalcDropRequirement(pts, true);
+        if (ret & EOS_DROPPED)
+        {
+          m_iDroppedFrames++;
+        }
 
         // the decoder didn't need more data, flush the remaning buffer
         iDecoderState = m_pVideoCodec->Decode(NULL, 0, DVD_NOPTS_VALUE, DVD_NOPTS_VALUE);
@@ -1372,7 +1376,6 @@ int CDVDPlayerVideo::CalcDropRequirement(double pts, bool updateOnly)
     m_droppingStats.m_dropRequests = 0;
     m_droppingStats.m_lateFrames = 0;
   }
-  m_droppingStats.m_lastRenderPts = iRenderPts;
   return result;
 }
 
@@ -1381,7 +1384,6 @@ void CDroppingStats::Reset()
   m_gain.clear();
   m_totalGain = 0;
   m_lastDecoderPts = 0;
-  m_lastRenderPts = 0;
   m_lateFrames = 0;
   m_dropRequests = 0;
 }
