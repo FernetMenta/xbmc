@@ -9,7 +9,8 @@ ARCHIVE=$(SOURCE).tar.bz2
 
 # configuration settings
 CONFIGURE=./configure --prefix=$(PREFIX) --exec-prefix=$(PREFIX) \
-  --disable-examples --disable-doxygen-doc
+  --disable-examples --disable-doxygen-doc \
+  --disable-bdjava --without-libxml2 --without-freetype
 
 LIBDYLIB=$(PLATFORM)/src/.libs/libbluray.la
 
@@ -22,8 +23,7 @@ $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	# libbluray has borked Makefile.am with respect to CFLAGS, remove the offending line
-	sed -i -e "s|CFLAGS=|#CFLAGS=|" $(PLATFORM)/src/Makefile.am
-	sed -i -e "s|CFLAGS=|#CFLAGS=|" $(PLATFORM)/src/examples/Makefile.am
+	sed -i -e "s|CFLAGS=|#CFLAGS=|" $(PLATFORM)/Makefile.am
 	cd $(PLATFORM); ./bootstrap
 	cd $(PLATFORM); $(CONFIGURE)
 
