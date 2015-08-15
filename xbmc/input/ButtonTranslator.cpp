@@ -1188,15 +1188,11 @@ CAction CButtonTranslator::GetGlobalAction(const CKey &key)
   return GetAction(-1, key, true);
 }
 
-bool CButtonTranslator::HasLonpressMapping(int window, const CKey &key)
+bool CButtonTranslator::IsPossibleLongpress(int window, const CKey &key)
 {
   map<int, buttonMap>::const_iterator it = m_translatorMap.find(window);
   if (it == m_translatorMap.end())
-  {
-    if (window > -1)
-      return HasLonpressMapping(GetFallbackWindow(window), key);
     return false;
-  }
 
   uint32_t code = key.GetButtonCode();
   code |= CKey::MODIFIER_LONG;
@@ -1216,7 +1212,8 @@ bool CButtonTranslator::HasLonpressMapping(int window, const CKey &key)
   }
 #endif
   if (window > -1)
-    return HasLonpressMapping(GetFallbackWindow(window), key);
+    return IsPossibleLongpress(GetFallbackWindow(window), key);
+
   return false;
 }
 
@@ -1628,7 +1625,7 @@ uint32_t CButtonTranslator::TranslateKeyboardButton(TiXmlElement *pButton)
         button_id |= CKey::MODIFIER_SUPER;
       else if (substr == "meta" || substr == "cmd")
         button_id |= CKey::MODIFIER_META;
-      else if (substr == "longpress")
+      else if (substr == "long")
         button_id |= CKey::MODIFIER_LONG;
       else
         CLog::Log(LOGERROR, "Keyboard Translator: Unknown key modifier %s in %s", substr.c_str(), strMod.c_str());

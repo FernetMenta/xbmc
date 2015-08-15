@@ -78,12 +78,7 @@ public:
   static void GetActions(std::vector<std::string> &actionList);
   static void GetWindows(std::vector<std::string> &windowList);
 
-  /*! \brief Finds out if a longpress mapping exists for this key
-   \param window id of the current window
-   \param key to search a mapping for
-   \return true if a longpress mapping exists
-   */
-  bool HasLonpressMapping(int window, const CKey &key);
+  bool IsPossibleLongpress(int window, const CKey &key);
 
   /*! \brief Obtain the action configured for a given window and key
    \param window the window id
