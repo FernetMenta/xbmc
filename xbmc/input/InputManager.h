@@ -255,7 +255,6 @@ private:
 
   CKeyboardStat m_Keyboard;
   CMouseStat m_Mouse;
-  CKey m_LastKey;
 
 #if defined(HAS_LIRC) || defined(HAS_IRSERVERSUITE)
   CRemoteControl m_RemoteControl;
