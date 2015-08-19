@@ -280,6 +280,11 @@ public:
    */
   virtual void GetSubtitleCapabilities(std::vector<int> &subCaps) { subCaps.assign(1,IPC_SUBS_ALL); };
 
+  /*!
+   \breif hook into render loop of render thread
+   */
+  virtual void FrameMove() {};
+
 protected:
   IPlayerCallback& m_callback;
 };

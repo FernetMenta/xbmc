@@ -4709,3 +4709,10 @@ bool CDVDPlayer::CachePVRStream(void) const
           (m_item.HasPVRRecordingInfoTag() && m_item.GetPVRRecordingInfoTag()->IsBeingRecorded()))&&
       g_advancedSettings.m_bPVRCacheInDvdPlayer;
 }
+
+void CDVDPlayer::FrameMove()
+{
+  g_renderManager.FrameMove();
+  g_renderManager.UpdateResolution();
+  g_renderManager.ManageCaptures();
+}

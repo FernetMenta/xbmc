@@ -77,6 +77,7 @@ public:
   PlayBackRet OpenFile(const CFileItem& item, const CPlayerOptions& options);
   void ResetPlayer() { m_eCurrentPlayer = EPC_NONE; }
   void SetPlaySpeed(int iSpeed, bool bApplicationMuted);
+  void FrameMove();
 
   // proxy calls
   void   AddSubtitle(const std::string& strSubPath);

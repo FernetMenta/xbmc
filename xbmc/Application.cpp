@@ -2063,9 +2063,6 @@ void CApplication::Render()
 
   m_lastFrameTime = XbmcThreads::SystemClockMillis();
   CTimeUtils::UpdateFrameTime(flip, vsync);
-
-  g_renderManager.UpdateResolution();
-  g_renderManager.ManageCaptures();
 }
 
 void CApplication::SetStandAlone(bool value)
@@ -2820,6 +2817,8 @@ void CApplication::FrameMove(bool processEvents, bool processGUI)
     }
     g_windowManager.FrameMove();
   }
+
+  m_pPlayer->FrameMove();
 }
 
 
