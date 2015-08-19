@@ -117,8 +117,6 @@
 #include "filesystem/SFTPFile.h"
 #endif
 #include "PartyModeManager.h"
-#ifdef HAS_VIDEO_PLAYBACK
-#include "cores/VideoRenderers/RenderManager.h"
 #endif
 #include "network/ZeroconfBrowser.h"
 #ifndef TARGET_POSIX
@@ -1913,7 +1911,7 @@ void CApplication::Render()
     m_bPresentFrame = false;
     if (!extPlayerActive && g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback())
     {
-      m_bPresentFrame = g_renderManager.HasFrame();
+      m_bPresentFrame = m_pPlayer->HasFrame();
       if (vsync_mode == VSYNC_DISABLED)
         vsync = false;
     }
@@ -1995,6 +1993,8 @@ void CApplication::Render()
   // render video layer
   g_windowManager.RenderEx();
 
+  m_pPlayer->AfterRender();
+
   g_Windowing.EndRender();
 
   // reset our info cache - we do this at the end of Render so that it is
@@ -2036,14 +2036,11 @@ void CApplication::Render()
 
   if (!extPlayerActive && g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback())
   {
-    g_renderManager.FrameWait(100);
+    m_pPlayer->FrameWait(100);
   }
 
   m_lastFrameTime = XbmcThreads::SystemClockMillis();
   CTimeUtils::UpdateFrameTime(flip, vsync);
-
-  g_renderManager.UpdateResolution();
-  g_renderManager.ManageCaptures();
 }
 
 void CApplication::SetStandAlone(bool value)
@@ -2511,7 +2508,7 @@ void CApplication::OnApplicationMessage(ThreadMessage* pMsg)
     break;
 
   case TMSG_RENDERER_FLUSH:
-    g_renderManager.Flush();
+    m_pPlayer->FlushRenderer();
     break;
 
   case TMSG_HIBERNATE:
@@ -2823,7 +2820,7 @@ void CApplication::FrameMove(bool processEvents, bool processGUI)
 #if defined(TARGET_RASPBERRY_PI) || defined(HAS_IMXVPU)
     // This code reduces rendering fps of the GUI layer when playing videos in fullscreen mode
     // it makes only sense on architectures with multiple layers
-    if (g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback() && g_renderManager.IsVideoLayer())
+    if (g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback() && m_pPlayer->IsRenderingVideoLayer())
       fps = CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_LIMITGUIUPDATE);
 #endif
 
@@ -2839,6 +2836,8 @@ void CApplication::FrameMove(bool processEvents, bool processGUI)
     }
     g_windowManager.FrameMove();
   }
+
+  m_pPlayer->FrameMove();
 }
 
 
@@ -3547,8 +3546,8 @@ PlayBackRet CApplication::PlayFile(const CFileItem& item, bool bRestart)
 #ifdef HAS_VIDEO_PLAYBACK
     else if(m_pPlayer->IsPlayingVideo())
     {
-      // if player didn't manange to switch to fullscreen by itself do it here
-      if (options.fullscreen && g_renderManager.IsConfigured() &&
+      // if player didn't manage to switch to fullscreen by itself do it here
+      if (options.fullscreen && m_pPlayer->IsRenderingVideo() &&
           g_windowManager.GetActiveWindow() != WINDOW_FULLSCREEN_VIDEO )
        SwitchToFullScreen(true);
     }
