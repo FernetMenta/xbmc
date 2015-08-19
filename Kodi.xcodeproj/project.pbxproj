@@ -392,6 +392,7 @@
 		7CAA469019427AED00008885 /* PosixDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CAA468E19427AED00008885 /* PosixDirectory.cpp */; };
 		7CAA469119427AED00008885 /* PosixDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CAA468E19427AED00008885 /* PosixDirectory.cpp */; };
 		7CAA469219427AED00008885 /* PosixDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CAA468E19427AED00008885 /* PosixDirectory.cpp */; };
+		7CBA908C1B848F9700A46ACD /* GLSLOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CBA908A1B848F9700A46ACD /* GLSLOutput.cpp */; };
 		7CBB101F1B1E1C7D00E4FDE5 /* RendererVDA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CBB101D1B1E1C7D00E4FDE5 /* RendererVDA.cpp */; };
 		7CBEBB8412912BA400431822 /* fstrcmp.c in Sources */ = {isa = PBXBuildFile; fileRef = 7CBEBB8212912BA300431822 /* fstrcmp.c */; };
 		7CC30DB116291A5C003E7579 /* MusicThumbLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CC30DAF16291A5C003E7579 /* MusicThumbLoader.cpp */; };
@@ -3864,6 +3865,9 @@
 		7CAA25381085971C0096DE39 /* ScraperUrl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScraperUrl.h; sourceTree = "<group>"; };
 		7CAA468E19427AED00008885 /* PosixDirectory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PosixDirectory.cpp; sourceTree = "<group>"; };
 		7CAA468F19427AED00008885 /* PosixDirectory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PosixDirectory.h; sourceTree = "<group>"; };
+		7CBA90891B848F9700A46ACD /* dither.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dither.h; sourceTree = "<group>"; };
+		7CBA908A1B848F9700A46ACD /* GLSLOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GLSLOutput.cpp; sourceTree = "<group>"; };
+		7CBA908B1B848F9700A46ACD /* GLSLOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLSLOutput.h; sourceTree = "<group>"; };
 		7CBB101D1B1E1C7D00E4FDE5 /* RendererVDA.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RendererVDA.cpp; path = HwDecRender/RendererVDA.cpp; sourceTree = "<group>"; };
 		7CBB101E1B1E1C7D00E4FDE5 /* RendererVDA.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RendererVDA.h; path = HwDecRender/RendererVDA.h; sourceTree = "<group>"; };
 		7CBEBB8212912BA300431822 /* fstrcmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fstrcmp.c; sourceTree = "<group>"; };
@@ -8858,6 +8862,9 @@
 		E38E166B0D25F9FA00618676 /* VideoShaders */ = {
 			isa = PBXGroup;
 			children = (
+				7CBA90891B848F9700A46ACD /* dither.h */,
+				7CBA908A1B848F9700A46ACD /* GLSLOutput.cpp */,
+				7CBA908B1B848F9700A46ACD /* GLSLOutput.h */,
 				F592568710FBF2E100D2C91D /* ConvolutionKernels.cpp */,
 				F592568610FBF2E100D2C91D /* ConvolutionKernels.h */,
 				E38E166F0D25F9FA00618676 /* VideoFilterShader.cpp */,
@@ -11158,6 +11165,7 @@
 				DF64FE3D16C07AAA00D028FB /* GUIViewControl.cpp in Sources */,
 				DF64FE3E16C07AAA00D028FB /* GUIViewState.cpp in Sources */,
 				DF64FE4016C07AAA00D028FB /* ViewDatabase.cpp in Sources */,
+				7CBA908C1B848F9700A46ACD /* GLSLOutput.cpp in Sources */,
 				DF404A3916B9896C00D8023E /* cximage.cpp in Sources */,
 				DF404A3A16B9896C00D8023E /* imagefactory.cpp in Sources */,
 				DFD5812516C828500008EEA0 /* DAVCommon.cpp in Sources */,
