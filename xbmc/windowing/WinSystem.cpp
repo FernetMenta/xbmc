@@ -253,7 +253,7 @@ bool CWinSystemBase::UseLimitedColor()
 bool CWinSystemBase::UseDithering()
 {
 #if defined(HAS_GL)
-  static CSettingBool* setting = (CSettingBool*)CSettings::Get().GetSetting("videoscreen.dither");
+  static CSettingBool* setting = (CSettingBool*)CSettings::GetInstance().GetSetting("videoscreen.dither");
   return setting->GetValue();
 #else
   return false;
@@ -263,7 +263,7 @@ bool CWinSystemBase::UseDithering()
 unsigned CWinSystemBase::DitherDepth()
 {
 #if defined(HAS_GL)
-  static CSettingInt* setting = (CSettingInt*)CSettings::Get().GetSetting("videoscreen.ditherdepth");
+  static CSettingInt* setting = (CSettingInt*)CSettings::GetInstance().GetSetting("videoscreen.ditherdepth");
   return setting->GetValue();
 #else
   return 8;
