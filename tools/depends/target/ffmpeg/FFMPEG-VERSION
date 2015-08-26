@@ -1,6 +1,6 @@
 LIBNAME=ffmpeg
 BASE_URL=https://github.com/FernetMenta/FFmpeg/archive
-BRANCH=release/2.8-kodi
-VERSION=release-2.8-kodi
+BRANCH=master-kodi
+VERSION=master-kodi
 ARCHIVE=$(LIBNAME)-$(VERSION).tar.gz
 
