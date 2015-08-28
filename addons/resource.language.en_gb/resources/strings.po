@@ -6408,23 +6408,23 @@ msgid "Render method"
 msgstr ""
 
 #: system/settings/settings.xml
-#: xbmc/cores/VideoRenderers/BaseRenderer.cpp
+#: xbmc/cores/dvdplayer/VideoRenderers/BaseRenderer.cpp
 msgctxt "#13416"
 msgid "Auto detect"
 msgstr ""
 
-#: xbmc/cores/VideoRenderers/BaseRenderer.cpp
+#: xbmc/cores/dvdplayer/VideoRenderers/BaseRenderer.cpp
 msgctxt "#13417"
 msgid "Basic shaders (ARB)"
 msgstr ""
 
-#: xbmc/cores/VideoRenderers/BaseRenderer.cpp
+#: xbmc/cores/dvdplayer/VideoRenderers/BaseRenderer.cpp
 msgctxt "#13418"
 msgid "Advanced shaders (GLSL)"
 msgstr ""
 
 #: system/settings/settings.xml
-#: xbmc/cores/VideoRenderers/BaseRenderer.cpp
+#: xbmc/cores/dvdplayer/VideoRenderers/BaseRenderer.cpp
 msgctxt "#13419"
 msgid "Software"
 msgstr ""
@@ -6479,7 +6479,7 @@ msgid "Allow hardware acceleration - OpenMax"
 msgstr ""
 
 #: system/settings/settings.xml
-#: xbmc/cores/VideoRenderers/BaseRenderer.cpp
+#: xbmc/cores/dvdplayer/VideoRenderers/BaseRenderer.cpp
 msgctxt "#13431"
 msgid "Pixel shaders"
 msgstr ""
@@ -8244,7 +8244,7 @@ msgctxt "#16318"
 msgid "Temporal / Spatial (half)"
 msgstr ""
 
-#: xbmc/cores/VideoRenderers/BaseRenderer.cpp
+#: xbmc/cores/dvdplayer/VideoRenderers/BaseRenderer.cpp
 msgctxt "#16319"
 msgid "DXVA"
 msgstr ""
@@ -8279,7 +8279,7 @@ msgctxt "#16325"
 msgid "VDPAU - Bob"
 msgstr ""
 
-#: xbmc/cores/VideoRenderers/BaseRenderer.cpp
+#: xbmc/cores/dvdplayer/VideoRenderers/BaseRenderer.cpp
 msgctxt "#16326"
 msgid "DXVA-HD"
 msgstr ""
