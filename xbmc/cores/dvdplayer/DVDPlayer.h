@@ -21,7 +21,7 @@
  */
 
 #include "cores/IPlayer.h"
-#include "cores/VideoRenderers/RenderManager.h"
+#include "cores/dvdplayer/VideoRenderers/RenderManager.h"
 #include "threads/Thread.h"
 
 #include "IDVDPlayer.h"
