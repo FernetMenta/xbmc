@@ -30,8 +30,8 @@ class FFmpegVideoDecoder;
 // Contact: oldnemesis
 //
 // FFMpeg-based background video decoder for Karaoke background.
-// We are not using DVDPlayer for this because:
-// 1. DVDPlayer was not designed to run at the same time when music is being played and other things (like lyrics) rendered. 
+// We are not using VideoPlayer for this because:
+// 1. VideoPlayer was not designed to run at the same time when music is being played and other things (like lyrics) rendered. 
 // While this setup works from time to time, it constantly gets broken. Some modes, like VDPAU, lead to crash right away.
 //
 // 2. We do not need to decode audio, hence we don't have to use extra CPU.
