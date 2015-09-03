@@ -36,7 +36,7 @@
 #include "utils/log.h"
 #include "video/VideoInfoTag.h"
 #include "video/VideoDatabase.h"
-#include "cores/dvdplayer/DVDFileInfo.h"
+#include "cores/VideoPlayer/DVDFileInfo.h"
 #include "music/MusicDatabase.h"
 #include "utils/StringUtils.h"
 #include "settings/AdvancedSettings.h"

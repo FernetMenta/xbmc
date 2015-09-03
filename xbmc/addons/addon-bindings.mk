@@ -21,5 +21,5 @@ BINDINGS+=addons/library.kodi.adsp/libKODI_adsp.h
 BINDINGS+=addons/library.kodi.guilib/libKODI_guilib.h
 BINDINGS+=addons/library.xbmc.pvr/libXBMC_pvr.h
 BINDINGS+=addons/library.xbmc.codec/libXBMC_codec.h
-BINDINGS+=xbmc/cores/dvdplayer/DVDDemuxers/DVDDemuxPacket.h
+BINDINGS+=xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxPacket.h
 BINDINGS+=xbmc/cores/AudioEngine/Utils/AEChannelData.h

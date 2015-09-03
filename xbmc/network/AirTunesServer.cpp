@@ -39,7 +39,7 @@
 #include "messaging/ApplicationMessenger.h"
 #include "filesystem/PipeFile.h"
 #include "Application.h"
-#include "cores/dvdplayer/DVDDemuxers/DVDDemuxBXA.h"
+#include "cores/VideoPlayer/DVDDemuxers/DVDDemuxBXA.h"
 #include "filesystem/File.h"
 #include "music/tags/MusicInfoTag.h"
 #include "FileItem.h"
