@@ -57,7 +57,7 @@ bool CDVDAudioCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
   AVCodec* pCodec = NULL;
   m_bOpenedCodec = false;
 
-  if (hints.codec == AV_CODEC_ID_DTS && CSettings::GetInstance().GetBool(CSettings::SETTING_AUDIOOUTPUT_SUPPORTSDTSHDCPUDECODING))
+  if (hints.codec == AV_CODEC_ID_DTS)
     pCodec = avcodec_find_decoder_by_name("libdcadec");
 
   if (!pCodec)
