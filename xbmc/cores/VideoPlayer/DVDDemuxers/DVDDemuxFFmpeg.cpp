@@ -454,6 +454,7 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput, bool streaminfo, bool filein
           st->codec->codec = pCodec;
       }
     }
+
     /* to speed up dvd switches, only analyse very short */
     if(m_pInput->IsStreamType(DVDSTREAM_TYPE_DVD))
       av_opt_set_int(m_pFormatContext, "analyzeduration", 500000, 0);
