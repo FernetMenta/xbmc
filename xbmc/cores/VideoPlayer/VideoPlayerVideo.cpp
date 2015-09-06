@@ -373,8 +373,10 @@ void CVideoPlayerVideo::Process()
 
       double absolute = m_pClock->GetAbsoluteClock();
       double delay = m_FlipTimeStamp - absolute;
-      if( delay > frametime ) delay = frametime;
-      else if( delay < 0 )    delay = 0;
+      if( delay > frametime )
+        delay = frametime;
+      else if( delay < 0 )
+        delay = 0;
       m_FlipTimePts = pts -frametime;
 
       if(pMsgGeneralResync->m_clock)
