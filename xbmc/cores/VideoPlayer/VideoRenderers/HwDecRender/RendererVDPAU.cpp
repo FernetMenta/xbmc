@@ -132,8 +132,12 @@ bool CRendererVDPAU::Supports(ESCALINGMETHOD method)
     // if scaling is below level, avoid hq scaling
     float scaleX = fabs(((float)m_sourceWidth - m_destRect.Width())/m_sourceWidth)*100;
     float scaleY = fabs(((float)m_sourceHeight - m_destRect.Height())/m_sourceHeight)*100;
-    int minScale = CSettings::GetInstance().GetInt("videoplayer.hqscalers");
+    int minScale = CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_HQSCALERS);
     if (scaleX < minScale && scaleY < minScale)
+      return false;
+
+    // avoid using hq scalers when downscaling UHD surfaces
+    if (m_sourceWidth > 1920 && (m_sourceWidth > m_destRect.Width() || m_sourceHeight > m_destRect.Height()))
       return false;
 
     // spline36 and lanczos3 are only allowed through advancedsettings.xml
