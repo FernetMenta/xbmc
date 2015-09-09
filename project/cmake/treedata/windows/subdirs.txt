@@ -1,0 +1,3 @@
+xbmc/input/windows         input/windows 
+xbmc/network/windows       network/windows
+xbmc/peripherals/bus/win32 peripherals/bus/windows
