@@ -126,7 +126,7 @@ unsigned int CDVDAudio::AddPackets(const DVDAudioFrame &audioframe)
   else if (newTime != m_syncErrorTime)
   {
     m_syncErrorTime = info.errortime;
-    m_syncError = info.error;
+    m_syncError = info.error / 1000 * DVD_TIME_BASE;
     m_resampleRatio = info.rr;
   }
 

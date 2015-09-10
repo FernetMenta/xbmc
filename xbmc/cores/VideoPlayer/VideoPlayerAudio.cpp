@@ -619,7 +619,7 @@ void CVideoPlayerAudio::SetSyncType(bool passthrough)
 
 bool CVideoPlayerAudio::OutputPacket(DVDAudioFrame &audioframe)
 {
-  double syncerror = m_dvdAudio.GetSyncError() / 1000 * DVD_TIME_BASE;
+  double syncerror = m_dvdAudio.GetSyncError();
 
   if (m_synctype == SYNC_DISCON)
   {
@@ -646,7 +646,7 @@ bool CVideoPlayerAudio::OutputPacket(DVDAudioFrame &audioframe)
     double clock = m_pClock->GetClock(absolute);
     if (m_pClock->Update(clock + error, absolute, limit - 0.001, "CVideoPlayerAudio::OutputPacket"))
     {
-      m_dvdAudio.SetSyncErrorCorrection(-syncerror);
+      m_dvdAudio.SetSyncErrorCorrection(-error);
     }
   }
   if (m_synctype == SYNC_SKIPDUP)
