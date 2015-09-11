@@ -19,7 +19,7 @@
  */
 
 #include "system.h"
-#include "DVDPlayerRadioRDS.h"
+#include "VideoPlayerRadioRDS.h"
 #include "VideoPlayer.h"
 
 #include "DVDInputStreams/DVDInputStream.h"
@@ -556,7 +556,7 @@ void CVideoPlayer::CreatePlayers()
     m_VideoPlayerVideo = new CVideoPlayerVideo(&m_clock, &m_overlayContainer, m_messenger, m_renderManager);
     m_VideoPlayerAudio = new CVideoPlayerAudio(&m_clock, m_messenger);
   }
-  m_dvdPlayerRadioRDS = new CDVDRadioRDSData();
+  m_VideoPlayerRadioRDS = new CDVDRadioRDSData();
   m_VideoPlayerSubtitle = new CVideoPlayerSubtitle(&m_overlayContainer);
   m_VideoPlayerTeletext = new CDVDTeletextData();
   m_players_created = true;
@@ -571,7 +571,7 @@ void CVideoPlayer::DestroyPlayers()
   delete m_VideoPlayerAudio;
   delete m_VideoPlayerSubtitle;
   delete m_VideoPlayerTeletext;
-  delete m_dvdPlayerRadioRDS;
+  delete m_VideoPlayerRadioRDS;
   m_players_created = false;
 }
 
@@ -582,7 +582,7 @@ CVideoPlayer::CVideoPlayer(IPlayerCallback& callback)
       m_CurrentVideo(STREAM_VIDEO, VideoPlayer_VIDEO),
       m_CurrentSubtitle(STREAM_SUBTITLE, VideoPlayer_SUBTITLE),
       m_CurrentTeletext(STREAM_TELETEXT, VideoPlayer_TELETEXT),
-      m_CurrentRadioRDS(STREAM_RADIO_RDS, DVDPLAYER_RDS),
+      m_CurrentRadioRDS(STREAM_RADIO_RDS, VideoPlayer_RDS),
       m_messenger("player"),
       m_ready(true),
       m_DemuxerPausePending(false)
@@ -1418,7 +1418,7 @@ void CVideoPlayer::Process()
       if(m_CurrentTeletext.inited)
         m_VideoPlayerTeletext->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_EOF));
       if(m_CurrentRadioRDS.inited)
-        m_dvdPlayerRadioRDS->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_EOF));
+        m_VideoPlayerRadioRDS->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_EOF));
 
       m_CurrentAudio.inited = false;
       m_CurrentVideo.inited = false;
@@ -1661,7 +1661,7 @@ void CVideoPlayer::ProcessTeletextData(CDemuxStream* pStream, DemuxPacket* pPack
   m_VideoPlayerTeletext->SendMessage(new CDVDMsgDemuxerPacket(pPacket, drop));
 }
 
-void CDVDPlayer::ProcessRadioRDSData(CDemuxStream* pStream, DemuxPacket* pPacket)
+void CVideoPlayer::ProcessRadioRDSData(CDemuxStream* pStream, DemuxPacket* pPacket)
 {
   CheckStreamChanges(m_CurrentRadioRDS, pStream);
 
@@ -1674,7 +1674,7 @@ void CDVDPlayer::ProcessRadioRDSData(CDemuxStream* pStream, DemuxPacket* pPacket
   if (CheckSceneSkip(m_CurrentRadioRDS))
     drop = true;
 
-  m_dvdPlayerRadioRDS->SendMessage(new CDVDMsgDemuxerPacket(pPacket, drop));
+  m_VideoPlayerRadioRDS->SendMessage(new CDVDMsgDemuxerPacket(pPacket, drop));
 }
 
 bool CVideoPlayer::GetCachingTimes(double& level, double& delay, double& offset)
@@ -2277,8 +2277,8 @@ IDVDStreamPlayer* CVideoPlayer::GetStreamPlayer(unsigned int target)
     return m_VideoPlayerSubtitle;
   if(target == VideoPlayer_TELETEXT)
     return m_VideoPlayerTeletext;
-  if(target == DVDPLAYER_RDS)
-    return m_dvdPlayerRadioRDS;
+  if(target == VideoPlayer_RDS)
+    return m_VideoPlayerRadioRDS;
   return NULL;
 }
 
@@ -3229,7 +3229,7 @@ std::string CVideoPlayer::GetRadioText(unsigned int line)
   if (m_CurrentRadioRDS.id < 0)
       return "";
 
-  return m_dvdPlayerRadioRDS->GetRadioText(line);
+  return m_VideoPlayerRadioRDS->GetRadioText(line);
 }
 
 void CVideoPlayer::SeekTime(int64_t iTime)
@@ -3580,7 +3580,7 @@ bool CVideoPlayer::OpenTeletextStream(CDVDStreamInfo& hint)
 
 bool CVideoPlayer::OpenRadioRDSStream(CDVDStreamInfo& hint)
 {
-  if (!m_dvdPlayerRadioRDS->CheckStream(hint))
+  if (!m_VideoPlayerRadioRDS->CheckStream(hint))
     return false;
 
   if(!OpenStreamPlayer(m_CurrentRadioRDS, hint, true))
@@ -3677,7 +3677,7 @@ void CVideoPlayer::FlushBuffers(bool queued, double pts, bool accurate, bool syn
     m_VideoPlayerVideo->SendMessage(new CDVDMsg(CDVDMsg::VIDEO_NOSKIP));
     m_VideoPlayerSubtitle->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
     m_VideoPlayerTeletext->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
-    m_dvdPlayerRadioRDS->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
+    m_VideoPlayerRadioRDS->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
     SynchronizePlayers(SYNCSOURCE_ALL);
   }
   else
@@ -3686,7 +3686,7 @@ void CVideoPlayer::FlushBuffers(bool queued, double pts, bool accurate, bool syn
     m_VideoPlayerVideo->Flush();
     m_VideoPlayerSubtitle->Flush();
     m_VideoPlayerTeletext->Flush();
-    m_dvdPlayerRadioRDS->Flush();
+    m_VideoPlayerRadioRDS->Flush();
 
     // clear subtitle and menu overlays
     m_overlayContainer.Clear();

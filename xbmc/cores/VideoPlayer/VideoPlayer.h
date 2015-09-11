@@ -30,7 +30,7 @@
 #include "VideoPlayerVideo.h"
 #include "VideoPlayerSubtitle.h"
 #include "VideoPlayerTeletext.h"
-#include "DVDPlayerRadioRDS.h"
+#include "VideoPlayerRadioRDS.h"
 #include "Edl.h"
 #include "FileItem.h"
 #include "system.h"
@@ -455,7 +455,7 @@ protected:
   IDVDStreamPlayerAudio *m_VideoPlayerAudio; // audio part
   CVideoPlayerSubtitle *m_VideoPlayerSubtitle; // subtitle part
   CDVDTeletextData *m_VideoPlayerTeletext; // teletext part
-  CDVDRadioRDSData *m_dvdPlayerRadioRDS; // rds part
+  CDVDRadioRDSData *m_VideoPlayerRadioRDS; // rds part
 
   CDVDClock m_clock;                // master clock
   CDVDOverlayContainer m_overlayContainer;

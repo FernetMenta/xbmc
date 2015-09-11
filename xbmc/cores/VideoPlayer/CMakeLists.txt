@@ -14,5 +14,5 @@ set(SOURCES DVDAudio.cpp
             DVDTSCorrection.cpp
             Edl.cpp)
 
-core_add_library(dvdplayer)
-add_dependencies(dvdplayer libcpluff ffmpeg dvdnav)
+core_add_library(VideoPlayer)
+add_dependencies(VideoPlayer libcpluff ffmpeg dvdnav)
