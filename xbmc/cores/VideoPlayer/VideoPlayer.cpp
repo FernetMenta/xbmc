@@ -556,14 +556,9 @@ void CVideoPlayer::CreatePlayers()
     m_VideoPlayerVideo = new CVideoPlayerVideo(&m_clock, &m_overlayContainer, m_messenger, m_renderManager);
     m_VideoPlayerAudio = new CVideoPlayerAudio(&m_clock, m_messenger);
   }
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-  m_dvdPlayerSubtitle = new CDVDPlayerSubtitle(&m_overlayContainer);
-  m_dvdPlayerTeletext = new CDVDTeletextData();
   m_dvdPlayerRadioRDS = new CDVDRadioRDSData();
-=======
   m_VideoPlayerSubtitle = new CVideoPlayerSubtitle(&m_overlayContainer);
   m_VideoPlayerTeletext = new CDVDTeletextData();
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
   m_players_created = true;
 }
 
@@ -571,37 +566,23 @@ void CVideoPlayer::DestroyPlayers()
 {
   if (!m_players_created)
     return;
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-  delete m_dvdPlayerVideo;
-  delete m_dvdPlayerAudio;
-  delete m_dvdPlayerSubtitle;
-  delete m_dvdPlayerTeletext;
-  delete m_dvdPlayerRadioRDS;
-=======
+
   delete m_VideoPlayerVideo;
   delete m_VideoPlayerAudio;
   delete m_VideoPlayerSubtitle;
   delete m_VideoPlayerTeletext;
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
+  delete m_dvdPlayerRadioRDS;
   m_players_created = false;
 }
 
 CVideoPlayer::CVideoPlayer(IPlayerCallback& callback)
     : IPlayer(callback),
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-      CThread("DVDPlayer"),
-      m_CurrentAudio(STREAM_AUDIO, DVDPLAYER_AUDIO),
-      m_CurrentVideo(STREAM_VIDEO, DVDPLAYER_VIDEO),
-      m_CurrentSubtitle(STREAM_SUBTITLE, DVDPLAYER_SUBTITLE),
-      m_CurrentTeletext(STREAM_TELETEXT, DVDPLAYER_TELETEXT),
-      m_CurrentRadioRDS(STREAM_RADIO_RDS, DVDPLAYER_RDS),
-=======
       CThread("VideoPlayer"),
       m_CurrentAudio(STREAM_AUDIO, VideoPlayer_AUDIO),
       m_CurrentVideo(STREAM_VIDEO, VideoPlayer_VIDEO),
       m_CurrentSubtitle(STREAM_SUBTITLE, VideoPlayer_SUBTITLE),
       m_CurrentTeletext(STREAM_TELETEXT, VideoPlayer_TELETEXT),
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
+      m_CurrentRadioRDS(STREAM_RADIO_RDS, DVDPLAYER_RDS),
       m_messenger("player"),
       m_ready(true),
       m_DemuxerPausePending(false)
@@ -1435,13 +1416,9 @@ void CVideoPlayer::Process()
       if(m_CurrentSubtitle.inited)
         m_VideoPlayerSubtitle->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_EOF));
       if(m_CurrentTeletext.inited)
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-        m_dvdPlayerTeletext->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_EOF));
+        m_VideoPlayerTeletext->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_EOF));
       if(m_CurrentRadioRDS.inited)
         m_dvdPlayerRadioRDS->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_EOF));
-=======
-        m_VideoPlayerTeletext->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_EOF));
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
 
       m_CurrentAudio.inited = false;
       m_CurrentVideo.inited = false;
@@ -1597,9 +1574,6 @@ void CVideoPlayer::ProcessAudioData(CDemuxStream* pStream, DemuxPacket* pPacket)
 {
   CheckStreamChanges(m_CurrentAudio, pStream);
 
-  // check if we are too slow and need to recache
-  CheckStartCaching(m_CurrentAudio);
-
   CheckContinuity(m_CurrentAudio, pPacket);
   UpdateTimestamps(m_CurrentAudio, pPacket);
 
@@ -1635,9 +1609,6 @@ void CVideoPlayer::ProcessAudioData(CDemuxStream* pStream, DemuxPacket* pPacket)
 void CVideoPlayer::ProcessVideoData(CDemuxStream* pStream, DemuxPacket* pPacket)
 {
   CheckStreamChanges(m_CurrentVideo, pStream);
-
-  // check if we are too slow and need to recache
-  CheckStartCaching(m_CurrentVideo);
 
   if( pPacket->iSize != 4) //don't check the EOF_SEQUENCE of stillframes
   {
@@ -1690,7 +1661,6 @@ void CVideoPlayer::ProcessTeletextData(CDemuxStream* pStream, DemuxPacket* pPack
   m_VideoPlayerTeletext->SendMessage(new CDVDMsgDemuxerPacket(pPacket, drop));
 }
 
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
 void CDVDPlayer::ProcessRadioRDSData(CDemuxStream* pStream, DemuxPacket* pPacket)
 {
   CheckStreamChanges(m_CurrentRadioRDS, pStream);
@@ -1707,10 +1677,7 @@ void CDVDPlayer::ProcessRadioRDSData(CDemuxStream* pStream, DemuxPacket* pPacket
   m_dvdPlayerRadioRDS->SendMessage(new CDVDMsgDemuxerPacket(pPacket, drop));
 }
 
-bool CDVDPlayer::GetCachingTimes(double& level, double& delay, double& offset)
-=======
 bool CVideoPlayer::GetCachingTimes(double& level, double& delay, double& offset)
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
 {
   if(!m_pInputStream || !m_pDemuxer)
     return false;
@@ -1763,42 +1730,42 @@ void CVideoPlayer::HandlePlaySpeed()
   ECacheState caching = m_caching;
   bool isInMenu = IsInMenu();
 
-  if(isInMenu && caching != CACHESTATE_DONE)
+  if (isInMenu && caching != CACHESTATE_DONE)
     caching = CACHESTATE_DONE;
 
-  if(caching == CACHESTATE_FULL)
+  if (caching == CACHESTATE_FULL)
   {
     double level, delay, offset;
-    if(GetCachingTimes(level, delay, offset))
+    if (GetCachingTimes(level, delay, offset))
     {
-      if(level  < 0.0)
+      if (level < 0.0)
       {
         CGUIDialogKaiToast::QueueNotification(g_localizeStrings.Get(21454), g_localizeStrings.Get(21455));
         caching = CACHESTATE_INIT;
       }
-      if(level >= 1.0)
+      if (level >= 1.0)
         caching = CACHESTATE_INIT;
     }
     else
     {
-      if ((!m_VideoPlayerAudio->AcceptsData() && m_CurrentAudio.id >= 0)
-      ||  (!m_VideoPlayerVideo->AcceptsData() && m_CurrentVideo.id >= 0))
+      if ((!m_VideoPlayerAudio->AcceptsData() && m_CurrentAudio.id >= 0) ||
+          (!m_VideoPlayerVideo->AcceptsData() && m_CurrentVideo.id >= 0))
         caching = CACHESTATE_INIT;
     }
   }
 
-  if(caching == CACHESTATE_INIT)
+  if (caching == CACHESTATE_INIT)
   {
     // if all enabled streams have been inited we are done
-    if((m_CurrentVideo.id < 0 || m_CurrentVideo.started)
-    && (m_CurrentAudio.id < 0 || m_CurrentAudio.started))
+    if ((m_CurrentVideo.id < 0 || m_CurrentVideo.started) &&
+        (m_CurrentAudio.id < 0 || m_CurrentAudio.started))
       caching = CACHESTATE_PLAY;
 
     // handle situation that we get no data on one stream
-    if(m_CurrentAudio.id >= 0 && m_CurrentVideo.id >= 0)
+    if (m_CurrentAudio.id >= 0 && m_CurrentVideo.id >= 0)
     {
-      if ((!m_VideoPlayerAudio->AcceptsData() && !m_CurrentVideo.started)
-      ||  (!m_VideoPlayerVideo->AcceptsData() && !m_CurrentAudio.started))
+      if ((!m_VideoPlayerAudio->AcceptsData() && !m_CurrentVideo.started) ||
+          (!m_VideoPlayerVideo->AcceptsData() && !m_CurrentAudio.started))
       {
         caching = CACHESTATE_DONE;
       }
@@ -1835,52 +1802,76 @@ void CVideoPlayer::HandlePlaySpeed()
     }
   }
 
-  if(caching == CACHESTATE_PLAY)
+  if (caching == CACHESTATE_PLAY)
   {
     // if all enabled streams have started playing we are done
-    if((m_CurrentVideo.id < 0 || !m_VideoPlayerVideo->IsStalled())
-    && (m_CurrentAudio.id < 0 || !m_VideoPlayerAudio->IsStalled()))
+    if ((m_CurrentVideo.id < 0 || !m_VideoPlayerVideo->IsStalled()) &&
+        (m_CurrentAudio.id < 0 || !m_VideoPlayerAudio->IsStalled()))
       caching = CACHESTATE_DONE;
   }
 
-  if(m_caching != caching)
-    SetCaching(caching);
-
-  // check buffering levels and adjust clock
-  if (m_playSpeed == DVD_PLAYSPEED_NORMAL && m_caching == CACHESTATE_DONE && !isInMenu)
+  if (caching == CACHESTATE_DONE)
   {
-    // due to i.e. discontinuities of pts the stream may have drifted away
-    // from clock too far for audio to sync back.
-    if (m_CurrentAudio.id >= 0 && m_CurrentAudio.inited &&
-        m_VideoPlayerAudio->IsStalled() && m_VideoPlayerAudio->GetLevel() == 0)
+    if (m_playSpeed == DVD_PLAYSPEED_NORMAL && !isInMenu)
     {
-      CLog::Log(LOGDEBUG,"CVideoPlayer::HandlePlaySpeed - audio stream stalled, triggering re-sync");
-      TriggerResync();
-    }
-
-    if (CachePVRStream())
-    {
-      if (m_CurrentAudio.id >= 0)
+      // take action is audio or video stream is stalles
+      if (m_VideoPlayerAudio->IsStalled() || m_VideoPlayerVideo->IsStalled())
       {
-        double adjust = -1.0; // a unique value
-        if (m_clock.GetSpeedAdjust() == 0.0 && m_VideoPlayerAudio->GetLevel() < 5)
-          adjust = -0.01;
-
-        if (m_clock.GetSpeedAdjust() < 0 && m_VideoPlayerAudio->GetLevel() > 20)
-          adjust = 0.0;
-
-        if (adjust != -1.0)
+        if (CachePVRStream())
         {
-          m_clock.SetSpeedAdjust(adjust);
-          if (m_omxplayer_mode)
-            m_OmxPlayerState.av_clock.OMXSetSpeedAdjust(adjust);
-          CLog::Log(LOGDEBUG, "CVideoPlayer::HandlePlaySpeed set clock adjust: %f", adjust);
+          if ((m_CurrentAudio.started && m_VideoPlayerAudio->GetLevel() == 0) ||
+              (m_CurrentVideo.started && m_VideoPlayerVideo->GetLevel() == 0))
+          {
+            CLog::Log(LOGDEBUG, "Stream stalled, start buffering. Audio: %d - Video: %d",
+                      m_VideoPlayerAudio->GetLevel(),m_VideoPlayerVideo->GetLevel());
+            caching = CACHESTATE_PVR;
+            TriggerResync();
+          }
+        }
+        else
+        {
+          // start caching if audio and video have run dry
+          if (m_VideoPlayerAudio->GetLevel() <= 50 &&
+              m_VideoPlayerVideo->GetLevel() <= 50)
+          {
+            caching = CACHESTATE_FULL;
+          }
+          else if (m_CurrentAudio.id >= 0 && m_CurrentAudio.inited &&
+                    m_VideoPlayerAudio->GetLevel() == 0)
+          {
+            CLog::Log(LOGDEBUG,"CVideoPlayer::HandlePlaySpeed - audio stream stalled, triggering re-sync");
+            TriggerResync();
+          }
+        }
+      }
+      // care for live streams
+      else if (CachePVRStream())
+      {
+        if (m_CurrentAudio.id >= 0)
+        {
+          double adjust = -1.0; // a unique value
+          if (m_clock.GetSpeedAdjust() == 0.0 && m_VideoPlayerAudio->GetLevel() < 5)
+            adjust = -0.01;
+
+          if (m_clock.GetSpeedAdjust() < 0 && m_VideoPlayerAudio->GetLevel() > 20)
+            adjust = 0.0;
+
+          if (adjust != -1.0)
+          {
+            m_clock.SetSpeedAdjust(adjust);
+            if (m_omxplayer_mode)
+              m_OmxPlayerState.av_clock.OMXSetSpeedAdjust(adjust);
+            CLog::Log(LOGDEBUG, "CVideoPlayer::HandlePlaySpeed set clock adjust: %f", adjust);
+          }
         }
       }
     }
   }
 
-  if(GetPlaySpeed() != DVD_PLAYSPEED_NORMAL && GetPlaySpeed() != DVD_PLAYSPEED_PAUSE)
+  if (m_caching != caching)
+    SetCaching(caching);
+
+  if(m_playSpeed != DVD_PLAYSPEED_NORMAL && m_playSpeed != DVD_PLAYSPEED_PAUSE)
   {
     if (isInMenu)
     {
@@ -1951,44 +1942,6 @@ void CVideoPlayer::HandlePlaySpeed()
       }
     }
   }
-}
-
-bool CVideoPlayer::CheckStartCaching(CCurrentStream& current)
-{
-  if(m_caching   != CACHESTATE_DONE
-  || m_playSpeed != DVD_PLAYSPEED_NORMAL)
-    return false;
-
-  if(IsInMenu())
-    return false;
-
-  if((current.type == STREAM_AUDIO && m_VideoPlayerAudio->IsStalled())
-  || (current.type == STREAM_VIDEO && m_VideoPlayerVideo->IsStalled()))
-  {
-    if (CachePVRStream())
-    {
-      if ((current.type == STREAM_AUDIO && current.started && m_VideoPlayerAudio->GetLevel() == 0) ||
-         (current.type == STREAM_VIDEO && current.started && m_VideoPlayerVideo->GetLevel() == 0))
-      {
-        CLog::Log(LOGDEBUG, "%s stream stalled. start buffering", current.type == STREAM_AUDIO ? "audio" : "video");
-        SetCaching(CACHESTATE_PVR);
-        TriggerResync();
-      }
-      return true;
-    }
-
-    // don't start caching if it's only a single stream that has run dry
-    if(m_VideoPlayerAudio->GetLevel() > 50
-    || m_VideoPlayerVideo->GetLevel() > 50)
-      return false;
-
-    if(current.inited)
-      SetCaching(CACHESTATE_FULL);
-    else
-      SetCaching(CACHESTATE_INIT);
-    return true;
-  }
-  return false;
 }
 
 bool CVideoPlayer::CheckPlayerInit(CCurrentStream& current)
@@ -2316,18 +2269,6 @@ void CVideoPlayer::SynchronizePlayers(unsigned int sources)
 
 IDVDStreamPlayer* CVideoPlayer::GetStreamPlayer(unsigned int target)
 {
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-  if(target == DVDPLAYER_AUDIO)
-    return m_dvdPlayerAudio;
-  if(target == DVDPLAYER_VIDEO)
-    return m_dvdPlayerVideo;
-  if(target == DVDPLAYER_SUBTITLE)
-    return m_dvdPlayerSubtitle;
-  if(target == DVDPLAYER_TELETEXT)
-    return m_dvdPlayerTeletext;
-  if(target == DVDPLAYER_RDS)
-    return m_dvdPlayerRadioRDS;
-=======
   if(target == VideoPlayer_AUDIO)
     return m_VideoPlayerAudio;
   if(target == VideoPlayer_VIDEO)
@@ -2336,7 +2277,8 @@ IDVDStreamPlayer* CVideoPlayer::GetStreamPlayer(unsigned int target)
     return m_VideoPlayerSubtitle;
   if(target == VideoPlayer_TELETEXT)
     return m_VideoPlayerTeletext;
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
+  if(target == DVDPLAYER_RDS)
+    return m_dvdPlayerRadioRDS;
   return NULL;
 }
 
@@ -2906,16 +2848,12 @@ bool CVideoPlayer::HasAudio() const
   return m_HasAudio;
 }
 
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-bool CDVDPlayer::HasRDS() const
+bool CVideoPlayer::HasRDS() const
 {
   return m_CurrentRadioRDS.id >= 0;
 }
 
-bool CDVDPlayer::IsPassthrough() const
-=======
 bool CVideoPlayer::IsPassthrough() const
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
 {
   return m_VideoPlayerAudio->IsPassthrough();
 }
@@ -3286,8 +3224,7 @@ void CVideoPlayer::LoadPage(int p, int sp, unsigned char* buffer)
   return m_VideoPlayerTeletext->LoadPage(p, sp, buffer);
 }
 
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-std::string CDVDPlayer::GetRadioText(unsigned int line)
+std::string CVideoPlayer::GetRadioText(unsigned int line)
 {
   if (m_CurrentRadioRDS.id < 0)
       return "";
@@ -3295,10 +3232,7 @@ std::string CDVDPlayer::GetRadioText(unsigned int line)
   return m_dvdPlayerRadioRDS->GetRadioText(line);
 }
 
-void CDVDPlayer::SeekTime(int64_t iTime)
-=======
 void CVideoPlayer::SeekTime(int64_t iTime)
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
 {
   int seekOffset = (int)(iTime - GetTime());
   m_messenger.Put(new CDVDMsgPlayerSeek((int)iTime, true, true, true));
@@ -3644,8 +3578,7 @@ bool CVideoPlayer::OpenTeletextStream(CDVDStreamInfo& hint)
   return true;
 }
 
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-bool CDVDPlayer::OpenRadioRDSStream(CDVDStreamInfo& hint)
+bool CVideoPlayer::OpenRadioRDSStream(CDVDStreamInfo& hint)
 {
   if (!m_dvdPlayerRadioRDS->CheckStream(hint))
     return false;
@@ -3656,10 +3589,7 @@ bool CDVDPlayer::OpenRadioRDSStream(CDVDStreamInfo& hint)
   return true;
 }
 
-bool CDVDPlayer::CloseStream(CCurrentStream& current, bool bWaitForBuffers)
-=======
 bool CVideoPlayer::CloseStream(CCurrentStream& current, bool bWaitForBuffers)
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
 {
   if (current.id < 0)
     return false;
@@ -3707,7 +3637,7 @@ void CVideoPlayer::UpdateClockMaster()
 void CVideoPlayer::FlushBuffers(bool queued, double pts, bool accurate, bool sync)
 {
   double startpts;
-  if(accurate && !m_omxplayer_mode)
+  if (accurate && !m_omxplayer_mode)
     startpts = pts;
   else
     startpts = DVD_NOPTS_VALUE;
@@ -3740,38 +3670,23 @@ void CVideoPlayer::FlushBuffers(bool queued, double pts, bool accurate, bool syn
   m_CurrentRadioRDS.dts      = DVD_NOPTS_VALUE;
   m_CurrentRadioRDS.startpts = startpts;
 
-  if(queued)
+  if (queued)
   {
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-    m_dvdPlayerAudio->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
-    m_dvdPlayerVideo->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
-    m_dvdPlayerVideo->SendMessage(new CDVDMsg(CDVDMsg::VIDEO_NOSKIP));
-    m_dvdPlayerSubtitle->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
-    m_dvdPlayerTeletext->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
-    m_dvdPlayerRadioRDS->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
-=======
     m_VideoPlayerAudio->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
     m_VideoPlayerVideo->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
     m_VideoPlayerVideo->SendMessage(new CDVDMsg(CDVDMsg::VIDEO_NOSKIP));
     m_VideoPlayerSubtitle->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
     m_VideoPlayerTeletext->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
+    m_dvdPlayerRadioRDS->SendMessage(new CDVDMsg(CDVDMsg::GENERAL_RESET));
     SynchronizePlayers(SYNCSOURCE_ALL);
   }
   else
   {
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.cpp
-    m_dvdPlayerAudio->Flush();
-    m_dvdPlayerVideo->Flush();
-    m_dvdPlayerSubtitle->Flush();
-    m_dvdPlayerTeletext->Flush();
-    m_dvdPlayerRadioRDS->Flush();
-=======
     m_VideoPlayerAudio->Flush();
     m_VideoPlayerVideo->Flush();
     m_VideoPlayerSubtitle->Flush();
     m_VideoPlayerTeletext->Flush();
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.cpp
+    m_dvdPlayerRadioRDS->Flush();
 
     // clear subtitle and menu overlays
     m_overlayContainer.Clear();
