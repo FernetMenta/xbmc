@@ -46,4 +46,4 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 core_add_library(audioengine)
-add_dependencies(audioengine ffmpeg)
+add_dependencies(audioengine libcpluff ffmpeg)

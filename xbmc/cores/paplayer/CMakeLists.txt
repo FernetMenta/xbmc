@@ -4,4 +4,4 @@ set(SOURCES AudioDecoder.cpp
             VideoPlayerCodec.cpp)
 
 core_add_library(paplayer)
-add_dependencies(paplayer ffmpeg)
+add_dependencies(paplayer libcpluff ffmpeg)
