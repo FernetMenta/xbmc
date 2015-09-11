@@ -1,5 +1,4 @@
-set(SOURCES AnimatedGif.cpp
-            cximage.cpp
+set(SOURCES cximage.cpp
             DDSImage.cpp
             DirectXGraphics.cpp
             DirtyRegionSolvers.cpp

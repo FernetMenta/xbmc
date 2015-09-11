@@ -17,6 +17,12 @@ if(GNUTLS_FOUND)
   list(APPEND ffmpeg_conf --enable-gnutls)
 endif()
 
+include(ProcessorCount)
+ProcessorCount(N)
+if(NOT N EQUAL 0)
+  set(PARALLEL_FLAGS -j${N})
+endif()
+
 include(ExternalProject)
 externalproject_add(ffmpeg
                     SOURCE_DIR ${CMAKE_SOURCE_DIR}
@@ -53,7 +59,7 @@ externalproject_add(ffmpeg
                       --cc=${CMAKE_C_COMPILER}
                       --prefix=${CMAKE_INSTALL_PREFIX}
                       ${ffmpeg_conf}
-                    BUILD_COMMAND make)
+                    BUILD_COMMAND make ${PARALLEL_FLAGS})
 
 install(CODE "Message(Done)")
 
