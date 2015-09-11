@@ -5,3 +5,4 @@ set(SOURCES AddonEvent.cpp
             MediaLibraryEvent.cpp)
 
 core_add_library(events)
+add_dependencies(events libcpluff)
