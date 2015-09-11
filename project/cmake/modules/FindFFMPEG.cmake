@@ -1,12 +1,17 @@
+include(ExternalProject)
+file(STRINGS ${CORE_SOURCE_DIR}/tools/depends/target/ffmpeg/FFMPEG-VERSION VER)
+string(REGEX MATCH "VERSION=[^ ]*$.*" FFMPEG_VER "${VER}")
+list(GET FFMPEG_VER 0 FFMPEG_VER)
+string(SUBSTRING "${FFMPEG_VER}" 8 -1 FFMPEG_VER)
+string(REGEX MATCH "BASE_URL=([^ ]*)" FFMPEG_BASE_URL "${VER}")
+list(GET FFMPEG_BASE_URL 0 FFMPEG_BASE_URL)
+string(SUBSTRING "${FFMPEG_BASE_URL}" 9 -1 FFMPEG_BASE_URL)
+
+
 if(ENABLE_INTERNAL_FFMPEG)
-  include(ExternalProject)
-  file(STRINGS ${CORE_SOURCE_DIR}/tools/depends/target/ffmpeg/FFMPEG-VERSION VER)
-  string(REGEX MATCH "VERSION=[^ ]*$.*" FFMPEG_VER "${VER}")
-  list(GET FFMPEG_VER 0 FFMPEG_VER)
-  string(SUBSTRING "${FFMPEG_VER}" 8 -1 FFMPEG_VER)
-  string(REGEX MATCH "BASE_URL=([^ ]*)" FFMPEG_BASE_URL "${VER}")
-  list(GET FFMPEG_BASE_URL 0 FFMPEG_BASE_URL)
-  string(SUBSTRING "${FFMPEG_BASE_URL}" 9 -1 FFMPEG_BASE_URL)
+  if(FFMPEG_PATH)
+    message(WARNING "Internal FFmpeg enabled, but FFMPEG_PATH given, ignoring")
+  endif()
 
   externalproject_add(ffmpeg
                       URL ${FFMPEG_BASE_URL}/${FFMPEG_VER}.tar.gz
@@ -42,15 +47,20 @@ fi")
                                  -DUSE_STATIC_FFMPEG=1)
   set(FFMPEG_FOUND 1)
 else()
+  if(FFMPEG_PATH)
+    set(ENV{PKG_CONFIG_PATH} "${FFMPEG_PATH}/lib/pkgconfig")
+  endif()
   set(FFMPEG_PKGS libavcodec>=56.26.100 libavfilter>=5.11.100 libavformat>=56.25.101
                   libavutil>=54.20.100 libswscale>=3.1.101 libswresample>=1.1.100 libpostproc>=53.3.100)
   if(PKG_CONFIG_FOUND)
     pkg_check_modules (FFMPEG ${FFMPEG_PKGS})
+    set(FFMPEG_LIBRARIES "${FFMPEG_LDFLAGS}")
   endif()
 
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(FFMPEG DEFAULT_MSG FFMPEG_INCLUDE_DIRS FFMPEG_LIBRARIES)
   set(FFMPEG_FOUND 1)
+  list(APPEND FFMPEG_DEFINITIONS -DFFMPEG_VER_SHA=\"${FFMPEG_VER}\")
 endif()
 
 mark_as_advanced(FFMPEG_INCLUDE_DIRS FFMPEG_LIBRARIES FFMPEG_DEFINITIONS FFMPEG_FOUND)
