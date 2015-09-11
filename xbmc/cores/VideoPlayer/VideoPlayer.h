@@ -31,7 +31,7 @@
 #include "VideoPlayerVideo.h"
 #include "VideoPlayerSubtitle.h"
 #include "VideoPlayerTeletext.h"
-#include "DVDPlayerRadioRDS.h"
+#include "VideoPlayerRadioRDS.h"
 
 #include "Edl.h"
 #include "FileItem.h"
@@ -207,18 +207,11 @@ public:
 };
 
 
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.h
-#define DVDPLAYER_AUDIO    1
-#define DVDPLAYER_VIDEO    2
-#define DVDPLAYER_SUBTITLE 3
-#define DVDPLAYER_TELETEXT 4
-#define DVDPLAYER_RDS      5
-=======
 #define VideoPlayer_AUDIO    1
 #define VideoPlayer_VIDEO    2
 #define VideoPlayer_SUBTITLE 3
 #define VideoPlayer_TELETEXT 4
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.h
+#define VideoPlayer_RDS        5
 
 class CVideoPlayer : public IPlayer, public CThread, public IVideoPlayer
 {
@@ -457,18 +450,11 @@ protected:
 
   CDVDMessageQueue m_messenger;     // thread messenger
 
-<<<<<<< HEAD:xbmc/cores/dvdplayer/DVDPlayer.h
-  IDVDStreamPlayerVideo *m_dvdPlayerVideo; // video part
-  IDVDStreamPlayerAudio *m_dvdPlayerAudio; // audio part
-  CDVDPlayerSubtitle *m_dvdPlayerSubtitle; // subtitle part
-  CDVDTeletextData *m_dvdPlayerTeletext; // teletext part
-  CDVDRadioRDSData *m_dvdPlayerRadioRDS; // rds part
-=======
   IDVDStreamPlayerVideo *m_VideoPlayerVideo; // video part
   IDVDStreamPlayerAudio *m_VideoPlayerAudio; // audio part
   CVideoPlayerSubtitle *m_VideoPlayerSubtitle; // subtitle part
   CDVDTeletextData *m_VideoPlayerTeletext; // teletext part
->>>>>>> ffc9b40... rename dvdplayer to VideoPlayer:xbmc/cores/VideoPlayer/VideoPlayer.h
+  CDVDRadioRDSData *m_VideoPlayerRadioRDS; // rds part
 
   CDVDClock m_clock;                // master clock
   CDVDOverlayContainer m_overlayContainer;
