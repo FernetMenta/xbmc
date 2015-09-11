@@ -10,7 +10,7 @@ if(ENABLE_DVDCSS)
                                         --prefix=<INSTALL_DIR>)
 
   core_link_library(${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/libdvd/lib/libdvdcss.a
-                    system/players/dvdplayer/libdvdcss dvdcss)
+                    system/players/VideoPlayer/libdvdcss dvdcss)
 endif()
 
 set(DVDREAD_CFLAGS "-D_XBMC")
@@ -32,7 +32,7 @@ if(ENABLE_DVDCSS)
 endif()
 
 core_link_library(${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/libdvd/lib/libdvdread.a
-                  system/players/dvdplayer/libdvdread dvdread)
+                  system/players/VideoPlayer/libdvdread dvdread)
 
 ExternalProject_ADD(dvdnav SOURCE_DIR ${CORE_SOURCE_DIR}/lib/libdvd/libdvdnav/
                            PREFIX ${CORE_BUILD_DIR}/libdvd
@@ -48,7 +48,7 @@ ExternalProject_ADD(dvdnav SOURCE_DIR ${CORE_SOURCE_DIR}/lib/libdvd/libdvdnav/
                                       "LIBS=-ldvdcss")
 add_dependencies(dvdnav dvdread)
 core_link_library(${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/libdvd/lib/libdvdnav.a
-                  system/players/dvdplayer/libdvdnav dvdnav)
+                  system/players/VideoPlayer/libdvdnav dvdnav)
 
 set(dvdnav_internal_headers ${CORE_SOURCE_DIR}/lib/libdvd/libdvdnav/src/dvdnav_internal.h
                             ${CORE_SOURCE_DIR}/lib/libdvd/libdvdnav/src/vm/vm.h)
