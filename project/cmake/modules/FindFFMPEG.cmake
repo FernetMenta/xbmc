@@ -1,4 +1,8 @@
 if(ENABLE_INTERNAL_FFMPEG)
+  if(FFMPEG_PATH)
+    message(WARNING "Internal FFmpeg enabled, but FFMPEG_PATH given, ignoring")
+  endif()
+
   include(ExternalProject)
   file(STRINGS ${CORE_SOURCE_DIR}/tools/depends/target/ffmpeg/FFMPEG-VERSION VER)
   string(REGEX MATCH "VERSION=[^ ]*$.*" FFMPEG_VER "${VER}")
@@ -42,6 +46,9 @@ fi")
                                  -DUSE_STATIC_FFMPEG=1)
   set(FFMPEG_FOUND 1)
 else()
+  if(FFMPEG_PATH)
+    set(ENV{PKG_CONFIG_PATH} "${FFMPEG_PATH}/lib/pkgconfig")
+  endif()
   set(FFMPEG_PKGS libavcodec>=56.26.100 libavfilter>=5.11.100 libavformat>=56.25.101
                   libavutil>=54.20.100 libswscale>=3.1.101 libswresample>=1.1.100 libpostproc>=53.3.100)
   if(PKG_CONFIG_FOUND)
