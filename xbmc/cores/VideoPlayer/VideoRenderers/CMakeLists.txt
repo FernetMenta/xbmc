@@ -17,7 +17,9 @@ if(OPENGL_FOUND)
 endif()
 
 if(GLES_FOUND)
-  list(APPEND SOURCES LinuxRendererGLES.cpp)
+  list(APPEND SOURCES LinuxRendererGLES.cpp
+                      OverlayRendererGL.cpp)
+
 endif()
 
 core_add_library(videorenderers)
