@@ -33,6 +33,24 @@ macro(check_type header type var)
   endif()
 endmacro()
 
+# Macro to check if a given builtin function exists
+# Arguments:
+#   func   the function to check
+#   var    the compiler definition to set if type exists
+# On return:
+#   If type was found, the definition is added to SYSTEM_DEFINES
+macro(check_builtin code var)
+  check_cxx_source_compiles("
+                             int main()
+                             {
+                               ${func};
+                             }" ${var})
+  if(${var})
+    list(APPEND SYSTEM_DEFINES -D${var}=1)
+  endif()
+endmacro()
+
+
 # -------- Main script --------- 
 message(STATUS "system type: ${CMAKE_SYSTEM_NAME}")
 if(NOT CORE_SYSTEM_NAME)
@@ -56,6 +74,9 @@ check_type(string char16_t HAVE_CHAR16_T)
 check_type(string char32_t HAVE_CHAR32_T)
 check_type(stdint.h uint_least16_t HAVE_STDINT_H)
 check_symbol_exists(posix_fadvise fcntl.h HAVE_POSIX_FADVISE)
+check_builtin("long* temp=0; long ret=__sync_add_and_fetch(temp, 1)" HAS_BUILTIN_SYNC_ADD_AND_FETCH)
+check_builtin("long* temp=0; long ret=__sync_sub_and_fetch(temp, 1)" HAS_BUILTIN_SYNC_SUB_AND_FETCH)
+check_builtin("long* temp=0; long ret=__sync_val_compare_and_swap(temp, 1, 1)" HAS_BUILTIN_SYNC_VAL_COMPARE_AND_SWAP)
 if(HAVE_POSIX_FADVISE)
   list(APPEND SYSTEM_DEFINES -DHAVE_POSIX_FADVISE=1)
 endif()
