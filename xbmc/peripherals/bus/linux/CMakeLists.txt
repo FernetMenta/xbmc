@@ -8,4 +8,5 @@ else()
   endif()
 endif()
 
-core_add_library(peripheral_bus_linux)
+core_add_library(peripherals_bus_linux)
+set_target_properties(peripherals_bus_linux PROPERTIES LINKER_LANGUAGE CXX)
