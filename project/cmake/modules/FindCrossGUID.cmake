@@ -24,7 +24,7 @@ if(ENABLE_INTERNAL_CROSSGUID)
   set(CROSSGUID_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/include)
 else()
   find_path(CROSSGUID_INCLUDE_DIRS guid.h)
-  find_library(CROSSGUID_LIBRARY crossguid)
+  find_library(CROSSGUID_LIBRARIES crossguid)
 endif()
 
 find_package(UUID REQUIRED)

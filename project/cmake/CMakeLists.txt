@@ -34,17 +34,20 @@ if(UNIX)
   option(ENABLE_LIBUSB      "Enable libusb support?" ON)
   option(ENABLE_UDEV        "Enable UDev support?" ON)
   option(ENABLE_OPENGL      "Enable OpenGL?" ON)
+  option(ENABLE_OPENGLES    "Enable OpenGLES?" ON)
   option(ENABLE_SDL         "Enable SDL?" OFF)
   option(ENABLE_X11         "Enable X11 support?" ON)
   option(ENABLE_WAYLAND     "Enable Wayland support?" OFF)
   option(ENABLE_EGL         "Enable EGL?" OFF)
   option(ENABLE_VAAPI       "Enable VAAPI support?" ON)
   option(ENABLE_VDPAU       "Enable VDPAU support?" ON)
+  option(ENABLE_MMAL        "Enable MMAL support?" OFF)
   option(ENABLE_OPTICAL     "Enable optical support?" ON)
 endif()
 # System options
 option(WITH_ARCH              "build with given arch" OFF)
 option(WITH_CPU               "build with given cpu" OFF)
+option(ENABLE_CCACHE          "Enable Ccache support" ON)
 
 set(CORE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../..)
 set(CORE_BUILD_DIR build)
@@ -76,7 +79,12 @@ if(CMAKE_CROSSCOMPILING)
     message(STATUS "CMAKE_CROSSCOMPILING: ${CMAKE_CROSSCOMPILING}")
     set(PKG_CONFIG_FOUND TRUE)
   endif()
+  core_require_dep(Squish)
+  set(TEXTUREPACKER_BIN ${NATIVEPREFIX}/bin/TexturePacker)
+else()
+  set(TEXTUREPACKER_BIN TexturePacker)
 endif()
+
 find_package(Threads REQUIRED)
 list(APPEND DEPLIBS ${CMAKE_THREAD_LIBS_INIT})
 
@@ -91,7 +99,7 @@ set(optional_deps MicroHttpd MySqlClient SSH
                   PulseAudio VDPAU VAAPI)
 
 # Required, dyloaded deps
-set(required_dyload Curl ASS Mpeg2 LibDvd)
+set(required_dyload Curl ASS Mpeg2)
 
 # Optional, dyloaded deps
 set(dyload_optional RTMP CEC Bluray
@@ -132,6 +140,10 @@ if(ENABLE_NONFREE)
   list(APPEND DEP_DEFINES "-DHAVE_XBMC_NONFREE=1")
 endif()
 
+if(ENABLE_DVDCSS)
+  core_require_dep(LibDvd)
+endif()
+
 if(ENABLE_OPTICAL)
   list(APPEND DEP_DEFINES -DHAS_DVD_DRIVE)
   core_require_dep(Cdio)
@@ -149,11 +161,27 @@ if(NOT WIN32)
     core_optional_dep(X ENABLE_X11)
     core_optional_dep(XRandR ENABLE_X11)
     core_optional_dep(Sdl)
+  else()
+    core_optional_dep(OpenGLES ENABLE_OPENGLES)
+    if(OPENGLES_FOUND)
+      core_optional_dep(EGL ENABLE_EGL)
+      core_optional_dep(OMX ENABLE_OMX)
+      core_optional_dep(X ENABLE_X11)
+      core_optional_dep(Sdl)
+    endif()
+  endif()
+
+  if(ENABLE_MMAL)
+    core_require_dep(MMAL)
   endif()
 endif()
 
 if(ENABLE_SKIN_TOUCHED)
   list(APPEND DEP_DEFINES "-DHAS_SKIN_TOUCHED=1")
+endif()
+
+if(ENABLE_CCACHE)
+  core_optional_dep(CCache)
 endif()
 
 add_custom_command(OUTPUT ${CORE_BUILD_DIR}/xbmc/CompileInfo.cpp
@@ -209,7 +237,7 @@ foreach(skin ${SKINS})
 endforeach()
 
 add_custom_target(pack-skins ALL
-                  DEPENDS TexturePacker export-files ${XBT_FILES})
+                  DEPENDS ${TEXTUREPACKER_BIN} export-files ${XBT_FILES})
 
 set(CXIMAGE_DEPLIBS ${ZLIB_LIBRARIES} ${JPEG_LIBRARIES}
                     ${TIFF_LIBRARIES} ${PNG_LIBRARIES}
@@ -231,8 +259,10 @@ configure_file(${CORE_SOURCE_DIR}/xbmc/DllPaths_generated.h.in
                ${CORE_BUILD_DIR}/DllPaths_generated.h @ONLY)
 
 # Build helpers
-add_executable(JsonSchemaBuilder ${CORE_SOURCE_DIR}/tools/depends/native/JsonSchemaBuilder/src/JsonSchemaBuilder.cpp)
-add_subdirectory(${CORE_SOURCE_DIR}/tools/depends/native/TexturePacker build/texturepacker)
+if(NOT CMAKE_CROSSCOMPILING)
+  add_executable(JsonSchemaBuilder ${CORE_SOURCE_DIR}/tools/depends/native/JsonSchemaBuilder/src/JsonSchemaBuilder.cpp)
+  add_subdirectory(${CORE_SOURCE_DIR}/tools/depends/native/TexturePacker build/texturepacker)
+endif()
 
 # Codegen
 add_subdirectory(${CORE_SOURCE_DIR}/xbmc/interfaces/swig build/swig)
@@ -266,8 +296,10 @@ if(FFMPEG_LINK_EXECUTABLE)
 endif()
 
 # randr
-add_executable(kodi-xrandr ${CORE_SOURCE_DIR}/xbmc-xrandr.c)
-target_link_libraries(kodi-xrandr ${SYSTEM_LDFLAGS} ${X_LIBRARIES} m ${XRANDR_LIBRARIES})
+if(ENABLE_X11 AND XRANDR_FOUND)
+  add_executable(kodi-xrandr ${CORE_SOURCE_DIR}/xbmc-xrandr.c)
+  target_link_libraries(kodi-xrandr ${SYSTEM_LDFLAGS} ${X_LIBRARIES} m ${XRANDR_LIBRARIES})
+endif()
 
 include(scripts/${CORE_SYSTEM_NAME}/install.cmake)
 
@@ -276,4 +308,12 @@ message("#---- CONFIGURATION ----#")
 foreach(msg ${final_message})
   message(STATUS ${msg})
 endforeach()
+
+if(VERBOSE)
+  message("\n#---- Internal Variables ----# ")
+  message("DEPLIBS: ${DEPLIBS}")
+  message("SYSTEM_LDFLAGS: ${SYSTEM_LDFLAGS}")
+  message("core_DEPENDS: ${core_DEPENDS}")
+  message("CMAKE_DL_LIBS: ${CMAKE_DL_LIBS}")
+endif()
 message("#-----------------------#")

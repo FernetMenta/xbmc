@@ -4,10 +4,14 @@ set(JSON_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/version.txt
               ${CMAKE_CURRENT_SOURCE_DIR}/types.json
               ${CMAKE_CURRENT_SOURCE_DIR}/notifications.json)
 
-set(JsonSchemaBuilder JsonSchemaBuilder)
+if(CMAKE_CROSSCOMPILING)
+  set(JASONSCHEMABUILDER_BIN ${NATIVEPREFIX}/bin/JsonSchemaBuilder)
+else()
+  set(JASONSCHEMABUILDER_BIN JsonSchemaBuilder)
+endif()
 
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ServiceDescription.h
-                   COMMAND ${JsonSchemaBuilder} ${JSON_SRCS}
+                   COMMAND ${JASONSCHEMABUILDER_BIN} ${JSON_SRCS}
                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}
                    DEPENDS ${JSON_SRCS}
                    COMMENT "Generating ServiceDescription.h")
