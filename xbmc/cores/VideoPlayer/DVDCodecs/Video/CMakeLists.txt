@@ -38,5 +38,9 @@ if(VTB_FOUND)
   list(APPEND SOURCES DVDVideoCodecVideoToolBox.cpp)
 endif()
 
+if(MMAL_FOUND)
+  list(APPEND SOURCES MMALCodec.cpp)
+endif()
+
 core_add_library(dvdvideocodecs)
 add_dependencies(dvdvideocodecs ffmpeg)
