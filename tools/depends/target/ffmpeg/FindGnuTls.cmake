@@ -5,6 +5,9 @@
 # GNUTLS_INCLUDE_DIRS - the gnutls include directory
 # GNUTLS_LIBRARIES - The gnutls libraries
 
+include(FindPkgConfig)
+find_package(PkgConfig)
+
 if(PKG_CONFIG_FOUND)
   pkg_check_modules (GNUTLS gnutls)
 endif()
