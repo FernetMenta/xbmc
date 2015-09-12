@@ -43,6 +43,11 @@ if(WIN32)
                       Sinks/AESinkWASAPI.cpp)
 endif()
 
+if(CORE_SYSTEM_NAME STREQUAL "rbpi")
+  list(APPEND SOURCES Engines/ActiveAE/ActiveAEResamplePi.cpp
+                      Sinks/AESinkPi.cpp)
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 core_add_library(audioengine)

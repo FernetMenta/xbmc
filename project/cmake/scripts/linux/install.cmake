@@ -8,6 +8,11 @@ if(OPENGL_FOUND)
 else()
   set(USE_OPENGL 0)
 endif()
+if(OPENGLES_FOUND)
+  set(USE_OPENGLES 1)
+else()
+  set(USE_OPENGLES 0)
+endif()
 
 configure_file(${CORE_SOURCE_DIR}/tools/Linux/kodi.sh.in
                ${CORE_BUILD_DIR}/scripts/${APP_NAME_LC} @ONLY)
@@ -15,17 +20,15 @@ configure_file(${CORE_SOURCE_DIR}/tools/Linux/kodi-standalone.sh.in
                 ${CORE_BUILD_DIR}/scripts/${APP_NAME_LC}-standalone @ONLY)
 
 install(TARGETS ${APP_NAME_LC}.bin DESTINATION ${libdir}/kodi)
-install(TARGETS ${APP_NAME_LC}-xrandr DESTINATION ${libdir}/${APP_NAME_LC})
+if(ENABLE_X11 AND XRANDR_FOUND)
+  install(TARGETS ${APP_NAME_LC}-xrandr DESTINATION ${libdir}/${APP_NAME_LC})
+endif()
 install(FILES ${addon_bindings} DESTINATION ${includedir}/kodi)
 install(FILES ${cmake-files}
         DESTINATION ${libdir}/kodi)
 install(PROGRAMS ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/scripts/${APP_NAME_LC}
                 ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/scripts/${APP_NAME_LC}-standalone
         DESTINATION ${bindir})
-
-# Backwards compat
-install(DIRECTORY ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/include/xbmc DESTINATION ${includedir})
-install(DIRECTORY ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/lib/xbmc DESTINATION ${libdir})
 
 configure_file(${CORE_SOURCE_DIR}/tools/Linux/kodi-xsession.desktop.in
                ${CORE_BUILD_DIR}/${APP_NAME_LC}-xsession.desktop)
@@ -58,7 +61,8 @@ foreach(file ${install_data})
           DESTINATION ${datarootdir}/kodi/${dir})
 endforeach()
 
-install(CODE "file(STRINGS ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/extra-installs dirs)
+if(EXISTS ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/extra-installs)
+  install(CODE "file(STRINGS ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/extra-installs dirs)
               foreach(dir \${dirs})
                 file(GLOB_RECURSE FILES RELATIVE ${CMAKE_BINARY_DIR} \${dir}/*)
                 foreach(file \${FILES})
@@ -66,6 +70,8 @@ install(CODE "file(STRINGS ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/extra-installs 
                   file(INSTALL \${file} DESTINATION ${datarootdir}/kodi/\${dir})
                 endforeach()
               endforeach()")
+endif()
+
 if(NOT "$ENV{DESTDIR}" STREQUAL "")
   set(DESTDIR ${CMAKE_BINARY_DIR}/$ENV{DESTDIR})
 endif()
