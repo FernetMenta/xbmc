@@ -1,3 +1,7 @@
+if(CMAKE_CROSSCOMPILING)
+  return()
+endif()
+
 set(SOURCES src/alpha.cpp
             src/clusterfit.cpp
             src/colourblock.cpp
