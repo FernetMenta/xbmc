@@ -17,7 +17,7 @@ if(VDA_FOUND)
 endif()
 
 if(MMAL_FOUND)
-  list(APPEND SOURCE MMALRenderer.cpp)
+  list(APPEND SOURCES MMALRenderer.cpp)
 endif()
 
 core_add_library(videorenderers_hwdec)
