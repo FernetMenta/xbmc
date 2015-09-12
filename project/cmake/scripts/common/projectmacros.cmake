@@ -7,7 +7,11 @@
 # On return:
 #   xbt is added to ${XBT_FILES}
 function(pack_xbt input output)
-  set(TexturePacker ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/texturepacker/TexturePacker)
+  if(CMAKE_CROSSCOMPILING)
+    set(TexturePacker ${TEXTUREPACKER_BIN})
+  else()
+    set(TexturePacker ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/texturepacker/TexturePacker)
+  endif()
   file(GLOB_RECURSE MEDIA_FILES ${input}/*)
   get_filename_component(dir ${output} PATH)
   add_custom_command(OUTPUT  ${output}
