@@ -1185,6 +1185,8 @@
 		DFDE5D521AE5658200EE53AD /* PictureScalingAlgorithm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFDE5D4F1AE5658200EE53AD /* PictureScalingAlgorithm.cpp */; };
 		DFDE5D531AE5658200EE53AD /* PictureScalingAlgorithm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFDE5D4F1AE5658200EE53AD /* PictureScalingAlgorithm.cpp */; };
 		DFE4095B17417FDF00473BD9 /* LegacyPathTranslation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFE4095917417FDF00473BD9 /* LegacyPathTranslation.cpp */; };
+		DFE9EE591BA60ADD00D9E141 /* RendererVTB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFE9EE571BA60ADD00D9E141 /* RendererVTB.cpp */; };
+		DFE9EE5A1BA60ADD00D9E141 /* RendererVTB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DFE9EE571BA60ADD00D9E141 /* RendererVTB.cpp */; };
 		DFEA4B4E1B5271A900562321 /* AddonCallbacksAudioDSP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CE31B50378E0002A874 /* AddonCallbacksAudioDSP.cpp */; };
 		DFEA4B4F1B5271AA00562321 /* AddonCallbacksAudioDSP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CE31B50378E0002A874 /* AddonCallbacksAudioDSP.cpp */; };
 		DFEA4B501B5271EB00562321 /* ActiveAEDSP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CE71B5037EF0002A874 /* ActiveAEDSP.cpp */; };
@@ -4893,6 +4895,8 @@
 		DFDE5D501AE5658200EE53AD /* PictureScalingAlgorithm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PictureScalingAlgorithm.h; sourceTree = "<group>"; };
 		DFE4095917417FDF00473BD9 /* LegacyPathTranslation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LegacyPathTranslation.cpp; sourceTree = "<group>"; };
 		DFE4095A17417FDF00473BD9 /* LegacyPathTranslation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LegacyPathTranslation.h; sourceTree = "<group>"; };
+		DFE9EE571BA60ADD00D9E141 /* RendererVTB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RendererVTB.cpp; path = xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVTB.cpp; sourceTree = SOURCE_ROOT; };
+		DFE9EE581BA60ADD00D9E141 /* RendererVTB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RendererVTB.h; path = xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVTB.h; sourceTree = SOURCE_ROOT; };
 		DFEB902519E9335E00728978 /* AEResample.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEResample.h; sourceTree = "<group>"; };
 		DFEB902619E9337200728978 /* AEResampleFactory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AEResampleFactory.cpp; sourceTree = "<group>"; };
 		DFEB902719E9337200728978 /* AEResampleFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEResampleFactory.h; sourceTree = "<group>"; };
@@ -7272,6 +7276,8 @@
 		7CBB101C1B1E1C0700E4FDE5 /* HwDecRender */ = {
 			isa = PBXGroup;
 			children = (
+				DFE9EE571BA60ADD00D9E141 /* RendererVTB.cpp */,
+				DFE9EE581BA60ADD00D9E141 /* RendererVTB.h */,
 				7CEC35211B960C1D00D31B0B /* RendererVDA.cpp */,
 				7CEC35221B960C1D00D31B0B /* RendererVDA.h */,
 			);
@@ -12202,6 +12208,7 @@
 				DFF0F38017528350002DA3A4 /* GUIDialogPVRRecordingInfo.cpp in Sources */,
 				DFF0F38117528350002DA3A4 /* GUIDialogPVRTimerSettings.cpp in Sources */,
 				DFF0F38217528350002DA3A4 /* PVRRecording.cpp in Sources */,
+				DFE9EE5A1BA60ADD00D9E141 /* RendererVTB.cpp in Sources */,
 				DFF0F38317528350002DA3A4 /* PVRRecordings.cpp in Sources */,
 				3994427C1A8DD920006C39E9 /* VideoLibraryScanningJob.cpp in Sources */,
 				DFF0F38417528350002DA3A4 /* PVRTimerInfoTag.cpp in Sources */,
@@ -13564,6 +13571,7 @@
 				7C14099F183224B8009F9411 /* SettingSection.cpp in Sources */,
 				7C1409A2183224B8009F9411 /* SettingsManager.cpp in Sources */,
 				7C1409A5183224B8009F9411 /* SettingUpdate.cpp in Sources */,
+				DFE9EE591BA60ADD00D9E141 /* RendererVTB.cpp in Sources */,
 				DF0ABB74183A94A30018445D /* Utf8Utils.cpp in Sources */,
 				7C1409AA184015C9009F9411 /* InfoExpression.cpp in Sources */,
 				AE4E87A717354C4A00D15206 /* XSLTUtils.cpp in Sources */,

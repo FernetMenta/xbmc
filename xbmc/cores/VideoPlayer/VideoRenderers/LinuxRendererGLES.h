@@ -162,9 +162,6 @@ public:
 #ifdef HAVE_LIBOPENMAX
   virtual void         AddProcessor(COpenMax* openMax, DVDVideoPicture *picture, int index);
 #endif
-#ifdef HAVE_VIDEOTOOLBOXDECODER
-  virtual void         AddProcessor(struct __CVBuffer *cvBufferRef, int index);
-#endif
 #ifdef HAS_LIBSTAGEFRIGHT
   virtual void         AddProcessor(CDVDVideoCodecStageFright* stf, EGLImageKHR eglimg, int index);
 #endif
@@ -188,9 +185,9 @@ protected:
   void UpdateVideoFilter();
 
   // textures
-  void (CLinuxRendererGLES::*m_textureUpload)(int index);
-  void (CLinuxRendererGLES::*m_textureDelete)(int index);
-  bool (CLinuxRendererGLES::*m_textureCreate)(int index);
+  virtual bool UploadTexture(int index);
+  virtual void DeleteTexture(int index);
+  virtual bool CreateTexture(int index);
 
   void UploadYV12Texture(int index);
   void DeleteYV12Texture(int index);
@@ -232,9 +229,12 @@ protected:
   void RenderSoftware(int index, int field);      // single pass s/w yuv2rgb renderer
   void RenderOpenMax(int index, int field);       // OpenMAX rgb texture
   void RenderEglImage(int index, int field);       // Android OES texture
-  void RenderCoreVideoRef(int index, int field);  // CoreVideo reference
   void RenderSurfaceTexture(int index, int field);// MediaCodec rendering using SurfaceTexture
   void RenderIMXMAPTexture(int index, int field); // IMXMAP rendering
+  
+  // hooks for HwDec Renderered
+  virtual bool LoadShadersHook() { return false; };
+  virtual bool RenderHook(int idx) { return false; };
 
   CFrameBufferObject m_fbo;
 
@@ -290,9 +290,6 @@ protected:
 #ifdef HAVE_LIBOPENMAX
     OpenMaxVideoBufferHolder *openMaxBufferHolder;
 #endif
-#ifdef HAVE_VIDEOTOOLBOXDECODER
-    struct __CVBuffer *cvBufferRef;
-#endif
 #ifdef HAS_LIBSTAGEFRIGHT
     CDVDVideoCodecStageFright* stf;
     EGLImageKHR eglimg;
@@ -304,6 +301,7 @@ protected:
 #ifdef HAS_IMXVPU
     CDVDVideoCodecIMXBuffer *IMXBuffer;
 #endif
+    void *hwDec;
   };
 
   typedef YUVBUFFER          YUVBUFFERS[NUM_BUFFERS];
