@@ -28,6 +28,10 @@ if(OMX_FOUND)
   list(APPEND SOURCES RendererOMX.cpp)
 endif()
 
+if (STAGEFRIGHT_FOUND)
+  list(APPEND SOURCES RendererStagefright.cpp)
+endif()
+
 if(MMAL_FOUND)
   list(APPEND SOURCE MMALRenderer.cpp)
 endif()
