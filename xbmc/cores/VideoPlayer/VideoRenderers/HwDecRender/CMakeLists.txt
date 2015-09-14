@@ -24,6 +24,10 @@ if(IMX_FOUND)
   list(APPEND SOURCES RendererIMX.cpp)
 endif()
 
+if(OMX_FOUND)
+  list(APPEND SOURCES RendererOMX.cpp)
+endif()
+
 if(MMAL_FOUND)
   list(APPEND SOURCE MMALRenderer.cpp)
 endif()
