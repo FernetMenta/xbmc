@@ -7,4 +7,4 @@ set(SOURCES GUIViewStatePVR.cpp
             GUIWindowPVRTimers.cpp)
 
 core_add_library(pvr_windows)
-add_dependencies(pvr_windows libcpluff)
+add_dependencies(pvr_windows libcpluff ffmpeg)
