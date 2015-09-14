@@ -1,5 +1,4 @@
-set(SOURCES AnnouncementManager.cpp
-            Builtins.cpp)
+set(SOURCES AnnouncementManager.cpp)
 
 core_add_library(interfaces)
 add_dependencies(interfaces libcpluff)
