@@ -32,6 +32,10 @@ if (STAGEFRIGHT_FOUND)
   list(APPEND SOURCES RendererStagefright.cpp)
 endif()
 
+if (MEDIACODEC_FOUND)
+  list(APPEND SOURCES RendererMediaCodec.cpp)
+endif()
+
 if(MMAL_FOUND)
   list(APPEND SOURCE MMALRenderer.cpp)
 endif()
