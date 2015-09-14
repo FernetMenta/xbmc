@@ -6,4 +6,4 @@ set(SOURCES GUIDialogAudioDSPManager.cpp
             GUIDialogSettingsManualBase.cpp)
 
 core_add_library(settings_dialogs)
-add_dependencies(settings_dialogs libcpluff)
+add_dependencies(settings_dialogs libcpluff ffmpeg)

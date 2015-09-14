@@ -6,4 +6,4 @@ set(SOURCES GUIWindowMusicBase.cpp
             GUIWindowVisualisation.cpp)
 
 core_add_library(music_windows)
-add_dependencies(music_windows libcpluff)
+add_dependencies(music_windows libcpluff ffmpeg)
