@@ -4,6 +4,7 @@ set(SOURCES GUIDialogPVRChannelManager.cpp
             GUIDialogPVRGuideInfo.cpp
             GUIDialogPVRGuideOSD.cpp
             GUIDialogPVRGuideSearch.cpp
+            GUIDialogPVRRadioRDSInfo.cpp
             GUIDialogPVRRecordingInfo.cpp
             GUIDialogPVRTimerSettings.cpp)
 
