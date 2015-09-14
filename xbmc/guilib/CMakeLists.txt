@@ -100,4 +100,4 @@ if(WIN32)
 endif()
 
 core_add_library(guilib)
-add_dependencies(guilib libcpluff)
+add_dependencies(guilib libcpluff ffmpeg)
