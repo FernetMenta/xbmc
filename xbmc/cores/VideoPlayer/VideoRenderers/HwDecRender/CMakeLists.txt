@@ -16,6 +16,10 @@ if(VDA_FOUND)
   list(APPEND SOURCES RendererVDA.cpp)
 endif()
 
+if(VTB_FOUND)
+  list(APPEND SOURCES RendererVTB.cpp)
+endif()
+
 if(MMAL_FOUND)
   list(APPEND SOURCE MMALRenderer.cpp)
 endif()
