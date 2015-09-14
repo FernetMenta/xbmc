@@ -20,6 +20,10 @@ if(VTB_FOUND)
   list(APPEND SOURCES RendererVTB.cpp)
 endif()
 
+if(IMX_FOUND)
+  list(APPEND SOURCES RendererIMX.cpp)
+endif()
+
 if(MMAL_FOUND)
   list(APPEND SOURCE MMALRenderer.cpp)
 endif()
