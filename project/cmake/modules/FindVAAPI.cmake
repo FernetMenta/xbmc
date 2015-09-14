@@ -12,7 +12,7 @@
 find_path(VAAPI_INCLUDE_DIRS va/va.h)
 
 find_library(VA_LIBRARY
-             NAMES va)
+             NAMES va>=1.4.0)
 
 find_library(VAX11_LIBRARY
              NAMES va-x11)
