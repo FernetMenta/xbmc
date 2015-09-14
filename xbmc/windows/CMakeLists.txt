@@ -12,4 +12,4 @@ set(SOURCES GUIMediaWindow.cpp
             GUIWindowWeather.cpp)
 
 core_add_library(windows)
-add_dependencies(windows libcpluff)
+add_dependencies(windows libcpluff ffmpeg)
