@@ -138,7 +138,10 @@ void CRenderer::ReleaseUnused()
         break;
     }
     if (!found)
+    {
+      delete it->second;
       it = m_textureCache.erase(it);
+    }
     else
       ++it;
   }
