@@ -169,7 +169,7 @@ void CVisualisation::Render()
 
 void CVisualisation::Stop()
 {
-  CAEFactory::UnregisterAudioCallback();
+  CAEFactory::UnregisterAudioCallback(this);
   if (Initialized())
   {
     CAddonDll<DllVisualisation, Visualisation, VIS_PROPS>::Stop();
