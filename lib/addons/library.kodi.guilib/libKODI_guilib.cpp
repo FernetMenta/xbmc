@@ -932,10 +932,10 @@ DLLEXPORT void GUI_control_release_rendering(CAddonGUIRenderingControl* p)
   delete p;
 }
 
-DLLEXPORT bool GUI_control_rendering_create(GUIHANDLE handle, int x, int y, int w, int h, void *device)
+DLLEXPORT bool GUI_control_rendering_create(GUIHANDLE handle, int x, int y, int w, int h, float ratio)
 {
   CAddonGUIRenderingControl *pControl = (CAddonGUIRenderingControl*) handle;
-  return pControl->Create(x,y,w,h,device);
+  return pControl->Create(x,y,w,h,ratio);
 }
 
 DLLEXPORT void GUI_control_rendering_render(GUIHANDLE handle)
@@ -975,12 +975,12 @@ void CAddonGUIRenderingControl::Init()
   ((CB_GUILib*)m_cb)->RenderAddon_SetCallbacks(((AddonCB*)m_Handle)->addonData, m_RenderingHandle, this, GUI_control_rendering_create, GUI_control_rendering_render, GUI_control_rendering_stop, GUI_control_rendering_dirty);
 }
 
-bool CAddonGUIRenderingControl::Create(int x, int y, int w, int h, void *device)
+bool CAddonGUIRenderingControl::Create(int x, int y, int w, int h, float ratio)
 {
   if (!CBCreate)
     return false;
 
-  return CBCreate(m_cbhdl, x, y, w, h, device);
+  return CBCreate(m_cbhdl, x, y, w, h, ratio);
 }
 
 void CAddonGUIRenderingControl::Render()

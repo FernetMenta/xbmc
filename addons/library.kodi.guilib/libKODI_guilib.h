@@ -825,13 +825,13 @@ public:
   virtual ~CAddonGUIRenderingControl();
   virtual void Init();
 
-  virtual bool Create(int x, int y, int w, int h, void *device);
+  virtual bool Create(int x, int y, int w, int h, float ratio);
   virtual void Render();
   virtual void Stop();
   virtual bool Dirty();
 
   GUIHANDLE m_cbhdl;
-  bool (*CBCreate)(GUIHANDLE cbhdl, int x, int y, int w, int h, void *device);
+  bool (*CBCreate)(GUIHANDLE cbhdl, int x, int y, int w, int h, float ratio);
   void (*CBRender)(GUIHANDLE cbhdl);
   void (*CBStop)(GUIHANDLE cbhdl);
   bool (*CBDirty)(GUIHANDLE cbhdl);

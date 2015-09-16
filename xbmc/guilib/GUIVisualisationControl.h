@@ -25,7 +25,7 @@
 class CGUIVisualisationControl : public CGUIRenderingControl
 {
 public:
-  CGUIVisualisationControl(int parentID, int controlID, float posX, float posY, float width, float height);
+  CGUIVisualisationControl(int parentID, int controlID, float posX, float posY, float width, float height, int slot, const std::string& id);
   CGUIVisualisationControl(const CGUIVisualisationControl &from);
   virtual CGUIVisualisationControl *Clone() const { return new CGUIVisualisationControl(*this); }; //TODO check for naughties
   virtual void FreeResources(bool immediately = false);
@@ -35,4 +35,6 @@ public:
 private:
   bool m_bAttemptedLoad;
   ADDON::VizPtr m_addon;
+  int m_slot;
+  std::string m_id;
 };

@@ -1473,7 +1473,13 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
     }
     break;
   case CGUIControl::GUICONTROL_VISUALISATION:
-    control = new CGUIVisualisationControl(parentID, id, posX, posY, width, height);
+    {
+      int slot=0;
+      XMLUtils::GetInt(pControlNode, "slot", slot);
+      std::string aid;
+      XMLUtils::GetString(pControlNode, "id", aid);
+      control = new CGUIVisualisationControl(parentID, id, posX, posY, width, height, slot, aid);
+    }
     break;
   case CGUIControl::GUICONTROL_RENDERADDON:
     control = new CGUIRenderingControl(parentID, id, posX, posY, width, height);

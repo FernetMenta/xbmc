@@ -62,7 +62,7 @@ void CAudioBuffer::Set(const float* psBuffer, int iSize)
   for (int i = iSize; i < m_iLen; ++i) m_pBuffer[i] = 0;
 }
 
-bool CVisualisation::Create(int x, int y, int w, int h, void *device)
+bool CVisualisation::Create()
 {
   m_pInfo = new VIS_PROPS;
 #ifdef HAS_DX
@@ -70,12 +70,6 @@ bool CVisualisation::Create(int x, int y, int w, int h, void *device)
 #else
   m_pInfo->device     = NULL;
 #endif
-  m_pInfo->x = x;
-  m_pInfo->y = y;
-  m_pInfo->width = w;
-  m_pInfo->height = h;
-  m_pInfo->pixelRatio = g_graphicsContext.GetResInfo().fPixelRatio;
-
   m_pInfo->name = strdup(Name().c_str());
   m_pInfo->presets = strdup(CSpecialProtocol::TranslatePath(Path()).c_str());
   m_pInfo->profile = strdup(CSpecialProtocol::TranslatePath(Profile()).c_str());
@@ -83,19 +77,6 @@ bool CVisualisation::Create(int x, int y, int w, int h, void *device)
 
   if (CAddonDll<DllVisualisation, Visualisation, VIS_PROPS>::Create() == ADDON_STATUS_OK)
   {
-    // Start the visualisation
-    std::string strFile = URIUtils::GetFileName(g_application.CurrentFile());
-    CLog::Log(LOGDEBUG, "Visualisation::Start()\n");
-    try
-    {
-      m_pStruct->Start(m_iChannels, m_iSamplesPerSec, m_iBitsPerSample, strFile.c_str());
-    }
-    catch (std::exception e)
-    {
-      HandleException(e, "m_pStruct->Start() (CVisualisation::Create)");
-      return false;
-    }
-
     m_hasPresets = GetPresets();
 
     if (GetSubModules())
@@ -105,22 +86,34 @@ bool CVisualisation::Create(int x, int y, int w, int h, void *device)
 
     CreateBuffers();
 
-    CAEFactory::RegisterAudioCallback(this);
-
     return true;
   }
   return false;
 }
 
-void CVisualisation::Start(int iChannels, int iSamplesPerSec, int iBitsPerSample, const std::string &strSongName)
+bool CVisualisation::Create(int x, int y, int width, int height, float fPixelRatio)
+{
+  std::string strFile = URIUtils::GetFileName(g_application.CurrentFile());
+  Start(x, y, width, height, fPixelRatio, m_iChannels,
+        m_iSamplesPerSec, m_iBitsPerSample, strFile);
+}
+
+void CVisualisation::Start(int x, int y, int width, int height, float pixelRatio,
+                           int iChannels, int iSamplesPerSec, int iBitsPerSample, const std::string &strSongName)
 {
   // notify visz. that new song has been started
   // pass it the nr of audio channels, sample rate, bits/sample and offcourse the songname
+  // and the screen info
+
+  // Start the visualisation
   if (Initialized())
   {
+    CAEFactory::RegisterAudioCallback(this);
+
     try
     {
-      m_pStruct->Start(iChannels, iSamplesPerSec, iBitsPerSample, strSongName.c_str());
+      m_pStruct->Start(x, y, width, height, pixelRatio,
+                       iChannels, iSamplesPerSec, iBitsPerSample, strSongName.c_str());
     }
     catch (std::exception e)
     {
@@ -473,3 +466,53 @@ std::string CVisualisation::GetPresetName()
     return "";
 }
 
+
+CVisualisationManager::CVisualisationManager()
+{
+}
+
+CVisualisationManager& CVisualisationManager::GetInstance()
+{
+  static CVisualisationManager instance;
+
+  return instance;
+}
+
+VisualisationPtr CVisualisationManager::GetAddon(const std::string& id, int slot)
+{
+  if (m_addons.find(slot) == m_addons.end() ||
+      m_addons[slot].first->ID() != id)
+  {
+    AddonPtr addon;
+    CAddonMgr::GetInstance().GetAddon(id, addon, ADDON_VIZ);
+    if (addon)
+      m_addons[slot].first = std::static_pointer_cast<CVisualisation>(addon);
+    else
+      return VisualisationPtr();
+    m_addons[slot].first->Create();
+  }
+
+  m_addons[slot].second.Stop();
+  return m_addons[slot].first;
+}
+
+void CVisualisationManager::Release(int slot)
+{
+  m_addons[slot].second.StartZero();
+}
+
+void CVisualisationManager::ClearOutIdle()
+{
+  std::vector<int> remove;
+  for (auto& it : m_addons)
+  {
+    if (it.second.second.GetElapsedSeconds() > 30)
+      remove.push_back(it.first);
+  }
+
+  for (auto& i : remove)
+  {
+    CLog::Log(LOGDEBUG, "Visualization %s in slot %i has been IDLE for 30 secs, stopping..", m_addons[i].first->ID().c_str(), i);
+    m_addons.erase(i);
+  }
+}

@@ -195,7 +195,7 @@ typedef void        (*GUIListItem_SetInfo)(void *addonData, GUIHANDLE handle, co
 typedef void        (*GUIListItem_SetProperty)(void *addonData, GUIHANDLE handle, const char *key, const char *value);
 typedef const char* (*GUIListItem_GetProperty)(void *addonData, GUIHANDLE handle, const char *key);
 typedef void        (*GUIListItem_SetPath)(void *addonData, GUIHANDLE handle, const char *path);
-typedef void        (*GUIRenderAddon_SetCallbacks)(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*createCB)(GUIHANDLE,int,int,int,int,void*), void (*renderCB)(GUIHANDLE), void (*stopCB)(GUIHANDLE), bool (*dirtyCB)(GUIHANDLE));
+typedef void        (*GUIRenderAddon_SetCallbacks)(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*createCB)(GUIHANDLE,int,int,int,int,float), void (*renderCB)(GUIHANDLE), void (*stopCB)(GUIHANDLE), bool (*dirtyCB)(GUIHANDLE));
 typedef void        (*GUIRenderAddon_Delete)(void *addonData, GUIHANDLE handle);
 typedef void        (*GUIRenderAddon_MarkDirty)(void *addonData, GUIHANDLE handle);
 

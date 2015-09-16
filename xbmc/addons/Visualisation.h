@@ -24,6 +24,7 @@
 #include "include/xbmc_vis_types.h"
 #include "guilib/IRenderingCallback.h"
 #include "utils/rfft.h"
+#include "utils/Stopwatch.h"
 
 #include <algorithm>
 #include <map>
@@ -61,8 +62,10 @@ namespace ADDON
     CVisualisation(const cp_extension_t *ext) : CAddonDll<DllVisualisation, Visualisation, VIS_PROPS>(ext) {}
     virtual void OnInitialize(int iChannels, int iSamplesPerSec, int iBitsPerSample);
     virtual void OnAudioData(const float* pAudioData, int iAudioDataLength);
-    bool Create(int x, int y, int w, int h, void *device);
-    void Start(int iChannels, int iSamplesPerSec, int iBitsPerSample, const std::string &strSongName);
+    bool Create();
+    virtual bool Create(int x, int y, int w, int h, float pixelRatio);
+    void Start(int x, int y, int w, int h, float pixelRatio,
+               int iChannels, int iSamplesPerSec, int iBitsPerSample, const std::string &strSongName);
     void AudioData(const float *pAudioData, int iAudioDataLength, float *pFreqData, int iFreqDataLength);
     void Render();
     void Stop();
@@ -112,5 +115,33 @@ namespace ADDON
 
     // track information
     std::string m_AlbumThumb;
+  };
+
+  typedef std::shared_ptr<CVisualisation> VisualisationPtr;
+
+  //! \brief Class managing visualisation instances.
+  class CVisualisationManager
+  {
+  public:
+    //! \brief Singleton accessor
+    static CVisualisationManager& GetInstance();
+
+    //! \brief Obtain an addon instance.
+    //! \param id ID of the addon to obtain.
+    //! \param slot Slot to put addon in.
+    VisualisationPtr GetAddon(const std::string& id, int slot=0);
+
+    //! \brief Release an addon.
+    //! \param slot Slot to release.
+    void Release(int slot);
+
+    //! \brief Clear out instances which have been idle for more than 30 secs.
+    void ClearOutIdle();
+  protected:
+    //! \brief Protected construction. Use singleton accessor.
+    CVisualisationManager();
+
+    //! \brief Mapsslot -> (addon, idle timer).
+    std::map<int, std::pair<VisualisationPtr, CStopWatch>> m_addons;
   };
 }

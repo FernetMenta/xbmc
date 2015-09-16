@@ -37,11 +37,6 @@ extern "C"
   struct VIS_PROPS
   {
     void *device;
-    int x;
-    int y;
-    int width;
-    int height;
-    float pixelRatio;
     const char *name;
     const char *presets;
     const char *profile;
@@ -95,7 +90,9 @@ extern "C"
 
   struct Visualisation
   {
-    void (__cdecl* Start)(int iChannels, int iSamplesPerSec, int iBitsPerSample, const char* szSongName);
+    void (__cdecl* Start)(int x, int y, int width, int height, float pixelRatio,
+                          int iChannels, int iSamplesPerSec, int iBitsPerSample,
+                          const char* szSongName);
     void (__cdecl* AudioData)(const float* pAudioData, int iAudioDataLength, float *pFreqData, int iFreqDataLength);
     void (__cdecl* Render) ();
     void (__cdecl* GetInfo)(VIS_INFO *info);

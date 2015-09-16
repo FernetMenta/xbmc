@@ -168,6 +168,7 @@
 #include "addons/AddonInstaller.h"
 #include "addons/AddonManager.h"
 #include "addons/RepositoryUpdater.h"
+#include "addons/Visualisation.h"
 #include "music/tags/MusicInfoTag.h"
 #include "music/tags/MusicInfoTagLoaderFactory.h"
 #include "CompileInfo.h"
@@ -4679,6 +4680,8 @@ void CApplication::ProcessSlow()
 #ifdef HAS_FILESYSTEM_SFTP
   CSFTPSessionManager::ClearOutIdleSessions();
 #endif
+
+  CVisualisationManager::GetInstance().ClearOutIdle();
 
   g_mediaManager.ProcessEvents();
 

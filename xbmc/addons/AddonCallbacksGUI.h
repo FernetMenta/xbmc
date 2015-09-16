@@ -141,7 +141,7 @@ public:
   static void         ListItem_SetProperty(void *addonData, GUIHANDLE handle, const char *key, const char *value);
   static const char * ListItem_GetProperty(void *addonData, GUIHANDLE handle, const char *key);
   static void         ListItem_SetPath(void *addonData, GUIHANDLE handle, const char *path);
-  static void         RenderAddon_SetCallbacks(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*createCB)(GUIHANDLE,int,int,int,int,void*), void (*renderCB)(GUIHANDLE), void (*stopCB)(GUIHANDLE), bool (*dirtyCB)(GUIHANDLE));
+  static void         RenderAddon_SetCallbacks(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*createCB)(GUIHANDLE,int,int,int,int,float), void (*renderCB)(GUIHANDLE), void (*stopCB)(GUIHANDLE), bool (*dirtyCB)(GUIHANDLE));
   static void         RenderAddon_Delete(void *addonData, GUIHANDLE handle);
   static void         RenderAddon_MarkDirty(void *addonData, GUIHANDLE handle);
 
@@ -253,13 +253,13 @@ friend class CAddonCallbacksGUI;
 public:
   CGUIAddonRenderingControl(CGUIRenderingControl *pControl);
   virtual ~CGUIAddonRenderingControl() {}
-  virtual bool Create(int x, int y, int w, int h, void *device);
+  virtual bool Create(int x, int y, int w, int h, float ratio);
   virtual void Render();
   virtual void Stop();
   virtual bool IsDirty();
   virtual void Delete();
 protected:
-  bool (*CBCreate) (GUIHANDLE cbhdl, int x, int y, int w, int h, void *device);
+  bool (*CBCreate) (GUIHANDLE cbhdl, int x, int y, int w, int h, float ratio);
   void (*CBRender)(GUIHANDLE cbhdl);
   void (*CBStop)(GUIHANDLE cbhdl);
   bool (*CBDirty)(GUIHANDLE cbhdl);

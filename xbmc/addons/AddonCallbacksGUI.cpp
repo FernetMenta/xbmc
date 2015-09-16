@@ -1632,7 +1632,7 @@ void CAddonCallbacksGUI::ListItem_SetPath(void *addonData, GUIHANDLE handle, con
   ((CFileItem*)handle)->SetPath(path);
 }
 
-void CAddonCallbacksGUI::RenderAddon_SetCallbacks(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*createCB)(GUIHANDLE,int,int,int,int,void*), void (*renderCB)(GUIHANDLE), void (*stopCB)(GUIHANDLE), bool (*dirtyCB)(GUIHANDLE))
+void CAddonCallbacksGUI::RenderAddon_SetCallbacks(void *addonData, GUIHANDLE handle, GUIHANDLE clienthandle, bool (*createCB)(GUIHANDLE,int,int,int,int,float), void (*renderCB)(GUIHANDLE), void (*stopCB)(GUIHANDLE), bool (*dirtyCB)(GUIHANDLE))
 {
   CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
   if (!helper || !handle)
@@ -2236,11 +2236,11 @@ CGUIAddonRenderingControl::CGUIAddonRenderingControl(CGUIRenderingControl *pCont
   m_refCount{1}
 { }
 
-bool CGUIAddonRenderingControl::Create(int x, int y, int w, int h, void *device)
+bool CGUIAddonRenderingControl::Create(int x, int y, int w, int h, float ratio)
 {
   if (CBCreate)
   {
-    if (CBCreate(m_clientHandle, x, y, w, h, device))
+    if (CBCreate(m_clientHandle, x, y, w, h, ratio))
     {
       m_refCount++;
       return true;
