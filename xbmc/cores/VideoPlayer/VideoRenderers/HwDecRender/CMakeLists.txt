@@ -28,10 +28,6 @@ if(OMX_FOUND)
   list(APPEND SOURCES RendererOMX.cpp)
 endif()
 
-if (STAGEFRIGHT_FOUND)
-  list(APPEND SOURCES RendererStagefright.cpp)
-endif()
-
 if (MEDIACODEC_FOUND)
   list(APPEND SOURCES RendererMediaCodec.cpp)
 endif()
