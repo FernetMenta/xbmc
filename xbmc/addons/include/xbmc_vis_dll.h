@@ -27,8 +27,7 @@
 extern "C"
 {
   // Functions that your visualisation must implement
-  void Start(int x, int y, int width, int height, float pixelRatio,
-             int iChannels, int iSamplesPerSec, int iBitsPerSample, const char* szSongName);
+  void Start(int iChannels, int iSamplesPerSec, int iBitsPerSample, const char* szSongName);
   void AudioData(const float* pAudioData, int iAudioDataLength, float *pFreqData, int iFreqDataLength);
   void Render();
   bool OnAction(long action, const void *param);

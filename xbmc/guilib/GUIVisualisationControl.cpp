@@ -26,7 +26,6 @@
 #include "addons/Visualisation.h"
 #include "utils/log.h"
 #include "input/Key.h"
-#include "settings/Settings.h"
 
 using namespace ADDON;
 
@@ -34,8 +33,8 @@ using namespace ADDON;
 #define LABEL_ROW2 11
 #define LABEL_ROW3 12
 
-CGUIVisualisationControl::CGUIVisualisationControl(int parentID, int controlID, float posX, float posY, float width, float height, int slot, const std::string& id)
-    : CGUIRenderingControl(parentID, controlID, posX, posY, width, height), m_bAttemptedLoad(false), m_slot(slot), m_id(id)
+CGUIVisualisationControl::CGUIVisualisationControl(int parentID, int controlID, float posX, float posY, float width, float height)
+    : CGUIRenderingControl(parentID, controlID, posX, posY, width, height), m_bAttemptedLoad(false)
 {
   ControlType = GUICONTROL_VISUALISATION;
 }
@@ -100,9 +99,8 @@ void CGUIVisualisationControl::Process(unsigned int currentTime, CDirtyRegionLis
 
     if (!m_addon && !m_bAttemptedLoad)
     {
-      std::string id = m_id.empty()?CSettings::GetInstance().GetString(CSettings::SETTING_MUSICPLAYER_VISUALISATION):m_id;
-      AddonPtr addon = ADDON::CVisualisationManager::GetInstance().GetAddon(id, m_slot);
-      if (addon)
+      AddonPtr addon;
+      if (ADDON::CAddonMgr::GetInstance().GetDefault(ADDON_VIZ, addon))
       {
         m_addon = std::dynamic_pointer_cast<CVisualisation>(addon);
         if (m_addon)
@@ -127,8 +125,6 @@ void CGUIVisualisationControl::FreeResources(bool immediately)
   g_windowManager.SendMessage(msg);
   CLog::Log(LOGDEBUG, "FreeVisualisation() started");
   CGUIRenderingControl::FreeResources(immediately);
-  m_addon->Stop();
-  CVisualisationManager::GetInstance().Release(m_slot);
   m_addon.reset();
   CLog::Log(LOGDEBUG, "FreeVisualisation() done");
 }
