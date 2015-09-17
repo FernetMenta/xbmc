@@ -43,10 +43,11 @@
 #if defined(TARGET_DARWIN_OSX)
 #include "HwDecRender/RendererVDA.h"
 #endif
-#elif defined(HAS_MMAL)
-  #include "HwDecRender/MMALRenderer.h"
 #elif HAS_GLES == 2
   #include "LinuxRendererGLES.h"
+#if defined(HAS_MMAL)
+#include "HwDecRender/MMALRenderer.h"
+#endif
 #if defined(HAVE_VIDEOTOOLBOXDECODER)
 #include "HWDecRender/RendererVTB.h"
 #endif
@@ -669,7 +670,7 @@ void CRenderManager::CreateRenderer()
       m_pRenderer = new CRendererMediaCodec;
 #endif
     }
-    if (m_format == RENDER_FMT_MMAL)
+    else if (m_format == RENDER_FMT_MMAL)
     {
 #if defined(HAS_MMAL)
       m_pRenderer = new CMMALRenderer
@@ -687,7 +688,7 @@ void CRenderManager::CreateRenderer()
       m_pRenderer = new CRendererOMX;
 #endif
     }
-    else if (m_format != RENDER_FMT_DXVA)
+    else if (m_format == RENDER_FMT_DXVA)
     {
 #if defined(HAS_DX)
       m_pRenderer = new CWinRenderer();
@@ -695,12 +696,14 @@ void CRenderManager::CreateRenderer()
     }
     else if (m_format != RENDER_FMT_NONE)
     {
-#if defined(HAS_GL)
+#if defined(HAS_MMAL)
+      m_pRenderer = new CMMALRenderer;
+#elif defined(HAS_GL)
       m_pRenderer = new CLinuxRendererGL;
 #elif HAS_GLES == 2
       m_pRenderer = new CLinuxRendererGLES;
 #elif defined(HAS_DX)
-  m_pRenderer = new CWinRenderer();
+      m_pRenderer = new CWinRenderer();
 #endif
     }
     if (m_pRenderer)
