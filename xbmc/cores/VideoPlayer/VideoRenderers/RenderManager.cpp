@@ -673,7 +673,7 @@ void CRenderManager::CreateRenderer()
     else if (m_format == RENDER_FMT_MMAL)
     {
 #if defined(HAS_MMAL)
-      m_pRenderer = new CMMALRenderer
+      m_pRenderer = new CMMALRenderer;
 #endif
     }
     else if (m_format == RENDER_FMT_IMXMAP)
@@ -696,9 +696,7 @@ void CRenderManager::CreateRenderer()
     }
     else if (m_format != RENDER_FMT_NONE)
     {
-#if defined(HAS_MMAL)
-      m_pRenderer = new CMMALRenderer;
-#elif defined(HAS_GL)
+#if defined(HAS_GL)
       m_pRenderer = new CLinuxRendererGL;
 #elif HAS_GLES == 2
       m_pRenderer = new CLinuxRendererGLES;
@@ -706,6 +704,10 @@ void CRenderManager::CreateRenderer()
       m_pRenderer = new CWinRenderer();
 #endif
     }
+#if defined(HAS_MMAL)
+    if (!m_pRenderer)
+      m_pRenderer = new CMMALRenderer;
+#endif
     if (m_pRenderer)
       m_pRenderer->PreInit();
     else
