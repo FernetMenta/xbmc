@@ -443,6 +443,9 @@
 		7C973CFB1B5038580002A874 /* GUIDialogAudioDSPSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C973CF81B5038580002A874 /* GUIDialogAudioDSPSettings.cpp */; };
 		7C99B6A4133D342100FC2B16 /* CircularCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C99B6A2133D342100FC2B16 /* CircularCache.cpp */; };
 		7C99B7951340723F00FC2B16 /* GUIDialogPlayEject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C99B7931340723F00FC2B16 /* GUIDialogPlayEject.cpp */; };
+		7CA1E0EA1BADE1A7008A3F86 /* Resolution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CA1E0E91BADE1A7008A3F86 /* Resolution.cpp */; settings = {ASSET_TAGS = (); }; };
+		7CA1E0EB1BADE1A7008A3F86 /* Resolution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CA1E0E91BADE1A7008A3F86 /* Resolution.cpp */; settings = {ASSET_TAGS = (); }; };
+		7CA1E0EC1BADE1A7008A3F86 /* Resolution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CA1E0E91BADE1A7008A3F86 /* Resolution.cpp */; settings = {ASSET_TAGS = (); }; };
 		7CAA25351085963B0096DE39 /* PasswordManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CAA25331085963B0096DE39 /* PasswordManager.cpp */; };
 		7CAA469019427AED00008885 /* PosixDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CAA468E19427AED00008885 /* PosixDirectory.cpp */; };
 		7CAA469119427AED00008885 /* PosixDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CAA468E19427AED00008885 /* PosixDirectory.cpp */; };
@@ -3940,6 +3943,7 @@
 		7C99B6A3133D342100FC2B16 /* CircularCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CircularCache.h; sourceTree = "<group>"; };
 		7C99B7931340723F00FC2B16 /* GUIDialogPlayEject.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIDialogPlayEject.cpp; sourceTree = "<group>"; };
 		7C99B7941340723F00FC2B16 /* GUIDialogPlayEject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIDialogPlayEject.h; sourceTree = "<group>"; };
+		7CA1E0E91BADE1A7008A3F86 /* Resolution.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Resolution.cpp; sourceTree = "<group>"; };
 		7CAA205B107AFC280096DE39 /* Job.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Job.h; sourceTree = "<group>"; };
 		7CAA25331085963B0096DE39 /* PasswordManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PasswordManager.cpp; sourceTree = "<group>"; };
 		7CAA25341085963B0096DE39 /* PasswordManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PasswordManager.h; sourceTree = "<group>"; };
@@ -6138,6 +6142,7 @@
 		18B7C3AA1294219F009E7A26 /* guilib */ = {
 			isa = PBXGroup;
 			children = (
+				7CA1E0E91BADE1A7008A3F86 /* Resolution.cpp */,
 				391416BE1B4A3EFA00BBF0AA /* guiinfo */,
 				DF404A3416B9896C00D8023E /* cximage.cpp */,
 				DF404A3516B9896C00D8023E /* cximage.h */,
@@ -10843,6 +10848,7 @@
 				E4DC97550FFE5BA8008E0C07 /* SAPFile.cpp in Sources */,
 				7CDAEA7D1001CD6E0040B25F /* karaokelyricstextustar.cpp in Sources */,
 				E49ACD8C100745C400A86ECD /* ZeroconfDirectory.cpp in Sources */,
+				7CA1E0EA1BADE1A7008A3F86 /* Resolution.cpp in Sources */,
 				B5101B5819DFF8DD00294D1E /* BlurayFile.cpp in Sources */,
 				E49ACD9F10074A4000A86ECD /* ZeroconfBrowserOSX.cpp in Sources */,
 				DF6F52AE1AF6D03F001BC57D /* dacp.cpp in Sources */,
@@ -11893,6 +11899,7 @@
 				DFF0F27617528350002DA3A4 /* DirtyRegionSolvers.cpp in Sources */,
 				DFF0F27717528350002DA3A4 /* DirtyRegionTracker.cpp in Sources */,
 				DFF0F27817528350002DA3A4 /* FrameBufferObject.cpp in Sources */,
+				7CA1E0EC1BADE1A7008A3F86 /* Resolution.cpp in Sources */,
 				DFF0F27917528350002DA3A4 /* GraphicContext.cpp in Sources */,
 				DFF0F27A17528350002DA3A4 /* GUIAction.cpp in Sources */,
 				DFF0F27B17528350002DA3A4 /* GUIAudioManager.cpp in Sources */,
@@ -13030,6 +13037,7 @@
 				E499130A174E5DAD00741B6D /* GUIRenderingControl.cpp in Sources */,
 				E499130B174E5DAD00741B6D /* GUIResizeControl.cpp in Sources */,
 				395897161AAD94F00033D27C /* KeyboardLayoutManager.cpp in Sources */,
+				7CA1E0EB1BADE1A7008A3F86 /* Resolution.cpp in Sources */,
 				395C2A251AA4C32100EBC7AD /* AudioDecoder.cpp in Sources */,
 				E499130C174E5DAD00741B6D /* GUIRSSControl.cpp in Sources */,
 				E499130D174E5DAD00741B6D /* GUIScrollBarControl.cpp in Sources */,
