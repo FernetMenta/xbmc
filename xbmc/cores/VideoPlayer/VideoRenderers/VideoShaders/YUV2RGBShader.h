@@ -24,8 +24,6 @@
 #include "guilib/TransformMatrix.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderFormats.h"
 
-#include "GLSLOutput.h"
-
 void CalculateYUVMatrix(TransformMatrix &matrix
                         , unsigned int  flags
                         , ERenderFormat format
@@ -33,6 +31,8 @@ void CalculateYUVMatrix(TransformMatrix &matrix
                         , float         contrast);
 
 #if defined(HAS_GL) || HAS_GLES == 2
+
+#include "GLSLOutput.h"
 
 #ifndef __GNUC__
 #pragma warning( push )
