@@ -23,8 +23,8 @@
 #include <DirectXPackedVector.h>
 #include "WinVideoFilter.h"
 #include "windowing/WindowingFactory.h"
-#include "../../../utils/log.h"
-#include "../../../FileSystem/File.h"
+#include "../../../../utils/log.h"
+#include "../../../../FileSystem/File.h"
 #include <map>
 #include "ConvolutionKernels.h"
 #include "YUV2RGBShader.h"
