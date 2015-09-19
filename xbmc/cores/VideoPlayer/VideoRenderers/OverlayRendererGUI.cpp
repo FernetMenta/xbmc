@@ -126,10 +126,10 @@ COverlayText::COverlayText(CDVDOverlayText * src)
   else
   {
     if(m_subalign == SUBTITLE_ALIGN_TOP_INSIDE ||
-       m_subalign == SUBTITLE_ALIGN_TOP_OUTSIDE)
+       m_subalign == SUBTITLE_ALIGN_BOTTOM_INSIDE)
       m_align  = ALIGN_VIDEO;
     else
-      m_align = ALIGN_SCREEN;
+      m_align  = ALIGN_SCREEN;
 
     m_pos    = POSITION_RELATIVE;
     m_x      = 0.5f;
