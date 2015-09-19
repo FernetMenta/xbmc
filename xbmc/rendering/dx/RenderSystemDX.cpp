@@ -496,7 +496,7 @@ void CRenderSystemDX::OnDeviceReset()
       (*i)->OnResetDevice();
   }
 
-  g_renderManager.Flush();
+  //g_renderManager.Flush();
   g_windowManager.SendMessage(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_RENDERER_RESET);
 }
 
