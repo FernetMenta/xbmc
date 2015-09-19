@@ -94,7 +94,8 @@ void CalculateYUVMatrix(TransformMatrix &matrix
                         , unsigned int  flags
                         , ERenderFormat format
                         , float         black
-                        , float         contrast)
+                        , float         contrast
+                        , bool          limited)
 {
   TransformMatrix coef;
 
@@ -107,7 +108,7 @@ void CalculateYUVMatrix(TransformMatrix &matrix
       coef.m[row][col] = conv[col][row];
   coef.identity = false;
 
-  if(g_Windowing.UseLimitedColor())
+  if(g_Windowing.UseLimitedColor() || limited)
   {
     matrix *= TransformMatrix::CreateTranslation(+ 16.0f / 255
                                                , + 16.0f / 255
