@@ -6668,7 +6668,12 @@ msgctxt "#13516"
 msgid "Add art"
 msgstr ""
 
-#empty strings from id 13517 to 13549
+#empty strings from id 13517 to 13548
+
+#: system/settings/settings.xml
+msgctxt "#13549"
+msgid "Allow change of resolution"
+msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#13550"
@@ -15848,7 +15853,11 @@ msgctxt "#36162"
 msgid "Enable VideoToolbox hardware decoding of video files."
 msgstr ""
 
-#empty string with id 36163
+#. Description of setting "Videos -> Playback -> Allow change of resolution" with label #13549
+#: system/settings/settings.xml
+msgctxt "#36163"
+msgid "Allow the resolution of the display to be changed to a higher resolution if it provides an fps with a good match for the content. This is especially useful if you run your kodi resolution at 1920x1080 but have a 4K capable TV. This setting tries to switch the resolution to 4K depending on content and content's fps."
+msgstr ""
 
 #. Description of setting "Videos -> Playback -> Adjust display refresh rate" with label #170
 #: system/settings/settings.xml
