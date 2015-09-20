@@ -2727,7 +2727,7 @@ AEAudioFormat CActiveAE::GetCurrentSinkFormat()
   return m_stats.GetCurrentSinkFormat();
 }
 
-void CActiveAE::OnLostDevice()
+void CActiveAE::OnLostDisplay()
 {
   Message *reply;
   if (m_controlPort.SendOutMessageSync(CActiveAEControlProtocol::DISPLAYLOST,
@@ -2747,7 +2747,7 @@ void CActiveAE::OnLostDevice()
   }
 }
 
-void CActiveAE::OnResetDevice()
+void CActiveAE::OnResetDisplay()
 {
   m_controlPort.SendOutMessage(CActiveAEControlProtocol::DISPLAYRESET);
 }
