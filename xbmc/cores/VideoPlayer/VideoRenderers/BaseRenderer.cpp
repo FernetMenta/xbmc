@@ -41,7 +41,6 @@ CBaseRenderer::CBaseRenderer()
   m_sourceFrameRatio = 1.0f;
   m_sourceWidth = 720;
   m_sourceHeight = 480;
-  m_resolution = RES_DESKTOP;
   m_fps = 0.0f;
   m_renderOrientation = 0;
   m_oldRenderOrientation = 0;
@@ -76,31 +75,6 @@ void CBaseRenderer::RegisterRenderFeaturesCallBack(const void *ctx, RenderFeatur
 {
   m_RenderFeaturesCallBackFn = fn;
   m_RenderFeaturesCallBackCtx = ctx;
-}
-
-void CBaseRenderer::ChooseBestResolution(float fps)
-{
-  if (fps == 0.0)
-    return;
-
-  // Adjust refreshrate to match source fps
-#if !defined(TARGET_DARWIN_IOS)
-  if (CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) != ADJUST_REFRESHRATE_OFF)
-  {
-    m_resolution = CResolutionUtils::ChooseBestResolution(fps, m_sourceWidth, CONF_FLAGS_STEREO_MODE_MASK(m_iFlags));
-  }
-  else
-#endif
-    CLog::Log(LOGNOTICE, "Display resolution %s : %s (%d)",
-        m_resolution == RES_DESKTOP ? "DESKTOP" : "USER", g_graphicsContext.GetResInfo(m_resolution).strMode.c_str(), m_resolution);
-}
-
-RESOLUTION CBaseRenderer::GetResolution() const
-{
-  if (g_graphicsContext.IsFullScreenRoot() && (g_graphicsContext.IsFullScreenVideo() || g_graphicsContext.IsCalibrating()))
-    return m_resolution;
-
-  return g_graphicsContext.GetVideoResolution();
 }
 
 float CBaseRenderer::GetAspectRatio() const
@@ -224,7 +198,7 @@ void CBaseRenderer::CalcNormalDisplayRect(float offsetX, float offsetY, float sc
   // calculate the correct output frame ratio (using the users pixel ratio setting
   // and the output pixel ratio setting)
 
-  float outputFrameRatio = inputFrameRatio / g_graphicsContext.GetResInfo(GetResolution()).fPixelRatio;
+  float outputFrameRatio = inputFrameRatio / g_graphicsContext.GetResInfo().fPixelRatio;
 
   // allow a certain error to maximize screen size
   float fCorrection = screenWidth / screenHeight / outputFrameRatio - 1.0f;
@@ -430,8 +404,8 @@ void CBaseRenderer::SetViewMode(int viewMode)
   CMediaSettings::GetInstance().GetCurrentVideoSettings().m_ViewMode = viewMode;
 
   // get our calibrated full screen resolution
-  RESOLUTION res = GetResolution();
-  RESOLUTION_INFO info = g_graphicsContext.GetResInfo(m_resolution);
+  RESOLUTION res = g_graphicsContext.GetVideoResolution();
+  RESOLUTION_INFO info = g_graphicsContext.GetResInfo();
   float screenWidth  = (float)(info.Overscan.right  - info.Overscan.left);
   float screenHeight = (float)(info.Overscan.bottom - info.Overscan.top);
 
