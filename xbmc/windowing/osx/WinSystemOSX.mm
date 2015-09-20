@@ -1791,7 +1791,7 @@ void CWinSystemOSX::AnnounceOnLostDevice()
   // tell any shared resources
   CLog::Log(LOGDEBUG, "CWinSystemOSX::AnnounceOnLostDevice");
   for (std::vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); i++)
-    (*i)->OnLostDevice();
+    (*i)->OnLostDisplay();
 }
 
 void CWinSystemOSX::AnnounceOnResetDevice()
@@ -1800,7 +1800,7 @@ void CWinSystemOSX::AnnounceOnResetDevice()
   // tell any shared resources
   CLog::Log(LOGDEBUG, "CWinSystemOSX::AnnounceOnResetDevice");
   for (std::vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); i++)
-    (*i)->OnResetDevice();
+    (*i)->OnResetDisplay();
 }
 
 void* CWinSystemOSX::GetCGLContextObj()
