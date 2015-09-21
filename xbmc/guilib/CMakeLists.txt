@@ -93,6 +93,10 @@ if(GLES_FOUND)
                       GUIShader.cpp)
 endif()
 
+if(GIF_FOUND)
+  list(APPEND SOURCES Gif.cpp)
+endif()
+
 if(WIN32)
   list(APPEND SOURCES D3DResource.cpp
                       GUIFontTTFDX.cpp
