@@ -292,7 +292,7 @@ bool CRenderManager::Configure(DVDVideoPicture& picture, float fps, unsigned fla
         m_dwidth == picture.iDisplayWidth &&
         m_dheight == picture.iDisplayHeight &&
         !changerefresh &&
-        m_flags == flags &&
+        (m_flags & ~CONF_FLAGS_FULLSCREEN) == (flags & ~CONF_FLAGS_FULLSCREEN) &&
         m_format == picture.format &&
         m_extended_format == picture.extended_format &&
         m_orientation == orientation &&
