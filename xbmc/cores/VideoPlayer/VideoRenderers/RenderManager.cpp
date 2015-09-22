@@ -963,10 +963,6 @@ RESOLUTION CRenderManager::GetResolution()
   if (m_renderState == STATE_UNCONFIGURED)
     return res;
 
-#if defined(TARGET_DARWIN_IOS)
-  return res;
-#endif
-
   if (CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) != ADJUST_REFRESHRATE_OFF)
     res = CResolutionUtils::ChooseBestResolution(m_fps, m_width, CONF_FLAGS_STEREO_MODE_MASK(m_flags));
 
