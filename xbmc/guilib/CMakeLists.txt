@@ -66,6 +66,7 @@ set(SOURCES cximage.cpp
             IWindowManagerCallback.cpp
             JpegIO.cpp
             LocalizeStrings.cpp
+            Resolution.cpp
             Shader.cpp
             StereoscopicsManager.cpp
             TextureBundle.cpp
