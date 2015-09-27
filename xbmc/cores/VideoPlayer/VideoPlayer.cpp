@@ -49,6 +49,7 @@
 
 #include "DVDDemuxers/DVDDemuxCC.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
+#include "cores/VideoPlayer/VideoRenderers/RenderFlags.h"
 #ifdef HAS_PERFORMANCE_SAMPLE
 #include "xbmc/utils/PerformanceSample.h"
 #else
@@ -3530,8 +3531,7 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
     if (CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) != ADJUST_REFRESHRATE_OFF)
     {
       float framerate = DVD_TIME_BASE / CDVDCodecUtils::NormalizeFrameduration((double)DVD_TIME_BASE * hint.fpsscale / hint.fpsrate);
-      RESOLUTION res = CResolutionUtils::ChooseBestResolution(framerate, hint.width, hint.stereo_mode.compare("mono") != 0);
-      g_graphicsContext.SetVideoResolution(res);
+      m_renderManager.TriggerUpdateResolution(framerate, hint.width, RenderManager::GetStereoModeFlags(hint.stereo_mode));
     }
   }
 
