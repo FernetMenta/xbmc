@@ -746,7 +746,7 @@ bool COMXVideo::GetPlayerInfo(double &match, double &phase, double &pll)
 }
 
 
-int COMXVideo::Decode(uint8_t *pData, int iSize, double dts, double pts)
+int COMXVideo::Decode(uint8_t *pData, int iSize, double dts, double pts, bool &settings_changed)
 {
   CSingleLock lock (m_critSection);
   OMX_ERRORTYPE omx_err;
@@ -821,6 +821,7 @@ int COMXVideo::Decode(uint8_t *pData, int iSize, double dts, double pts)
         }
       }
     }
+    settings_changed = m_settings_changed;
     return true;
 
   }
