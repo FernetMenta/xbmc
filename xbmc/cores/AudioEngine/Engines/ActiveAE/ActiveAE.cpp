@@ -2247,7 +2247,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
   if (stream->m_syncClock == CActiveAEStream::STARTSYNC)
   {
     stream->m_syncClock = CActiveAEStream::MUTE;
-    stream->m_syncError.Flush();
+    stream->m_syncError.Flush(100);
     stream->m_resampleBuffers->m_resampleRatio = 1.0;
     stream->m_resampleIntegral = 0;
     CLog::Log(LOGDEBUG,"ActiveAE - start sync of audio stream");
@@ -2260,16 +2260,19 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
 
   bool newerror = stream->m_syncError.Get(error, stream->m_syncClock ? 100 : 1000);
 
-  if (newerror && fabs(error) > threshold && stream->m_syncClock != CActiveAEStream::ADJUST)
+  if (newerror && fabs(error) > threshold && stream->m_syncClock == CActiveAEStream::INSYNC)
   {
     stream->m_syncClock = CActiveAEStream::ADJUST;
     stream->m_resampleBuffers->m_resampleRatio = 1.0;
     stream->m_resampleIntegral = 0;
-    CLog::Log(LOGDEBUG,"ActiveAE - average error %f above threshold of %f", error, threshold);
+    stream->m_lastSyncError = error;
+    CLog::Log(LOGDEBUG,"ActiveAE::SyncStream - average error %f above threshold of %f", error, threshold);
   }
   else if (newerror && stream->m_syncClock == CActiveAEStream::MUTE)
   {
     stream->m_syncClock = CActiveAEStream::ADJUST;
+    stream->m_lastSyncError = error;
+    CLog::Log(LOGDEBUG,"ActiveAE::SyncStream - average error of %f, start adjusting", error);
   }
 
   if (stream->m_syncClock == CActiveAEStream::MUTE)
@@ -2331,11 +2334,21 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
 
     if (fabs(error) < 30)
     {
-      stream->m_syncClock = CActiveAEStream::INSYNC;
-      stream->m_syncError.Flush(1000);
-      stream->m_resampleIntegral = 0;
-      stream->m_resampleBuffers->m_resampleRatio = 1.0;
-      CLog::Log(LOGDEBUG,"ActiveAE - average error %f below threshold of %f", error, 30.0);
+      if (stream->m_lastSyncError > threshold * 2)
+      {
+        stream->m_syncClock = CActiveAEStream::ADJUST;
+        stream->m_syncError.Flush(100);
+        CLog::Log(LOGDEBUG,"ActiveAE::SyncStream - average error %f, last average error: %f", error, stream->m_lastSyncError);
+        stream->m_lastSyncError = error;
+      }
+      else
+      {
+        stream->m_syncClock = CActiveAEStream::INSYNC;
+        stream->m_syncError.Flush(1000);
+        stream->m_resampleIntegral = 0;
+        stream->m_resampleBuffers->m_resampleRatio = 1.0;
+        CLog::Log(LOGDEBUG,"ActiveAE::SyncStream - average error %f below threshold of %f", error, 30.0);
+      }
     }
 
     return ret;
