@@ -199,6 +199,7 @@ protected:
   bool m_forceResampler;
   IAEClockCallback *m_pClock;
   CSyncError m_syncError;
+  double m_lastSyncError;
   enum
   {
     INSYNC = 0,
