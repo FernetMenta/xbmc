@@ -5,6 +5,7 @@ endif()
 if(ENABLE_DVDCSS)
   ExternalProject_ADD(dvdcss SOURCE_DIR ${CORE_SOURCE_DIR}/lib/libdvd/libdvdcss/
                              PREFIX ${CORE_BUILD_DIR}/libdvd
+                      PATCH_COMMAND rm -f config.status
                       UPDATE_COMMAND autoreconf -vif
                       CONFIGURE_COMMAND  <SOURCE_DIR>/configure
                                         --target=${ARCH}
@@ -29,6 +30,7 @@ endif(ENABLE_DVDCSS)
 
 ExternalProject_ADD(dvdread SOURCE_DIR ${CORE_SOURCE_DIR}/lib/libdvd/libdvdread/
                             PREFIX ${CORE_BUILD_DIR}/libdvd
+                    PATCH_COMMAND rm -f config.status
                     UPDATE_COMMAND autoreconf -vif
                     CONFIGURE_COMMAND <SOURCE_DIR>/configure
                                       --target=${ARCH}
@@ -49,6 +51,7 @@ core_link_library(${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/libdvd/lib/libdvdread.a
 
 ExternalProject_ADD(dvdnav SOURCE_DIR ${CORE_SOURCE_DIR}/lib/libdvd/libdvdnav/
                            PREFIX ${CORE_BUILD_DIR}/libdvd
+                    PATCH_COMMAND rm -f config.status
                     UPDATE_COMMAND autoreconf -vif
                     CONFIGURE_COMMAND <SOURCE_DIR>/configure
                                       --target=${ARCH}
