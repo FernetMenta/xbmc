@@ -490,5 +490,6 @@ loop_h_422:
 #ifndef __APPLE__
         .fnend
 #endif
-
+#else
+#error __ARM_NEON__ not defined
 #endif /* __ARM_NEON__ */
