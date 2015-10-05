@@ -71,6 +71,7 @@ void CDVDStreamInfo::Clear()
   blockalign = 0;
   bitrate    = 0;
   bitspersample = 0;
+  channellayout = 0;
 
   orientation = 0;
 }
