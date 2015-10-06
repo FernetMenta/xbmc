@@ -3,6 +3,7 @@ get_filename_component(expat_dir ${EXPAT_LIBRARY} PATH)
 set(ldflags "-L${expat_dir}")
 ExternalProject_ADD(libcpluff SOURCE_DIR ${CORE_SOURCE_DIR}/lib/cpluff
                     PREFIX ${CORE_BUILD_DIR}/cpluff
+                    PATCH_COMMAND rm -f config.status
                     UPDATE_COMMAND autoreconf -vif
                     CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} ${CORE_SOURCE_DIR}/lib/cpluff/configure
                                       --disable-nls
