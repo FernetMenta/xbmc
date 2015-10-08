@@ -1765,8 +1765,8 @@ void CVideoPlayer::HandlePlaySpeed()
   {
     // if all enabled streams have been inited we are done
     if ((m_CurrentVideo.id >= 0 || m_CurrentAudio.id >= 0) &&
-        (m_CurrentVideo.id < 0 || m_CurrentVideo.syncState == IDVDStreamPlayer::SYNC_WAITSYNC) &&
-        (m_CurrentAudio.id < 0 || m_CurrentAudio.syncState == IDVDStreamPlayer::SYNC_WAITSYNC))
+        (m_CurrentVideo.id < 0 || m_CurrentVideo.syncState != IDVDStreamPlayer::SYNC_STARTING) &&
+        (m_CurrentAudio.id < 0 || m_CurrentAudio.syncState != IDVDStreamPlayer::SYNC_STARTING))
       caching = CACHESTATE_PLAY;
 
     // handle situation that we get no data on one stream
