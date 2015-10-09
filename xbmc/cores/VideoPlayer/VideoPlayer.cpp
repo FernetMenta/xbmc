@@ -1795,7 +1795,7 @@ void CVideoPlayer::HandlePlaySpeed()
       // take action is audio or video stream is stalled
       if (m_VideoPlayerAudio->IsStalled() || m_VideoPlayerVideo->IsStalled())
       {
-        if (CachePVRStream())
+        if (m_pInputStream->IsRealtime())
         {
           if ((m_CurrentAudio.syncState == IDVDStreamPlayer::SYNC_INSYNC && m_VideoPlayerAudio->GetLevel() == 0) ||
               (m_CurrentVideo.syncState == IDVDStreamPlayer::SYNC_INSYNC && m_VideoPlayerVideo->GetLevel() == 0))
@@ -1823,7 +1823,7 @@ void CVideoPlayer::HandlePlaySpeed()
         }
       }
       // care for live streams
-      else if (CachePVRStream())
+      else if (m_pInputStream->IsRealtime())
       {
         if (m_CurrentAudio.id >= 0)
         {
@@ -1867,7 +1867,7 @@ void CVideoPlayer::HandlePlaySpeed()
 
       if (m_CurrentAudio.starttime != DVD_NOPTS_VALUE)
       {
-        if (CachePVRStream())
+        if (m_pInputStream->IsRealtime())
           clock = m_CurrentAudio.starttime - m_CurrentAudio.cachetotal - DVD_MSEC_TO_TIME(200);
         else
           clock = m_CurrentAudio.starttime - m_CurrentAudio.cachetime;
@@ -2748,8 +2748,7 @@ void CVideoPlayer::SetCaching(ECacheState state)
     m_VideoPlayerAudio->SetSpeed(DVD_PLAYSPEED_PAUSE);
     m_VideoPlayerVideo->SetSpeed(DVD_PLAYSPEED_PAUSE);
 
-    if (CachePVRStream())
-      m_pInputStream->ResetScanTimeout((unsigned int) CSettings::GetInstance().GetInt(CSettings::SETTING_PVRPLAYBACK_SCANTIME) * 1000);
+    m_pInputStream->ResetScanTimeout((unsigned int) CSettings::GetInstance().GetInt(CSettings::SETTING_PVRPLAYBACK_SCANTIME) * 1000);
   }
 
   if(state == CACHESTATE_PLAY
@@ -4680,12 +4679,6 @@ bool CVideoPlayer::SwitchChannel(const CPVRChannelPtr &channel)
   m_messenger.Put(new CDVDMsgType<CPVRChannelPtr>(CDVDMsg::PLAYER_CHANNEL_SELECT, channel));
 
   return true;
-}
-
-bool CVideoPlayer::CachePVRStream(void) const
-{
-  return m_pInputStream->IsStreamType(DVDSTREAM_TYPE_PVRMANAGER) &&
-         !g_PVRManager.IsPlayingRecording();
 }
 
 void CVideoPlayer::FrameMove()
