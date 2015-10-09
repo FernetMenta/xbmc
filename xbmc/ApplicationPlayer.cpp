@@ -729,7 +729,7 @@ void CApplicationPlayer::SetPlaySpeed(int iSpeed, bool bApplicationMuted)
   // if player has volume control, set it.
   if (ControlsVolume())
   {
-    if (m_iPlaySpeed == 1)
+    if (m_iPlaySpeed == 1 || m_iPlaySpeed == 2)
     { // restore volume
       player->SetVolume(g_application.GetVolume(false));
     }
