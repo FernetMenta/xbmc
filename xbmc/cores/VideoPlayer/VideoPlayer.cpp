@@ -3370,7 +3370,10 @@ void CVideoPlayer::ToFFRW(int iSpeed)
   // can't rewind in menu as seeking isn't possible
   // forward is fine
   if (iSpeed < 0 && IsInMenu()) return;
-  SetPlaySpeed(iSpeed * DVD_PLAYSPEED_NORMAL);
+  int speed = iSpeed * DVD_PLAYSPEED_NORMAL;
+  if (iSpeed == 2)
+    speed = CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_ACCELERATEDPLAYBACK)*DVD_PLAYSPEED_NORMAL/100;
+  SetPlaySpeed(speed);
 }
 
 bool CVideoPlayer::OpenStream(CCurrentStream& current, int iStream, int source, bool reset)
