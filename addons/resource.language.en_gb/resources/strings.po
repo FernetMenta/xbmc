@@ -18235,3 +18235,39 @@ msgstr ""
 msgctxt "#38030"
 msgid "This option uses frame-packing to output full resolution for 3D through HDMI.[CR]Enabling this improves quality of Multiview Video Coding (MVC) videos, but may not be supported by all displays."
 msgstr ""
+
+#. Description of setting "Videos -> Playback -> accelerated playback
+#: system/settings/settings.xml
+msgctxt "#38038"
+msgid "Accelerated playback speed"
+msgstr ""
+
+#. Description of setting "Videos -> Playback -> accelerated playback
+#: system/settings/settings.xml
+msgctxt "#38031"
+msgid "The first fastforward step can use accelerated playback with audio"
+msgstr ""
+
+msgctxt "#38032"
+msgid "110%"
+msgstr ""
+
+msgctxt "#38033"
+msgid "120%"
+msgstr ""
+
+msgctxt "#38034"
+msgid "130%"
+msgstr ""
+
+msgctxt "#38035"
+msgid "140%"
+msgstr ""
+
+msgctxt "#38036"
+msgid "150%"
+msgstr ""
+
+msgctxt "#38037"
+msgid "Disabled"
+msgstr ""
