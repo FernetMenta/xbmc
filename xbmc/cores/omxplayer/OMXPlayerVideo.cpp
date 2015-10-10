@@ -290,6 +290,10 @@ void OMXPlayerVideo::Output(double pts, bool bDropPacket)
   if (CThread::m_bStop)
     return;
 
+  CRect SrcRect, DestRect, viewRect;
+  m_renderManager.GetVideoRect(SrcRect, DestRect, viewRect);
+  SetVideoRect(SrcRect, DestRect);
+
   // we aim to submit subtitles 100ms early
   const double preroll = DVD_MSEC_TO_TIME(100);
   double media_pts = m_av_clock->OMXMediaTime();
@@ -732,12 +736,6 @@ void OMXPlayerVideo::SetVideoRect(const CRect &InSrcRect, const CRect &InDestRec
   m_omxVideo.SetVideoRect(SrcRect, DestRect, video_stereo_mode, display_stereo_mode);
 }
 
-void OMXPlayerVideo::RenderUpdateCallBack(const void *ctx, const CRect &SrcRect, const CRect &DestRect)
-{
-  OMXPlayerVideo *player = (OMXPlayerVideo*)ctx;
-  player->SetVideoRect(SrcRect, DestRect);
-}
-
 void OMXPlayerVideo::ResolutionUpdateCallBack(uint32_t width, uint32_t height, float framerate, float display_aspect)
 {
   RESOLUTION res  = g_graphicsContext.GetVideoResolution();
@@ -809,8 +807,6 @@ void OMXPlayerVideo::ResolutionUpdateCallBack(uint32_t width, uint32_t height, f
 
   m_src_rect.SetRect(0, 0, 0, 0);
   m_dst_rect.SetRect(0, 0, 0, 0);
-
-  m_renderManager.RegisterRenderUpdateCallBack((const void*)this, RenderUpdateCallBack);
 }
 
 void OMXPlayerVideo::ResolutionUpdateCallBack(void *ctx, uint32_t width, uint32_t height, float framerate, float display_aspect)
