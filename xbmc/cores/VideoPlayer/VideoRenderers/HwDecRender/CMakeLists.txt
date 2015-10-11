@@ -36,5 +36,9 @@ if(MMAL_FOUND)
   list(APPEND SOURCES MMALRenderer.cpp)
 endif()
 
+if(AMLCODEC_FOUND)
+  list(APPEND SOURCES RendererAML.cpp)
+endif()
+
 core_add_library(videorenderers_hwdec)
 add_dependencies(videorenderers_hwdec ffmpeg)
