@@ -1796,8 +1796,8 @@ void CVideoPlayer::HandlePlaySpeed()
       {
         if (m_pInputStream->IsRealtime())
         {
-          if ((m_CurrentAudio.syncState == IDVDStreamPlayer::SYNC_INSYNC && m_VideoPlayerAudio->GetLevel() == 0) ||
-              (m_CurrentVideo.syncState == IDVDStreamPlayer::SYNC_INSYNC && m_VideoPlayerVideo->GetLevel() == 0))
+          if ((m_CurrentAudio.id >= 0 && m_CurrentAudio.syncState == IDVDStreamPlayer::SYNC_INSYNC && m_VideoPlayerAudio->GetLevel() == 0) ||
+              (m_CurrentVideo.id >= 0 && m_CurrentVideo.syncState == IDVDStreamPlayer::SYNC_INSYNC && m_VideoPlayerVideo->GetLevel() == 0))
           {
             CLog::Log(LOGDEBUG, "Stream stalled, start buffering. Audio: %d - Video: %d",
                                  m_VideoPlayerAudio->GetLevel(),m_VideoPlayerVideo->GetLevel());
@@ -1864,7 +1864,7 @@ void CVideoPlayer::HandlePlaySpeed()
       if (m_CurrentAudio.starttime != DVD_NOPTS_VALUE)
       {
         if (m_pInputStream->IsRealtime())
-          clock = m_CurrentAudio.starttime - m_CurrentAudio.cachetotal - DVD_MSEC_TO_TIME(200);
+          clock = m_CurrentAudio.starttime - m_CurrentAudio.cachetotal - DVD_MSEC_TO_TIME(400);
         else
           clock = m_CurrentAudio.starttime - m_CurrentAudio.cachetime;
         if (m_CurrentVideo.starttime != DVD_NOPTS_VALUE &&
