@@ -910,7 +910,7 @@ int CDecoder::Check(AVCodecContext* avctx)
       return VC_ERROR;
   }
 
-  if (m_getBufferError >= 0 && m_getBufferError < 5)
+  if (m_getBufferError > 0 && m_getBufferError < 5)
   {
     // if there is no other error, sleep for a short while
     // in order not to drain player's message queue
