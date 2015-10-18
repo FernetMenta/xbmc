@@ -154,7 +154,7 @@ void CGUIWindowPVRBase::OnInitWindow(void)
           return;
         }
 
-        g_windowManager.ProcessRenderLoop(false);
+        g_windowManager.ProcessLoop(false);
       }
 
       dialog->Close();

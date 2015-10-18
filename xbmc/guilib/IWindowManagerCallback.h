@@ -35,7 +35,5 @@ public:
   IWindowManagerCallback(void);
   virtual ~IWindowManagerCallback(void);
 
-  virtual void FrameMove(bool processEvents, bool processGUI = true) = 0;
-  virtual void Render() = 0;
   virtual void Process() = 0;
 };

@@ -516,7 +516,7 @@ bool CPluginDirectory::WaitOnScriptResult(const std::string &scriptPath, int scr
     else // if the progressBar exists and we call StartModal or Progress we get the
          //  ProcessRenderLoop call anyway.
       if (inMainAppThread) 
-        g_windowManager.ProcessRenderLoop();
+        g_windowManager.ProcessLoop();
 
     if (!cancelled && m_cancelled)
     {

@@ -137,8 +137,6 @@ public:
   CApplication(void);
   virtual ~CApplication(void);
   virtual bool Initialize() override;
-  virtual void FrameMove(bool processEvents, bool processGUI = true) override;
-  virtual void Render() override;
   virtual bool RenderNoPresent();
   virtual void Preflight();
   virtual bool Create() override;

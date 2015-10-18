@@ -194,7 +194,7 @@ void CGUIDialog::Open_Internal(bool bProcessRenderLoop, const std::string &param
 
     while (m_active && !g_application.m_bStop)
     {
-      g_windowManager.ProcessRenderLoop();
+      g_windowManager.ProcessLoop();
     }
   }
 }

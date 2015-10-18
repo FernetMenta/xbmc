@@ -1042,8 +1042,6 @@ void CGraphicContext::SetMediaDir(const std::string &strMediaDir)
 
 void CGraphicContext::Flip(const CDirtyRegionList& dirty)
 {
-  g_Windowing.PresentRender(dirty);
-
   if(m_stereoMode != m_nextStereoMode)
   {
     m_stereoMode = m_nextStereoMode;

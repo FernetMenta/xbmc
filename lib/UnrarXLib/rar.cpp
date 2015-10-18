@@ -1,7 +1,7 @@
 #include "rar.hpp"
 #include "UnrarX.hpp"
-#include "guilib/GUIWindowManager.h"
 #include "filesystem/File.h"
+#include <memory>
 
 #include "smallfn.cpp"
 

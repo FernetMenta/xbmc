@@ -192,7 +192,7 @@ bool CDirectory::GetDirectory(const CURL& url, CFileItemList &items, const CHint
                 }
 
                 lock.Leave(); // prevent an occasional deadlock on exit
-                g_windowManager.ProcessRenderLoop(false);
+                g_windowManager.ProcessLoop(false);
               }
 
               dialog->Close();

@@ -88,8 +88,9 @@ INT CXBApplicationEx::Run()
 #ifdef HAS_PERFORMANCE_SAMPLE
     CPerformanceSample sampleLoop("XBApplicationEx-loop");
 #endif
+    // TODO get rid of this too -> loop in CApplication::Process()
     //-----------------------------------------
-    // Animate and render a frame
+    // Application main loop
     //-----------------------------------------
 #ifdef XBMC_TRACK_EXCEPTIONS
     try
@@ -109,52 +110,6 @@ INT CXBApplicationEx::Run()
     catch (...)
     {
       CLog::Log(LOGERROR, "exception in CApplication::Process()");
-      throw;
-    }
-#endif
-    // Frame move the scene
-#ifdef XBMC_TRACK_EXCEPTIONS
-    try
-    {
-#endif
-      if (!m_bStop) FrameMove(true, m_renderGUI);
-      //reset exception count
-#ifdef XBMC_TRACK_EXCEPTIONS
-    }
-    catch (const XbmcCommons::UncheckedException &e)
-    {
-      e.LogThrowMessage("CApplication::FrameMove()");
-      throw;
-    }
-    catch (...)
-    {
-      CLog::Log(LOGERROR, "exception in CApplication::FrameMove()");
-      throw;
-    }
-#endif
-
-    // Render the scene
-#ifdef XBMC_TRACK_EXCEPTIONS
-    try
-    {
-#endif
-      if (m_renderGUI && !m_bStop) Render();
-      else if (!m_renderGUI)
-      {
-        frameTime = XbmcThreads::SystemClockMillis() - lastFrameTime;
-        if(frameTime < noRenderFrameTime)
-          Sleep(noRenderFrameTime - frameTime);
-      }
-#ifdef XBMC_TRACK_EXCEPTIONS
-    }
-    catch (const XbmcCommons::UncheckedException &e)
-    {
-      e.LogThrowMessage("CApplication::Render()");
-      throw;
-    }
-    catch (...)
-    {
-      CLog::Log(LOGERROR, "exception in CApplication::Render()");
       throw;
     }
 #endif

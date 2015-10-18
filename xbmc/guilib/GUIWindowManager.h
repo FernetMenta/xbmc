@@ -140,7 +140,7 @@ public:
   bool DestroyWindows();
 
   CGUIWindow* GetWindow(int id) const;
-  void ProcessRenderLoop(bool renderOnly = false);
+  void ProcessLoop(bool renderOnly = false);
   void SetCallback(IWindowManagerCallback& callback);
   void DeInitialize();
 

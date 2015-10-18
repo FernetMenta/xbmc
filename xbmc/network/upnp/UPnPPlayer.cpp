@@ -198,13 +198,13 @@ static NPT_Result WaitOnEvent(CEvent& event, XbmcThreads::EndTime& timeout, CGUI
     dialog->Open();
   }
 
-  g_windowManager.ProcessRenderLoop(false);
+  g_windowManager.ProcessLoop(false);
 
   do {
     if(event.WaitMSec(100))
       return NPT_SUCCESS;
 
-    g_windowManager.ProcessRenderLoop(false);
+    g_windowManager.ProcessLoop(false);
 
     if(dialog->IsCanceled())
       return NPT_FAILURE;

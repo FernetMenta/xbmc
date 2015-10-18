@@ -18,14 +18,12 @@
  *
  */
 
-#ifndef RENDER_SYSTEM_H
-#define RENDER_SYSTEM_H
-
 #pragma once
 
 #include "guilib/Geometry.h"
 #include "guilib/TransformMatrix.h"
 #include "guilib/DirtyRegion.h"
+#include "threads/Thread.h"
 #include <stdint.h>
 #include <string>
 
@@ -87,7 +85,7 @@ enum RENDER_STEREO_MODE
 };
 
 
-class CRenderSystemBase
+class CRenderSystemBase : public CThread
 {
 public:
   CRenderSystemBase();
@@ -100,9 +98,6 @@ public:
   virtual bool DestroyRenderSystem() = 0;
   virtual bool ResetRenderSystem(int width, int height, bool fullScreen, float refreshRate) = 0;
 
-  virtual bool BeginRender() = 0;
-  virtual bool EndRender() = 0;
-  virtual bool PresentRender(const CDirtyRegionList& dirty) = 0;
   virtual bool ClearBuffers(color_t color) = 0;
   virtual bool IsExtSupported(const char* extension) = 0;
 
@@ -150,22 +145,31 @@ public:
   unsigned int GetMinDXTPitch() const { return m_minDXTPitch; }
   unsigned int GetRenderQuirks() const { return m_renderQuirks; }
 
-protected:
-  bool                m_bRenderCreated;
-  RenderingSystemType m_enumRenderingSystem;
-  bool                m_bVSync;
-  unsigned int        m_maxTextureSize;
-  unsigned int        m_minDXTPitch;
+  void ShowSplash(std::string splashImage);
 
-  std::string   m_RenderRenderer;
-  std::string   m_RenderVendor;
-  std::string   m_RenderVersion;
-  int          m_RenderVersionMinor;
-  int          m_RenderVersionMajor;
+protected:
+  virtual void Process();
+  void FrameMove();
+  void Render();
+
+  virtual bool BeginRender() = 0;
+  virtual bool EndRender() = 0;
+  virtual bool PresentRender(const CDirtyRegionList& dirty) = 0;
+
+  bool m_bRenderCreated;
+  RenderingSystemType m_enumRenderingSystem;
+  bool m_bVSync;
+  unsigned int m_maxTextureSize;
+  unsigned int m_minDXTPitch;
+
+  std::string m_RenderRenderer;
+  std::string m_RenderVendor;
+  std::string m_RenderVersion;
+  int m_RenderVersionMinor;
+  int m_RenderVersionMajor;
   unsigned int m_renderCaps;
   unsigned int m_renderQuirks;
   RENDER_STEREO_VIEW m_stereoView;
   RENDER_STEREO_MODE m_stereoMode;
 };
 
-#endif // RENDER_SYSTEM_H

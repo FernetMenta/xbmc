@@ -18,9 +18,6 @@
  *
  */
 
-#ifndef RENDER_SYSTEM_GL_H
-#define RENDER_SYSTEM_GL_H
-
 #pragma once
 
 #if defined(HAVE_LIBGL)
@@ -39,9 +36,6 @@ public:
   virtual bool DestroyRenderSystem();
   virtual bool ResetRenderSystem(int width, int height, bool fullScreen, float refreshRate);
 
-  virtual bool BeginRender();
-  virtual bool EndRender();
-  virtual bool PresentRender(const CDirtyRegionList& dirty);
   virtual bool ClearBuffers(color_t color);
   virtual bool IsExtSupported(const char* extension);
 
@@ -73,6 +67,9 @@ public:
   virtual void ResetGLErrors();
 
 protected:
+  virtual bool BeginRender();
+  virtual bool EndRender();
+  virtual bool PresentRender(const CDirtyRegionList& dirty);
   virtual void SetVSyncImpl(bool enable) = 0;
   virtual bool PresentRenderImpl(const CDirtyRegionList& dirty) = 0;
   void CalculateMaxTexturesize();
@@ -96,4 +93,3 @@ protected:
 
 #endif // HAVE_LIBGL
 
-#endif // RENDER_SYSTEM_H

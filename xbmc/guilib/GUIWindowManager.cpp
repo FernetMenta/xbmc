@@ -1170,15 +1170,13 @@ CGUIWindow* CGUIWindowManager::GetWindow(int id) const
   return window;
 }
 
-void CGUIWindowManager::ProcessRenderLoop(bool renderOnly /*= false*/)
+void CGUIWindowManager::ProcessLoop(bool renderOnly /*= false*/)
 {
   if (g_application.IsCurrentThread() && m_pCallback)
   {
     m_iNested++;
     if (!renderOnly)
       m_pCallback->Process();
-    m_pCallback->FrameMove(!renderOnly);
-    m_pCallback->Render();
     m_iNested--;
   }
 }
@@ -1554,7 +1552,7 @@ void CGUIWindowManager::CloseWindowSync(CGUIWindow *window, int nextWindowID /*=
 {
   window->Close(false, nextWindowID);
   while (window->IsAnimating(ANIM_TYPE_WINDOW_CLOSE))
-    ProcessRenderLoop(true);
+    ProcessLoop(true);
 }
 
 #ifdef _DEBUG
