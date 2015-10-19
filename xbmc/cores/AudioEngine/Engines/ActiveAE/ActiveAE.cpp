@@ -2341,7 +2341,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
     {
       if (stream->m_lastSyncError > threshold * 2)
       {
-        stream->m_syncClock = CActiveAEStream::ADJUST;
+        stream->m_syncClock = CActiveAEStream::MUTE;
         stream->m_syncError.Flush(100);
         CLog::Log(LOGDEBUG,"ActiveAE::SyncStream - average error %f, last average error: %f", error, stream->m_lastSyncError);
         stream->m_lastSyncError = error;
