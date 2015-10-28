@@ -147,9 +147,9 @@ public:
     NEXTSTREAM_RETRY,
   };
 
-  CDVDInputStream(DVDStreamType m_streamType);
+  CDVDInputStream(DVDStreamType m_streamType, const char* strFileName);
   virtual ~CDVDInputStream();
-  virtual bool Open(const char* strFileName, const std::string& content, bool contentLookup);
+  virtual bool Open(const std::string& content, bool contentLookup);
   virtual void Close() = 0;
   virtual int Read(uint8_t* buf, int buf_size) = 0;
   virtual int64_t Seek(int64_t offset, int whence) = 0;
@@ -192,7 +192,6 @@ protected:
   CURL m_url;
   BitstreamStats m_stats;
   std::string m_content;
-  CFileItem m_item;
   bool m_contentLookup;
   bool m_realtime;
 };

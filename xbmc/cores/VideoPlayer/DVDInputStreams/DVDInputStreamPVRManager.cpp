@@ -38,7 +38,7 @@ using namespace PVR;
  * Description: Class constructor, initialize member variables
  *              public class is CDVDInputStream
  */
-CDVDInputStreamPVRManager::CDVDInputStreamPVRManager(IVideoPlayer* pPlayer) : CDVDInputStream(DVDSTREAM_TYPE_PVRMANAGER)
+CDVDInputStreamPVRManager::CDVDInputStreamPVRManager(IVideoPlayer* pPlayer, const char* strFile) : CDVDInputStream(DVDSTREAM_TYPE_PVRMANAGER, strFile)
 {
   m_pPlayer         = pPlayer;
   m_pFile           = NULL;
@@ -74,7 +74,7 @@ bool CDVDInputStreamPVRManager::IsEOF()
     return !m_pFile || m_eof;
 }
 
-bool CDVDInputStreamPVRManager::Open(const char* strFile, const std::string& content, bool contentLookup)
+bool CDVDInputStreamPVRManager::Open(const std::string& content, bool contentLookup)
 {
   /* Open PVR File for both cases, to have access to ILiveTVInterface and
    * IRecordable
@@ -83,8 +83,8 @@ bool CDVDInputStreamPVRManager::Open(const char* strFile, const std::string& con
   m_pLiveTV     = ((CPVRFile*)m_pFile)->GetLiveTV();
   m_pRecordable = ((CPVRFile*)m_pFile)->GetRecordable();
 
-  CURL url(strFile);
-  if (!CDVDInputStream::Open(strFile, content, contentLookup)) return false;
+  CURL url(m_strFileName);
+  if (!CDVDInputStream::Open(content, contentLookup)) return false;
   if (!m_pFile->Open(url))
   {
     delete m_pFile;
@@ -105,7 +105,7 @@ bool CDVDInputStreamPVRManager::Open(const char* strFile, const std::string& con
    * for the right protocol stream handler and swap every call to this input stream
    * handler.
    */
-  std::string transFile = XFILE::CPVRFile::TranslatePVRFilename(strFile);
+  std::string transFile = XFILE::CPVRFile::TranslatePVRFilename(m_strFileName);
   if(transFile.substr(0, 6) != "pvr://")
   {
     m_pOtherStream = CDVDFactoryInputStream::CreateInputStream(m_pPlayer, transFile, content);
@@ -114,10 +114,8 @@ bool CDVDInputStreamPVRManager::Open(const char* strFile, const std::string& con
       CLog::Log(LOGERROR, "CDVDInputStreamPVRManager::Open - unable to create input stream for [%s]", transFile.c_str());
       return false;
     }
-    else
-      m_pOtherStream->SetFileItem(m_item);
 
-    if (!m_pOtherStream->Open(transFile.c_str(), content, contentLookup))
+    if (!m_pOtherStream->Open(content, contentLookup))
     {
       CLog::Log(LOGERROR, "CDVDInputStreamPVRManager::Open - error opening [%s]", transFile.c_str());
       delete m_pFile;
@@ -239,7 +237,8 @@ bool CDVDInputStreamPVRManager::NextChannel(bool preview/* = false*/)
     CPVRChannelPtr channel(g_PVRManager.GetCurrentChannel());
     CFileItemPtr item(g_PVRChannelGroups->Get(channel->IsRadio())->GetSelectedGroup()->GetByChannelUp(channel));
     if (item)
-      return CloseAndOpen(item->GetPath().c_str());
+      // xxx TODO: something...
+      return CloseAndOpen();
   }
   else if (m_pLiveTV)
     return m_pLiveTV->NextChannel(preview);
@@ -254,7 +253,8 @@ bool CDVDInputStreamPVRManager::PrevChannel(bool preview/* = false*/)
     CPVRChannelPtr channel(g_PVRManager.GetCurrentChannel());
     CFileItemPtr item(g_PVRChannelGroups->Get(channel->IsRadio())->GetSelectedGroup()->GetByChannelDown(channel));
     if (item)
-      return CloseAndOpen(item->GetPath().c_str());
+      // xxx TODO: something...
+      return CloseAndOpen();
   }
   else if (m_pLiveTV)
     return m_pLiveTV->PrevChannel(preview);
@@ -269,7 +269,8 @@ bool CDVDInputStreamPVRManager::SelectChannelByNumber(unsigned int iChannelNumbe
     CPVRChannelPtr channel(g_PVRManager.GetCurrentChannel());
     CFileItemPtr item(g_PVRChannelGroups->Get(channel->IsRadio())->GetSelectedGroup()->GetByChannelNumber(iChannelNumber));
     if (item)
-      return CloseAndOpen(item->GetPath().c_str());
+      // xxx TODO: something...
+      return CloseAndOpen();
   }
   else if (m_pLiveTV)
     return m_pLiveTV->SelectChannel(iChannelNumber);
@@ -285,7 +286,8 @@ bool CDVDInputStreamPVRManager::SelectChannel(const CPVRChannelPtr &channel)
   if (!SupportsChannelSwitch())
   {
     CFileItem item(channel);
-    return CloseAndOpen(item.GetPath().c_str());
+    // xxx TODO: something...
+    return CloseAndOpen();
   }
   else if (m_pLiveTV)
   {
@@ -370,11 +372,11 @@ std::string CDVDInputStreamPVRManager::GetInputFormat()
   return "";
 }
 
-bool CDVDInputStreamPVRManager::CloseAndOpen(const char* strFile)
+bool CDVDInputStreamPVRManager::CloseAndOpen()
 {
   Close();
 
-  if (Open(strFile, m_content, m_contentLookup))
+  if (Open(m_content, m_contentLookup))
   {
     return true;
   }

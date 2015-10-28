@@ -26,8 +26,8 @@
 
 using namespace XFILE;
 
-CDVDInputStreamFFmpeg::CDVDInputStreamFFmpeg()
-  : CDVDInputStream(DVDSTREAM_TYPE_FFMPEG)
+CDVDInputStreamFFmpeg::CDVDInputStreamFFmpeg(const char* strFile)
+  : CDVDInputStream(DVDSTREAM_TYPE_FFMPEG, strFile)
   , m_can_pause(false)
   , m_can_seek(false)
   , m_aborted(false)
@@ -48,8 +48,9 @@ bool CDVDInputStreamFFmpeg::IsEOF()
     return false;
 }
 
-bool CDVDInputStreamFFmpeg::Open(const char* strFile, const std::string& content, bool contentLookup)
+bool CDVDInputStreamFFmpeg::Open(const std::string& content, bool contentLookup)
 {
+  const char *strFile = m_strFileName.c_str();
   CFileItem item(strFile, false);
   std::string selected;
   if (item.IsInternetStream() && (item.IsType(".m3u8") || content == "application/vnd.apple.mpegurl"))
@@ -66,7 +67,7 @@ bool CDVDInputStreamFFmpeg::Open(const char* strFile, const std::string& content
     }
   }
 
-  if (!CDVDInputStream::Open(strFile, content, contentLookup))
+  if (!CDVDInputStream::Open(content, contentLookup))
     return false;
 
   m_can_pause = true;

@@ -60,7 +60,7 @@ bool CDVDDemuxVobsub::Open(const std::string& filename, int source, const std::s
   }
 
   m_Input.reset(CDVDFactoryInputStream::CreateInputStream(NULL, vobsub, ""));
-  if(!m_Input.get() || !m_Input->Open(vobsub.c_str(), "video/x-vobsub", false))
+  if(!m_Input.get() || !m_Input->Open("video/x-vobsub", false))
     return false;
 
   m_Demuxer.reset(new CDVDDemuxFFmpeg());

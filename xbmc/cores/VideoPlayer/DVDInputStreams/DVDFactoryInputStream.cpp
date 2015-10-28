@@ -52,10 +52,10 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IVideoPlayer* pPlayer
     url.SetHostName(file);
     url.SetFileName("BDMV/index.bdmv");
     if(XFILE::CFile::Exists(url.Get()))
-        return new CDVDInputStreamBluray(pPlayer);
+        return new CDVDInputStreamBluray(pPlayer, file.c_str());
 #endif
 
-    return new CDVDInputStreamNavigator(pPlayer);
+    return new CDVDInputStreamNavigator(pPlayer, file.c_str());
   }
 
 #ifdef HAS_DVD_DRIVE
@@ -63,20 +63,20 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IVideoPlayer* pPlayer
   {
 #ifdef HAVE_LIBBLURAY
     if(XFILE::CFile::Exists(URIUtils::AddFileToFolder(file, "BDMV/index.bdmv")))
-        return new CDVDInputStreamBluray(pPlayer);
+        return new CDVDInputStreamBluray(pPlayer, file.c_str());
 #endif
 
-    return new CDVDInputStreamNavigator(pPlayer);
+    return new CDVDInputStreamNavigator(pPlayer, file.c_str());
   }
 #endif
 
   if (item.IsDVDFile(false, true))
-    return (new CDVDInputStreamNavigator(pPlayer));
+    return (new CDVDInputStreamNavigator(pPlayer, file.c_str()));
   else if(file.substr(0, 6) == "pvr://")
-    return new CDVDInputStreamPVRManager(pPlayer);
+    return new CDVDInputStreamPVRManager(pPlayer, file.c_str());
 #ifdef HAVE_LIBBLURAY
   else if (item.IsType(".bdmv") || item.IsType(".mpls") || file.substr(0, 7) == "bluray:")
-    return new CDVDInputStreamBluray(pPlayer);
+    return new CDVDInputStreamBluray(pPlayer, file.c_str());
 #endif
   else if(file.substr(0, 6) == "rtp://"
        || file.substr(0, 7) == "rtsp://"
@@ -86,10 +86,10 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IVideoPlayer* pPlayer
        || file.substr(0, 6) == "mms://"
        || file.substr(0, 7) == "mmst://"
        || file.substr(0, 7) == "mmsh://")
-    return new CDVDInputStreamFFmpeg();
+    return new CDVDInputStreamFFmpeg(file.c_str());
 #ifdef ENABLE_DVDINPUTSTREAM_STACK
   else if(file.substr(0, 8) == "stack://")
-    return new CDVDInputStreamStack();
+    return new CDVDInputStreamStack(file.c_str());
 #endif
 #ifdef HAS_LIBRTMP
   else if(file.substr(0, 7) == "rtmp://"
@@ -97,12 +97,12 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IVideoPlayer* pPlayer
        || file.substr(0, 8) == "rtmpe://"
        || file.substr(0, 9) == "rtmpte://"
        || file.substr(0, 8) == "rtmps://")
-    return new CDVDInputStreamRTMP();
+    return new CDVDInputStreamRTMP(file.c_str());
 #endif
   else if (item.IsInternetStream())
   {
     if (item.IsType(".m3u8"))
-      return new CDVDInputStreamFFmpeg();
+      return new CDVDInputStreamFFmpeg(file.c_str());
 
     if (contentlookup)
     {
@@ -112,9 +112,9 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IVideoPlayer* pPlayer
     }
 
     if (item.GetMimeType() == "application/vnd.apple.mpegurl")
-      return new CDVDInputStreamFFmpeg();
+      return new CDVDInputStreamFFmpeg(file.c_str());
   }
 
   // our file interface handles all these types of streams
-  return (new CDVDInputStreamFile());
+  return (new CDVDInputStreamFile(file.c_str()));
 }

@@ -43,9 +43,9 @@ class CDVDInputStreamPVRManager
   , public CDVDInputStream::ISeekable
 {
 public:
-  CDVDInputStreamPVRManager(IVideoPlayer* pPlayer);
+  CDVDInputStreamPVRManager(IVideoPlayer* pPlayer, const char* strFile);
   virtual ~CDVDInputStreamPVRManager();
-  virtual bool Open(const char* strFile, const std::string &content, bool contentLookup);
+  virtual bool Open(const std::string &content, bool contentLookup);
   virtual void Close();
   virtual int Read(uint8_t* buf, int buf_size);
   virtual int64_t Seek(int64_t offset, int whence);
@@ -89,7 +89,7 @@ public:
 
   void ResetScanTimeout(unsigned int iTimeoutMs);
 protected:
-  bool CloseAndOpen(const char* strFile);
+  bool CloseAndOpen();
   static bool SupportsChannelSwitch(void);
 
   IVideoPlayer*               m_pPlayer;

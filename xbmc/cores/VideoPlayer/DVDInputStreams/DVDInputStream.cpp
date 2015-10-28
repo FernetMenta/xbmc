@@ -21,19 +21,12 @@
 #include "DVDInputStream.h"
 #include "URL.h"
 
-CDVDInputStream::CDVDInputStream(DVDStreamType streamType)
+CDVDInputStream::CDVDInputStream(DVDStreamType streamType, const char* strFile)
 {
   m_streamType = streamType;
   m_contentLookup = true;
   m_realtime = false;
-}
 
-CDVDInputStream::~CDVDInputStream()
-{
-}
-
-bool CDVDInputStream::Open(const char* strFile, const std::string &content, bool contentLookup)
-{
   CURL url(strFile);
 
   m_url = url;
@@ -41,7 +34,14 @@ bool CDVDInputStream::Open(const char* strFile, const std::string &content, bool
   // but keep them in m_url.
   url.SetProtocolOptions("");
   m_strFileName = url.Get();
+}
 
+CDVDInputStream::~CDVDInputStream()
+{
+}
+
+bool CDVDInputStream::Open(const std::string &content, bool contentLookup)
+{
   m_content = content;
   m_contentLookup = contentLookup;
   return true;
@@ -50,10 +50,4 @@ bool CDVDInputStream::Open(const char* strFile, const std::string &content, bool
 void CDVDInputStream::Close()
 {
   m_strFileName = "";
-  m_item.Reset();
-}
-
-void CDVDInputStream::SetFileItem(const CFileItem& item)
-{
-  m_item = item;
 }

@@ -183,8 +183,8 @@ void  bluray_overlay_argb_cb(void *this_gen, const struct bd_argb_overlay_s * co
 }
 #endif
 
-CDVDInputStreamBluray::CDVDInputStreamBluray(IVideoPlayer* player) :
-  CDVDInputStream(DVDSTREAM_TYPE_BLURAY)
+CDVDInputStreamBluray::CDVDInputStreamBluray(IVideoPlayer* player, const char* strFile) :
+  CDVDInputStream(DVDSTREAM_TYPE_BLURAY, strFile)
 {
   m_title = NULL;
   m_clip  = (uint32_t)-1;
@@ -260,12 +260,12 @@ BLURAY_TITLE_INFO* CDVDInputStreamBluray::GetTitleFile(const std::string& filena
 }
 
 
-bool CDVDInputStreamBluray::Open(const char* strFile, const std::string& content, bool contentLookup)
+bool CDVDInputStreamBluray::Open(const std::string& content, bool contentLookup)
 {
   if(m_player == NULL)
     return false;
 
-  std::string strPath(strFile);
+  std::string strPath(m_strFileName);
   std::string filename;
   std::string root;
 
@@ -299,7 +299,7 @@ bool CDVDInputStreamBluray::Open(const char* strFile, const std::string& content
       URIUtils::RemoveSlashAtEnd(strPath);
     }
     root     = strPath;
-    filename = URIUtils::GetFileName(strFile);
+    filename = URIUtils::GetFileName(m_strFileName);
   }
 
   // root should not have trailing slash
