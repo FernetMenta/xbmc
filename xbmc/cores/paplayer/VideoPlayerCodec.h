@@ -44,8 +44,9 @@ public:
   virtual int ReadPCM(BYTE *pBuffer, int size, int *actualsize);
   virtual bool CanInit();
   virtual bool CanSeek();
-  virtual CAEChannelInfo GetChannelInfo() {return m_ChannelInfo;}
+  virtual CAEChannelInfo GetChannelInfo() {return m_srcFormat.m_channelLayout;}
 
+  AEAudioFormat GetFormat();
   void SetContentType(const std::string &strContent);
 
   bool NeedConvert(AEDataFormat fmt);
@@ -56,17 +57,11 @@ private:
   CDVDAudioCodec* m_pAudioCodec;
 
   std::string m_strContentType;
-
   std::string m_strFileName;
-
   int m_nAudioStream;
-
   int m_audioPos;
   DemuxPacket* m_pPacket;
-
   int  m_nDecodedLen;
-
-  CAEChannelInfo m_ChannelInfo;
 
   bool m_bInited;
   bool m_bCanSeek;
@@ -75,8 +70,9 @@ private:
   uint8_t *m_audioPlanes[8];
   int m_planes;
   bool m_needConvert;
-  AEDataFormat m_srcFormat;
-  int m_srcFrameSize;
+  AEAudioFormat m_srcFormat;
+  AEAudioFormat m_format;
+  int m_channels;
 };
 
 #endif

@@ -66,10 +66,10 @@ public:
   void SetTotalTime(int64_t time);
   void Start() { m_canPlay = true;}; // cause a pre-buffered stream to start.
   int GetStatus() { return m_status; };
-  void SetStatus(int status) { m_status = status; };
+  void SetStatus(int status) { m_status = status; }
 
-  void GetDataFormat(CAEChannelInfo *channelInfo, unsigned int *samplerate, unsigned int *encodedSampleRate, enum AEDataFormat *dataFormat);
-  unsigned int GetChannels() { if (m_codec) return m_codec->GetChannelInfo().Count(); else return 0; };
+  AEAudioFormat GetFormat();
+  unsigned int GetChannels() { return GetFormat().m_channelLayout.Count(); }
   // Data management
   unsigned int GetDataSize();
   void *GetData(unsigned int samples);
@@ -93,7 +93,7 @@ private:
   bool    m_canPlay;
 
   // the codec we're using
-  ICodec*          m_codec;
+  ICodec* m_codec;
 
   CCriticalSection m_critSection;
 };

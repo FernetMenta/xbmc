@@ -267,7 +267,7 @@ unsigned int CActiveAEStream::AddData(uint8_t* const *data, unsigned int offset,
         m_bufferedTime += (double)minFrames / m_currentBuffer->pkt->config.sample_rate;
       }
 
-      if (m_currentBuffer->pkt->nb_samples == m_currentBuffer->pkt->max_nb_samples)
+      if (m_currentBuffer->pkt->nb_samples == m_currentBuffer->pkt->max_nb_samples || m_format.m_dataFormat == AE_FMT_RAW)
       {
         MsgStreamSample msgData;
         msgData.buffer = m_currentBuffer;
@@ -524,11 +524,6 @@ const unsigned int CActiveAEStream::GetChannelCount() const
 const unsigned int CActiveAEStream::GetSampleRate() const
 {
   return m_format.m_sampleRate;
-}
-
-const unsigned int CActiveAEStream::GetEncodedSampleRate() const
-{
-  return m_format.m_encodedRate;
 }
 
 const enum AEDataFormat CActiveAEStream::GetDataFormat() const

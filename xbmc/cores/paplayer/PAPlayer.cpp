@@ -36,11 +36,6 @@
 #define FAST_XFADE_TIME           80 /* 80 milliseconds */
 #define MAX_SKIP_XFADE_TIME     2000 /* max 2 seconds crossfade on track skip */
 
-CAEChannelInfo ICodec::GetChannelInfo()
-{
-  return CAEUtil::GuessChLayout(m_Channels);
-}
-
 class CQueueNextFileJob : public CJob
 {
   CFileItem m_item;
@@ -387,20 +382,20 @@ bool PAPlayer::QueueNextFileEx(const CFileItem &file, bool fadeIn/* = true */, b
   UpdateCrossfadeTime(file);
 
   /* init the streaminfo struct */
-  si->m_decoder.GetDataFormat(&si->m_channelInfo, &si->m_sampleRate, &si->m_encodedSampleRate, &si->m_dataFormat);
-  si->m_startOffset        = file.m_lStartOffset * 1000 / 75;
-  si->m_endOffset          = file.m_lEndOffset   * 1000 / 75;
-  si->m_bytesPerSample     = CAEUtil::DataFormatToBits(si->m_dataFormat) >> 3;
-  si->m_bytesPerFrame      = si->m_bytesPerSample * si->m_channelInfo.Count();
-  si->m_started            = false;
-  si->m_finishing          = false;
-  si->m_framesSent         = 0;
-  si->m_seekNextAtFrame    = 0;
-  si->m_seekFrame          = -1;
-  si->m_stream             = NULL;
-  si->m_volume             = (fadeIn && m_upcomingCrossfadeMS) ? 0.0f : 1.0f;
-  si->m_fadeOutTriggered   = false;
-  si->m_isSlaved           = false;
+  si->m_audioFormat = si->m_decoder.GetFormat();
+  si->m_startOffset = file.m_lStartOffset * 1000 / 75;
+  si->m_endOffset = file.m_lEndOffset   * 1000 / 75;
+  si->m_bytesPerSample = CAEUtil::DataFormatToBits(si->m_audioFormat.m_dataFormat) >> 3;
+  si->m_bytesPerFrame = si->m_bytesPerSample * si->m_channelInfo.Count();
+  si->m_started = false;
+  si->m_finishing = false;
+  si->m_framesSent = 0;
+  si->m_seekNextAtFrame = 0;
+  si->m_seekFrame = -1;
+  si->m_stream = NULL;
+  si->m_volume = (fadeIn && m_upcomingCrossfadeMS) ? 0.0f : 1.0f;
+  si->m_fadeOutTriggered = false;
+  si->m_isSlaved = false;
 
   int64_t streamTotalTime = si->m_decoder.TotalTime();
   if (si->m_endOffset)
@@ -414,7 +409,7 @@ bool PAPlayer::QueueNextFileEx(const CFileItem &file, bool fadeIn/* = true */, b
       si->m_prepareNextAtFrame = (int)((streamTotalTime - TIME_TO_CACHE_NEXT_FILE - m_defaultCrossfadeMS) * si->m_sampleRate / 1000.0f);
   }
 
-  if (m_currentStream && (AE_IS_RAW(m_currentStream->m_dataFormat) || AE_IS_RAW(si->m_dataFormat)))
+  if (m_currentStream && (AE_IS_RAW(m_currentStream->m_audioFormat.m_dataFormat) || AE_IS_RAW(si->m_audioFormat.m_dataFormat)))
   {
     m_currentStream->m_prepareTriggered = false;
     m_currentStream->m_waitOnDrain = true;
@@ -475,11 +470,9 @@ inline bool PAPlayer::PrepareStream(StreamInfo *si)
     return true;
 
   /* get a paused stream */
+  AEAudioFormat format = si->m_audioFormat;
   si->m_stream = CAEFactory::MakeStream(
-    si->m_dataFormat,
-    si->m_sampleRate,
-    si->m_encodedSampleRate,
-    si->m_channelInfo,
+    format,
     AESTREAM_PAUSED
   );
 
@@ -1098,10 +1091,10 @@ void PAPlayer::UpdateGUIData(StreamInfo *si)
 
   const ICodec* codec = si->m_decoder.GetCodec();
 
-  m_playerGUIData.m_audioBitrate = codec ? codec->m_Bitrate : 0;
+  m_playerGUIData.m_audioBitrate = codec ? codec->m_bitRate : 0;
   strncpy(m_playerGUIData.m_codec,codec ? codec->m_CodecName.c_str() : "",20);
   m_playerGUIData.m_cacheLevel   = codec ? codec->GetCacheLevel() : 0;
-  m_playerGUIData.m_bitsPerSample = (codec && codec->m_BitsPerCodedSample) ? codec->m_BitsPerCodedSample : si->m_bytesPerSample << 3;
+  m_playerGUIData.m_bitsPerSample = (codec && codec->m_bitsPerCodedSample) ? codec->m_bitsPerCodedSample : si->m_bytesPerSample << 3;
 
   int64_t total = si->m_decoder.TotalTime();
   if (si->m_endOffset)
