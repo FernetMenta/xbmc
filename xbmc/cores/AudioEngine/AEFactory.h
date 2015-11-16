@@ -25,6 +25,7 @@
 #include "Interfaces/AE.h"
 
 class CSetting;
+class CAEStreamInfo;
 
 class CAEFactory
 {
@@ -44,7 +45,7 @@ public:
   static void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   static void VerifyOutputDevice(std::string &device, bool passthrough);
   static std::string GetDefaultDevice(bool passthrough);
-  static bool SupportsRaw(AEDataFormat format, int samplerate);
+  static bool SupportsRaw(CAEStreamInfo &info);
   static bool SupportsSilenceTimeout();
   static bool HasStereoAudioChannelCount();
   static bool HasHDAudioChannelCount();

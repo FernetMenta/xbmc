@@ -22,6 +22,7 @@
 
 #include "ActiveAESink.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
+#include "cores/AudioEngine/Utils/AEStreamInfo.h"
 #include "utils/EndianSwap.h"
 #include "ActiveAE.h"
 #include "cores/AudioEngine/AEResampleFactory.h"
@@ -105,10 +106,47 @@ bool CActiveAESink::HasPassthroughDevice()
   return false;
 }
 
-bool CActiveAESink::SupportsFormat(const std::string &device, AEDataFormat format, int samplerate)
+bool CActiveAESink::SupportsFormat(const std::string &device, CAEStreamInfo &streaminfo)
 {
   std::string dev = device;
   std::string dri;
+
+  // IEC packed
+  unsigned int samplerate = streaminfo.m_sampleRate;
+  AEDataFormat format;
+  switch (streaminfo.m_type)
+  {
+    case CAEStreamInfo::STREAM_TYPE_AC3:
+      format = AE_FMT_AC3;
+      break;
+
+    case CAEStreamInfo::STREAM_TYPE_EAC3:
+      format = AE_FMT_EAC3;
+      samplerate = 4*samplerate;
+      break;
+
+    case CAEStreamInfo::STREAM_TYPE_TRUEHD:
+      format = AE_FMT_TRUEHD;
+      if (samplerate == 48000 || samplerate == 96000 || samplerate == 192000)
+        samplerate = 192000;
+      else
+        samplerate = 176400;
+      break;
+
+    case CAEStreamInfo::STREAM_TYPE_DTSHD:
+      samplerate = 192000;
+    case CAEStreamInfo::STREAM_TYPE_DTSHD_CORE:
+    case CAEStreamInfo::STREAM_TYPE_DTS_512:
+    case CAEStreamInfo::STREAM_TYPE_DTS_1024:
+    case CAEStreamInfo::STREAM_TYPE_DTS_2048:
+      format = AE_FMT_DTS;
+      break;
+
+    default:
+      format = AE_FMT_INVALID;
+      break;
+  }
+
   CAESinkFactory::ParseDevice(dev, dri);
   for (AESinkInfoList::iterator itt = m_sinkInfoList.begin(); itt != m_sinkInfoList.end(); ++itt)
   {
@@ -131,7 +169,10 @@ bool CActiveAESink::SupportsFormat(const std::string &device, AEDataFormat forma
               return false;
           }
           else
+          {
+            // TODO - check if sink supports stream type (non IEC packed)
             return false;
+          }
         }
       }
     }

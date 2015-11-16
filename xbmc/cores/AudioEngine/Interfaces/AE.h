@@ -37,6 +37,7 @@ class IAESound;
 class IAEPacketizer;
 class IAudioCallback;
 class IAEClockCallback;
+class CAEStreamInfo;
 
 /* sound options */
 #define AE_SOUND_OFF    0 /* disable sounds */
@@ -206,7 +207,7 @@ public:
    * @see CAEPackIEC61937::CAEPackIEC61937()
    * @returns true if the AudioEngine is capable of RAW output
    */
-  virtual bool SupportsRaw(AEDataFormat format, int samplerate) { return false; }
+  virtual bool SupportsRaw(CAEStreamInfo &info) { return false; }
 
    /**
    * Returns true if the AudioEngine supports drain mode which is not streaming silence when idle

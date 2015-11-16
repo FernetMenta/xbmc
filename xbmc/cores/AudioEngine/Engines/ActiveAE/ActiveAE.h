@@ -248,7 +248,7 @@ public:
 
   virtual void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   virtual std::string GetDefaultDevice(bool passthrough);
-  virtual bool SupportsRaw(AEDataFormat format, int samplerate);
+  virtual bool SupportsRaw(CAEStreamInfo &info);
   virtual bool SupportsSilenceTimeout();
   virtual bool HasStereoAudioChannelCount();
   virtual bool HasHDAudioChannelCount();
