@@ -39,28 +39,44 @@ CDVDAudioCodecPassthrough::~CDVDAudioCodecPassthrough(void)
 
 bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 {
-  bool bSupportsAC3Out    = CAEFactory::SupportsRaw(AE_FMT_AC3, hints.samplerate);
-  bool bSupportsEAC3Out   = CAEFactory::SupportsRaw(AE_FMT_EAC3, 192000);
-  bool bSupportsDTSOut    = CAEFactory::SupportsRaw(AE_FMT_DTS, hints.samplerate);
-  bool bSupportsTrueHDOut = CAEFactory::SupportsRaw(AE_FMT_TRUEHD, 192000);
-  bool bSupportsDTSHDOut  = CAEFactory::SupportsRaw(AE_FMT_DTSHD, 192000);
-
-  /* only get the dts core from the parser if we don't support dtsHD */
-  m_parser.SetCoreOnly(!bSupportsDTSHDOut);
-  m_bufferSize = 0;
-
-  /* 32kHz E-AC-3 passthrough requires 128kHz IEC 60958 stream
-   * which HDMI does not support, and IEC 61937 does not mention
-   * reduced sample rate support, so support only 44.1 and 48 */
-  if ((hints.codec == AV_CODEC_ID_AC3 && bSupportsAC3Out) ||
-      (hints.codec == AV_CODEC_ID_EAC3 && bSupportsEAC3Out && (hints.samplerate == 44100 || hints.samplerate == 48000)) ||
-      (hints.codec == AV_CODEC_ID_DTS && bSupportsDTSOut) ||
-      (hints.codec == AV_CODEC_ID_TRUEHD && bSupportsTrueHDOut))
+  CAEStreamInfo info;
+  info.m_sampleRate = hints.samplerate;
+  switch (hints.codec)
   {
-    return true;
+    case AV_CODEC_ID_AC3:
+      info.m_type = CAEStreamInfo::STREAM_TYPE_AC3;
+      break;
+
+    case AV_CODEC_ID_EAC3:
+      info.m_type = CAEStreamInfo::STREAM_TYPE_EAC3;
+      break;
+
+    case AV_CODEC_ID_DTS:
+      info.m_type = CAEStreamInfo::STREAM_TYPE_DTSHD;
+      break;
+
+    case AV_CODEC_ID_TRUEHD:
+      info.m_type = CAEStreamInfo::STREAM_TYPE_TRUEHD;
+      break;
+
+    default:
+      info.m_type = CAEStreamInfo::STREAM_TYPE_NULL;
   }
 
-  return false;
+  bool ret = CAEFactory::SupportsRaw(info);
+
+  m_parser.SetCoreOnly(false);
+  if (!ret && hints.codec == AV_CODEC_ID_DTS)
+  {
+    info.m_type = CAEStreamInfo::STREAM_TYPE_DTSHD_CORE;
+    ret = CAEFactory::SupportsRaw(info);
+
+    // only get the dts core from the parser if we don't support dtsHD
+    m_parser.SetCoreOnly(true);
+    m_bufferSize = 0;
+  }
+
+  return ret;
 }
 
 int CDVDAudioCodecPassthrough::GetSampleRate()

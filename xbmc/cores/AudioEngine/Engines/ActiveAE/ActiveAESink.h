@@ -27,6 +27,8 @@
 #include "cores/AudioEngine/AESinkFactory.h"
 #include "cores/AudioEngine/Engines/ActiveAE/ActiveAEBuffer.h"
 
+class CAEStreamInfo;
+
 namespace ActiveAE
 {
 using namespace Actor;
@@ -97,7 +99,7 @@ public:
   void Dispose();
   AEDeviceType GetDeviceType(const std::string &device);
   bool HasPassthroughDevice();
-  bool SupportsFormat(const std::string &device, AEDataFormat format, int samplerate);
+  bool SupportsFormat(const std::string &device, CAEStreamInfo &steaminfo);
   CSinkControlProtocol m_controlPort;
   CSinkDataProtocol m_dataPort;
 
