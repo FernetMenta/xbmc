@@ -53,7 +53,7 @@ CAEBitstreamPacker::~CAEBitstreamPacker()
 
 void CAEBitstreamPacker::Pack(CAEStreamInfo &info, uint8_t* data, int size)
 {
-  switch (info.GetDataType())
+  switch (info.m_type)
   {
     case CAEStreamInfo::STREAM_TYPE_TRUEHD:
       PackTrueHD(info, data, size);
@@ -69,20 +69,20 @@ void CAEBitstreamPacker::Pack(CAEStreamInfo &info, uint8_t* data, int size)
 
     case CAEStreamInfo::STREAM_TYPE_DTSHD_CORE:
     case CAEStreamInfo::STREAM_TYPE_DTS_512:
-      m_dataSize = CAEPackIEC61937::PackDTS_512(data, size, m_packedBuffer, info.IsLittleEndian());
+      m_dataSize = CAEPackIEC61937::PackDTS_512(data, size, m_packedBuffer, info.m_dataIsLE);
       break;
 
     case CAEStreamInfo::STREAM_TYPE_DTS_1024:
-      m_dataSize = CAEPackIEC61937::PackDTS_1024(data, size, m_packedBuffer, info.IsLittleEndian());
+      m_dataSize = CAEPackIEC61937::PackDTS_1024(data, size, m_packedBuffer, info.m_dataIsLE);
       break;
 
     case CAEStreamInfo::STREAM_TYPE_DTS_2048:
-      m_dataSize = CAEPackIEC61937::PackDTS_2048(data, size, m_packedBuffer, info.IsLittleEndian());
+      m_dataSize = CAEPackIEC61937::PackDTS_2048(data, size, m_packedBuffer, info.m_dataIsLE);
       break;
 
     default:
       /* pack the data into an IEC61937 frame */
-      CAEPackIEC61937::PackFunc pack = info.GetPackFunc();
+      CAEPackIEC61937::PackFunc pack = info.m_packFunc;
       if (pack)
         m_dataSize = pack(data, size, m_packedBuffer);
   }
@@ -158,12 +158,12 @@ void CAEBitstreamPacker::PackDTSHD(CAEStreamInfo &info, uint8_t* data, int size)
   m_dtsHD[sizeof(dtshd_start_code) + 1] = ((uint16_t)size & 0x00FF);
   memcpy(m_dtsHD + sizeof(dtshd_start_code) + 2, data, size);
 
-  m_dataSize = CAEPackIEC61937::PackDTSHD(m_dtsHD, dataSize, m_packedBuffer, info.GetDTSPeriod());
+  m_dataSize = CAEPackIEC61937::PackDTSHD(m_dtsHD, dataSize, m_packedBuffer, info.m_dtsPeriod);
 }
 
 void CAEBitstreamPacker::PackEAC3(CAEStreamInfo &info, uint8_t* data, int size)
 {
-  unsigned int framesPerBurst = info.GetEAC3BlocksDiv();
+  unsigned int framesPerBurst = info.m_repeat;
 
   if (m_eac3FramesPerBurst != framesPerBurst)
   {

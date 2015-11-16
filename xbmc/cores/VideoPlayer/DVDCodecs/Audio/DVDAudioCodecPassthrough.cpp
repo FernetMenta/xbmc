@@ -46,7 +46,7 @@ bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &op
   bool bSupportsDTSHDOut  = CAEFactory::SupportsRaw(AE_FMT_DTSHD, 192000);
 
   /* only get the dts core from the parser if we don't support dtsHD */
-  m_info.SetCoreOnly(!bSupportsDTSHDOut);
+  m_parser.SetCoreOnly(!bSupportsDTSHDOut);
   m_bufferSize = 0;
 
   /* 32kHz E-AC-3 passthrough requires 128kHz IEC 60958 stream
@@ -65,17 +65,17 @@ bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &op
 
 int CDVDAudioCodecPassthrough::GetSampleRate()
 {
-  return m_info.GetOutputRate();
+  return m_parser.GetOutputRate();
 }
 
 int CDVDAudioCodecPassthrough::GetEncodedSampleRate()
 {
-  return m_info.GetSampleRate();
+  return m_parser.GetSampleRate();
 }
 
 enum AEDataFormat CDVDAudioCodecPassthrough::GetDataFormat()
 {
-  switch(m_info.GetDataType())
+  switch(m_parser.GetDataType())
   {
     case CAEStreamInfo::STREAM_TYPE_AC3:
       return AE_FMT_AC3;
@@ -102,17 +102,17 @@ enum AEDataFormat CDVDAudioCodecPassthrough::GetDataFormat()
 
 int CDVDAudioCodecPassthrough::GetChannels()
 {
-  return m_info.GetOutputChannels();
+  return m_parser.GetOutputChannels();
 }
 
 int CDVDAudioCodecPassthrough::GetEncodedChannels()
 {
-  return m_info.GetChannels();
+  return m_parser.GetChannels();
 }
 
 CAEChannelInfo CDVDAudioCodecPassthrough::GetChannelMap()
 {
-  return m_info.GetChannelMap();
+  return m_parser.GetChannelMap();
 }
 
 void CDVDAudioCodecPassthrough::Dispose()
@@ -131,12 +131,12 @@ int CDVDAudioCodecPassthrough::Decode(uint8_t* pData, int iSize)
   if (iSize <= 0) return 0;
 
   unsigned int size = m_bufferSize;
-  unsigned int used = m_info.AddData(pData, iSize, &m_buffer, &size);
+  unsigned int used = m_parser.AddData(pData, iSize, &m_buffer, &size);
   m_bufferSize = std::max(m_bufferSize, size);
 
   /* if we have a frame */
   if (size)
-    m_packer.Pack(m_info, m_buffer, size);
+    m_packer.Pack(m_parser.GetStreamInfo(), m_buffer, size);
 
   return used;
 }
@@ -154,5 +154,5 @@ void CDVDAudioCodecPassthrough::Reset()
 
 int CDVDAudioCodecPassthrough::GetBufferSize()
 {
-  return (int)m_info.GetBufferSize();
+  return (int)m_parser.GetBufferSize();
 }
