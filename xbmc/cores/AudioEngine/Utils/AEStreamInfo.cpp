@@ -83,6 +83,34 @@ CAEStreamParser::CAEStreamParser() :
   av_crc_init(m_crcTrueHD, 0, 16, 0x2D, sizeof(m_crcTrueHD));
 }
 
+CAEStreamInfo::CAEStreamInfo() :
+  m_type(STREAM_TYPE_NULL),
+  m_sampleRate(0),
+  m_channels(0),
+  m_dataIsLE(true),
+  m_dtsPeriod(0),
+  m_repeat(0),
+  m_packFunc(NULL)
+{
+}
+
+bool CAEStreamInfo::operator==(const CAEStreamInfo& info) const
+{
+  if (m_type != info.m_type)
+    return false;
+  if (m_sampleRate != info.m_sampleRate)
+    return false;
+  if (m_channels != info.m_channels)
+    return false;
+  if (m_channelMap != info.m_channelMap)
+    return false;
+  if (m_dataIsLE != info.m_dataIsLE)
+    return false;
+  if (m_repeat != info.m_repeat)
+    return false;
+  return true;
+}
+
 CAEStreamParser::~CAEStreamParser()
 {
 }

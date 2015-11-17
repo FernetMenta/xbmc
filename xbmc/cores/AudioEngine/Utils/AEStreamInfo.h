@@ -33,16 +33,8 @@ extern "C" {
 class CAEStreamInfo
 {
 public:
-  CAEStreamInfo() :
-    m_type(STREAM_TYPE_NULL),
-    m_sampleRate(0),
-    m_channels(0),
-    m_dataIsLE(true),
-    m_dtsPeriod(0),
-    m_repeat(0),
-    m_packFunc(NULL)
-  {
-  }
+  CAEStreamInfo();
+  bool operator==(const CAEStreamInfo& info) const;
 
   enum DataType
   {

@@ -20,9 +20,9 @@
  */
 
 #include "AEChannelInfo.h"
+#include "AEStreamInfo.h"
 
-#define AE_IS_RAW(x) ((x) >= AE_FMT_AAC && (x) < AE_FMT_U8P)
-#define AE_IS_RAW_HD(x) ((x) >= AE_FMT_EAC3 && (x) < AE_FMT_U8P)
+#define AE_IS_RAW(x) ((x) >= AE_FMT_RAW && (x) < AE_FMT_U8P)
 #define AE_IS_PLANAR(x) ((x) >= AE_FMT_U8P && (x) <= AE_FMT_FLOATP)
 
 /**
@@ -63,6 +63,11 @@ typedef struct AEAudioFormat{
    * The size of one frame in bytes
    */
   unsigned int m_frameSize;
+
+  /**
+   * Stream info of raw passthrough
+   */
+  CAEStreamInfo m_streamInfo;
  
   AEAudioFormat()
   {
@@ -82,18 +87,20 @@ typedef struct AEAudioFormat{
             m_channelLayout ==  fmt.m_channelLayout &&
             m_frames        ==  fmt.m_frames        &&
             m_frameSamples  ==  fmt.m_frameSamples  &&
-            m_frameSize     ==  fmt.m_frameSize;
+            m_frameSize     ==  fmt.m_frameSize     &&
+            m_streamInfo    ==  fmt.m_streamInfo;
   }
  
   AEAudioFormat& operator=(const AEAudioFormat& fmt)
   {
-    m_dataFormat      = fmt.m_dataFormat;
-    m_sampleRate      = fmt.m_sampleRate;
-    m_encodedRate     = fmt.m_encodedRate;
-    m_channelLayout   = fmt.m_channelLayout;
-    m_frames          = fmt.m_frames;
-    m_frameSamples    = fmt.m_frameSamples;
-    m_frameSize       = fmt.m_frameSize;
+    m_dataFormat = fmt.m_dataFormat;
+    m_sampleRate = fmt.m_sampleRate;
+    m_encodedRate = fmt.m_encodedRate;
+    m_channelLayout = fmt.m_channelLayout;
+    m_frames = fmt.m_frames;
+    m_frameSamples = fmt.m_frameSamples;
+    m_frameSize = fmt.m_frameSize;
+    m_streamInfo = fmt.m_streamInfo;
 
     return *this;
   }
