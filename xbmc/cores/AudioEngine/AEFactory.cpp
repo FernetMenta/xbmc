@@ -278,10 +278,10 @@ void CAEFactory::Shutdown()
 }
 
 IAEStream *CAEFactory::MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, 
-  unsigned int encodedSampleRate, CAEChannelInfo channelLayout, unsigned int options, IAEClockCallback *clock)
+  CAEChannelInfo channelLayout, unsigned int options, IAEClockCallback *clock)
 {
   if(AE)
-    return AE->MakeStream(dataFormat, sampleRate, encodedSampleRate, channelLayout, options, clock);
+    return AE->MakeStream(dataFormat, sampleRate, channelLayout, options, clock);
 
   return NULL;
 }

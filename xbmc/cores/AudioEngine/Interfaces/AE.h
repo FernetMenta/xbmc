@@ -155,12 +155,11 @@ public:
    * Creates and returns a new IAEStream in the format specified, this function should never fail
    * @param dataFormat The data format the incoming audio will be in (eg, AE_FMT_S16LE)
    * @param sampleRate The sample rate of the audio data (eg, 48000)
-   * @prarm encodedSampleRate The sample rate of the encoded audio data if AE_IS_RAW(dataFormat)
    * @param channelLayout The order of the channels in the audio data
    * @param options A bit field of stream options (see: enum AEStreamOptions)
    * @return a new IAEStream that will accept data in the requested format
    */
-  virtual IAEStream *MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, unsigned int encodedSampleRate, CAEChannelInfo& channelLayout, unsigned int options = 0, IAEClockCallback *clock = NULL) = 0;
+  virtual IAEStream *MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, CAEChannelInfo& channelLayout, unsigned int options = 0, IAEClockCallback *clock = NULL) = 0;
 
   /**
    * This method will remove the specifyed stream from the engine.

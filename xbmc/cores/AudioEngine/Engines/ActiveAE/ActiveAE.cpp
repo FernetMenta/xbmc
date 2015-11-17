@@ -1004,7 +1004,6 @@ AEAudioFormat CActiveAE::GetInputFormat(AEAudioFormat *desiredFmt)
   {
     inputFormat.m_dataFormat    = AE_FMT_FLOAT;
     inputFormat.m_sampleRate    = 44100;
-    inputFormat.m_encodedRate   = 0;
     inputFormat.m_channelLayout = AE_CH_LAYOUT_2_0;
     inputFormat.m_frames        = 0;
     inputFormat.m_frameSamples  = 0;
@@ -1131,7 +1130,6 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
       outputFormat = inputFormat;
       outputFormat.m_dataFormat = AE_FMT_FLOATP;
       outputFormat.m_sampleRate = 48000;
-      outputFormat.m_encodedRate = 48000;
 
       // setup encoder
       if (!m_encoder)
@@ -1155,7 +1153,7 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
         format.m_frameSize = 2* (CAEUtil::DataFormatToBits(format.m_dataFormat) >> 3);
         format.m_frames = AC3_FRAME_SIZE;
         format.m_sampleRate = 48000;
-        format.m_encodedRate = m_encoderFormat.m_sampleRate;
+        // TODO
         if (m_encoderBuffers && initSink)
         {
           m_discardBufferPools.push_back(m_encoderBuffers);
@@ -1558,7 +1556,6 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
   {
     format.m_dataFormat = AE_FMT_AC3;
     format.m_sampleRate = 48000;
-    format.m_encodedRate = 48000;
     format.m_channelLayout = AE_CH_LAYOUT_2_0;
     if (mode)
       *mode = MODE_TRANSCODE;
@@ -3089,7 +3086,7 @@ bool CActiveAE::ResampleSound(CActiveAESound *sound)
 // Streams
 //-----------------------------------------------------------------------------
 
-IAEStream *CActiveAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, unsigned int encodedSampleRate, CAEChannelInfo& channelLayout, unsigned int options, IAEClockCallback *clock)
+IAEStream *CActiveAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, CAEChannelInfo& channelLayout, unsigned int options, IAEClockCallback *clock)
 {
   if (IsSuspended())
     return NULL;
@@ -3099,7 +3096,6 @@ IAEStream *CActiveAE::MakeStream(enum AEDataFormat dataFormat, unsigned int samp
   AEAudioFormat format;
   format.m_dataFormat = dataFormat;
   format.m_sampleRate = sampleRate;
-  format.m_encodedRate = encodedSampleRate;
   format.m_channelLayout = channelLayout;
   format.m_frames = format.m_sampleRate / 10;
   format.m_frameSize = format.m_channelLayout.Count() *

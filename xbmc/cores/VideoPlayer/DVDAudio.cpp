@@ -66,7 +66,6 @@ bool CDVDAudio::Create(const DVDAudioFrame &audioframe, AVCodecID codec, bool ne
   m_pAudioStream = CAEFactory::MakeStream(
     audioframe.data_format,
     audioframe.sample_rate,
-    audioframe.encoded_sample_rate,
     audioframe.channel_layout,
     options,
     this

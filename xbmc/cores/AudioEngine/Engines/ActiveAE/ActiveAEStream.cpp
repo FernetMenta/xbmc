@@ -526,11 +526,6 @@ const unsigned int CActiveAEStream::GetSampleRate() const
   return m_format.m_sampleRate;
 }
 
-const unsigned int CActiveAEStream::GetEncodedSampleRate() const
-{
-  return m_format.m_encodedRate;
-}
-
 const enum AEDataFormat CActiveAEStream::GetDataFormat() const
 {
   return m_format.m_dataFormat;

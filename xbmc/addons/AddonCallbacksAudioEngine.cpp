@@ -58,14 +58,13 @@ CAddonCallbacksAudioEngine::CAddonCallbacksAudioEngine(CAddon* addon)
   m_callbacks->AEStream_GetFrameSize          = AEStream_GetFrameSize;
   m_callbacks->AEStream_GetChannelCount       = AEStream_GetChannelCount;
   m_callbacks->AEStream_GetSampleRate         = AEStream_GetSampleRate;
-  m_callbacks->AEStream_GetEncodedSampleRate  = AEStream_GetEncodedSampleRate;
   m_callbacks->AEStream_GetDataFormat         = AEStream_GetDataFormat;
   m_callbacks->AEStream_GetResampleRatio      = AEStream_GetResampleRatio;
   m_callbacks->AEStream_SetResampleRatio      = AEStream_SetResampleRatio;
   m_callbacks->AEStream_Discontinuity         = AEStream_Discontinuity;
 }
 
-AEStreamHandle* CAddonCallbacksAudioEngine::AudioEngine_MakeStream(AEDataFormat DataFormat, unsigned int SampleRate, unsigned int EncodedSampleRate, enum AEChannel *Channels, unsigned int Options)
+AEStreamHandle* CAddonCallbacksAudioEngine::AudioEngine_MakeStream(AEDataFormat DataFormat, unsigned int SampleRate, enum AEChannel *Channels, unsigned int Options)
 {
   if (!Channels)
   {
@@ -74,7 +73,7 @@ AEStreamHandle* CAddonCallbacksAudioEngine::AudioEngine_MakeStream(AEDataFormat 
   }
 
   CAEChannelInfo channelInfo(Channels);
-  return CAEFactory::MakeStream(DataFormat, SampleRate, EncodedSampleRate, channelInfo, Options);
+  return CAEFactory::MakeStream(DataFormat, SampleRate, channelInfo, Options);
 }
 
 void CAddonCallbacksAudioEngine::AudioEngine_FreeStream(AEStreamHandle *StreamHandle)
@@ -111,7 +110,6 @@ bool CAddonCallbacksAudioEngine::AudioEngine_GetCurrentSinkFormat(void *AddonDat
 
   SinkFormat->m_dataFormat   = AESinkFormat.m_dataFormat;
   SinkFormat->m_sampleRate   = AESinkFormat.m_sampleRate;
-  SinkFormat->m_encodedRate  = AESinkFormat.m_encodedRate;
   SinkFormat->m_frames       = AESinkFormat.m_frames;
   SinkFormat->m_frameSamples = AESinkFormat.m_frameSamples;
   SinkFormat->m_frameSize    = AESinkFormat.m_frameSize;
@@ -360,19 +358,6 @@ const unsigned int CAddonCallbacksAudioEngine::AEStream_GetSampleRate(void *Addo
   }
 
   return ((IAEStream*)StreamHandle)->GetSampleRate();
-}
-
-const unsigned int CAddonCallbacksAudioEngine::AEStream_GetEncodedSampleRate(void *AddonData, AEStreamHandle *StreamHandle)
-{
-  // prevent compiler warnings
-  void *addonData = AddonData;
-  if (!addonData || !StreamHandle)
-  {
-    CLog::Log(LOGERROR, "libKODI_audioengine - %s - invalid stream data", __FUNCTION__);
-    return 0;
-  }
-
-  return ((IAEStream*)StreamHandle)->GetEncodedSampleRate();
 }
 
 const AEDataFormat CAddonCallbacksAudioEngine::AEStream_GetDataFormat(void *AddonData, AEStreamHandle *StreamHandle)

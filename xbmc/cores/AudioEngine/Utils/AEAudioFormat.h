@@ -40,11 +40,6 @@ typedef struct AEAudioFormat{
   unsigned int m_sampleRate;
 
   /**
-   * The encoded streams sample rate if a bitstream, otherwise undefined
-   */
-  unsigned int m_encodedRate;
-
-  /**
    * The stream's channel layout
    */
   CAEChannelInfo m_channelLayout;
@@ -73,7 +68,6 @@ typedef struct AEAudioFormat{
   {
     m_dataFormat = AE_FMT_INVALID;
     m_sampleRate = 0;
-    m_encodedRate = 0;
     m_frames = 0;
     m_frameSamples = 0;
     m_frameSize = 0;
@@ -83,7 +77,6 @@ typedef struct AEAudioFormat{
   {
     return  m_dataFormat    ==  fmt.m_dataFormat    &&
             m_sampleRate    ==  fmt.m_sampleRate    &&
-            m_encodedRate   ==  fmt.m_encodedRate   &&
             m_channelLayout ==  fmt.m_channelLayout &&
             m_frames        ==  fmt.m_frames        &&
             m_frameSamples  ==  fmt.m_frameSamples  &&
@@ -95,7 +88,6 @@ typedef struct AEAudioFormat{
   {
     m_dataFormat = fmt.m_dataFormat;
     m_sampleRate = fmt.m_sampleRate;
-    m_encodedRate = fmt.m_encodedRate;
     m_channelLayout = fmt.m_channelLayout;
     m_frames = fmt.m_frames;
     m_frameSamples = fmt.m_frameSamples;
