@@ -25,6 +25,7 @@
 #include "DVDCodecs/Audio/DVDAudioCodec.h"
 #include "cores/AudioEngine/AEFactory.h"
 #include "cores/AudioEngine/Interfaces/AEStream.h"
+#include "cores/AudioEngine/Utils/AEAudioFormat.h"
 #include "settings/MediaSettings.h"
 
 CDVDAudio::CDVDAudio(volatile bool &bStop, CDVDClock *clock) : m_bStop(bStop), m_pClock(clock)
@@ -63,10 +64,12 @@ bool CDVDAudio::Create(const DVDAudioFrame &audioframe, AVCodecID codec, bool ne
   unsigned int options = needresampler && !audioframe.passthrough ? AESTREAM_FORCE_RESAMPLE : 0;
   options |= AESTREAM_PAUSED;
 
+  AEAudioFormat format;
+  format.m_dataFormat = audioframe.data_format;
+  format.m_sampleRate = audioframe.sample_rate;
+  format.m_channelLayout = audioframe.channel_layout;
   m_pAudioStream = CAEFactory::MakeStream(
-    audioframe.data_format,
-    audioframe.sample_rate,
-    audioframe.channel_layout,
+    format,
     options,
     this
   );

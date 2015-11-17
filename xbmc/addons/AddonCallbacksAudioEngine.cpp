@@ -64,16 +64,13 @@ CAddonCallbacksAudioEngine::CAddonCallbacksAudioEngine(CAddon* addon)
   m_callbacks->AEStream_Discontinuity         = AEStream_Discontinuity;
 }
 
-AEStreamHandle* CAddonCallbacksAudioEngine::AudioEngine_MakeStream(AEDataFormat DataFormat, unsigned int SampleRate, enum AEChannel *Channels, unsigned int Options)
+AEStreamHandle* CAddonCallbacksAudioEngine::AudioEngine_MakeStream(AudioEngineFormat StreamFormat, unsigned int Options)
 {
-  if (!Channels)
-  {
-    CLog::Log(LOGERROR, "CAddonCallbacksAudioEngine - %s - Invalid input! Channels is a NULL pointer!", __FUNCTION__);
-    return NULL;
-  }
-
-  CAEChannelInfo channelInfo(Channels);
-  return CAEFactory::MakeStream(DataFormat, SampleRate, channelInfo, Options);
+  AEAudioFormat format;
+  format.m_dataFormat = StreamFormat.m_dataFormat;
+  format.m_sampleRate = StreamFormat.m_sampleRate;
+  format.m_channelLayout = StreamFormat.m_channels;
+  return CAEFactory::MakeStream(format, Options);
 }
 
 void CAddonCallbacksAudioEngine::AudioEngine_FreeStream(AEStreamHandle *StreamHandle)

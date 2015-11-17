@@ -60,8 +60,7 @@ public:
   static float GetVolume();
   static void SetVolume(const float volume);
   static void Shutdown();
-  static IAEStream *MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, 
-    CAEChannelInfo channelLayout, unsigned int options = 0, IAEClockCallback *clock = NULL);
+  static IAEStream *MakeStream(AEAudioFormat &audioFormat, unsigned int options = 0, IAEClockCallback *clock = NULL);
   static bool FreeStream(IAEStream *stream);
   static void GarbageCollect();
 

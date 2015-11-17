@@ -41,13 +41,11 @@ public:
 
   /**
    * Creates and returns a new handle to an IAEStream in the format specified, this function should never fail
-   * @param dataFormat The data format the incoming audio will be in (eg, AE_FMT_S16LE)
-   * @param sampleRate The sample rate of the audio data (eg, 48000)
-   * @param channelLayout The order of the channels in the audio data
+   * @param audioFormat
    * @param options A bit field of stream options (see: enum AEStreamOptions)
    * @return a new Handle to an IAEStream that will accept data in the requested format
    */
-  static AEStreamHandle* AudioEngine_MakeStream(AEDataFormat DataFormat, unsigned int SampleRate, enum AEChannel *Channels, unsigned int Options);
+  static AEStreamHandle* AudioEngine_MakeStream(AudioEngineFormat StreamFormat, unsigned int Options);
 
   /**
   * This method will remove the specifyed stream from the engine.

@@ -402,7 +402,7 @@ typedef struct CB_ADSPLib
 // ---------------------------------------
 // libKODI_audioengine definitions
 // ---------------------------------------
-typedef AEStreamHandle* (*AudioEngine_MakeStream)(AEDataFormat DataFormat, unsigned int SampleRate, enum AEChannel *ChannelLayout, unsigned int Options);
+typedef AEStreamHandle* (*AudioEngine_MakeStream)(AudioEngineFormat Format, unsigned int Options);
 typedef void            (*AudioEngine_FreeStream)(AEStreamHandle *stream);
 typedef bool            (*AudioEngine_GetCurrentSinkFormat)(void *addonData, AudioEngineFormat *SinkFormat);
 

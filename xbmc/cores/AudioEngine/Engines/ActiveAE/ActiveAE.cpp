@@ -3086,17 +3086,14 @@ bool CActiveAE::ResampleSound(CActiveAESound *sound)
 // Streams
 //-----------------------------------------------------------------------------
 
-IAEStream *CActiveAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, CAEChannelInfo& channelLayout, unsigned int options, IAEClockCallback *clock)
+IAEStream *CActiveAE::MakeStream(AEAudioFormat &audioFormat, unsigned int options, IAEClockCallback *clock)
 {
   if (IsSuspended())
     return NULL;
 
   //TODO: pass number of samples in audio packet
 
-  AEAudioFormat format;
-  format.m_dataFormat = dataFormat;
-  format.m_sampleRate = sampleRate;
-  format.m_channelLayout = channelLayout;
+  AEAudioFormat format = audioFormat;
   format.m_frames = format.m_sampleRate / 10;
   format.m_frameSize = format.m_channelLayout.Count() *
                        (CAEUtil::DataFormatToBits(format.m_dataFormat) >> 3);

@@ -277,11 +277,10 @@ void CAEFactory::Shutdown()
     AE->Shutdown();
 }
 
-IAEStream *CAEFactory::MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, 
-  CAEChannelInfo channelLayout, unsigned int options, IAEClockCallback *clock)
+IAEStream *CAEFactory::MakeStream(AEAudioFormat &audioFormat, unsigned int options, IAEClockCallback *clock)
 {
   if(AE)
-    return AE->MakeStream(dataFormat, sampleRate, channelLayout, options, clock);
+    return AE->MakeStream(audioFormat, options, clock);
 
   return NULL;
 }

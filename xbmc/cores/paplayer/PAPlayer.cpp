@@ -475,10 +475,12 @@ inline bool PAPlayer::PrepareStream(StreamInfo *si)
     return true;
 
   /* get a paused stream */
+  AEAudioFormat format;
+  format.m_dataFormat = si->m_dataFormat;
+  format.m_sampleRate = si->m_sampleRate;
+  format.m_channelLayout = si->m_channelInfo;
   si->m_stream = CAEFactory::MakeStream(
-    si->m_dataFormat,
-    si->m_sampleRate,
-    si->m_channelInfo,
+    format,
     AESTREAM_PAUSED
   );
 

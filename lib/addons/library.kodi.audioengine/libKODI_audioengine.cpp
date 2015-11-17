@@ -62,7 +62,7 @@ DLLEXPORT void AudioEngine_unregister_me(void *hdl, void* cb)
 // ---------------------------------------------
 // CAddonAEStream implementations
 // ---------------------------------------------
-DLLEXPORT CAddonAEStream* AudioEngine_make_stream(void *hdl, void *cb, AEDataFormat DataFormat, unsigned int SampleRate, enum AEChannel *Channels, unsigned int Options)
+DLLEXPORT CAddonAEStream* AudioEngine_make_stream(void *hdl, void *cb, AudioEngineFormat Format, unsigned int Options)
 {
   if (!hdl || !cb)
   {
@@ -70,7 +70,7 @@ DLLEXPORT CAddonAEStream* AudioEngine_make_stream(void *hdl, void *cb, AEDataFor
     return NULL;
   }
 
-  AEStreamHandle *streamHandle = ((CB_AudioEngineLib*)cb)->MakeStream(DataFormat, SampleRate, Channels, Options);
+  AEStreamHandle *streamHandle = ((CB_AudioEngineLib*)cb)->MakeStream(Format, Options);
   if (!streamHandle)
   {
     fprintf(stderr, "%s-ERROR: AudioEngine_make_stream MakeStream failed!\n", LIBRARY_NAME);

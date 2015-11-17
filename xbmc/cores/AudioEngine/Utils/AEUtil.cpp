@@ -123,7 +123,8 @@ const unsigned int CAEUtil::DataFormatToBits(const enum AEDataFormat dataFormat)
     
     sizeof(double) << 3, /* DOUBLE */
     sizeof(float ) << 3, /* FLOAT  */
-    
+
+    16,                  /* RAW    */
     16,                  /* AAC    */
     16,                  /* AC3    */
     16,                  /* DTS    */
