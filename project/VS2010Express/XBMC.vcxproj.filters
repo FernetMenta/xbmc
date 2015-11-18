@@ -3224,6 +3224,7 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\input\InputCodingTableKorean.cpp">
       <Filter>input</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\xbmc\guilib\Resolution.cpp">
       <Filter>guilib</Filter>
     </ClCompile>
