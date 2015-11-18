@@ -66,10 +66,10 @@ public:
   void SetTotalTime(int64_t time);
   void Start() { m_canPlay = true;}; // cause a pre-buffered stream to start.
   int GetStatus() { return m_status; };
-  void SetStatus(int status) { m_status = status; };
+  void SetStatus(int status) { m_status = status; }
 
   AEAudioFormat GetFormat();
-  unsigned int GetChannels() { GetFormat().m_channelLayout.Count(); };
+  unsigned int GetChannels() { return GetFormat().m_channelLayout.Count(); }
   // Data management
   unsigned int GetDataSize();
   void *GetData(unsigned int samples);
