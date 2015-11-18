@@ -27,6 +27,7 @@
 #include <DirectXMath.h>
 #include "Geometry.h"
 #include "GUIColorManager.h"
+#include "DispResource.h"
 
 using namespace DirectX;
 
@@ -53,7 +54,7 @@ typedef enum SHADER_SAMPLER {
 } _SHADER_SAMPLER;
 
 
-class ID3DResource
+class ID3DResource : public IDispResource
 {
 public:
   virtual ~ID3DResource() {};

@@ -27,5 +27,7 @@ public:
   virtual void OnLostDisplay() {};
   virtual void OnResetDisplay() {};
   virtual void OnAppFocusChange(bool focus) {};
+  virtual void OnDestroyDisplay() {};
+  virtual void OnCreateDisplay() {};
 };
 

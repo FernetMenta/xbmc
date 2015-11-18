@@ -37,7 +37,7 @@ enum PCI_Vendors
   PCIV_Intel  = 0x8086
 };
 
-class ID3DResource;
+class IDispResource;
 
 class CRenderSystemDX : public CRenderSystemBase
 {
@@ -107,14 +107,14 @@ public:
    where any resources dependent on the DirectX device should be destroyed and recreated.
    \sa Unregister, ID3DResource
   */
-  void Register(ID3DResource *resource);
+  void Register(IDispResource *resource);
 
   /*!
    \brief Unregister as a dependent of the DirectX Render System
    Resources should call this on destruction if they're a dependent on the Render System
    \sa Register, ID3DResource
   */
-  void Unregister(ID3DResource *resource);
+  void Unregister(IDispResource *resource);
 
   static std::string GetErrorDescription(HRESULT hr);
 
@@ -159,7 +159,7 @@ protected:
   bool                        m_useWindowedDX;
 
   CCriticalSection            m_resourceSection;
-  std::vector<ID3DResource*>  m_resources;
+  std::vector<IDispResource*>  m_resources;
 
   bool                        m_inScene; ///< True if we're in a BeginScene()/EndScene() block
 

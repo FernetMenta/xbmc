@@ -425,8 +425,8 @@ void CRenderSystemDX::DeleteDevice()
     m_pGUIShader->End();
 
   // tell any shared resources
-  for (std::vector<ID3DResource *>::iterator i = m_resources.begin(); i != m_resources.end(); ++i)
-    (*i)->OnDestroyDevice();
+  for (std::vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); ++i)
+    (*i)->OnDestroyDisplay();
 
   if (m_pSwapChain)
     m_pSwapChain->SetFullscreenState(false, NULL);
@@ -479,8 +479,8 @@ void CRenderSystemDX::OnDeviceLost()
   else
   {
     // just resetting the device
-    for (std::vector<ID3DResource *>::iterator i = m_resources.begin(); i != m_resources.end(); ++i)
-      (*i)->OnLostDevice();
+    for (std::vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); ++i)
+      (*i)->OnLostDisplay();
   }
 }
 
@@ -492,8 +492,8 @@ void CRenderSystemDX::OnDeviceReset()
     CreateDevice();
   else
   { // we're back
-    for (std::vector<ID3DResource *>::iterator i = m_resources.begin(); i != m_resources.end(); ++i)
-      (*i)->OnResetDevice();
+    for (std::vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); ++i)
+      (*i)->OnResetDisplay();
   }
 
   //g_renderManager.Flush();
@@ -694,8 +694,8 @@ bool CRenderSystemDX::CreateDevice()
   m_needNewDevice = false;
 
   // tell any shared objects about our resurrection
-  for (std::vector<ID3DResource *>::iterator i = m_resources.begin(); i != m_resources.end(); ++i)
-    (*i)->OnCreateDevice();
+  for (std::vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); ++i)
+    (*i)->OnCreateDisplay();
 
   RestoreViewPort();
 
@@ -1531,16 +1531,16 @@ void CRenderSystemDX::ResetScissors()
   m_ScissorsEnabled = false;
 }
 
-void CRenderSystemDX::Register(ID3DResource *resource)
+void CRenderSystemDX::Register(IDispResource *resource)
 {
   CSingleLock lock(m_resourceSection);
   m_resources.push_back(resource);
 }
 
-void CRenderSystemDX::Unregister(ID3DResource* resource)
+void CRenderSystemDX::Unregister(IDispResource* resource)
 {
   CSingleLock lock(m_resourceSection);
-  std::vector<ID3DResource*>::iterator i = find(m_resources.begin(), m_resources.end(), resource);
+  std::vector<IDispResource*>::iterator i = find(m_resources.begin(), m_resources.end(), resource);
   if (i != m_resources.end())
     m_resources.erase(i);
 }
