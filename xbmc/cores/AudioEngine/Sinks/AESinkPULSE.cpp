@@ -486,13 +486,24 @@ bool CAESinkPULSE::Initialize(AEAudioFormat &format, std::string &device)
 
    // PULSE cannot cope with e.g. planar formats so we fallback to FLOAT
    // when we receive an invalid pulse format
-   if (AEFormatToPulseFormat(format.m_dataFormat) == PA_SAMPLE_INVALID)
+   pa_sample_format pa_fmt;
+   // PA can only handle IEC packed RAW format if we get a RAW format
+   // that is not IEC packed we fall back to FLOAT below
+   if ((format.m_dataFormat == AE_FMT_RAW) && format.m_isIecPacked)
+   {
+     pa_fmt = AEFormatToPulseFormat(format.m_iecPack.m_dataFormat);
+     m_passthrough = true;
+   }
+   else
+    pa_fmt = AEFormatToPulseFormat(format.m_dataFormat);
+
+   if (pa_fmt == PA_SAMPLE_INVALID)
    {
      CLog::Log(LOGDEBUG, "PULSE does not support format: %s - will fallback to AE_FMT_FLOAT", CAEUtil::DataFormatToStr(format.m_dataFormat));
      format.m_dataFormat = AE_FMT_FLOAT;
+     pa_fmt = PA_SAMPLE_FLOAT32;
+     m_passthrough = false;
    }
-
-  m_passthrough = AE_IS_RAW(format.m_dataFormat);
 
   if(m_passthrough)
   {
@@ -531,23 +542,24 @@ bool CAESinkPULSE::Initialize(AEAudioFormat &format, std::string &device)
 
   pa_format_info *info[1];
   info[0] = pa_format_info_new();
-  info[0]->encoding = AEFormatToPulseEncoding(format.m_dataFormat);
+  if (m_passthrough)
+    info[0]->encoding = AEFormatToPulseEncoding(format.m_iecPack.m_dataFormat);
+  else
+   info[0]->encoding = AEFormatToPulseEncoding(format.m_dataFormat);
+
   if(!m_passthrough)
   {
-    pa_format_info_set_sample_format(info[0], AEFormatToPulseFormat(format.m_dataFormat));
+    pa_format_info_set_sample_format(info[0], pa_fmt);
     pa_format_info_set_channel_map(info[0], &map);
   }
   pa_format_info_set_channels(info[0], m_Channels);
 
   // PA requires the original encoded rate in order to do EAC3
   unsigned int samplerate = format.m_sampleRate;
-  if (m_passthrough && (AEFormatToPulseEncoding(format.m_dataFormat) == PA_ENCODING_EAC3_IEC61937))
+  if (m_passthrough && (info[0]->encoding == PA_ENCODING_EAC3_IEC61937))
   {
     // this is only used internally for PA to use EAC3
-    if (format.m_isIecPacked)
-      samplerate = format.m_iecPack.m_sampleRate;
-    else
-      CLog::Log(LOGNOTICE, "Stream is not IEC packed - EAC3 might not work. Using samplerate: %d", (int) samplerate);
+    samplerate = format.m_iecPack.m_sampleRate;
   }
 
   pa_format_info_set_rate(info[0], samplerate);
@@ -565,8 +577,8 @@ bool CAESinkPULSE::Initialize(AEAudioFormat &format, std::string &device)
   #if PA_CHECK_VERSION(2,0,0)
     pa_format_info_to_sample_spec(info[0], &spec, NULL);
   #else
-    spec.rate = (AEFormatToPulseEncoding(format.m_dataFormat) == PA_ENCODING_EAC3_IEC61937) ? 4 * samplerate : samplerate;
-    spec.format = AEFormatToPulseFormat(format.m_dataFormat);
+    spec.rate = (info[0]->encoding == PA_ENCODING_EAC3_IEC61937) ? 4 * samplerate : samplerate;
+    spec.format = pa_fmt;
     spec.channels = m_Channels;
   #endif
   if (!pa_sample_spec_valid(&spec))
