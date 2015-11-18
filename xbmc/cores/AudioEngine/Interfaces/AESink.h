@@ -86,5 +86,11 @@ public:
     This method sets the volume control, volume ranges from 0.0 to 1.0.
   */
   virtual void  SetVolume(float volume) {};
+
+  /*
+    Indicates if the sink wants IEC packed passthrough data
+  */
+  virtual bool  WantsIECPassthrough() = 0;
+
 };
 

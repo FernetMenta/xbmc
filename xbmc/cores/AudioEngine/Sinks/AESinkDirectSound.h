@@ -43,6 +43,7 @@ public:
   virtual unsigned int AddPackets         (uint8_t **data, unsigned int frames, unsigned int offset);
   static  std::string  GetDefaultDevice   ();
   static  void         EnumerateDevicesEx (AEDeviceInfoList &deviceInfoList, bool force = false);
+  virtual bool WantsIECPassthrough() { return true; }
 private:
   void          AEChannelsFromSpeakerMask(DWORD speakers);
   DWORD         SpeakerMaskFromAEChannels(const CAEChannelInfo &channels);
