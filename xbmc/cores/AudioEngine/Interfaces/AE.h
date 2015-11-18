@@ -204,7 +204,7 @@ public:
    * @see CAEPackIEC61937::CAEPackIEC61937()
    * @returns true if the AudioEngine is capable of RAW output
    */
-  virtual bool SupportsRaw(CAEStreamInfo &info) { return false; }
+  virtual bool SupportsRaw(AEAudioFormat &format) { return false; }
 
    /**
    * Returns true if the AudioEngine supports drain mode which is not streaming silence when idle

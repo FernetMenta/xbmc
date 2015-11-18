@@ -106,27 +106,27 @@ bool CActiveAESink::HasPassthroughDevice()
   return false;
 }
 
-bool CActiveAESink::SupportsFormat(const std::string &device, CAEStreamInfo &streaminfo)
+bool CActiveAESink::SupportsFormat(const std::string &device, AEAudioFormat &format)
 {
   std::string dev = device;
   std::string dri;
 
   // IEC packed
-  unsigned int samplerate = streaminfo.m_sampleRate;
-  AEDataFormat format;
-  switch (streaminfo.m_type)
+  unsigned int samplerate = format.m_sampleRate;
+  AEDataFormat dataFormat;
+  switch (format.m_streamInfo.m_type)
   {
     case CAEStreamInfo::STREAM_TYPE_AC3:
-      format = AE_FMT_AC3;
+      dataFormat = AE_FMT_AC3;
       break;
 
     case CAEStreamInfo::STREAM_TYPE_EAC3:
-      format = AE_FMT_EAC3;
+      dataFormat = AE_FMT_EAC3;
       samplerate = 4*samplerate;
       break;
 
     case CAEStreamInfo::STREAM_TYPE_TRUEHD:
-      format = AE_FMT_TRUEHD;
+      dataFormat = AE_FMT_TRUEHD;
       if (samplerate == 48000 || samplerate == 96000 || samplerate == 192000)
         samplerate = 192000;
       else
@@ -139,11 +139,11 @@ bool CActiveAESink::SupportsFormat(const std::string &device, CAEStreamInfo &str
     case CAEStreamInfo::STREAM_TYPE_DTS_512:
     case CAEStreamInfo::STREAM_TYPE_DTS_1024:
     case CAEStreamInfo::STREAM_TYPE_DTS_2048:
-      format = AE_FMT_DTS;
+      dataFormat = AE_FMT_DTS;
       break;
 
     default:
-      format = AE_FMT_INVALID;
+      dataFormat = AE_FMT_INVALID;
       break;
   }
 
@@ -158,7 +158,7 @@ bool CActiveAESink::SupportsFormat(const std::string &device, CAEStreamInfo &str
         if (info.m_deviceName == dev)
         {
           AEDataFormatList::iterator itt3;
-          itt3 = find(info.m_dataFormats.begin(), info.m_dataFormats.end(), format);
+          itt3 = find(info.m_dataFormats.begin(), info.m_dataFormats.end(), dataFormat);
           if (itt3 != info.m_dataFormats.end())
           {
             AESampleRateList::iterator itt4;

@@ -27,7 +27,7 @@
 #include "cores/AudioEngine/AEFactory.h"
 
 CDVDAudioCodecPassthrough::CDVDAudioCodecPassthrough(void) :
-  m_buffer    (NULL),
+  m_buffer(NULL),
   m_bufferSize(0)
 {
 }
@@ -39,37 +39,37 @@ CDVDAudioCodecPassthrough::~CDVDAudioCodecPassthrough(void)
 
 bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 {
-  CAEStreamInfo info;
-  info.m_sampleRate = hints.samplerate;
+  AEAudioFormat format;
+  format.m_sampleRate = hints.samplerate;
   switch (hints.codec)
   {
     case AV_CODEC_ID_AC3:
-      info.m_type = CAEStreamInfo::STREAM_TYPE_AC3;
+      format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_AC3;
       break;
 
     case AV_CODEC_ID_EAC3:
-      info.m_type = CAEStreamInfo::STREAM_TYPE_EAC3;
+      format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_EAC3;
       break;
 
     case AV_CODEC_ID_DTS:
-      info.m_type = CAEStreamInfo::STREAM_TYPE_DTSHD;
+      format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_DTSHD;
       break;
 
     case AV_CODEC_ID_TRUEHD:
-      info.m_type = CAEStreamInfo::STREAM_TYPE_TRUEHD;
+      format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_TRUEHD;
       break;
 
     default:
-      info.m_type = CAEStreamInfo::STREAM_TYPE_NULL;
+      format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_NULL;
   }
 
-  bool ret = CAEFactory::SupportsRaw(info);
+  bool ret = CAEFactory::SupportsRaw(format);
 
   m_parser.SetCoreOnly(false);
   if (!ret && hints.codec == AV_CODEC_ID_DTS)
   {
-    info.m_type = CAEStreamInfo::STREAM_TYPE_DTSHD_CORE;
-    ret = CAEFactory::SupportsRaw(info);
+    format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_DTSHD_CORE;
+    ret = CAEFactory::SupportsRaw(format);
 
     // only get the dts core from the parser if we don't support dtsHD
     m_parser.SetCoreOnly(true);
@@ -81,54 +81,23 @@ bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &op
 
 int CDVDAudioCodecPassthrough::GetSampleRate()
 {
-  return m_parser.GetOutputRate();
-}
-
-int CDVDAudioCodecPassthrough::GetEncodedSampleRate()
-{
   return m_parser.GetSampleRate();
 }
 
 enum AEDataFormat CDVDAudioCodecPassthrough::GetDataFormat()
 {
-  switch(m_parser.GetDataType())
-  {
-    case CAEStreamInfo::STREAM_TYPE_AC3:
-      return AE_FMT_AC3;
-
-    case CAEStreamInfo::STREAM_TYPE_DTS_512:
-    case CAEStreamInfo::STREAM_TYPE_DTS_1024:
-    case CAEStreamInfo::STREAM_TYPE_DTS_2048:
-    case CAEStreamInfo::STREAM_TYPE_DTSHD_CORE:
-      return AE_FMT_DTS;
-
-    case CAEStreamInfo::STREAM_TYPE_EAC3:
-      return AE_FMT_EAC3;
-
-    case CAEStreamInfo::STREAM_TYPE_TRUEHD:
-      return AE_FMT_TRUEHD;
-
-    case CAEStreamInfo::STREAM_TYPE_DTSHD:
-      return AE_FMT_DTSHD;
-
-    default:
-      return AE_FMT_INVALID; //Unknown stream type
-  }
+  return AE_FMT_RAW;
 }
 
 int CDVDAudioCodecPassthrough::GetChannels()
-{
-  return m_parser.GetOutputChannels();
-}
-
-int CDVDAudioCodecPassthrough::GetEncodedChannels()
 {
   return m_parser.GetChannels();
 }
 
 CAEChannelInfo CDVDAudioCodecPassthrough::GetChannelMap()
 {
-  return m_parser.GetChannelMap();
+  static enum AEChannel OutputMap[3] = {AE_CH_RAW, AE_CH_RAW, AE_CH_NULL};
+  return OutputMap;
 }
 
 void CDVDAudioCodecPassthrough::Dispose()
@@ -144,24 +113,39 @@ void CDVDAudioCodecPassthrough::Dispose()
 
 int CDVDAudioCodecPassthrough::Decode(uint8_t* pData, int iSize)
 {
-  if (iSize <= 0) return 0;
+  if (iSize <= 0)
+    return 0;
 
-  unsigned int size = m_bufferSize;
-  unsigned int used = m_parser.AddData(pData, iSize, &m_buffer, &size);
-  m_bufferSize = std::max(m_bufferSize, size);
+  m_dataSize = m_bufferSize;
+  unsigned int used = m_parser.AddData(pData, iSize, &m_buffer, &m_dataSize);
+  m_bufferSize = std::max(m_bufferSize, m_dataSize);
 
-  /* if we have a frame */
-  if (size)
-    m_packer.Pack(m_parser.GetStreamInfo(), m_buffer, size);
+  if (m_dataSize)
+  {
+    m_format.m_dataFormat = AE_FMT_RAW;
+    m_format.m_streamInfo = m_parser.GetStreamInfo();
+    m_format.m_sampleRate = m_parser.GetSampleRate();
+    m_format.m_channelLayout = CAEUtil::GuessChLayout(m_parser.GetChannels());
+  }
 
   return used;
 }
 
+void CDVDAudioCodecPassthrough::GetData(DVDAudioFrame &frame)
+{
+  frame.nb_frames = m_dataSize;
+  frame.passthrough = true;
+  frame.format.m_dataFormat = AE_FMT_RAW;
+  frame.format.m_streamInfo = m_format.m_streamInfo;
+  frame.format.m_sampleRate = m_format.m_sampleRate;
+  frame.format.m_channelLayout = m_format.m_channelLayout;
+  frame.duration = frame.format.m_streamInfo.GetDuration(frame.format.m_sampleRate);
+}
+
 int CDVDAudioCodecPassthrough::GetData(uint8_t** dst)
 {
-  int size = m_packer.GetSize();
-  *dst     = m_packer.GetBuffer();
-  return size;
+  *dst = m_buffer;
+  return m_dataSize;
 }
 
 void CDVDAudioCodecPassthrough::Reset()

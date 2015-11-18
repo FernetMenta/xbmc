@@ -54,8 +54,8 @@ bool CDVDAudio::Create(const DVDAudioFrame &audioframe, AVCodecID codec, bool ne
   CLog::Log(LOGNOTICE,
     "Creating audio stream (codec id: %i, channels: %i, sample rate: %i, %s)",
     codec,
-    audioframe.channel_count,
-    audioframe.sample_rate,
+    audioframe.format.m_channelLayout.Count(),
+    audioframe.format.m_sampleRate,
     audioframe.passthrough ? "pass-through" : "no pass-through"
   );
 
@@ -64,10 +64,7 @@ bool CDVDAudio::Create(const DVDAudioFrame &audioframe, AVCodecID codec, bool ne
   unsigned int options = needresampler && !audioframe.passthrough ? AESTREAM_FORCE_RESAMPLE : 0;
   options |= AESTREAM_PAUSED;
 
-  AEAudioFormat format;
-  format.m_dataFormat = audioframe.data_format;
-  format.m_sampleRate = audioframe.sample_rate;
-  format.m_channelLayout = audioframe.channel_layout;
+  AEAudioFormat format = audioframe.format;
   m_pAudioStream = CAEFactory::MakeStream(
     format,
     options,
@@ -76,10 +73,10 @@ bool CDVDAudio::Create(const DVDAudioFrame &audioframe, AVCodecID codec, bool ne
   if (!m_pAudioStream)
     return false;
 
-  m_iBitrate       = audioframe.sample_rate;
+  m_iBitrate       = audioframe.format.m_sampleRate;
   m_iBitsPerSample = audioframe.bits_per_sample;
   m_bPassthrough   = audioframe.passthrough;
-  m_channelLayout  = audioframe.channel_layout;
+  m_channelLayout  = audioframe.format.m_channelLayout;
 
   if(m_channelLayout.Count() && m_iBitrate && m_iBitsPerSample)
     m_SecondsPerByte = 1.0 / (m_channelLayout.Count() * m_iBitrate * (m_iBitsPerSample>>3));
@@ -245,9 +242,9 @@ bool CDVDAudio::IsValidFormat(const DVDAudioFrame &audioframe)
   if(audioframe.passthrough != m_bPassthrough)
     return false;
 
-  if(m_iBitrate       != audioframe.sample_rate ||
+  if(m_iBitrate != audioframe.format.m_sampleRate ||
      m_iBitsPerSample != audioframe.bits_per_sample ||
-     m_channelLayout  != audioframe.channel_layout)
+     m_channelLayout != audioframe.format.m_channelLayout)
     return false;
 
   return true;

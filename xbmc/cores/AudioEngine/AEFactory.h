@@ -45,7 +45,7 @@ public:
   static void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   static void VerifyOutputDevice(std::string &device, bool passthrough);
   static std::string GetDefaultDevice(bool passthrough);
-  static bool SupportsRaw(CAEStreamInfo &info);
+  static bool SupportsRaw(AEAudioFormat &format);
   static bool SupportsSilenceTimeout();
   static bool HasStereoAudioChannelCount();
   static bool HasHDAudioChannelCount();

@@ -37,21 +37,22 @@ public:
   virtual bool Open(CDVDStreamInfo &hints, CDVDCodecOptions &options);
   virtual void Dispose();
   virtual int Decode(uint8_t* pData, int iSize);
+  virtual void GetData(DVDAudioFrame &frame);
   virtual int GetData(uint8_t** dst);
   virtual void Reset();
-  virtual int GetChannels();
-  virtual int GetEncodedChannels();
-  virtual CAEChannelInfo GetChannelMap();
-  virtual int GetSampleRate();
-  virtual int GetEncodedSampleRate();
+  virtual AEAudioFormat GetFormat() { return m_format; }
   virtual enum AEDataFormat GetDataFormat();
-  virtual bool NeedPassthrough() { return true;          }
+  virtual bool NeedPassthrough() { return true; }
   virtual const char* GetName() { return "passthrough"; }
   virtual int GetBufferSize();
 private:
+  CAEChannelInfo GetChannelMap();
+  int GetSampleRate();
+  int GetChannels();
   CAEStreamParser m_parser;
-  CAEBitstreamPacker m_packer;
   uint8_t* m_buffer;
   unsigned int m_bufferSize;
+  unsigned int m_dataSize;
+  AEAudioFormat m_format;
 };
 

@@ -99,7 +99,7 @@ public:
   void Dispose();
   AEDeviceType GetDeviceType(const std::string &device);
   bool HasPassthroughDevice();
-  bool SupportsFormat(const std::string &device, CAEStreamInfo &streaminfo);
+  bool SupportsFormat(const std::string &device, AEAudioFormat &format);
   CSinkControlProtocol m_controlPort;
   CSinkDataProtocol m_dataPort;
 

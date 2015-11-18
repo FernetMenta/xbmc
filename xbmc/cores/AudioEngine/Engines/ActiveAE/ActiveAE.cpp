@@ -2543,9 +2543,9 @@ void CActiveAE::OnSettingsChange(const std::string& setting)
   }
 }
 
-bool CActiveAE::SupportsRaw(CAEStreamInfo &info)
+bool CActiveAE::SupportsRaw(AEAudioFormat &format)
 {
-  if (!m_sink.SupportsFormat(CSettings::GetInstance().GetString(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGHDEVICE), info))
+  if (!m_sink.SupportsFormat(CSettings::GetInstance().GetString(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGHDEVICE), format))
     return false;
 
   return true;
@@ -2606,25 +2606,31 @@ bool CActiveAE::IsSettingVisible(const std::string &settingId)
   }
   else if (settingId == CSettings::SETTING_AUDIOOUTPUT_TRUEHDPASSTHROUGH)
   {
-    CAEStreamInfo info;
-    info.m_type = CAEStreamInfo::STREAM_TYPE_TRUEHD;
-    if (m_sink.SupportsFormat(CSettings::GetInstance().GetString(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGHDEVICE), info) &&
+    AEAudioFormat format;
+    format.m_dataFormat = AE_FMT_RAW;
+    format.m_sampleRate = 192000;
+    format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_TRUEHD;
+    if (m_sink.SupportsFormat(CSettings::GetInstance().GetString(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGHDEVICE), format) &&
         CSettings::GetInstance().GetInt(CSettings::SETTING_AUDIOOUTPUT_CONFIG) != AE_CONFIG_FIXED)
       return true;
   }
   else if (settingId == CSettings::SETTING_AUDIOOUTPUT_DTSHDPASSTHROUGH)
   {
-    CAEStreamInfo info;
-    info.m_type = CAEStreamInfo::STREAM_TYPE_DTSHD;
-    if (m_sink.SupportsFormat(CSettings::GetInstance().GetString(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGHDEVICE), info) &&
+    AEAudioFormat format;
+    format.m_dataFormat = AE_FMT_RAW;
+    format.m_sampleRate = 192000;
+    format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_DTSHD;
+    if (m_sink.SupportsFormat(CSettings::GetInstance().GetString(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGHDEVICE), format) &&
         CSettings::GetInstance().GetInt(CSettings::SETTING_AUDIOOUTPUT_CONFIG) != AE_CONFIG_FIXED)
       return true;
   }
   else if (settingId == CSettings::SETTING_AUDIOOUTPUT_EAC3PASSTHROUGH)
   {
-    CAEStreamInfo info;
-    info.m_type = CAEStreamInfo::STREAM_TYPE_EAC3;
-    if (m_sink.SupportsFormat(CSettings::GetInstance().GetString(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGHDEVICE), info) &&
+    AEAudioFormat format;
+    format.m_dataFormat = AE_FMT_RAW;
+    format.m_sampleRate = 192000;
+    format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_EAC3;
+    if (m_sink.SupportsFormat(CSettings::GetInstance().GetString(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGHDEVICE), format) &&
         CSettings::GetInstance().GetInt(CSettings::SETTING_AUDIOOUTPUT_CONFIG) != AE_CONFIG_FIXED)
       return true;
   }

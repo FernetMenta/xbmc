@@ -34,6 +34,7 @@ class CAEStreamInfo
 {
 public:
   CAEStreamInfo();
+  double GetDuration(unsigned int sampleRate);
   bool operator==(const CAEStreamInfo& info) const;
 
   enum DataType
@@ -50,9 +51,6 @@ public:
     STREAM_TYPE_TRUEHD
   };
   DataType m_type;
-  unsigned int m_sampleRate;
-  CAEChannelInfo m_channelMap;
-  unsigned int m_channels;
   bool m_dataIsLE;
   unsigned int m_dtsPeriod;
   unsigned int m_repeat;
@@ -70,17 +68,14 @@ public:
 
   void SetCoreOnly(bool value) { m_coreOnly = value; }
   unsigned int IsValid() { return m_hasSync; }
-  unsigned int GetSampleRate() { return m_info.m_sampleRate; }
-  unsigned int GetOutputRate() { return m_outputRate; }
-  unsigned int GetOutputChannels() { return m_outputChannels; }
-  CAEChannelInfo GetChannelMap() { return m_info.m_channelMap; }
-  unsigned int GetChannels() { return m_info.m_channels; }
+  unsigned int GetSampleRate() { return m_sampleRate; }
+  unsigned int GetChannels() { return m_channels; }
   unsigned int GetFrameSize() { return m_fsize; }
   // unsigned int GetDTSBlocks() { return m_dtsBlocks; }
   unsigned int GetDTSPeriod() { return m_info.m_dtsPeriod; }
   unsigned int GetEAC3BlocksDiv() { return m_info.m_repeat; }
   enum CAEStreamInfo::DataType GetDataType() { return m_info.m_type; }
-  bool IsLittleEndian   () { return m_info.m_dataIsLE; }
+  bool IsLittleEndian() { return m_info.m_dataIsLE; }
   CAEPackIEC61937::PackFunc GetPackFunc() { return m_info.m_packFunc; }
   unsigned int GetBufferSize() { return m_bufferSize; }
   CAEStreamInfo& GetStreamInfo() { return m_info; }
@@ -93,12 +88,12 @@ private:
   typedef unsigned int (CAEStreamParser::*ParseFunc)(uint8_t *data, unsigned int size);
 
   CAEStreamInfo m_info;
+  unsigned int m_sampleRate;
+  unsigned int m_channels;
   bool m_coreOnly;
   unsigned int m_needBytes;
   ParseFunc m_syncFunc;
   bool m_hasSync;
-  unsigned int m_outputRate;       /* the output sample rate */
-  unsigned int m_outputChannels;   /* the output channel count */
 
   unsigned int m_coreSize;         /* core size for dtsHD */
   unsigned int m_dtsBlocks;

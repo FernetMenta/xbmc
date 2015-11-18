@@ -154,8 +154,8 @@ void CVideoPlayerAudio::OpenStream(CDVDStreamInfo &hints, CDVDAudioCodec* codec)
   m_streaminfo = hints;
 
   /* update codec information from what codec gave out, if any */
-  int channelsFromCodec   = m_pAudioCodec->GetEncodedChannels();
-  int samplerateFromCodec = m_pAudioCodec->GetEncodedSampleRate();
+  int channelsFromCodec   = m_pAudioCodec->GetFormat().m_channelLayout.Count();
+  int samplerateFromCodec = m_pAudioCodec->GetFormat().m_sampleRate;
 
   if (channelsFromCodec > 0)
     m_streaminfo.channels = channelsFromCodec;
@@ -272,13 +272,14 @@ int CVideoPlayerAudio::DecodeFrame(DVDAudioFrame &audioframe)
       if (audioframe.pts == DVD_NOPTS_VALUE)
         audioframe.pts = m_audioClock;
 
-      if (audioframe.encoded_sample_rate && m_streaminfo.samplerate != audioframe.encoded_sample_rate)
+      if (audioframe.format.m_sampleRate && m_streaminfo.samplerate != audioframe.format.m_sampleRate)
       {
         // The sample rate has changed or we just got it for the first time
         // for this stream. See if we should enable/disable passthrough due
         // to it.
-        m_streaminfo.samplerate = audioframe.encoded_sample_rate;
-        if (!switched && SwitchCodecIfNeeded()) {
+        m_streaminfo.samplerate = audioframe.format.m_sampleRate;
+        if (!switched && SwitchCodecIfNeeded())
+        {
           // passthrough has been enabled/disabled, reprocess the packet
           m_decode.data -= len;
           m_decode.size += len;
@@ -508,7 +509,7 @@ void CVideoPlayerAudio::Process()
 
     // demuxer reads metatags that influence channel layout
     if (m_streaminfo.codec == AV_CODEC_ID_FLAC && m_streaminfo.channellayout)
-      audioframe.channel_layout = CAEUtil::GetAEChannelLayout(m_streaminfo.channellayout);
+      audioframe.format.m_channelLayout = CAEUtil::GetAEChannelLayout(m_streaminfo.channellayout);
     
     // we have succesfully decoded an audio frame, setup renderer to match
     if (!m_dvdAudio.IsValidFormat(audioframe))
@@ -524,7 +525,7 @@ void CVideoPlayerAudio::Process()
       if (m_syncState == IDVDStreamPlayer::SYNC_INSYNC)
         m_dvdAudio.Resume();
 
-      m_streaminfo.channels = audioframe.passthrough ? audioframe.encoded_channel_count : audioframe.channel_count;
+      m_streaminfo.channels = audioframe.format.m_channelLayout.Count();
 
       g_dataCacheCore.SignalAudioInfoChange();
     }
@@ -567,10 +568,9 @@ void CVideoPlayerAudio::Process()
 void CVideoPlayerAudio::SetSyncType(bool passthrough)
 {
   //set the synctype from the gui
-  //use skip/duplicate when resample is selected and passthrough is on
   m_synctype = m_setsynctype;
   if (passthrough && m_synctype == SYNC_RESAMPLE)
-    m_synctype = SYNC_SKIPDUP;
+    m_synctype = SYNC_DISCON;
 
   //if SetMaxSpeedAdjust returns false, it means no video is played and we need to use clock feedback
   double maxspeedadjust = 0.0;
@@ -581,8 +581,8 @@ void CVideoPlayerAudio::SetSyncType(bool passthrough)
 
   if (m_synctype != m_prevsynctype)
   {
-    const char *synctypes[] = {"clock feedback", "skip/duplicate", "resample", "invalid"};
-    int synctype = (m_synctype >= 0 && m_synctype <= 2) ? m_synctype : 3;
+    const char *synctypes[] = {"clock feedback", "resample", "invalid"};
+    int synctype = (m_synctype >= 0 && m_synctype <= 1) ? m_synctype : 2;
     CLog::Log(LOGDEBUG, "CVideoPlayerAudio:: synctype set to %i: %s", m_synctype, synctypes[synctype]);
     m_prevsynctype = m_synctype;
     if (m_synctype == SYNC_RESAMPLE)
@@ -623,30 +623,6 @@ bool CVideoPlayerAudio::OutputPacket(DVDAudioFrame &audioframe)
     {
       m_dvdAudio.SetSyncErrorCorrection(-error);
     }
-  }
-  if (m_synctype == SYNC_SKIPDUP)
-  {
-    double limit = std::max(DVD_MSEC_TO_TIME(10), audioframe.duration * 2.0 / 3.0);
-    if (syncerror < -limit)
-    {
-      m_prevskipped = !m_prevskipped;
-      if (m_prevskipped)
-        m_dvdAudio.AddPackets(audioframe);
-      else
-      {
-        CLog::Log(LOGDEBUG, "CVideoPlayerAudio:: Dropping packet of %d ms", DVD_TIME_TO_MSEC(audioframe.duration));
-        m_dvdAudio.SetSyncErrorCorrection(audioframe.duration);
-      }
-    }
-    else if(syncerror > limit)
-    {
-      CLog::Log(LOGDEBUG, "CVideoPlayerAudio:: Duplicating packet of %d ms", DVD_TIME_TO_MSEC(audioframe.duration));
-      m_dvdAudio.AddPackets(audioframe);
-      m_dvdAudio.AddPackets(audioframe);
-      m_dvdAudio.SetSyncErrorCorrection(-audioframe.duration);
-    }
-    else
-      m_dvdAudio.AddPackets(audioframe);
   }
   else
   {

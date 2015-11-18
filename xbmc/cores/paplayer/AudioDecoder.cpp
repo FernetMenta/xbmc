@@ -90,17 +90,17 @@ bool CAudioDecoder::Create(const CFileItem &file, int64_t seekOffset)
     Destroy();
     return false;
   }
-  unsigned int blockSize = (m_codec->m_BitsPerSample >> 3) * m_codec->GetChannelInfo().Count();
+  unsigned int blockSize = (m_codec->m_bitsPerSample >> 3) * m_codec->m_format.m_channelLayout.Count();
 
   if (blockSize == 0)
   {
     CLog::Log(LOGERROR, "CAudioDecoder: Codec provided invalid parameters (%d-bit, %u channels)",
-              m_codec->m_BitsPerSample, m_codec->GetChannelInfo().Count());
+              m_codec->m_bitsPerSample, GetFormat().m_channelLayout.Count());
     return false;
   }
 
   /* allocate the pcmBuffer for 2 seconds of audio */
-  m_pcmBuffer.Create(2 * blockSize * m_codec->m_SampleRate);
+  m_pcmBuffer.Create(2 * blockSize * m_codec->m_format.m_sampleRate);
 
   if (file.HasMusicInfoTag())
   {
@@ -135,15 +135,11 @@ bool CAudioDecoder::Create(const CFileItem &file, int64_t seekOffset)
   return true;
 }
 
-void CAudioDecoder::GetDataFormat(CAEChannelInfo *channelInfo, unsigned int *samplerate, unsigned int *encodedSampleRate, enum AEDataFormat *dataFormat)
+AEAudioFormat CAudioDecoder::GetFormat()
 {
-  if (!m_codec)
-    return;
+  AEAudioFormat format;
 
-  if (channelInfo      ) *channelInfo       = m_codec->GetChannelInfo();
-  if (samplerate       ) *samplerate        = m_codec->m_SampleRate;
-  if (encodedSampleRate) *encodedSampleRate = m_codec->m_EncodedSampleRate;
-  if (dataFormat       ) *dataFormat        = m_codec->m_DataFormat;
+  return format;
 }
 
 int64_t CAudioDecoder::Seek(int64_t time)
@@ -176,12 +172,12 @@ unsigned int CAudioDecoder::GetDataSize()
   // check for end of file and end of buffer
   if (m_status == STATUS_ENDING && m_pcmBuffer.getMaxReadSize() < PACKET_SIZE)
     m_status = STATUS_ENDED;
-  return std::min(m_pcmBuffer.getMaxReadSize() / (m_codec->m_BitsPerSample >> 3), (unsigned int)OUTPUT_SAMPLES);
+  return std::min(m_pcmBuffer.getMaxReadSize() / (m_codec->m_bitsPerSample >> 3), (unsigned int)OUTPUT_SAMPLES);
 }
 
 void *CAudioDecoder::GetData(unsigned int samples)
 {
-  unsigned int size  = samples * (m_codec->m_BitsPerSample >> 3);
+  unsigned int size  = samples * (m_codec->m_bitsPerSample >> 3);
   if (size > sizeof(m_outputBuffer))
   {
     CLog::Log(LOGERROR, "CAudioDecoder::GetData - More data was requested then we have space to buffer!");
@@ -219,13 +215,13 @@ int CAudioDecoder::ReadSamples(int numsamples)
   CSingleLock lock(m_critSection);
 
   // Read in more data
-  int maxsize = std::min<int>(INPUT_SAMPLES, m_pcmBuffer.getMaxWriteSize() / (m_codec->m_BitsPerSample >> 3));
+  int maxsize = std::min<int>(INPUT_SAMPLES, m_pcmBuffer.getMaxWriteSize() / (m_codec->m_bitsPerSample >> 3));
   numsamples = std::min<int>(numsamples, maxsize);
-  numsamples -= (numsamples % m_codec->GetChannelInfo().Count());  // make sure it's divisible by our number of channels
+  numsamples -= (numsamples % GetFormat().m_channelLayout.Count());  // make sure it's divisible by our number of channels
   if ( numsamples )
   {
     int readSize = 0;
-    int result = m_codec->ReadPCM(m_pcmInputBuffer, numsamples * (m_codec->m_BitsPerSample >> 3), &readSize);
+    int result = m_codec->ReadPCM(m_pcmInputBuffer, numsamples * (m_codec->m_bitsPerSample >> 3), &readSize);
 
     if (result != READ_ERROR && readSize)
     {
