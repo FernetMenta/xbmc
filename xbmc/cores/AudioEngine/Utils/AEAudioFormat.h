@@ -28,7 +28,8 @@
 /**
  * The audio format structure that fully defines a stream's audio information
  */
-typedef struct AEAudioFormat{
+struct AEAudioFormat
+{
   /**
    * The stream's data format (eg, AE_FMT_S16LE)
    */
@@ -63,6 +64,16 @@ typedef struct AEAudioFormat{
    * Stream info of raw passthrough
    */
   CAEStreamInfo m_streamInfo;
+
+  struct IECPack
+  {
+    enum AEDataFormat m_dataFormat;
+    unsigned int m_sampleRate;
+    CAEChannelInfo m_channelLayout;
+  };
+  IECPack m_iecPack;
+
+  bool m_isIecPacked;
  
   AEAudioFormat()
   {
@@ -71,6 +82,7 @@ typedef struct AEAudioFormat{
     m_frames = 0;
     m_frameSamples = 0;
     m_frameSize = 0;
+    m_isIecPacked = false;
   }
 
   bool operator==(const AEAudioFormat& fmt) const
@@ -96,5 +108,5 @@ typedef struct AEAudioFormat{
 
     return *this;
   }
-} AEAudioFormat;
+};
 
