@@ -23,6 +23,7 @@
 #include <vector>
 #include "DVDCodecs/Video/DVDVideoCodecFFmpeg.h"
 #include "DVDResource.h"
+#include "guilib/DispResource.h"
 #include "guilib/D3DResource.h"
 #include "libavcodec/avcodec.h"
 #include "libavcodec/dxva2.h"
