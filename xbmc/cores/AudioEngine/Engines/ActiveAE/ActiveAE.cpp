@@ -1006,7 +1006,6 @@ AEAudioFormat CActiveAE::GetInputFormat(AEAudioFormat *desiredFmt)
     inputFormat.m_sampleRate    = 44100;
     inputFormat.m_channelLayout = AE_CH_LAYOUT_2_0;
     inputFormat.m_frames        = 0;
-    inputFormat.m_frameSamples  = 0;
     inputFormat.m_frameSize     = 0;
   }
   // force input format after unpausing slave

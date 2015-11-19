@@ -108,7 +108,6 @@ bool CAddonCallbacksAudioEngine::AudioEngine_GetCurrentSinkFormat(void *AddonDat
   SinkFormat->m_dataFormat   = AESinkFormat.m_dataFormat;
   SinkFormat->m_sampleRate   = AESinkFormat.m_sampleRate;
   SinkFormat->m_frames       = AESinkFormat.m_frames;
-  SinkFormat->m_frameSamples = AESinkFormat.m_frameSamples;
   SinkFormat->m_frameSize    = AESinkFormat.m_frameSize;
 
   return true;

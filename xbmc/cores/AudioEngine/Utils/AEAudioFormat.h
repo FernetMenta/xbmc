@@ -51,11 +51,6 @@ struct AEAudioFormat
   unsigned int m_frames;
 
   /**
-   * The number of samples in one frame
-   */
-  unsigned int m_frameSamples;
-
-  /**
    * The size of one frame in bytes
    */
   unsigned int m_frameSize;
@@ -80,7 +75,6 @@ struct AEAudioFormat
     m_dataFormat = AE_FMT_INVALID;
     m_sampleRate = 0;
     m_frames = 0;
-    m_frameSamples = 0;
     m_frameSize = 0;
     m_isIecPacked = false;
   }
@@ -91,7 +85,6 @@ struct AEAudioFormat
             m_sampleRate    ==  fmt.m_sampleRate    &&
             m_channelLayout ==  fmt.m_channelLayout &&
             m_frames        ==  fmt.m_frames        &&
-            m_frameSamples  ==  fmt.m_frameSamples  &&
             m_frameSize     ==  fmt.m_frameSize     &&
             m_streamInfo    ==  fmt.m_streamInfo;
   }
@@ -102,7 +95,6 @@ struct AEAudioFormat
     m_sampleRate = fmt.m_sampleRate;
     m_channelLayout = fmt.m_channelLayout;
     m_frames = fmt.m_frames;
-    m_frameSamples = fmt.m_frameSamples;
     m_frameSize = fmt.m_frameSize;
     m_streamInfo = fmt.m_streamInfo;
 

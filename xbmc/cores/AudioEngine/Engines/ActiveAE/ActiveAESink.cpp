@@ -794,7 +794,6 @@ void CActiveAESink::OpenSink()
   CLog::Log(LOGDEBUG, "  Channel Count : %d", m_sinkFormat.m_channelLayout.Count());
   CLog::Log(LOGDEBUG, "  Channel Layout: %s", ((std::string)m_sinkFormat.m_channelLayout).c_str());
   CLog::Log(LOGDEBUG, "  Frames        : %d", m_sinkFormat.m_frames);
-  CLog::Log(LOGDEBUG, "  Frame Samples : %d", m_sinkFormat.m_frameSamples);
   CLog::Log(LOGDEBUG, "  Frame Size    : %d", m_sinkFormat.m_frameSize);
 
   // init sample of silence

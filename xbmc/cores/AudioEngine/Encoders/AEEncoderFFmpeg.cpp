@@ -222,7 +222,6 @@ bool CAEEncoderFFmpeg::Initialize(AEAudioFormat &format, bool allow_planar_input
   }
 
   format.m_frames        = m_CodecCtx->frame_size;
-  format.m_frameSamples  = m_CodecCtx->frame_size * m_CodecCtx->channels;
   format.m_frameSize     = m_CodecCtx->channels * (CAEUtil::DataFormatToBits(format.m_dataFormat) >> 3);
   format.m_channelLayout = m_Layout;
 
