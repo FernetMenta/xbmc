@@ -502,6 +502,7 @@ void CAESinkOSS::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
         if (*rate >= ainfo.min_rate && *rate <= ainfo.max_rate)
           info.m_sampleRates.push_back(*rate);
     }
+    info.m_wantsIECPassthrough = true;
     list.push_back(info);
   }
 #endif
