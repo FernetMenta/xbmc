@@ -802,6 +802,15 @@ void CActiveAESink::OpenSink()
     return;
   }
 
+  // TODO
+  // use max raw packet size, for now use max size of an IEC packed packet
+  // maxIECPpacket > maxRawPacket
+  // for raw packets frameSize is set to 1
+  if (passthrough)
+  {
+    m_sinkFormat.m_frames = 61440;
+  }
+
   m_sink->SetVolume(m_volume);
 
 #ifdef WORDS_BIGENDIAN
