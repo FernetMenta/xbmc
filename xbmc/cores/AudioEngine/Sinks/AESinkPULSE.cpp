@@ -124,7 +124,14 @@ static pa_encoding AEStreamFormatToPulseEncoding(CAEStreamInfo::DataType type)
 
 static pa_encoding AEFormatToPulseEncoding(AEDataFormat format)
 {
-  return PA_ENCODING_PCM;
+  switch (format)
+  {
+    case AE_FMT_RAW:
+      return PA_ENCODING_INVALID;
+
+    default:
+      return PA_ENCODING_PCM;
+  }
 }
 
 static AEDataFormat defaultDataFormats[] = {
