@@ -41,14 +41,10 @@ public:
   virtual int GetData(uint8_t** dst);
   virtual void Reset();
   virtual AEAudioFormat GetFormat() { return m_format; }
-  virtual enum AEDataFormat GetDataFormat();
   virtual bool NeedPassthrough() { return true; }
   virtual const char* GetName() { return "passthrough"; }
   virtual int GetBufferSize();
 private:
-  CAEChannelInfo GetChannelMap();
-  int GetSampleRate();
-  int GetChannels();
   CAEStreamParser m_parser;
   uint8_t* m_buffer;
   unsigned int m_bufferSize;

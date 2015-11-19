@@ -79,27 +79,6 @@ bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &op
   return ret;
 }
 
-int CDVDAudioCodecPassthrough::GetSampleRate()
-{
-  return m_parser.GetSampleRate();
-}
-
-enum AEDataFormat CDVDAudioCodecPassthrough::GetDataFormat()
-{
-  return AE_FMT_RAW;
-}
-
-int CDVDAudioCodecPassthrough::GetChannels()
-{
-  return m_parser.GetChannels();
-}
-
-CAEChannelInfo CDVDAudioCodecPassthrough::GetChannelMap()
-{
-  static enum AEChannel OutputMap[3] = {AE_CH_RAW, AE_CH_RAW, AE_CH_NULL};
-  return OutputMap;
-}
-
 void CDVDAudioCodecPassthrough::Dispose()
 {
   if (m_buffer)
@@ -125,7 +104,13 @@ int CDVDAudioCodecPassthrough::Decode(uint8_t* pData, int iSize)
     m_format.m_dataFormat = AE_FMT_RAW;
     m_format.m_streamInfo = m_parser.GetStreamInfo();
     m_format.m_sampleRate = m_parser.GetSampleRate();
-    m_format.m_channelLayout = CAEUtil::GuessChLayout(m_parser.GetChannels());
+    m_format.m_frameSize = 1;
+    CAEChannelInfo layout;
+    for (unsigned int i=0; i<m_parser.GetChannels(); i++)
+    {
+      layout += AE_CH_RAW;
+    }
+    m_format.m_channelLayout = layout;
   }
 
   return used;
@@ -133,12 +118,11 @@ int CDVDAudioCodecPassthrough::Decode(uint8_t* pData, int iSize)
 
 void CDVDAudioCodecPassthrough::GetData(DVDAudioFrame &frame)
 {
-  frame.nb_frames = m_dataSize;
+  frame.nb_frames = GetData(frame.data);
   frame.passthrough = true;
-  frame.format.m_dataFormat = AE_FMT_RAW;
-  frame.format.m_streamInfo = m_format.m_streamInfo;
-  frame.format.m_sampleRate = m_format.m_sampleRate;
-  frame.format.m_channelLayout = m_format.m_channelLayout;
+  frame.format = m_format;
+  frame.planes = 1;
+  frame.bits_per_sample = 8;
   frame.duration = frame.format.m_streamInfo.GetDuration(frame.format.m_sampleRate);
 }
 

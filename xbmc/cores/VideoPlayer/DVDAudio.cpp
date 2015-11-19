@@ -33,8 +33,7 @@ CDVDAudio::CDVDAudio(volatile bool &bStop, CDVDClock *clock) : m_bStop(bStop), m
   m_pAudioStream = NULL;
   m_bPassthrough = false;
   m_iBitsPerSample = 0;
-  m_iBitrate = 0;
-  m_SecondsPerByte = 0.0;
+  m_sampeRate = 0;
   m_bPaused = true;
   m_playingPts = DVD_NOPTS_VALUE; //silence coverity uninitialized warning, is set elsewhere
   m_timeOfPts = 0.0; //silence coverity uninitialized warning, is set elsewhere
@@ -73,15 +72,10 @@ bool CDVDAudio::Create(const DVDAudioFrame &audioframe, AVCodecID codec, bool ne
   if (!m_pAudioStream)
     return false;
 
-  m_iBitrate       = audioframe.format.m_sampleRate;
+  m_sampeRate = audioframe.format.m_sampleRate;
   m_iBitsPerSample = audioframe.bits_per_sample;
-  m_bPassthrough   = audioframe.passthrough;
-  m_channelLayout  = audioframe.format.m_channelLayout;
-
-  if(m_channelLayout.Count() && m_iBitrate && m_iBitsPerSample)
-    m_SecondsPerByte = 1.0 / (m_channelLayout.Count() * m_iBitrate * (m_iBitsPerSample>>3));
-  else
-    m_SecondsPerByte = 0.0;
+  m_bPassthrough = audioframe.passthrough;
+  m_channelLayout = audioframe.format.m_channelLayout;
 
   if (m_pAudioStream->HasDSP())
     m_pAudioStream->SetFFmpegInfo(audioframe.profile, audioframe.matrix_encoding, audioframe.audio_service_type);
@@ -99,7 +93,7 @@ void CDVDAudio::Destroy()
     CAEFactory::FreeStream(m_pAudioStream);
 
   m_pAudioStream = NULL;
-  m_iBitrate = 0;
+  m_sampeRate = 0;
   m_iBitsPerSample = 0;
   m_bPassthrough = false;
   m_bPaused = true;
@@ -132,7 +126,7 @@ unsigned int CDVDAudio::AddPackets(const DVDAudioFrame &audioframe)
 
   //Calculate a timeout when this definitely should be done
   double timeout;
-  timeout  = DVD_SEC_TO_TIME(m_pAudioStream->GetDelay() + audioframe.nb_frames*audioframe.framesize * m_SecondsPerByte);
+  timeout  = DVD_SEC_TO_TIME(m_pAudioStream->GetDelay()) + audioframe.duration;
   timeout += DVD_SEC_TO_TIME(1.0);
   timeout += CDVDClock::GetAbsoluteClock();
 
@@ -242,7 +236,7 @@ bool CDVDAudio::IsValidFormat(const DVDAudioFrame &audioframe)
   if(audioframe.passthrough != m_bPassthrough)
     return false;
 
-  if(m_iBitrate != audioframe.format.m_sampleRate ||
+  if(m_sampeRate != audioframe.format.m_sampleRate ||
      m_iBitsPerSample != audioframe.bits_per_sample ||
      m_channelLayout != audioframe.format.m_channelLayout)
     return false;

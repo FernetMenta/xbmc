@@ -498,13 +498,13 @@ void CVideoPlayerAudio::Process()
       continue;
     }
 
-    if( result & DECODE_FLAG_ABORT )
+    if (result & DECODE_FLAG_ABORT)
     {
       CLog::Log(LOGDEBUG, "CVideoPlayerAudio::Process - Abort received, exiting thread");
       break;
     }
 
-    if( audioframe.nb_frames == 0 )
+    if (audioframe.nb_frames == 0)
       continue;
 
     // demuxer reads metatags that influence channel layout
