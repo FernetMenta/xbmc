@@ -47,6 +47,7 @@ public:
 
   virtual bool HasVolume() { return true; };
   virtual void SetVolume(float volume);
+  virtual bool  WantsIECPassthrough() { return true; };
 
   static void EnumerateDevicesEx(AEDeviceInfoList &list, bool force = false);
   bool IsInitialized();

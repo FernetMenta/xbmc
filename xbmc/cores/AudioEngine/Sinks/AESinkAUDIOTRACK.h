@@ -46,6 +46,7 @@ public:
   virtual unsigned int AddPackets      (uint8_t **data, unsigned int frames, unsigned int offset);
   virtual void         Drain           ();
   static void          EnumerateDevicesEx(AEDeviceInfoList &list, bool force = false);
+  virtual bool WantsIECPassthrough() { return false; }
 
 protected:
   static bool IsSupported(int sampleRateInHz, int channelConfig, int audioFormat);

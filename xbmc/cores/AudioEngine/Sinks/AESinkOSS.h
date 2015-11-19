@@ -41,6 +41,7 @@ public:
   virtual double       GetCacheTotal   () { return 0.0; } /* FIXME */
   virtual unsigned int AddPackets      (uint8_t **data, unsigned int frames, unsigned int offset);
   virtual void         Drain           ();
+  virtual bool WantsIECPassthrough() { return true; }
   static  void         EnumerateDevicesEx(AEDeviceInfoList &list, bool force = false);
 private:
   int m_fd;

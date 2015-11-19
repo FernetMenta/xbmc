@@ -41,6 +41,7 @@ public:
     virtual double       GetCacheTotal               ();
     virtual unsigned int AddPackets                  (uint8_t **data, unsigned int frames, unsigned int offset);
     virtual void         Drain                       ();
+    virtual bool WantsIECPassthrough() { return true; }
     static  void         EnumerateDevicesEx          (AEDeviceInfoList &deviceInfoList, bool force = false);
 private:
     bool         InitializeExclusive(AEAudioFormat &format);

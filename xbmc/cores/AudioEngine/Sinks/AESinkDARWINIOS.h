@@ -51,6 +51,7 @@ public:
   virtual void         Drain           ();
   virtual bool         HasVolume       ();
   static void          EnumerateDevicesEx(AEDeviceInfoList &list, bool force = false);
+  virtual bool WantsIECPassthrough() { return true; }
 
 private:
   static AEDeviceInfoList m_devices;
