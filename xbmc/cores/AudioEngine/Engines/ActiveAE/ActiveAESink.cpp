@@ -170,8 +170,7 @@ bool CActiveAESink::SupportsFormat(const std::string &device, AEAudioFormat &for
           }
           else
           {
-            // TODO - check if sink supports stream type (non IEC packed)
-            return false;
+            return !itt2->m_wantsIECPassthrough;
           }
         }
       }
