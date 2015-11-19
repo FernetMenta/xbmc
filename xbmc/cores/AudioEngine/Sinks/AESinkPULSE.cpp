@@ -450,7 +450,10 @@ static void SinkInfoRequestCallback(pa_context *c, const pa_sink_info *i, int eo
     }
     // passthrough is only working when device has Stereo channel config
     if (device_type > AE_DEVTYPE_PCM && device.m_channels.Count() == 2)
+    {
       device.m_deviceType = AE_DEVTYPE_IEC958;
+      device.m_dataFormats.push_back(AE_FMT_RAW);
+    }
     else
       device.m_deviceType = AE_DEVTYPE_PCM;
 
