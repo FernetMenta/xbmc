@@ -123,7 +123,7 @@ void CDVDAudioCodecPassthrough::GetData(DVDAudioFrame &frame)
   frame.format = m_format;
   frame.planes = 1;
   frame.bits_per_sample = 8;
-  frame.duration = frame.format.m_streamInfo.GetDuration(frame.format.m_sampleRate);
+  frame.duration = frame.format.m_streamInfo.GetDuration();
 }
 
 int CDVDAudioCodecPassthrough::GetData(uint8_t** dst)

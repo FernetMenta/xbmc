@@ -173,7 +173,7 @@ struct MsgStreamFFmpegInfo
 class CEngineStats
 {
 public:
-  void Reset(unsigned int sampleRate);
+  void Reset(unsigned int sampleRate, bool pcm);
   void UpdateSinkDelay(const AEDelayStatus& status, int samples, int64_t pts, int clockId = 0);
   void AddSamples(int samples, std::list<CActiveAEStream*> &streams);
   void GetDelay(AEDelayStatus& status);
@@ -204,6 +204,7 @@ protected:
   bool m_suspended;
   bool m_hasDSP;
   AEAudioFormat m_sinkFormat;
+  bool m_pcmOutput;
   CCriticalSection m_lock;
 };
 

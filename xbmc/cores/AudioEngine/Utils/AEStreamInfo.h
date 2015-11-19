@@ -34,7 +34,7 @@ class CAEStreamInfo
 {
 public:
   CAEStreamInfo();
-  double GetDuration(unsigned int sampleRate);
+  double GetDuration();
   bool operator==(const CAEStreamInfo& info) const;
 
   enum DataType
@@ -51,6 +51,8 @@ public:
     STREAM_TYPE_TRUEHD
   };
   DataType m_type;
+  unsigned int m_sampleRate;
+  unsigned int m_channels;
   bool m_dataIsLE;
   unsigned int m_dtsPeriod;
   unsigned int m_repeat;
@@ -68,8 +70,8 @@ public:
 
   void SetCoreOnly(bool value) { m_coreOnly = value; }
   unsigned int IsValid() { return m_hasSync; }
-  unsigned int GetSampleRate() { return m_sampleRate; }
-  unsigned int GetChannels() { return m_channels; }
+  unsigned int GetSampleRate() { return m_info.m_sampleRate; }
+  unsigned int GetChannels() { return m_info.m_channels; }
   unsigned int GetFrameSize() { return m_fsize; }
   // unsigned int GetDTSBlocks() { return m_dtsBlocks; }
   unsigned int GetDTSPeriod() { return m_info.m_dtsPeriod; }
@@ -88,8 +90,6 @@ private:
   typedef unsigned int (CAEStreamParser::*ParseFunc)(uint8_t *data, unsigned int size);
 
   CAEStreamInfo m_info;
-  unsigned int m_sampleRate;
-  unsigned int m_channels;
   bool m_coreOnly;
   unsigned int m_needBytes;
   ParseFunc m_syncFunc;

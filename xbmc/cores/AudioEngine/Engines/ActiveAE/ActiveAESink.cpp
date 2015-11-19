@@ -23,6 +23,7 @@
 #include "ActiveAESink.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include "cores/AudioEngine/Utils/AEStreamInfo.h"
+#include "cores/AudioEngine/Utils/AEBitstreamPacker.h"
 #include "utils/EndianSwap.h"
 #include "ActiveAE.h"
 #include "cores/AudioEngine/AEResampleFactory.h"
@@ -41,9 +42,10 @@ CActiveAESink::CActiveAESink(CEvent *inMsgEvent) :
   m_dataPort("SinkDataPort", inMsgEvent, &m_outMsgEvent)
 {
   m_inMsgEvent = inMsgEvent;
-  m_sink = NULL;
-  m_stats = NULL;
+  m_sink = nullptr;
+  m_stats = nullptr;
   m_volume = 0.0;
+  m_packer = nullptr;
 }
 
 void CActiveAESink::Start()
@@ -68,11 +70,14 @@ void CActiveAESink::Dispose()
     m_sink->Drain();
     m_sink->Deinitialize();
     delete m_sink;
-    m_sink = NULL;
+    m_sink = nullptr;
   }
 
   delete m_sampleOfSilence.pkt;
-  m_sampleOfSilence.pkt = NULL;
+  m_sampleOfSilence.pkt = nullptr;
+
+  delete m_packer;
+  m_packer = nullptr;
 }
 
 AEDeviceType CActiveAESink::GetDeviceType(const std::string &device)
@@ -170,8 +175,32 @@ bool CActiveAESink::SupportsFormat(const std::string &device, AEAudioFormat &for
           }
           else
           {
-            return !itt2->m_wantsIECPassthrough;
+            // TODO hanlde non IEC packing
+            return false;
           }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool CActiveAESink::NeedIECPacking()
+{
+  std::string dev = m_device;
+  std::string dri;
+
+  CAESinkFactory::ParseDevice(dev, dri);
+  for (AESinkInfoList::iterator itt = m_sinkInfoList.begin(); itt != m_sinkInfoList.end(); ++itt)
+  {
+    if (dri == itt->m_sinkName)
+    {
+      for (AEDeviceInfoList::iterator itt2 = itt->m_deviceInfoList.begin(); itt2 != itt->m_deviceInfoList.end(); ++itt2)
+      {
+        CAEDeviceInfo& info = *itt2;
+        if (info.m_deviceName == dev)
+        {
+          return info.m_wantsIECPassthrough;
         }
       }
     }
@@ -252,7 +281,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
             m_sink->Drain();
             m_sink->Deinitialize();
             delete m_sink;
-            m_sink = NULL;
+            m_sink = nullptr;
           }
           m_state = S_TOP_UNCONFIGURED;
           msg->Reply(CSinkControlProtocol::ACC);
@@ -291,13 +320,13 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
         }
       }
       {
-        std::string portName = port == NULL ? "timer" : port->portName;
+        std::string portName = port == nullptr ? "timer" : port->portName;
         CLog::Log(LOGWARNING, "CActiveAESink::%s - signal: %d form port: %s not handled for state: %d", __FUNCTION__, signal, portName.c_str(), m_state);
       }
       return;
 
     case S_TOP_UNCONFIGURED:
-      if (port == NULL) // timeout
+      if (port == nullptr) // timeout
       {
         switch (signal)
         {
@@ -369,7 +398,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           {
             m_sink->Deinitialize();
             delete m_sink;
-            m_sink = NULL;
+            m_sink = nullptr;
             m_state = S_TOP_CONFIGURED_SUSPEND;
             m_extTimeout = 0;
           }
@@ -422,7 +451,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           break;
         }
       }
-      else if (port == NULL) // timeout
+      else if (port == nullptr) // timeout
       {
         switch (signal)
         {
@@ -450,14 +479,14 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           break;
         }
       }
-      else if (port == NULL) // timeout
+      else if (port == nullptr) // timeout
       {
         switch (signal)
         {
         case CSinkControlProtocol::TIMEOUT:
           m_sink->Deinitialize();
           delete m_sink;
-          m_sink = NULL;
+          m_sink = nullptr;
           m_state = S_TOP_CONFIGURED_SUSPEND;
           m_extTimeout = 10000;
           return;
@@ -468,7 +497,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
       break;
 
     case S_TOP_CONFIGURED_PLAY:
-      if (port == NULL) // timeout
+      if (port == nullptr) // timeout
       {
         switch (signal)
         {
@@ -495,7 +524,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
       break;
 
     case S_TOP_CONFIGURED_SILENCE:
-      if (port == NULL) // timeout
+      if (port == nullptr) // timeout
       {
         switch (signal)
         {
@@ -505,7 +534,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           {
             m_sink->Deinitialize();
             delete m_sink;
-            m_sink = NULL;
+            m_sink = nullptr;
             m_state = S_TOP_CONFIGURED_SUSPEND;
           }
           else
@@ -527,8 +556,8 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
 
 void CActiveAESink::Process()
 {
-  Message *msg = NULL;
-  Protocol *port = NULL;
+  Message *msg = nullptr;
+  Protocol *port = nullptr;
   bool gotMsg;
   XbmcThreads::EndTime timer;
 
@@ -550,7 +579,7 @@ void CActiveAESink::Process()
       if (!m_bStateMachineSelfTrigger)
       {
         msg->Release();
-        msg = NULL;
+        msg = nullptr;
       }
       continue;
     }
@@ -573,7 +602,7 @@ void CActiveAESink::Process()
       if (!m_bStateMachineSelfTrigger)
       {
         msg->Release();
-        msg = NULL;
+        msg = nullptr;
       }
       continue;
     }
@@ -595,7 +624,7 @@ void CActiveAESink::Process()
       if (!m_bStateMachineSelfTrigger)
       {
         msg->Release();
-        msg = NULL;
+        msg = nullptr;
       }
     }
   }
@@ -728,7 +757,7 @@ void CActiveAESink::OpenSink()
     m_sink->Drain();
     m_sink->Deinitialize();
     delete m_sink;
-    m_sink = NULL;
+    m_sink = nullptr;
   }
 
   // get the display name of the device
@@ -812,12 +841,22 @@ void CActiveAESink::OpenSink()
   if (!passthrough)
     GenerateNoise();
 
+  // iec packing or raw
+  if (passthrough)
+  {
+    m_needIecPack = NeedIECPacking();
+    if (m_needIecPack)
+    {
+      m_packer = new CAEBitstreamPacker();
+    }
+  }
+
   m_swapState = CHECK_SWAP;
 }
 
 void CActiveAESink::ReturnBuffers()
 {
-  Message *msg = NULL;
+  Message *msg = nullptr;
   CSampleBuffer *samples;
   while (m_dataPort.ReceiveOutMessage(&msg))
   {
@@ -832,25 +871,32 @@ void CActiveAESink::ReturnBuffers()
 unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
 {
   uint8_t **buffer = samples->pkt->data;
+  uint8_t *packBuffer;
   unsigned int frames = samples->pkt->nb_samples;
   unsigned int maxFrames;
   int retry = 0;
   unsigned int written = 0;
 
-  switch(m_swapState)
+  if (m_sinkFormat.m_dataFormat == AE_FMT_RAW && m_needIecPack)
   {
-  case SKIP_SWAP:
-    break;
-  case NEED_BYTESWAP:
-    Endian_Swap16_buf((uint16_t *)buffer[0], (uint16_t *)buffer[0], frames * samples->pkt->config.channels);
-    break;
-  case CHECK_SWAP:
-    SwapInit(samples);
-    if (m_swapState == NEED_BYTESWAP)
-      Endian_Swap16_buf((uint16_t *)buffer[0], (uint16_t *)buffer[0], frames * samples->pkt->config.channels);
-    break;
-  default:
-    break;
+    m_packer->Pack(m_sinkFormat.m_streamInfo, buffer[0], frames);
+    packBuffer = m_packer->GetBuffer();
+    *buffer = packBuffer;
+    switch(m_swapState)
+    {
+      case SKIP_SWAP:
+        break;
+      case NEED_BYTESWAP:
+        Endian_Swap16_buf((uint16_t *)buffer[0], (uint16_t *)buffer[0], frames * samples->pkt->config.channels);
+        break;
+      case CHECK_SWAP:
+        SwapInit(samples);
+        if (m_swapState == NEED_BYTESWAP)
+          Endian_Swap16_buf((uint16_t *)buffer[0], (uint16_t *)buffer[0], frames * samples->pkt->config.channels);
+        break;
+      default:
+        break;
+    }
   }
 
   AEDelayStatus status;
@@ -895,7 +941,8 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
       if (pts < 0)
         pts = 0;
     }
-    m_stats->UpdateSinkDelay(status, samples->pool ? written : 0, pts, samples->clockId);
+    int framesOrPacktes = (m_requestedFormat.m_dataFormat == AE_FMT_RAW) ? 1 : written;
+    m_stats->UpdateSinkDelay(status, samples->pool ? framesOrPacktes : 0, pts, samples->clockId);
   }
   return status.delay * 1000;
 }
@@ -948,7 +995,7 @@ void CActiveAESink::GenerateNoise()
                  AV_SAMPLE_FMT_FLT,
                  CAEUtil::DataFormatToUsedBits(m_sinkFormat.m_dataFormat),
                  CAEUtil::DataFormatToDitherBits(m_sinkFormat.m_dataFormat),
-                 false, false, NULL, AE_QUALITY_UNKNOWN, false);
+                 false, false, nullptr, AE_QUALITY_UNKNOWN, false);
   resampler->Resample(m_sampleOfSilence.pkt->data, m_sampleOfSilence.pkt->max_nb_samples,
                      (uint8_t**)&noise, m_sampleOfSilence.pkt->max_nb_samples, 1.0);
 

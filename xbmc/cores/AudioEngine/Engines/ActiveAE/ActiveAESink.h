@@ -27,7 +27,7 @@
 #include "cores/AudioEngine/AESinkFactory.h"
 #include "cores/AudioEngine/Engines/ActiveAE/ActiveAEBuffer.h"
 
-class CAEStreamInfo;
+class CAEBitstreamPacker;
 
 namespace ActiveAE
 {
@@ -111,6 +111,7 @@ protected:
   void OpenSink();
   void ReturnBuffers();
   void SetSilenceTimer();
+  bool NeedIECPacking();
 
   unsigned int OutputSamples(CSampleBuffer* samples);
   void SwapInit(CSampleBuffer* samples);
@@ -145,6 +146,8 @@ protected:
   CEngineStats *m_stats;
   float m_volume;
   int m_sinkLatency;
+  CAEBitstreamPacker *m_packer;
+  bool m_needIecPack;
 };
 
 }

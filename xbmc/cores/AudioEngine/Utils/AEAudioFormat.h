@@ -60,23 +60,12 @@ struct AEAudioFormat
    */
   CAEStreamInfo m_streamInfo;
 
-  struct IECPack
-  {
-    enum AEDataFormat m_dataFormat;
-    unsigned int m_sampleRate;
-    CAEChannelInfo m_channelLayout;
-  };
-  IECPack m_iecPack;
-
-  bool m_isIecPacked;
- 
   AEAudioFormat()
   {
     m_dataFormat = AE_FMT_INVALID;
     m_sampleRate = 0;
     m_frames = 0;
     m_frameSize = 0;
-    m_isIecPacked = false;
   }
 
   bool operator==(const AEAudioFormat& fmt) const

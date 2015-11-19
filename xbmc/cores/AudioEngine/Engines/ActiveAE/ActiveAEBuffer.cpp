@@ -72,8 +72,6 @@ void CSampleBuffer::Return()
 CActiveAEBufferPool::CActiveAEBufferPool(AEAudioFormat format)
 {
   m_format = format;
-  if (AE_IS_RAW(m_format.m_dataFormat))
-    m_format.m_dataFormat = AE_FMT_S16NE;
 }
 
 CActiveAEBufferPool::~CActiveAEBufferPool()
@@ -119,6 +117,10 @@ bool CActiveAEBufferPool::Create(unsigned int totaltime)
 
   unsigned int time = 0;
   unsigned int buffertime = (m_format.m_frames*1000) / m_format.m_sampleRate;
+  if (m_format.m_dataFormat == AE_FMT_RAW)
+  {
+    buffertime = m_format.m_streamInfo.GetDuration();
+  }
   unsigned int n = 0;
   while (time < totaltime || n < 5)
   {

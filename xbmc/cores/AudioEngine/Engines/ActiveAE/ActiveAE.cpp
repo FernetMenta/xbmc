@@ -38,7 +38,7 @@ using namespace ActiveAE;
 #define MAX_WATER_LEVEL 0.2   // buffered time after stream stages in seconds
 #define MAX_BUFFER_TIME 0.1   // max time of a buffer in seconds
 
-void CEngineStats::Reset(unsigned int sampleRate)
+void CEngineStats::Reset(unsigned int sampleRate, bool pcm)
 {
   CSingleLock lock(m_lock);
   m_sinkDelay.SetDelay(0.0);
@@ -48,6 +48,7 @@ void CEngineStats::Reset(unsigned int sampleRate)
   m_hasDSP = false;
   m_playingPTS = 0;
   m_clockId = 0;
+  m_pcmOutput = pcm;
 }
 
 void CEngineStats::UpdateSinkDelay(const AEDelayStatus& status, int samples, int64_t pts, int clockId)
@@ -87,7 +88,10 @@ void CEngineStats::GetDelay(AEDelayStatus& status)
 {
   CSingleLock lock(m_lock);
   status = m_sinkDelay;
-  status.delay += (double)m_bufferedSamples / m_sinkSampleRate;
+  if (m_pcmOutput)
+    status.delay += (double)m_bufferedSamples / m_sinkSampleRate;
+  else
+    status.delay += (double)m_bufferedSamples * m_sinkFormat.m_streamInfo.GetDuration() / 1000;
 }
 
 // this is used to sync a/v so we need to add sink latency here
@@ -96,7 +100,10 @@ void CEngineStats::GetDelay(AEDelayStatus& status, CActiveAEStream *stream)
   CSingleLock lock(m_lock);
   status = m_sinkDelay;
   status.delay += m_sinkLatency;
-  status.delay += (double)m_bufferedSamples / m_sinkSampleRate;
+  if (m_pcmOutput)
+    status.delay += (double)m_bufferedSamples / m_sinkSampleRate;
+  else
+    status.delay += (double)m_bufferedSamples * m_sinkFormat.m_streamInfo.GetDuration() / 1000;
 
   if (stream->m_resampleBuffers)
     status.delay += stream->m_bufferedTime / stream->m_resampleBuffers->m_resampleRatio;
@@ -108,7 +115,10 @@ void CEngineStats::GetSyncInfo(CAESyncInfo& info, CActiveAEStream *stream)
   CSingleLock lock(m_lock);
   AEDelayStatus status;
   status = m_sinkDelay;
-  status.delay += (double)m_bufferedSamples / m_sinkSampleRate;
+  if (m_pcmOutput)
+    status.delay += (double)m_bufferedSamples / m_sinkSampleRate;
+  else
+    status.delay += (double)m_bufferedSamples * m_sinkFormat.m_streamInfo.GetDuration() / 1000;
 
   status.delay += m_sinkLatency;
   if (stream->m_resampleBuffers)
@@ -133,6 +143,8 @@ float CEngineStats::GetCacheTime(CActiveAEStream *stream)
 {
   CSingleLock lock(m_lock);
   float delay = (float)m_bufferedSamples / m_sinkSampleRate;
+  if (!m_pcmOutput)
+    delay = (float)m_bufferedSamples * m_sinkFormat.m_streamInfo.GetDuration() / 1000;
 
   delay += stream->m_bufferedTime;
   return delay;
@@ -171,7 +183,10 @@ int CEngineStats::Discontinuity(bool reset)
 float CEngineStats::GetWaterLevel()
 {
   CSingleLock lock(m_lock);
-  return (float)m_bufferedSamples / m_sinkSampleRate;
+  if (m_pcmOutput)
+    return (float)m_bufferedSamples / m_sinkSampleRate;
+  else
+    return (float)m_bufferedSamples * m_sinkFormat.m_streamInfo.GetDuration() / 1000;
 }
 
 void CEngineStats::SetSuspended(bool state)
@@ -231,7 +246,7 @@ CActiveAE::CActiveAE() :
   m_vizInitialized = false;
   m_sinkHasVolume = false;
   m_aeGUISoundForce = false;
-  m_stats.Reset(44100);
+  m_stats.Reset(44100, true);
 }
 
 CActiveAE::~CActiveAE()
@@ -1053,7 +1068,7 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
     m_settings.driver = driver;
     m_currDevice = device;
     initSink = true;
-    m_stats.Reset(m_sinkFormat.m_sampleRate);
+    m_stats.Reset(m_sinkFormat.m_sampleRate, m_mode == MODE_PCM);
     m_sink.m_controlPort.SendOutMessage(CSinkControlProtocol::VOLUME, &m_volume, sizeof(float));
 
     // limit buffer size in case of sink returns large buffer
@@ -1432,7 +1447,7 @@ void CActiveAE::FlushEngine()
     CLog::Log(LOGERROR, "ActiveAE::%s - failed to flush", __FUNCTION__);
     m_extError = true;
   }
-  m_stats.Reset(m_sinkFormat.m_sampleRate);
+  m_stats.Reset(m_sinkFormat.m_sampleRate, m_mode == MODE_PCM);
 }
 
 void CActiveAE::ClearDiscardedBuffers()
@@ -2169,7 +2184,8 @@ bool CActiveAE::RunStages()
       // update stats
       if(out)
       {
-        m_stats.AddSamples(out->pkt->nb_samples, m_streams);
+        int samples = (m_mode == MODE_TRANSCODE) ? 1 : out->pkt->nb_samples;
+        m_stats.AddSamples(samples, m_streams);
         m_sinkBuffers->m_inputSamples.push_back(out);
       }
     }
@@ -2189,7 +2205,7 @@ bool CActiveAE::RunStages()
             buffer = (*it)->m_resampleBuffers->m_outputSamples.front();
             (*it)->m_resampleBuffers->m_outputSamples.pop_front();
           }
-          m_stats.AddSamples(buffer->pkt->nb_samples, m_streams);
+          m_stats.AddSamples(1, m_streams);
           m_sinkBuffers->m_inputSamples.push_back(buffer);
         }
       }
