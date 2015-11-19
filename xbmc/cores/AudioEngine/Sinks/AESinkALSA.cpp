@@ -611,7 +611,6 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, std::string &device)
   format.m_sampleRate = outconfig.sampleRate;
   format.m_frames = outconfig.periodSize;
   format.m_frameSize = outconfig.frameSize;
-  format.m_frameSamples = outconfig.periodSize * outconfig.channels;
   format.m_dataFormat = outconfig.format;
 
   m_format              = format;
