@@ -68,6 +68,23 @@ static const char *StreamStateToString(pa_stream_state s)
   }
 }
 
+static pa_sample_format AEStreamFormatToPulseFormat(CAEStreamInfo::DataType type)
+{
+  switch (type)
+  {
+    case CAEStreamInfo::STREAM_TYPE_AC3:
+    case CAEStreamInfo::STREAM_TYPE_DTS_512:
+    case CAEStreamInfo::STREAM_TYPE_DTS_1024:
+    case CAEStreamInfo::STREAM_TYPE_DTS_2048:
+    case CAEStreamInfo::STREAM_TYPE_DTSHD_CORE:
+    case CAEStreamInfo::STREAM_TYPE_EAC3:
+      return PA_SAMPLE_S16NE;
+
+    default:
+      return PA_SAMPLE_INVALID;
+  }
+}
+
 static pa_sample_format AEFormatToPulseFormat(AEDataFormat format)
 {
   switch (format)
@@ -79,13 +96,29 @@ static pa_sample_format AEFormatToPulseFormat(AEDataFormat format)
     case AE_FMT_S32NE  : return PA_SAMPLE_S32NE;
     case AE_FMT_FLOAT  : return PA_SAMPLE_FLOAT32;
 
-    case AE_FMT_AC3:
-    case AE_FMT_DTS:
-    case AE_FMT_EAC3:
-      return PA_SAMPLE_S16NE;
-
     default:
       return PA_SAMPLE_INVALID;
+  }
+}
+
+static pa_encoding AEStreamFormatToPulseEncoding(CAEStreamInfo::DataType type)
+{
+  switch (type)
+  {
+    case CAEStreamInfo::STREAM_TYPE_AC3:
+      return PA_ENCODING_AC3_IEC61937;
+
+    case CAEStreamInfo::STREAM_TYPE_DTS_512:
+    case CAEStreamInfo::STREAM_TYPE_DTS_1024:
+    case CAEStreamInfo::STREAM_TYPE_DTS_2048:
+    case CAEStreamInfo::STREAM_TYPE_DTSHD_CORE:
+      return PA_ENCODING_DTS_IEC61937;
+
+    case CAEStreamInfo::STREAM_TYPE_EAC3:
+      return PA_ENCODING_EAC3_IEC61937;
+
+    default:
+      return PA_ENCODING_INVALID;
   }
 }
 
@@ -93,9 +126,8 @@ static pa_encoding AEFormatToPulseEncoding(AEDataFormat format)
 {
   switch (format)
   {
-    case AE_FMT_AC3   : return PA_ENCODING_AC3_IEC61937;
-    case AE_FMT_DTS   : return PA_ENCODING_DTS_IEC61937;
-    case AE_FMT_EAC3  : return PA_ENCODING_EAC3_IEC61937;
+    case AE_FMT_RAW:
+      return PA_ENCODING_INVALID;
 
     default:
       return PA_ENCODING_PCM;
@@ -395,15 +427,18 @@ static void SinkInfoRequestCallback(pa_context *c, const pa_sink_info *i, int eo
       switch(i->formats[j]->encoding)
       {
         case PA_ENCODING_AC3_IEC61937:
-          device.m_dataFormats.push_back(AE_FMT_AC3);
+          device.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_AC3);
           device_type = AE_DEVTYPE_IEC958;
           break;
         case PA_ENCODING_DTS_IEC61937:
-          device.m_dataFormats.push_back(AE_FMT_DTS);
+          device.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTSHD_CORE);
+          device.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTS_1024);
+          device.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTS_512);
+          device.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTS_2048);
           device_type = AE_DEVTYPE_IEC958;
           break;
         case PA_ENCODING_EAC3_IEC61937:
-          device.m_dataFormats.push_back(AE_FMT_EAC3);
+          device.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_EAC3);
           device_type = AE_DEVTYPE_IEC958;
           break;
         case PA_ENCODING_PCM:
@@ -488,14 +523,13 @@ bool CAESinkPULSE::Initialize(AEAudioFormat &format, std::string &device)
   struct pa_channel_map map;
   pa_channel_map_init(&map);
 
-   // PULSE cannot cope with e.g. planar formats so we fallback to FLOAT
+   // PULSE cannot cope with e.g. planar formats so we fall back to FLOAT
    // when we receive an invalid pulse format
    pa_sample_format pa_fmt;
    // PA can only handle IEC packed RAW format if we get a RAW format
-   // that is not IEC packed we fall back to FLOAT below
-   if ((format.m_dataFormat == AE_FMT_RAW) && format.m_isIecPacked)
+   if (format.m_dataFormat == AE_FMT_RAW)
    {
-     pa_fmt = AEFormatToPulseFormat(format.m_iecPack.m_dataFormat);
+     pa_fmt = AEStreamFormatToPulseFormat(format.m_streamInfo.m_type);
      m_passthrough = true;
    }
    else
@@ -547,9 +581,18 @@ bool CAESinkPULSE::Initialize(AEAudioFormat &format, std::string &device)
   pa_format_info *info[1];
   info[0] = pa_format_info_new();
   if (m_passthrough)
-    info[0]->encoding = AEFormatToPulseEncoding(format.m_iecPack.m_dataFormat);
+    info[0]->encoding = AEStreamFormatToPulseEncoding(format.m_streamInfo.m_type);
   else
    info[0]->encoding = AEFormatToPulseEncoding(format.m_dataFormat);
+
+  if (info[0]->encoding == PA_ENCODING_INVALID)
+  {
+    CLog::Log(LOGERROR, "PulseAudio: Invalid Encoding");
+    pa_format_info_free(info[0]);
+    pa_threaded_mainloop_unlock(m_MainLoop);
+    Deinitialize();
+    return false;
+  }
 
   if(!m_passthrough)
   {
@@ -563,7 +606,7 @@ bool CAESinkPULSE::Initialize(AEAudioFormat &format, std::string &device)
   if (m_passthrough && (info[0]->encoding == PA_ENCODING_EAC3_IEC61937))
   {
     // this is only used internally for PA to use EAC3
-    samplerate = format.m_iecPack.m_sampleRate;
+    samplerate = format.m_streamInfo.m_sampleRate;
   }
 
   pa_format_info_set_rate(info[0], samplerate);
@@ -694,7 +737,6 @@ bool CAESinkPULSE::Initialize(AEAudioFormat &format, std::string &device)
   pa_threaded_mainloop_unlock(m_MainLoop);
   
   format.m_frameSize = frameSize;
-  format.m_frameSamples = format.m_frames * format.m_channelLayout.Count();
   m_format = format;
   format.m_dataFormat = m_passthrough ? AE_FMT_S16NE : format.m_dataFormat;
 
