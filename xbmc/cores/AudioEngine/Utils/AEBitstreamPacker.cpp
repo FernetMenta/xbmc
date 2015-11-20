@@ -202,3 +202,38 @@ void CAEBitstreamPacker::PackEAC3(CAEStreamInfo &info, uint8_t* data, int size)
     }
   }
 }
+
+unsigned int CAEBitstreamPacker::GetOutputRate(CAEStreamInfo &info)
+{
+  unsigned int rate;
+  switch (info.m_type)
+  {
+    case CAEStreamInfo::STREAM_TYPE_AC3:
+      rate = info.m_sampleRate;
+      break;
+    case CAEStreamInfo::STREAM_TYPE_EAC3:
+      rate = info.m_sampleRate * 4;
+      break;
+    case CAEStreamInfo::STREAM_TYPE_TRUEHD:
+      if (info.m_sampleRate == 48000 ||
+          info.m_sampleRate == 96000 ||
+          info.m_sampleRate == 192000)
+        rate = 192000;
+      else
+        rate = 176400;
+      break;
+    case CAEStreamInfo::STREAM_TYPE_DTS_512:
+    case CAEStreamInfo::STREAM_TYPE_DTS_1024:
+    case CAEStreamInfo::STREAM_TYPE_DTS_2048:
+    case CAEStreamInfo::STREAM_TYPE_DTSHD_CORE:
+      rate = info.m_sampleRate;
+      break;
+    case CAEStreamInfo::STREAM_TYPE_DTSHD:
+      rate = 192000;
+      break;
+    default:
+      rate = 48000;
+      break;
+  }
+  return rate;
+}

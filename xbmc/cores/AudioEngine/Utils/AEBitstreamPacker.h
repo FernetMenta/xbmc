@@ -33,7 +33,8 @@ public:
 
   void Pack(CAEStreamInfo &info, uint8_t* data, int size);
   uint8_t* GetBuffer();
-  unsigned int GetSize  ();
+  unsigned int GetSize();
+  static unsigned int GetOutputRate(CAEStreamInfo &info);
 
 private:
   void PackTrueHD(CAEStreamInfo &info, uint8_t* data, int size);

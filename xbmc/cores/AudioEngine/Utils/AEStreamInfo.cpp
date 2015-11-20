@@ -100,9 +100,17 @@ double CAEStreamInfo::GetDuration()
       duration = 6144 / m_sampleRate / 4;
       break;
     case STREAM_TYPE_TRUEHD:
-      duration = 6144 / m_sampleRate / 4;
+      int rate;
+      if (m_sampleRate == 48000 ||
+          m_sampleRate == 96000 ||
+          m_sampleRate == 192000)
+        rate = 192000;
+      else
+        rate = 176400;
+      duration = 3840 / rate;
       break;
     case STREAM_TYPE_DTS_512:
+    case STREAM_TYPE_DTSHD_CORE:
       duration = 512 / m_sampleRate;
       break;
     case STREAM_TYPE_DTS_1024:
@@ -111,8 +119,14 @@ double CAEStreamInfo::GetDuration()
     case STREAM_TYPE_DTS_2048:
       duration = 2048 / m_sampleRate;
       break;
+    case STREAM_TYPE_DTSHD:
+      duration = m_dtsPeriod * 2 / 16 / 192000;
+      break;
+    default:
+      CLog::Log(LOGERROR, "CAEStreamInfo::GetDuration - invalid stream type");
+      break;
   }
-  return duration;
+  return duration * 1000;
 }
 
 bool CAEStreamInfo::operator==(const CAEStreamInfo& info) const

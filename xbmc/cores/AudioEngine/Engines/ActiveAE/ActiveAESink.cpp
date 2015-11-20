@@ -751,6 +751,17 @@ void CActiveAESink::OpenSink()
   if (driver.empty() && m_sink)
     driver = m_sink->GetName();
 
+  // iec packing or raw
+  if (passthrough)
+  {
+    m_needIecPack = NeedIECPacking();
+    if (m_needIecPack)
+    {
+      m_packer = new CAEBitstreamPacker();
+      m_requestedFormat.m_sampleRate = CAEBitstreamPacker::GetOutputRate(m_requestedFormat.m_streamInfo);
+    }
+  }
+
   CLog::Log(LOGINFO, "CActiveAESink::OpenSink - initialize sink");
 
   if (m_sink)
@@ -851,16 +862,6 @@ void CActiveAESink::OpenSink()
   if (!passthrough)
     GenerateNoise();
 
-  // iec packing or raw
-  if (passthrough)
-  {
-    m_needIecPack = NeedIECPacking();
-    if (m_needIecPack)
-    {
-      m_packer = new CAEBitstreamPacker();
-    }
-  }
-
   m_swapState = CHECK_SWAP;
 }
 
@@ -883,6 +884,7 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
   uint8_t **buffer = samples->pkt->data;
   uint8_t *packBuffer;
   unsigned int frames = samples->pkt->nb_samples;
+  unsigned int totalFrames = frames;
   unsigned int maxFrames;
   int retry = 0;
   unsigned int written = 0;
@@ -890,19 +892,22 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
   if (m_sinkFormat.m_dataFormat == AE_FMT_RAW && m_needIecPack)
   {
     m_packer->Pack(m_sinkFormat.m_streamInfo, buffer[0], frames);
+    unsigned int size = m_packer->GetSize();
     packBuffer = m_packer->GetBuffer();
     *buffer = packBuffer;
+    totalFrames = size / m_sinkFormat.m_frameSize;
+    frames = totalFrames;
     switch(m_swapState)
     {
       case SKIP_SWAP:
         break;
       case NEED_BYTESWAP:
-        Endian_Swap16_buf((uint16_t *)buffer[0], (uint16_t *)buffer[0], frames * samples->pkt->config.channels);
+        Endian_Swap16_buf((uint16_t *)buffer[0], (uint16_t *)buffer[0], size / 2);
         break;
       case CHECK_SWAP:
         SwapInit(samples);
         if (m_swapState == NEED_BYTESWAP)
-          Endian_Swap16_buf((uint16_t *)buffer[0], (uint16_t *)buffer[0], frames * samples->pkt->config.channels);
+          Endian_Swap16_buf((uint16_t *)buffer[0], (uint16_t *)buffer[0], size / 2);
         break;
       default:
         break;
@@ -914,7 +919,7 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
   while(frames > 0)
   {
     maxFrames = std::min(frames, m_sinkFormat.m_frames);
-    written = m_sink->AddPackets(buffer, maxFrames, samples->pkt->nb_samples-frames);
+    written = m_sink->AddPackets(buffer, maxFrames, totalFrames - frames);
     if (written == 0)
     {
       Sleep(500*m_sinkFormat.m_frames/m_sinkFormat.m_sampleRate);
