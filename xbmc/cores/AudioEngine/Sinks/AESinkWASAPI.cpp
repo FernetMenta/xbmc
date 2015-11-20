@@ -187,7 +187,6 @@ CAESinkWASAPI::CAESinkWASAPI() :
   m_pAudioClock(NULL),
   m_encodedFormat(AE_FMT_INVALID),
   m_encodedChannels(0),
-  m_encodedSampleRate(0),
   sinkReqFormat(AE_FMT_INVALID),
   sinkRetFormat(AE_FMT_INVALID),
   m_running(false),
@@ -1152,9 +1151,9 @@ initialize:
   /* parameters, so store the encoded stream values here for the IsCompatible function */
   m_encodedFormat     = format.m_dataFormat;
   m_encodedChannels   = wfxex.Format.nChannels;
-  m_encodedSampleRate = format.m_encodedRate;
+
   wfxex_iec61937.dwEncodedChannelCount = wfxex.Format.nChannels;
-  wfxex_iec61937.dwEncodedSamplesPerSec = m_encodedSampleRate;
+
 
   /* Set up returned sink format for engine */
   if (!AE_IS_RAW(format.m_dataFormat))

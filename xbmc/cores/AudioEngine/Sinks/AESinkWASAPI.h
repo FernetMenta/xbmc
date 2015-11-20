@@ -61,7 +61,7 @@ private:
     AEAudioFormat       m_format;
     enum AEDataFormat   m_encodedFormat;
     unsigned int        m_encodedChannels;
-    unsigned int        m_encodedSampleRate;
+
     CAEChannelInfo      m_channelLayout;
     std::string         m_device;
 
