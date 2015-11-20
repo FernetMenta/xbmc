@@ -3224,6 +3224,7 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\input\InputCodingTableKorean.cpp">
       <Filter>input</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\xbmc\guilib\Resolution.cpp">
       <Filter>guilib</Filter>
     </ClCompile>
@@ -6266,6 +6267,9 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\pvr\PVRSettings.h">
       <Filter>pvr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\guilib\DispResource.h">
+      <Filter>guilib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
