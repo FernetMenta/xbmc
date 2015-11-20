@@ -453,7 +453,7 @@ void CGUIWindowFullScreen::FrameMove()
     }
     // show sizing information
     SPlayerVideoStreamInfo info;
-    g_application.m_pPlayer->GetVideoStreamInfo(info);
+    g_application.m_pPlayer->GetVideoStreamInfo(0,info);
     {
       // Splitres scaling factor
       float xscale = (float)res.iScreenWidth  / (float)res.iWidth;

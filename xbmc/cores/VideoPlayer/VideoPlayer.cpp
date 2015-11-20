@@ -2437,6 +2437,25 @@ void CVideoPlayer::HandleMessages()
           }
         }
       }
+      else if (pMsg->IsType(CDVDMsg::PLAYER_SET_VIDEOSTREAM))
+      {
+        CDVDMsgPlayerSetVideoStream* pMsg2 = (CDVDMsgPlayerSetVideoStream*)pMsg;
+
+        SelectionStream& st = m_SelectionStreams.Get(STREAM_VIDEO, pMsg2->GetStreamId());
+        if (st.source != STREAM_SOURCE_NONE)
+        {
+          if (st.source == STREAM_SOURCE_NAV && m_pInputStream && m_pInputStream->IsStreamType(DVDSTREAM_TYPE_DVD))
+          {
+
+          }
+          else
+          {
+            CloseStream(m_CurrentVideo, false);
+            OpenStream(m_CurrentVideo, st.id, st.source);
+            m_messenger.Put(new CDVDMsgPlayerSeek((int)GetTime(), true, true, true, true, true));
+          }
+        }
+      }
       else if (pMsg->IsType(CDVDMsg::PLAYER_SET_SUBTITLESTREAM))
       {
         CDVDMsgPlayerSetSubtitleStream* pMsg2 = (CDVDMsgPlayerSetSubtitleStream*)pMsg;
@@ -3171,6 +3190,22 @@ int CVideoPlayer::GetAudioStream()
 void CVideoPlayer::SetAudioStream(int iStream)
 {
   m_messenger.Put(new CDVDMsgPlayerSetAudioStream(iStream));
+  SynchronizeDemuxer(100);
+}
+
+int CVideoPlayer::GetVideoStreamCount()
+{
+  return m_SelectionStreams.Count(STREAM_VIDEO);
+}
+
+int CVideoPlayer::GetVideoStream()
+{
+  return m_SelectionStreams.IndexOf(STREAM_VIDEO, *this);
+}
+
+void CVideoPlayer::SetVideoStream(int iStream)
+{
+  m_messenger.Put(new CDVDMsgPlayerSetVideoStream(iStream));
   SynchronizeDemuxer(100);
 }
 
@@ -4273,8 +4308,11 @@ double CVideoPlayer::GetQueueTime()
   return std::max(a, v) * 8000.0 / 100;
 }
 
-void CVideoPlayer::GetVideoStreamInfo(SPlayerVideoStreamInfo &info)
+void CVideoPlayer::GetVideoStreamInfo(int streamId, SPlayerVideoStreamInfo &info)
 {
+  if (streamId == CURRENT_STREAM)
+    streamId = GetVideoStream();
+
   info.bitrate = m_VideoPlayerVideo->GetVideoBitrate();
 
   std::string retVal;

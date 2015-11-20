@@ -60,6 +60,8 @@ class CApplicationPlayer
   // cache player state
   XbmcThreads::EndTime m_audioStreamUpdate;
   int m_iAudioStream;
+  XbmcThreads::EndTime m_videoStreamUpdate;
+  int m_iVideoStream;
   XbmcThreads::EndTime m_subtitleStreamUpdate;
   int m_iSubtitleStream;
   
@@ -113,6 +115,8 @@ public:
   void  GetAudioInfo(std::string& strAudioInfo);
   int   GetAudioStream();
   int   GetAudioStreamCount();
+  int   GetVideoStream();
+  int   GetVideoStreamCount();
   void  GetAudioStreamInfo(int index, SPlayerAudioStreamInfo &info);
   int   GetCacheLevel() const;
   float GetCachePercentage() const;
@@ -141,7 +145,7 @@ public:
   int64_t GetDisplayTime() const;
   int64_t GetTotalTime() const;
   void  GetVideoInfo(std::string& strVideoInfo);
-  void  GetVideoStreamInfo(SPlayerVideoStreamInfo &info);
+  void  GetVideoStreamInfo(int streamId, SPlayerVideoStreamInfo &info);
   bool  HasAudio() const;
   bool  HasMenu() const;
   bool  HasVideo() const;
@@ -176,6 +180,7 @@ public:
   void  SetSubtitle(int iStream);
   void  SetSubTitleDelay(float fValue = 0.0f);
   void  SetSubtitleVisible(bool bVisible);
+  void  SetVideoStream(int iStream);
   void  SetVolume(float volume);
   bool  SwitchChannel(const PVR::CPVRChannelPtr &channel);
   void  ToFFRW(int iSpeed = 0);
