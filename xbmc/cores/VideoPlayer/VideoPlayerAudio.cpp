@@ -599,23 +599,8 @@ bool CVideoPlayerAudio::OutputPacket(DVDAudioFrame &audioframe)
   if (m_synctype == SYNC_DISCON)
   {
     double limit, error;
-    if (g_VideoReferenceClock.GetRefreshRate(&limit) > 0)
-    {
-      //when the videoreferenceclock is running, the discontinuity limit is one vblank period
-      limit *= DVD_TIME_BASE;
-
-      //make error a multiple of limit, rounded towards zero,
-      //so it won't interfere with the sync methods in CRenderManager::WaitPresentTime
-      if (syncerror > 0.0)
-        error = limit * floor(syncerror / limit);
-      else
-        error = limit * ceil(syncerror / limit);
-    }
-    else
-    {
-      limit = DVD_MSEC_TO_TIME(10);
-      error = syncerror;
-    }
+    limit = DVD_MSEC_TO_TIME(10);
+    error = syncerror;
 
     double absolute;
     double clock = m_pClock->GetClock(absolute);
@@ -624,10 +609,7 @@ bool CVideoPlayerAudio::OutputPacket(DVDAudioFrame &audioframe)
       m_dvdAudio.SetSyncErrorCorrection(-error);
     }
   }
-  else
-  {
-    m_dvdAudio.AddPackets(audioframe);
-  }
+  m_dvdAudio.AddPackets(audioframe);
 
   return true;
 }

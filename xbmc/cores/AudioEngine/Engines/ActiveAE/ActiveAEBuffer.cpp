@@ -72,6 +72,11 @@ void CSampleBuffer::Return()
 CActiveAEBufferPool::CActiveAEBufferPool(AEAudioFormat format)
 {
   m_format = format;
+  if (m_format.m_dataFormat == AE_FMT_RAW)
+  {
+    m_format.m_channelLayout.Reset();
+    m_format.m_channelLayout += AE_CH_FC;
+  }
 }
 
 CActiveAEBufferPool::~CActiveAEBufferPool()
@@ -143,8 +148,11 @@ CActiveAEBufferPoolResample::CActiveAEBufferPoolResample(AEAudioFormat inputForm
   : CActiveAEBufferPool(outputFormat)
 {
   m_inputFormat = inputFormat;
-  if (AE_IS_RAW(m_inputFormat.m_dataFormat))
-    m_inputFormat.m_dataFormat = AE_FMT_S16NE;
+  if (m_inputFormat.m_dataFormat == AE_FMT_RAW)
+  {
+    m_inputFormat.m_channelLayout.Reset();
+    m_inputFormat.m_channelLayout += AE_CH_FC;
+  }
   m_resampler = NULL;
   m_fillPackets = false;
   m_drain = false;

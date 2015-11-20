@@ -260,6 +260,14 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
           {
             SinkReply reply;
             reply.format = m_sinkFormat;
+            // TODO
+            // use max raw packet size, for now use max size of an IEC packed packet
+            // maxIECPpacket > maxRawPacket
+            // for raw packets frameSize is set to 1
+            if (m_requestedFormat.m_dataFormat == AE_FMT_RAW)
+            {
+              reply.format.m_frames = 61440;
+            }
             reply.cacheTotal = m_sink->GetCacheTotal();
             reply.latency = m_sink->GetLatency();
             reply.hasVolume = m_sink->HasVolume();
@@ -814,15 +822,6 @@ void CActiveAESink::OpenSink()
     return;
   }
 
-  // TODO
-  // use max raw packet size, for now use max size of an IEC packed packet
-  // maxIECPpacket > maxRawPacket
-  // for raw packets frameSize is set to 1
-  if (passthrough)
-  {
-    m_sinkFormat.m_frames = 61440;
-  }
-
   m_sink->SetVolume(m_volume);
 
 #ifdef WORDS_BIGENDIAN
@@ -889,12 +888,12 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
   int retry = 0;
   unsigned int written = 0;
 
-  if (m_sinkFormat.m_dataFormat == AE_FMT_RAW && m_needIecPack)
+  if (m_requestedFormat.m_dataFormat == AE_FMT_RAW && m_needIecPack)
   {
     m_packer->Pack(m_sinkFormat.m_streamInfo, buffer[0], frames);
     unsigned int size = m_packer->GetSize();
     packBuffer = m_packer->GetBuffer();
-    *buffer = packBuffer;
+    buffer = &packBuffer;
     totalFrames = size / m_sinkFormat.m_frameSize;
     frames = totalFrames;
     switch(m_swapState)
