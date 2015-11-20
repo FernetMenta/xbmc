@@ -2436,6 +2436,25 @@ void CVideoPlayer::HandleMessages()
           }
         }
       }
+      else if (pMsg->IsType(CDVDMsg::PLAYER_SET_VIDEOSTREAM))
+      {
+        CDVDMsgPlayerSetVideoStream* pMsg2 = (CDVDMsgPlayerSetVideoStream*)pMsg;
+
+        SelectionStream& st = m_SelectionStreams.Get(STREAM_VIDEO, pMsg2->GetStreamId());
+        if (st.source != STREAM_SOURCE_NONE)
+        {
+          if (st.source == STREAM_SOURCE_NAV && m_pInputStream && m_pInputStream->IsStreamType(DVDSTREAM_TYPE_DVD))
+          {
+
+          }
+          else
+          {
+            CloseStream(m_CurrentVideo, false);
+            OpenStream(m_CurrentVideo, st.id, st.source);
+            m_messenger.Put(new CDVDMsgPlayerSeek((int)GetTime(), true, true, true, true, true));
+          }
+        }
+      }
       else if (pMsg->IsType(CDVDMsg::PLAYER_SET_SUBTITLESTREAM))
       {
         CDVDMsgPlayerSetSubtitleStream* pMsg2 = (CDVDMsgPlayerSetSubtitleStream*)pMsg;
@@ -3170,6 +3189,22 @@ int CVideoPlayer::GetAudioStream()
 void CVideoPlayer::SetAudioStream(int iStream)
 {
   m_messenger.Put(new CDVDMsgPlayerSetAudioStream(iStream));
+  SynchronizeDemuxer(100);
+}
+
+int CVideoPlayer::GetVideoStreamCount()
+{
+  return m_SelectionStreams.Count(STREAM_VIDEO);
+}
+
+int CVideoPlayer::GetVideoStream()
+{
+  return m_SelectionStreams.IndexOf(STREAM_VIDEO, *this);
+}
+
+void CVideoPlayer::SetVideoStream(int iStream)
+{
+  m_messenger.Put(new CDVDMsgPlayerSetVideoStream(iStream));
   SynchronizeDemuxer(100);
 }
 
@@ -4299,21 +4334,32 @@ double CVideoPlayer::GetQueueTime()
   return std::max(a, v) * 8000.0 / 100;
 }
 
-void CVideoPlayer::GetVideoStreamInfo(SPlayerVideoStreamInfo &info)
+void CVideoPlayer::GetVideoStreamInfo(int streamId, SPlayerVideoStreamInfo &info)
 {
-  info.bitrate = m_VideoPlayerVideo->GetVideoBitrate();
+  if (streamId == CURRENT_STREAM)
+    streamId = GetVideoStream();
+
+  if (streamId < 0 || streamId > GetVideoStreamCount() - 1)
+    return;
+
+  if (streamId == GetVideoStream())
+  {
+    info.bitrate = m_VideoPlayerVideo->GetVideoBitrate();
+  }
 
   std::string retVal;
-  if (m_pDemuxer && (m_CurrentVideo.id != -1))
+  if (m_pDemuxer)
   {
-    m_pDemuxer->GetStreamCodecName(m_CurrentVideo.id, retVal);
-    CDemuxStreamVideo* stream = static_cast<CDemuxStreamVideo*>(m_pDemuxer->GetStream(m_CurrentVideo.id));
+    CDemuxStreamVideo* stream = m_pDemuxer->GetStreamFromVideoId(streamId);
+    m_pDemuxer->GetStreamCodecName(stream->iId, retVal);
+
     if (stream)
     {
       info.width  = stream->iWidth;
       info.height = stream->iHeight;
     }
   }
+
   info.videoCodecName = retVal;
   info.videoAspectRatio = m_renderManager.GetAspectRatio();
   CRect viewRect;
@@ -4321,6 +4367,13 @@ void CVideoPlayer::GetVideoStreamInfo(SPlayerVideoStreamInfo &info)
   info.stereoMode = m_VideoPlayerVideo->GetStereoMode();
   if (info.stereoMode == "mono")
     info.stereoMode = "";
+
+  SelectionStream& s = m_SelectionStreams.Get(STREAM_VIDEO, streamId);
+  if (s.language.length() > 0)
+    info.language = s.language;
+
+  if (s.name.length() > 0)
+    info.name = s.name;
 }
 
 int CVideoPlayer::GetSourceBitrate()
