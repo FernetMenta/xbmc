@@ -163,7 +163,7 @@ bool CActiveAESink::SupportsFormat(const std::string &device, AEAudioFormat &for
           if (isRaw && info.m_wantsIECPassthrough)
           {
              AEDataTypeList::iterator iit3;
-             iit3 = find(info.m_streamTypes.begin(), info.m_streamTypes.begin(), format.m_streamInfo.m_type);
+             iit3 = find(info.m_streamTypes.begin(), info.m_streamTypes.end(), format.m_streamInfo.m_type);
              formatExists = iit3 != info.m_streamTypes.end();
           }
           else if (isRaw && !info.m_wantsIECPassthrough)
