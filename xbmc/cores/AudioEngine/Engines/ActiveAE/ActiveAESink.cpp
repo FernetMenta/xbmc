@@ -116,43 +116,6 @@ bool CActiveAESink::SupportsFormat(const std::string &device, AEAudioFormat &for
   std::string dev = device;
   std::string dri;
 
-  // IEC packed
-  unsigned int samplerate = format.m_sampleRate;
-  AEDataFormat dataFormat;
-  switch (format.m_streamInfo.m_type)
-  {
-    case CAEStreamInfo::STREAM_TYPE_AC3:
-      dataFormat = AE_FMT_AC3;
-      break;
-
-    case CAEStreamInfo::STREAM_TYPE_EAC3:
-      dataFormat = AE_FMT_EAC3;
-      samplerate = 4*samplerate;
-      break;
-
-    case CAEStreamInfo::STREAM_TYPE_TRUEHD:
-      dataFormat = AE_FMT_TRUEHD;
-      if (samplerate == 48000 || samplerate == 96000 || samplerate == 192000)
-        samplerate = 192000;
-      else
-        samplerate = 176400;
-      break;
-
-    case CAEStreamInfo::STREAM_TYPE_DTSHD:
-      samplerate = 192000;
-      break;
-    case CAEStreamInfo::STREAM_TYPE_DTSHD_CORE:
-    case CAEStreamInfo::STREAM_TYPE_DTS_512:
-    case CAEStreamInfo::STREAM_TYPE_DTS_1024:
-    case CAEStreamInfo::STREAM_TYPE_DTS_2048:
-      dataFormat = AE_FMT_DTS;
-      break;
-
-    default:
-      dataFormat = AE_FMT_INVALID;
-      break;
-  }
-
   CAESinkFactory::ParseDevice(dev, dri);
   for (AESinkInfoList::iterator itt = m_sinkInfoList.begin(); itt != m_sinkInfoList.end(); ++itt)
   {
@@ -163,20 +126,68 @@ bool CActiveAESink::SupportsFormat(const std::string &device, AEAudioFormat &for
         CAEDeviceInfo& info = *itt2;
         if (info.m_deviceName == dev)
         {
-          AEDataFormatList::iterator itt3;
-          itt3 = find(info.m_dataFormats.begin(), info.m_dataFormats.end(), dataFormat);
-          if (itt3 != info.m_dataFormats.end())
+          bool isRaw = format.m_dataFormat == AE_FMT_RAW;
+
+          // PCM sample rate
+          unsigned int samplerate = format.m_sampleRate;
+
+	  if (isRaw && info.m_wantsIECPassthrough)
+	  {
+	    switch (format.m_streamInfo.m_type)
+	    {
+	      case CAEStreamInfo::STREAM_TYPE_EAC3:
+	      samplerate = 4 * format.m_streamInfo.m_sampleRate;
+	      break;
+
+	      case CAEStreamInfo::STREAM_TYPE_TRUEHD:
+	      if (format.m_streamInfo.m_sampleRate == 48000 || format.m_streamInfo.m_sampleRate == 96000 || format.m_streamInfo.m_sampleRate == 192000)
+		samplerate = 192000;
+	      else
+		samplerate = 176400;
+	      break;
+
+	      case CAEStreamInfo::STREAM_TYPE_DTSHD:
+	      samplerate = 192000;
+	      break;
+
+	      default:
+	      break;
+	    }
+	  }
+	  else if (isRaw && !info.m_wantsIECPassthrough)
+	  {
+	      // fix me
+	  }
+
+          bool formatExists = false;
+          if (isRaw && info.m_wantsIECPassthrough)
           {
-            AESampleRateList::iterator itt4;
-            itt4 = find(info.m_sampleRates.begin(), info.m_sampleRates.end(), samplerate);
-            if (itt4 != info.m_sampleRates.end())
-              return true;
-            else
-              return false;
+             AEDataTypeList::iterator iit3;
+             iit3 = find(info.m_streamTypes.begin(), info.m_streamTypes.begin(), format.m_streamInfo.m_type);
+             formatExists = iit3 != info.m_streamTypes.end();
           }
-          else
+          else if (isRaw && !info.m_wantsIECPassthrough)
           {
-            // TODO hanlde non IEC packing
+              // fix me non IEC formats
+          }
+          else // PCM case
+          {
+            AEDataFormatList::iterator itt3;
+            itt3 = find(info.m_dataFormats.begin(), info.m_dataFormats.end(), format.m_dataFormat);
+            formatExists = itt3 != info.m_dataFormats.end();
+          }
+          // check if samplerate is available
+          if (formatExists)
+          {
+              AESampleRateList::iterator itt4;
+              itt4 = find(info.m_sampleRates.begin(), info.m_sampleRates.end(), samplerate);
+              if (itt4 != info.m_sampleRates.end())
+                return true;
+              else
+                return false;
+          }
+          else // format is not existent
+          {
             return false;
           }
         }
