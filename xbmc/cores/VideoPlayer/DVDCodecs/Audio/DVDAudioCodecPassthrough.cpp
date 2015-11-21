@@ -40,6 +40,7 @@ CDVDAudioCodecPassthrough::~CDVDAudioCodecPassthrough(void)
 bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 {
   AEAudioFormat format;
+  format.m_dataFormat = AE_FMT_RAW;
   format.m_sampleRate = hints.samplerate;
   switch (hints.codec)
   {
