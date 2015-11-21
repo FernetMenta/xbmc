@@ -1165,11 +1165,13 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
       if (m_encoder->GetCodecID() == AV_CODEC_ID_AC3)
       {
         AEAudioFormat format;
-        format.m_channelLayout = AE_CH_LAYOUT_2_0;
-        format.m_dataFormat = AE_FMT_S16NE;
-        format.m_frameSize = 2* (CAEUtil::DataFormatToBits(format.m_dataFormat) >> 3);
-        format.m_frames = AC3_FRAME_SIZE;
+        format.m_channelLayout += AE_CH_FC;
+        format.m_dataFormat = AE_FMT_RAW;
         format.m_sampleRate = 48000;
+        format.m_channelLayout = AE_CH_LAYOUT_2_0;
+        format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_AC3;
+        format.m_streamInfo.m_channels = 2;
+        format.m_streamInfo.m_sampleRate = 48000;
         // TODO
         if (m_encoderBuffers && initSink)
         {
@@ -1571,9 +1573,12 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
            !m_streams.empty() &&
            (format.m_channelLayout.Count() > 2 || settings.stereoupmix))
   {
-    format.m_dataFormat = AE_FMT_AC3;
+    format.m_dataFormat = AE_FMT_RAW;
     format.m_sampleRate = 48000;
     format.m_channelLayout = AE_CH_LAYOUT_2_0;
+    format.m_streamInfo.m_type = CAEStreamInfo::STREAM_TYPE_AC3;
+    format.m_streamInfo.m_channels = 2;
+    format.m_streamInfo.m_sampleRate = 48000;
     if (mode)
       *mode = MODE_TRANSCODE;
   }
@@ -2169,9 +2174,8 @@ bool CActiveAE::RunStages()
         if (m_mode == MODE_TRANSCODE && m_encoder)
         {
           CSampleBuffer *buf = m_encoderBuffers->GetFreeBuffer();
-          m_encoder->Encode(out->pkt->data[0], out->pkt->planes*out->pkt->linesize,
-                            buf->pkt->data[0], buf->pkt->planes*buf->pkt->linesize);
-          buf->pkt->nb_samples = buf->pkt->max_nb_samples;
+          buf->pkt->nb_samples = m_encoder->Encode(out->pkt->data[0], out->pkt->planes*out->pkt->linesize,
+                                                   buf->pkt->data[0], buf->pkt->planes*buf->pkt->linesize);
 
           // set pts of last sample
           buf->pkt_start_offset = buf->pkt->nb_samples;
@@ -2259,6 +2263,11 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
 
   if (!stream->m_pClock)
     return ret;
+
+  if (m_mode == MODE_RAW)
+  {
+    stream->m_syncClock = CActiveAEStream::INSYNC;
+  }
 
   if (stream->m_syncClock == CActiveAEStream::STARTSYNC)
   {

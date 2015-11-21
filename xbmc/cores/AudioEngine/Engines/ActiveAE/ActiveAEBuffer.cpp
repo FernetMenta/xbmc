@@ -74,6 +74,8 @@ CActiveAEBufferPool::CActiveAEBufferPool(AEAudioFormat format)
   m_format = format;
   if (m_format.m_dataFormat == AE_FMT_RAW)
   {
+    m_format.m_frameSize = 1;
+    m_format.m_frames = 61440;
     m_format.m_channelLayout.Reset();
     m_format.m_channelLayout += AE_CH_FC;
   }
@@ -150,6 +152,8 @@ CActiveAEBufferPoolResample::CActiveAEBufferPoolResample(AEAudioFormat inputForm
   m_inputFormat = inputFormat;
   if (m_inputFormat.m_dataFormat == AE_FMT_RAW)
   {
+    m_format.m_frameSize = 1;
+    m_format.m_frames = 61440;
     m_inputFormat.m_channelLayout.Reset();
     m_inputFormat.m_channelLayout += AE_CH_FC;
   }

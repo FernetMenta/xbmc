@@ -56,7 +56,6 @@ public:
   bool m_dataIsLE;
   unsigned int m_dtsPeriod;
   unsigned int m_repeat;
-  CAEPackIEC61937::PackFunc m_packFunc;
 };
 
 class CAEStreamParser
@@ -78,7 +77,6 @@ public:
   unsigned int GetEAC3BlocksDiv() { return m_info.m_repeat; }
   enum CAEStreamInfo::DataType GetDataType() { return m_info.m_type; }
   bool IsLittleEndian() { return m_info.m_dataIsLE; }
-  CAEPackIEC61937::PackFunc GetPackFunc() { return m_info.m_packFunc; }
   unsigned int GetBufferSize() { return m_bufferSize; }
   CAEStreamInfo& GetStreamInfo() { return m_info; }
 

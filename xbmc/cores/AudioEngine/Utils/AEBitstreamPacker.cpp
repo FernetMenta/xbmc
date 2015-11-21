@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include "utils/log.h"
 
 #define BURST_HEADER_SIZE       8
 #define TRUEHD_FRAME_OFFSET     2560
@@ -63,6 +64,10 @@ void CAEBitstreamPacker::Pack(CAEStreamInfo &info, uint8_t* data, int size)
       PackDTSHD (info, data, size);
       break;
 
+    case CAEStreamInfo::STREAM_TYPE_AC3:
+      m_dataSize = CAEPackIEC61937::PackAC3(data, size, m_packedBuffer);
+      break;
+
     case CAEStreamInfo::STREAM_TYPE_EAC3:
       PackEAC3 (info, data, size);
       break;
@@ -81,10 +86,7 @@ void CAEBitstreamPacker::Pack(CAEStreamInfo &info, uint8_t* data, int size)
       break;
 
     default:
-      /* pack the data into an IEC61937 frame */
-      CAEPackIEC61937::PackFunc pack = info.m_packFunc;
-      if (pack)
-        m_dataSize = pack(data, size, m_packedBuffer);
+      CLog::Log(LOGERROR, "CAEBitstreamPacker::Pack - no pack function");
   }
 }
 
