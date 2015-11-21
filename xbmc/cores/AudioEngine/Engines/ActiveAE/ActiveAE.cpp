@@ -2317,7 +2317,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
           framesToDelay = ret->pkt->max_nb_samples;
         if (m_mode == MODE_TRANSCODE)
         {
-          if (framesToDelay > m_encoderFormat.m_frames / 2)
+          if (framesToDelay > (int) (m_encoderFormat.m_frames / 2))
             framesToDelay = m_encoderFormat.m_frames;
           else
             framesToDelay = 0;
@@ -2339,7 +2339,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
         framesToSkip = buf->pkt->nb_samples;
       if (m_mode == MODE_TRANSCODE)
       {
-        if (framesToSkip > m_encoderFormat.m_frames / 2)
+        if (framesToSkip > (int) (m_encoderFormat.m_frames / 2))
           framesToSkip = buf->pkt->nb_samples;
         else
           framesToSkip = 0;
