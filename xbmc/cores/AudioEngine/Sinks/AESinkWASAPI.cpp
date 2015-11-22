@@ -690,9 +690,9 @@ void CAESinkWASAPI::EnumerateDevicesEx(AEDeviceInfoList &deviceInfoList, bool fo
       if (SUCCEEDED(hr) || aeDeviceType == AE_DEVTYPE_HDMI)
       {
         if(FAILED(hr))
-          CLog::Log(LOGNOTICE, __FUNCTION__": data format \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::DataFormatToStr(AE_FMT_DTSHD), strFriendlyName.c_str());
+          CLog::Log(LOGNOTICE, __FUNCTION__": stream type \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::StreamTypeToStr(CAEStreamInfo::STREAM_TYPE_DTSHD), strFriendlyName.c_str());
 
-        deviceInfo.m_dataFormats.push_back(AEDataFormat(AE_FMT_DTSHD));
+        deviceInfo.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTSHD);
         add192 = true;
       }
 
@@ -702,9 +702,9 @@ void CAESinkWASAPI::EnumerateDevicesEx(AEDeviceInfoList &deviceInfoList, bool fo
       if (SUCCEEDED(hr) || aeDeviceType == AE_DEVTYPE_HDMI)
       {
         if(FAILED(hr))
-          CLog::Log(LOGNOTICE, __FUNCTION__": data format \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::DataFormatToStr(AE_FMT_TRUEHD), strFriendlyName.c_str());
+          CLog::Log(LOGNOTICE, __FUNCTION__": stream type \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::StreamTypeToStr(CAEStreamInfo::STREAM_TYPE_TRUEHD), strFriendlyName.c_str());
 
-        deviceInfo.m_dataFormats.push_back(AEDataFormat(AE_FMT_TRUEHD));
+        deviceInfo.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_TRUEHD);
         add192 = true;
       }
 
@@ -717,9 +717,9 @@ void CAESinkWASAPI::EnumerateDevicesEx(AEDeviceInfoList &deviceInfoList, bool fo
       if (SUCCEEDED(hr) || aeDeviceType == AE_DEVTYPE_HDMI)
       {
         if(FAILED(hr))
-          CLog::Log(LOGNOTICE, __FUNCTION__": data format \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::DataFormatToStr(AE_FMT_EAC3), strFriendlyName.c_str());
+          CLog::Log(LOGNOTICE, __FUNCTION__": stream type \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::StreamTypeToStr(CAEStreamInfo::STREAM_TYPE_EAC3), strFriendlyName.c_str());
 
-        deviceInfo.m_dataFormats.push_back(AEDataFormat(AE_FMT_EAC3));
+        deviceInfo.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_EAC3);
         add192 = true;
       }
 
@@ -733,9 +733,12 @@ void CAESinkWASAPI::EnumerateDevicesEx(AEDeviceInfoList &deviceInfoList, bool fo
       if (SUCCEEDED(hr) || aeDeviceType == AE_DEVTYPE_HDMI)
       {
         if(FAILED(hr))
-          CLog::Log(LOGNOTICE, __FUNCTION__": data format \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::DataFormatToStr(AE_FMT_DTS), strFriendlyName.c_str());
+          CLog::Log(LOGNOTICE, __FUNCTION__": stream type \"%s\" on device \"%s\" seems to be not supported.", "STREAM_TYPE_DTS", strFriendlyName.c_str());
 
-        deviceInfo.m_dataFormats.push_back(AEDataFormat(AE_FMT_DTS));
+        deviceInfo.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTSHD_CORE);
+        deviceInfo.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTS_2048);
+        deviceInfo.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTS_1024);
+        deviceInfo.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_DTS_512);
       }
 
       /* Test format Dolby AC3 */
@@ -744,9 +747,9 @@ void CAESinkWASAPI::EnumerateDevicesEx(AEDeviceInfoList &deviceInfoList, bool fo
       if (SUCCEEDED(hr) || aeDeviceType == AE_DEVTYPE_HDMI)
       {
         if(FAILED(hr))
-          CLog::Log(LOGNOTICE, __FUNCTION__": data format \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::DataFormatToStr(AE_FMT_AC3), strFriendlyName.c_str());
+          CLog::Log(LOGNOTICE, __FUNCTION__": stream type \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::StreamTypeToStr(CAEStreamInfo::STREAM_TYPE_AC3), strFriendlyName.c_str());
 
-        deviceInfo.m_dataFormats.push_back(AEDataFormat(AE_FMT_AC3));
+        deviceInfo.m_streamTypes.push_back(CAEStreamInfo::STREAM_TYPE_AC3);
       }
 
       /* Test format for PCM format iteration */
@@ -899,6 +902,10 @@ void CAESinkWASAPI::EnumerateDevicesEx(AEDeviceInfoList &deviceInfoList, bool fo
 
     /* Store the device info */
     deviceInfo.m_wantsIECPassthrough = true;
+
+    if (!deviceInfo.m_streamTypes.empty())
+      deviceInfo.m_dataFormats.push_back(AE_FMT_RAW);
+
     deviceInfoList.push_back(deviceInfo);
 
     if(pDevice->GetId(&pwszID) == S_OK)
@@ -936,7 +943,7 @@ void CAESinkWASAPI::BuildWaveFormatExtensible(AEAudioFormat &format, WAVEFORMATE
   wfxex.Format.cbSize            = sizeof(WAVEFORMATEXTENSIBLE)-sizeof(WAVEFORMATEX);
 
 
-  if (!AE_IS_RAW(format.m_dataFormat)) // PCM data
+  if (format.m_dataFormat != AE_FMT_RAW) // PCM data
   {
     wfxex.dwChannelMask          = SpeakerMaskFromAEChannels(format.m_channelLayout);
     wfxex.Format.nChannels       = (WORD)format.m_channelLayout.Count();
@@ -947,16 +954,25 @@ void CAESinkWASAPI::BuildWaveFormatExtensible(AEAudioFormat &format, WAVEFORMATE
   else //Raw bitstream
   {
     wfxex.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
-    if (format.m_dataFormat == AE_FMT_AC3 || format.m_dataFormat == AE_FMT_DTS)
+    if (format.m_dataFormat == AE_FMT_RAW
+	&& ((format.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_AC3)
+	|| (format.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_DTSHD_CORE)
+        || (format.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_DTS_2048)
+        || (format.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_DTS_1024)
+        || (format.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_DTS_512)))
     {
       wfxex.dwChannelMask               = bool (format.m_channelLayout.Count() == 2) ? KSAUDIO_SPEAKER_STEREO : KSAUDIO_SPEAKER_5POINT1;
       wfxex.SubFormat                   = KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_DIGITAL;
       wfxex.Format.wBitsPerSample       = 16;
       wfxex.Samples.wValidBitsPerSample = 16;
-      wfxex.Format.nChannels            = (WORD)format.m_channelLayout.Count();
-      wfxex.Format.nSamplesPerSec       = format.m_sampleRate;
+      wfxex.Format.nChannels            = (WORD)format.m_channelLayout.Count(); // Fixme and test on windows setup
+      wfxex.Format.nSamplesPerSec       = format.m_streamInfo.m_sampleRate;
+      if (format.m_streamInfo.m_sampleRate == 0)
+	CLog::Log(LOGERROR, "Invalid sample rate supplied for RAW format");
     }
-    else if (format.m_dataFormat == AE_FMT_EAC3 || format.m_dataFormat == AE_FMT_TRUEHD || format.m_dataFormat == AE_FMT_DTSHD)
+    else if (format.m_dataFormat == AE_FMT_RAW
+	&& ((format.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_DTSHD)
+	|| (format.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_TRUEHD)))
     {
       /* IEC 61937 transmissions over HDMI */            
       wfxex.Format.nSamplesPerSec       = 192000L;
@@ -964,19 +980,19 @@ void CAESinkWASAPI::BuildWaveFormatExtensible(AEAudioFormat &format, WAVEFORMATE
       wfxex.Samples.wValidBitsPerSample = 16;
       wfxex.dwChannelMask               = KSAUDIO_SPEAKER_7POINT1_SURROUND;
 
-      switch (format.m_dataFormat)
+      switch (format.m_streamInfo.m_type)
       {
-        case AE_FMT_EAC3:
+        case CAEStreamInfo::STREAM_TYPE_EAC3:
           wfxex.SubFormat             = KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_DIGITAL_PLUS;
           wfxex.Format.nChannels      = 2; // One IEC 60958 Line.
           wfxex.dwChannelMask         = KSAUDIO_SPEAKER_5POINT1;
           break;
-        case AE_FMT_TRUEHD:
+        case CAEStreamInfo::STREAM_TYPE_TRUEHD:
           wfxex.SubFormat             = KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_MLP;
           wfxex.Format.nChannels      = 8; // Four IEC 60958 Lines.
           wfxex.dwChannelMask         = KSAUDIO_SPEAKER_7POINT1_SURROUND;
           break;
-        case AE_FMT_DTSHD:
+        case CAEStreamInfo::STREAM_TYPE_DTSHD:
           wfxex.SubFormat             = KSDATAFORMAT_SUBTYPE_IEC61937_DTS_HD;
           wfxex.Format.nChannels      = 8; // Four IEC 60958 Lines.
           wfxex.dwChannelMask         = KSAUDIO_SPEAKER_7POINT1_SURROUND;
@@ -1022,7 +1038,7 @@ bool CAESinkWASAPI::InitializeExclusive(AEAudioFormat &format)
 
   if (format.m_dataFormat <= AE_FMT_FLOAT)
     BuildWaveFormatExtensible(format, wfxex);
-  else if (AE_IS_RAW(format.m_dataFormat))
+  else if (format.m_dataFormat == AE_FMT_RAW)
     BuildWaveFormatExtensibleIEC61397(format, wfxex_iec61937);
   else
   {
@@ -1062,7 +1078,7 @@ bool CAESinkWASAPI::InitializeExclusive(AEAudioFormat &format)
     CLog::Log(LOGERROR, __FUNCTION__": IsFormatSupported failed (%s)", WASAPIErrToStr(hr));
     return false;
   }
-  else if (AE_IS_RAW(format.m_dataFormat)) //No sense in trying other formats for passthrough.
+  else if (format.m_dataFormat == AE_FMT_RAW) //No sense in trying other formats for passthrough.
     return false;
 
   if (g_advancedSettings.CanLogComponent(LOGAUDIO))
@@ -1158,7 +1174,7 @@ initialize:
   wfxex_iec61937.dwEncodedSamplesPerSec = m_encodedSampleRate;
 
   /* Set up returned sink format for engine */
-  if (!AE_IS_RAW(format.m_dataFormat))
+  if (format.m_dataFormat != AE_FMT_RAW)
   {
     if (wfxex.Format.wBitsPerSample == 32)
     {
@@ -1188,7 +1204,7 @@ initialize:
   }
   audioSinkBufferDurationMsec = (REFERENCE_TIME)((audioSinkBufferDurationMsec / format.m_frameSize) * format.m_frameSize); //even number of frames
 
-  if (AE_IS_RAW(format.m_dataFormat))
+  if (format.m_dataFormat == AE_FMT_RAW)
     format.m_dataFormat = AE_FMT_S16NE;
 
   hr = m_pAudioClient->Initialize(AUDCLNT_SHAREMODE_EXCLUSIVE, AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_NOPERSIST,
