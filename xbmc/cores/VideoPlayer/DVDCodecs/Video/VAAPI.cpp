@@ -1987,7 +1987,11 @@ void COutput::InitCycle()
         ||  method == VS_INTERLACEMETHOD_RENDER_BOB)
     {
         if (method == VS_INTERLACEMETHOD_AUTO)
+#if !defined(HAVE_VPP)
           method = VS_INTERLACEMETHOD_RENDER_BOB;
+#else
+          method = VS_INTERLACEMETHOD_VAAPI_BOB;
+#endif
     }
     else
     {
@@ -2004,6 +2008,7 @@ void COutput::InitCycle()
     }
     if (!m_pp)
     {
+      bool vpp_wanted = ((method != VS_INTERLACEMETHOD_DEINTERLACE) && (method != VS_INTERLACEMETHOD_RENDER_BOB));
       if (method == VS_INTERLACEMETHOD_DEINTERLACE ||
           method == VS_INTERLACEMETHOD_RENDER_BOB)
       {
@@ -2015,7 +2020,18 @@ void COutput::InitCycle()
         m_pp = new CVppPostproc();
         m_config.stats->SetVpp(true);
       }
-      if (m_pp->PreInit(m_config))
+      bool preinit_done = m_pp->PreInit(m_config);
+      if (!preinit_done && vpp_wanted)
+      {
+        // we wanted vpp but it failed fallback to render_bob
+        CLog::Log(LOGWARNING, "VPP init failed - will fallback to opengl render");
+        delete m_pp;
+        m_pp = new CFFmpegPostproc();
+        m_config.stats->SetVpp(false);
+        method = VS_INTERLACEMETHOD_RENDER_BOB;
+        preinit_done = m_pp->PreInit(m_config);
+      }
+      if (preinit_done)
       {
         m_pp->Init(method);
         m_currentDiMethod = method;
