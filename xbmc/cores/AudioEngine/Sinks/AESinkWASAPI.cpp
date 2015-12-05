@@ -185,7 +185,6 @@ CAESinkWASAPI::CAESinkWASAPI() :
   m_pAudioClient(NULL),
   m_pRenderClient(NULL),
   m_pAudioClock(NULL),
-  m_encodedFormat(AE_FMT_INVALID),
   m_encodedChannels(0),
   m_encodedSampleRate(0),
   sinkReqFormat(AE_FMT_INVALID),
@@ -808,86 +807,7 @@ void CAESinkWASAPI::EnumerateDevicesEx(AEDeviceInfoList &deviceInfoList, bool fo
           CLog::Log(LOGNOTICE, __FUNCTION__": sample rate 192khz on device \"%s\" seems to be not supported.", strFriendlyName.c_str());
         }
       }
-
-      /* Test format for channels iteration */
-      wfxex.Format.cbSize               = sizeof(WAVEFORMATEXTENSIBLE)-sizeof(WAVEFORMATEX);
-      wfxex.dwChannelMask               = KSAUDIO_SPEAKER_STEREO;
-      wfxex.Format.wFormatTag           = WAVE_FORMAT_EXTENSIBLE;
-      wfxex.SubFormat                   = KSDATAFORMAT_SUBTYPE_PCM;
-      wfxex.Format.nSamplesPerSec       = 48000;
-      wfxex.Format.wBitsPerSample       = 16;
-      wfxex.Samples.wValidBitsPerSample = 16;
-      wfxex.Format.nChannels            = 2;
-      wfxex.Format.nBlockAlign          = wfxex.Format.nChannels * (wfxex.Format.wBitsPerSample >> 3);
-      wfxex.Format.nAvgBytesPerSec      = wfxex.Format.nSamplesPerSec * wfxex.Format.nBlockAlign;
-
-      bool hasLpcm = false;
-
-      // Try with KSAUDIO_SPEAKER_DIRECTOUT
-      for (unsigned int k = WASAPI_SPEAKER_COUNT; k > 0; k--)
-      {
-        wfxex.dwChannelMask             = KSAUDIO_SPEAKER_DIRECTOUT;
-        wfxex.Format.nChannels          = k;
-        wfxex.Format.nBlockAlign        = wfxex.Format.nChannels * (wfxex.Format.wBitsPerSample >> 3);
-        wfxex.Format.nAvgBytesPerSec    = wfxex.Format.nSamplesPerSec * wfxex.Format.nBlockAlign;
-        hr = pClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE, &wfxex.Format, NULL);
-        if (SUCCEEDED(hr))
-        {
-          if (k > 3) // Add only multichannel LPCM
-          {
-            deviceInfo.m_dataFormats.push_back(AE_FMT_LPCM);
-            hasLpcm = true;
-          }
-          break;
-        }
-      }
-
-      /* Try with reported channel mask */
-      for (unsigned int k = WASAPI_SPEAKER_COUNT; k > 0; k--)
-      {
-        wfxex.dwChannelMask             = uiChannelMask;
-        wfxex.Format.nChannels          = k;
-        wfxex.Format.nBlockAlign        = wfxex.Format.nChannels * (wfxex.Format.wBitsPerSample >> 3);
-        wfxex.Format.nAvgBytesPerSec    = wfxex.Format.nSamplesPerSec * wfxex.Format.nBlockAlign;
-        hr = pClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE, &wfxex.Format, NULL);
-        if (SUCCEEDED(hr))
-        {
-          if ( !hasLpcm && k > 3) // Add only multichannel LPCM
-          {
-            deviceInfo.m_dataFormats.push_back(AE_FMT_LPCM);
-            hasLpcm = true;
-          }
-          break;
-        }
-      }
-
-      /* Try with specific speakers configurations */
-      for (unsigned int i = 0; i < ARRAYSIZE(layoutsList); i++)
-      {
-        unsigned int nmbOfCh;
-        wfxex.dwChannelMask             = ChLayoutToChMask(layoutsList[i], &nmbOfCh);
-        wfxex.Format.nChannels          = nmbOfCh;
-        wfxex.Format.nBlockAlign        = wfxex.Format.nChannels * (wfxex.Format.wBitsPerSample >> 3);
-        wfxex.Format.nAvgBytesPerSec    = wfxex.Format.nSamplesPerSec * wfxex.Format.nBlockAlign;
-        hr = pClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE, &wfxex.Format, NULL);
-        if (SUCCEEDED(hr))
-        {
-          if ( deviceChannels.Count() < nmbOfCh)
-            deviceChannels = layoutsList[i];
-          if ( !hasLpcm && nmbOfCh > 3) // Add only multichannel LPCM
-          {
-            deviceInfo.m_dataFormats.push_back(AE_FMT_LPCM);
-            hasLpcm = true;
-          }
-        }
-      }
       pClient->Release();
-
-      if (hasLpcm == false && aeDeviceType == AE_DEVTYPE_HDMI)
-      {
-        CLog::Log(LOGNOTICE, __FUNCTION__": data format \"%s\" on device \"%s\" seems to be not supported.", CAEUtil::DataFormatToStr(AE_FMT_LPCM), strFriendlyName.c_str());
-        deviceInfo.m_dataFormats.push_back(AE_FMT_LPCM);
-      }
     }
     else
     {
@@ -1167,9 +1087,8 @@ initialize:
 
   /* When the stream is raw, the values in the format structure are set to the link    */
   /* parameters, so store the encoded stream values here for the IsCompatible function */
-  m_encodedFormat     = format.m_dataFormat;
   m_encodedChannels   = wfxex.Format.nChannels;
-  m_encodedSampleRate = format.m_encodedRate;
+  m_encodedSampleRate = (format.m_dataFormat == AE_FMT_RAW) ? format.m_streamInfo.m_sampleRate : format.m_sampleRate;
   wfxex_iec61937.dwEncodedChannelCount = wfxex.Format.nChannels;
   wfxex_iec61937.dwEncodedSamplesPerSec = m_encodedSampleRate;
 
