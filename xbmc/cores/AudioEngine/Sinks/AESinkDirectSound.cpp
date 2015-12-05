@@ -280,7 +280,7 @@ bool CAESinkDirectSound::Initialize(AEAudioFormat &format, std::string &device)
   format.m_channelLayout = m_channelLayout;
   m_encodedFormat = format.m_dataFormat;
   format.m_frames = uiFrameCount;
-  format.m_frameSize = (format.m_dataFormat == AE_FMT_RAW) ? wfxex.Format.wBitsPerSample >> 3 : sizeof(float)) * format.m_channelLayout.Count();
+  format.m_frameSize =  ((format.m_dataFormat == AE_FMT_RAW) ? (wfxex.Format.wBitsPerSample >> 3) : sizeof(float)) * format.m_channelLayout.Count();
   format.m_dataFormat = (format.m_dataFormat == AE_FMT_RAW) ? AE_FMT_S16NE : AE_FMT_FLOAT;
 
   m_format = format;
