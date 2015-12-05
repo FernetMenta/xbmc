@@ -2,7 +2,7 @@ media/*
 sounds/*
 system/keymaps/*
 system/library/*
-system/players/dvdplayer/etc/*
+system/players/VideoPlayer/etc/*
 system/shaders/*
 system/settings/*
 userdata/*
