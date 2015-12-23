@@ -31,9 +31,7 @@ set(SOURCES Application.cpp
             URL.cpp
             Util.cpp
             XBApplicationEx.cpp
-            XBDateTime.cpp
-            xbmc.cpp
-            XbmcContext.cpp)
+            XBDateTime.cpp)
 
 core_add_library(xbmc)
 add_dependencies(xbmc libcpluff ffmpeg)
