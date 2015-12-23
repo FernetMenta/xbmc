@@ -268,7 +268,7 @@ endif()
 add_subdirectory(${CORE_SOURCE_DIR}/xbmc/interfaces/swig build/swig)
 
 # main binary
-add_executable(${APP_NAME_LC}.bin ${CORE_SOURCE_DIR}/xbmc/main/main.cpp $<TARGET_OBJECTS:compileinfo>)
+add_executable(${APP_NAME_LC}.bin $<TARGET_OBJECTS:compileinfo>)
 target_link_libraries(${APP_NAME_LC}.bin ${SYSTEM_LDFLAGS} -Wl,--whole-archive ${core_DEPENDS} -Wl,--no-whole-archive
                       ${DEPLIBS} ${CMAKE_DL_LIBS})
 add_dependencies(${APP_NAME_LC}.bin export-files)
