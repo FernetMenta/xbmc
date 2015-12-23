@@ -12,6 +12,7 @@ xbmc/media                      media
 xbmc/messaging                  messaging
 xbmc/messaging/helpers          messagingHelpers
 xbmc/pictures                   pictures
+xbmc/platform                   platform
 xbmc/playlists                  playlists
 xbmc/powermanagement            powermanagement
 xbmc/programs                   programs
