@@ -3,6 +3,7 @@ set(SOURCES cximage.cpp
             DirectXGraphics.cpp
             DirtyRegionSolvers.cpp
             DirtyRegionTracker.cpp
+            FFmpegImage.cpp
             FrameBufferObject.cpp
             GraphicContext.cpp
             GUIAction.cpp
