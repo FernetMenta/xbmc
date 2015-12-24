@@ -9,7 +9,7 @@ if(PKG_CONFIG_FOUND)
   pkg_check_modules (FRIBIDI fribidi)
 else()
   find_path(FRIBIDI_INCLUDE_DIRS fribidi/fribidi.h)
-  find_library(FRIBIDI_LIBRARIES fribidi)
+  find_library(FRIBIDI_LIBRARIES NAMES fribidi libfribidi)
 endif()
 
 include(FindPackageHandleStandardArgs)
