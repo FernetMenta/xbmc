@@ -15,7 +15,7 @@ if(NOT TINYXML_FOUND)
              PATH_SUFFIXES "tinyxml" )
 
   find_library( TINYXML_LIBRARIES
-                NAMES "tinyxml"
+                NAMES "tinyxml" "tinyxmlSTL"
                 PATH_SUFFIXES "tinyxml" )
 endif()
 
