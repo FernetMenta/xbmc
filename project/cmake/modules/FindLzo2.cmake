@@ -14,7 +14,7 @@
 
 FIND_PATH(LZO2_INCLUDE_DIRS lzo1x.h PATH_SUFFIXES lzo)
 
-FIND_LIBRARY(LZO2_LIBRARIES NAMES lzo2 )
+FIND_LIBRARY(LZO2_LIBRARIES NAMES lzo2 liblzo2)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Lzo2 DEFAULT_MSG LZO2_INCLUDE_DIRS LZO2_LIBRARIES)
