@@ -9,7 +9,7 @@ if(PKG_CONFIG_FOUND)
   pkg_check_modules (XSLT libxslt)
 else()
   find_path(XSLT_INCLUDE_DIRS libxslt/xslt.h)
-  find_library(XSLT_LIBRARIES xslt)
+  find_library(XSLT_LIBRARIES NAMES xslt libxslt)
 endif()
 
 include(FindPackageHandleStandardArgs)
