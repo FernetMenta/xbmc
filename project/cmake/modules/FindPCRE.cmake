@@ -12,7 +12,7 @@ if(PKG_CONFIG_FOUND)
   endif()
 else()
   find_path(PCRE_INCLUDE_DIRS pcrecpp.h)
-  find_library(PCRE_LIBRARIES pcrecpp)
+  find_library(PCRE_LIBRARIES NAMES pcrecpp pcrecppd)
 endif()
 
 include(FindPackageHandleStandardArgs)
