@@ -40,6 +40,7 @@
 
 #include "filesystem/File.h"
 #include "guilib/GraphicContext.h"
+#include "guilib/GUIWindowManager.h"
 
 #include "utils/JobManager.h"
 #include "utils/URIUtils.h"
@@ -77,7 +78,7 @@ bool CScreenshotSurface::capture()
 #elif defined(HAS_DX)
   g_graphicsContext.Lock();
 
-  g_application.RenderNoPresent();
+  g_windowManager.Render();
   g_Windowing.FinishCommandList();
 
   ID3D11DeviceContext* pImdContext = g_Windowing.GetImmediateContext();
@@ -127,13 +128,13 @@ bool CScreenshotSurface::capture()
     SAFE_RELEASE(pCopyTexture);
   }
   SAFE_RELEASE(pRTTexture);
-
+b
   g_graphicsContext.Unlock();
 
 #elif defined(HAS_GL) || defined(HAS_GLES)
 
   g_graphicsContext.BeginPaint();
-  g_application.RenderNoPresent();
+  g_windowManager.Render();
 #ifndef HAS_GLES
   glReadBuffer(GL_BACK);
 #endif
