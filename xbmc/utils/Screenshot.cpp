@@ -133,6 +133,7 @@ bool CScreenshotSurface::capture()
 #elif defined(HAS_GL) || defined(HAS_GLES)
 
   CSingleLock lock(g_graphicsContext);
+
   g_windowManager.Render();
 #ifndef HAS_GLES
   glReadBuffer(GL_BACK);
