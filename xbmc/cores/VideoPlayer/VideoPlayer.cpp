@@ -1799,11 +1799,11 @@ void CVideoPlayer::HandlePlaySpeed()
         (m_CurrentAudio.id < 0 || m_CurrentAudio.syncState != IDVDStreamPlayer::SYNC_STARTING))
       SetCaching(CACHESTATE_PLAY);
 
-    // handle situation that we get no data on one stream
+    // handle exceptional cases
     if (m_CurrentAudio.id >= 0 && m_CurrentVideo.id >= 0)
     {
-      if ((!m_VideoPlayerAudio->AcceptsData() && m_CurrentVideo.syncState == IDVDStreamPlayer::SYNC_STARTING) ||
-          (!m_VideoPlayerVideo->AcceptsData() && m_CurrentAudio.syncState == IDVDStreamPlayer::SYNC_STARTING))
+      if ((!m_VideoPlayerAudio->AcceptsData() && m_CurrentAudio.inited) ||
+          (!m_VideoPlayerVideo->AcceptsData() && m_CurrentVideo.inited))
       {
         SetCaching(CACHESTATE_DONE);
       }
