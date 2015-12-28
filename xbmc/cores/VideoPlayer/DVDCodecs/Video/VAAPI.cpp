@@ -760,6 +760,11 @@ void CDecoder::FFReleaseBuffer(uint8_t *data)
   IHardwareDecoder::Release();
 }
 
+void CDecoder::SetCodecControl(int flags)
+{
+  m_codecControl = flags & (DVD_CODEC_CTRL_DRAIN | DVD_CODEC_CTRL_HURRY);
+}
+
 int CDecoder::Decode(AVCodecContext* avctx, AVFrame* pFrame)
 {
   int result = Check(avctx);
@@ -771,7 +776,7 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* pFrame)
   if (!m_vaapiConfigured)
     return VC_ERROR;
 
-  if(pFrame)
+  if (pFrame)
   { // we have a new frame from decoder
 
     VASurfaceID surf = (VASurfaceID)(uintptr_t)pFrame->data[3];
@@ -792,7 +797,7 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* pFrame)
     m_bufferStats.IncDecoded();
     m_vaapiOutput.m_dataPort.SendOutMessage(COutputDataProtocol::NEWFRAME, &pic, sizeof(pic));
 
-    m_codecControl = pic.DVDPic.iFlags & (DVD_CODEC_CTRL_DRAIN | DVD_CODEC_CTRL_NO_POSTPROC);
+    m_codecControl = pic.DVDPic.iFlags & (DVD_CODEC_CTRL_HURRY | DVD_CODEC_CTRL_NO_POSTPROC);
   }
 
   int retval = 0;
@@ -813,8 +818,13 @@ int CDecoder::Decode(AVCodecContext* avctx, AVFrame* pFrame)
 
   while (!retval)
   {
+    bool drain = (m_codecControl & DVD_CODEC_CTRL_DRAIN);
+    // if all pics are drained, break the loop by settngn VC_BUFFER
+    if (drain && decoded <= 0 && processed <= 0 && render <= 0)
+      drain = false;
+
     // first fill the buffers to keep vaapi busy
-    if (decoded < 2 && processed < 3 && m_videoSurfaces.HasFree())
+    if (decoded < 2 && processed < 3 && m_videoSurfaces.HasFree() && !drain)
     {
       retval |= VC_BUFFER;
     }
