@@ -346,7 +346,10 @@ bool CDVDVideoCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
     CLog::Log(LOGERROR, "CDVDVideoCodecAndroidMediaCodec::Open - %s\n", "null size, cannot handle");
     return false;
   }
+  else if (hints.stills)
+    return false;
 
+  m_render_surface = CSettings::GetInstance().GetBool(CSettings::SETTING_VIDEOPLAYER_USEMEDIACODECSURFACE);
   m_drop = false;
   m_hints = hints;
 
@@ -357,6 +360,8 @@ bool CDVDVideoCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
       m_formatname = "amc-mpeg2";
       break;
     case AV_CODEC_ID_MPEG4:
+      if (hint.width <= 800)
+        return false;
       m_mime = "video/mp4v-es";
       m_formatname = "amc-mpeg4";
       break;
