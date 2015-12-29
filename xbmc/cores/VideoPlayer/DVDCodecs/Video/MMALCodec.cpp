@@ -529,6 +529,12 @@ bool CMMALVideo::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
   if (g_advancedSettings.CanLogComponent(LOGVIDEO))
     CLog::Log(LOGDEBUG, "%s::%s usemmal:%d software:%d %dx%d pool:%p", CLASSNAME, __func__, CSettings::GetInstance().GetBool(CSettings::SETTING_VIDEOPLAYER_USEMMAL), hints.software, hints.width, hints.height, options.m_opaque_pointer);
 
+  if (!(hints.codec == AV_CODEC_ID_H264 || hints.codec == AV_CODEC_ID_H263 || hints.codec == AV_CODEC_ID_MPEG4 ||
+    hints.codec == AV_CODEC_ID_MPEG1VIDEO || hints.codec == AV_CODEC_ID_MPEG2VIDEO ||
+    hints.codec == AV_CODEC_ID_VP6 || hints.codec == AV_CODEC_ID_VP6F || hints.codec == AV_CODEC_ID_VP6A || hints.codec == AV_CODEC_ID_VP8 ||
+    hints.codec == AV_CODEC_ID_THEORA || hints.codec == AV_CODEC_ID_MJPEG || hints.codec == AV_CODEC_ID_MJPEGB || hints.codec == AV_CODEC_ID_VC1 || hints.codec == AV_CODEC_ID_WMV3))
+    return false;
+
   // we always qualify even if DVDFactoryCodec does this too.
   if (!CSettings::GetInstance().GetBool(CSettings::SETTING_VIDEOPLAYER_USEMMAL) || hints.software)
     return false;
