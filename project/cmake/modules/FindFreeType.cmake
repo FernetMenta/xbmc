@@ -8,7 +8,8 @@
 if(PKG_CONFIG_FOUND)
   pkg_check_modules (FREETYPE freetype2)
 else()
-  find_package(Freetype)
+  find_path(FREETYPE_INCLUDE_DIRS freetype/freetype.h)
+  find_library(FREETYPE_LIBRARIES NAMES freetype freetype246MT)
 endif()
 
 include(FindPackageHandleStandardArgs)
