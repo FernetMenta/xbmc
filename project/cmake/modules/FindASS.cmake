@@ -9,7 +9,7 @@ if(PKG_CONFIG_FOUND)
   pkg_check_modules (ASS libass)
 else()
   find_path(ASS_INCLUDE_DIRS ass/ass.h)
-  find_library(ASS_LIBRARIES ass)
+  find_library(ASS_LIBRARIES NAMES ass libass)
 endif()
 
 include(FindPackageHandleStandardArgs)
