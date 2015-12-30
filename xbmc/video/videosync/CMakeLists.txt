@@ -11,4 +11,8 @@ if(X_FOUND)
   list(APPEND SOURCES VideoSyncDRM.cpp)
 endif()
 
+if(CORE_SYSTEM_NAME STREQUAL "windows")
+  list(APPEND SOURCES VideoSyncD3D.cpp)
+endif()
+
 core_add_library(video_sync)

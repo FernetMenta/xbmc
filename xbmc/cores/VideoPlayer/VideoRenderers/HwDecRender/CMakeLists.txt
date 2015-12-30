@@ -1,6 +1,6 @@
 set(SOURCES)
 
-if(DXVA_FOUND)
+if(CORE_SYSTEM_NAME STREQUAL "windows")
   list(APPEND SOURCES DXVAHD.cpp)
 endif()
 
