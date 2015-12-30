@@ -8,10 +8,9 @@
 if(PKG_CONFIG_FOUND)
   pkg_check_modules (CURL libcurl)
   list(APPEND CURL_INCLUDE_DIRS ${CURL_INCLUDEDIR})
-endif()
-
-if(NOT CURL_FOUND)
-  find_package(CURL)
+else()
+  find_path(CURL_INCLUDE_DIRS curl/curl.h)
+  find_library(CURL_LIBRARIES NAMES curl libcurl)
 endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Curl DEFAULT_MSG CURL_INCLUDE_DIRS CURL_LIBRARIES)
