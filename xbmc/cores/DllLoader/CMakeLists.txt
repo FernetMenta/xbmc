@@ -6,12 +6,14 @@ set(SOURCES coff.cpp
             dll_tracker_file.cpp
             dll_tracker_library.cpp
             dll_util.cpp
-            LibraryLoader.cpp
-            mmap_anon.c
-            SoLoader.cpp)
+            LibraryLoader.cpp)
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-  list(APPEND SOURCES ldt_keeper.c)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND SOURCES mmap_anon.c
+                      ldt_keeper.c
+                      SoLoader.cpp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  list(APPEND SOURCES Win32DllLoader.cpp)
 endif()
 
 add_definitions(-DAPI_DEBUG)
