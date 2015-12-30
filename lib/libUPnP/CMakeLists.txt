@@ -59,12 +59,6 @@ set(SOURCES Platinum/Source/Core/PltAction.cpp
             Neptune/Source/Core/NptUtils.cpp
             Neptune/Source/Core/NptXml.cpp
             Neptune/Source/System/Bsd/NptBsdSockets.cpp
-            Neptune/Source/System/Bsd/NptBsdNetwork.cpp
-            Neptune/Source/System/Posix/NptPosixSystem.cpp
-            Neptune/Source/System/Posix/NptSelectableMessageQueue.cpp
-            Neptune/Source/System/Posix/NptPosixQueue.cpp
-            Neptune/Source/System/Posix/NptPosixThreads.cpp
-            Neptune/Source/System/Posix/NptPosixTime.cpp
             Neptune/Source/System/StdC/NptStdcDebug.cpp
             Neptune/Source/System/StdC/NptStdcEnvironment.cpp
             Platinum/Source/Devices/MediaRenderer/PltMediaRenderer.cpp
@@ -84,6 +78,28 @@ include_directories(Neptune/Source/Core
                     Platinum/Source/Devices/MediaServer
                     Neptune/Source/System/Posix
                     Platinum/Source/Extras)
+
+if(NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
+  list(APPEND SOURCES Neptune/Source/System/Posix/NptPosixSystem.cpp
+                      Neptune/Source/System/Posix/NptSelectableMessageQueue.cpp
+                      Neptune/Source/System/Posix/NptPosixQueue.cpp
+                      Neptune/Source/System/Posix/NptPosixThreads.cpp
+                      Neptune/Source/System/Posix/NptPosixTime.cpp
+                      Neptune/Source/System/Bsd/NptBsdNetwork.cpp)
+else()
+  list(APPEND SOURCES Neptune/Source/System/Win32/NptWin32Console.cpp
+                      Neptune/Source/System/Win32/NptWin32Debug.cpp
+                      Neptune/Source/System/Win32/NptWin32DynamicLibraries.cpp
+                      Neptune/Source/System/Win32/NptWin32File.cpp
+                      Neptune/Source/System/Win32/NptWin32MessageQueue.cpp
+                      Neptune/Source/System/Win32/NptWin32Network.cpp
+                      Neptune/Source/System/Win32/NptWin32Queue.cpp
+                      Neptune/Source/System/Win32/NptWin32SerialPort.cpp
+                      Neptune/Source/System/Win32/NptWin32System.cpp
+                      Neptune/Source/System/Win32/NptWin32Threads.cpp
+                      Neptune/Source/System/Win32/NptWin32Time.cpp)
+  include_directories(Neptune/Source/System/Win32)
+endif()
 
 add_definitions(-DNPT_CONFIG_ENABLE_LOGGING)
 
