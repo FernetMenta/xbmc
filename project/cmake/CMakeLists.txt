@@ -68,7 +68,7 @@ set(INCLUDES ${CORE_SOURCE_DIR}
              ${CORE_SOURCE_DIR}/lib
              ${CORE_SOURCE_DIR}/lib/gtest/include
              ${CORE_SOURCE_DIR}/xbmc
-             ${CORE_SOURCE_DIR}/xbmc/linux
+             ${CORE_SOURCE_DIR}/xbmc/${PLATFORM_DIR}
              ${CORE_SOURCE_DIR}/xbmc/cores/VideoPlayer
              ${CORE_SOURCE_DIR}/tools/depends/native/libsquish-native/src
              ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR})
@@ -94,6 +94,8 @@ set(required_deps Sqlite3 FreeType PCRE Cpluff
                   JPEG Lzo2 Fribidi TagLib Boost FFMPEG CrossGUID)
 if(NOT WIN32)
   list(APPEND required_deps LibSmbClient OpenSSL)
+else()
+  list(APPEND required_deps D3DX11Effects)
 endif()
 
 # Optional dependencies
