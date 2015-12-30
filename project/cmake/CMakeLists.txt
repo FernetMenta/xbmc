@@ -89,11 +89,11 @@ find_package(Threads REQUIRED)
 list(APPEND DEPLIBS ${CMAKE_THREAD_LIBS_INIT})
 
 # Required dependencies
-set(required_deps Sqlite3 FreeType PCRE Cpluff OpenSSL
+set(required_deps Sqlite3 FreeType PCRE Cpluff
                   TinyXML Python Yajl ZLIB Xslt
                   JPEG Lzo2 Fribidi TagLib Boost FFMPEG CrossGUID)
 if(NOT WIN32)
-  list(APPEND required_deps LibSmbClient)
+  list(APPEND required_deps LibSmbClient OpenSSL)
 endif()
 
 # Optional dependencies
@@ -102,14 +102,19 @@ set(optional_deps MicroHttpd MySqlClient SSH
                   PulseAudio VDPAU VAAPI)
 
 # Required, dyloaded deps
-set(required_dyload Curl ASS Mpeg2)
+set(required_dyload Curl ASS)
 
 # Optional, dyloaded deps
 set(dyload_optional RTMP CEC Bluray
                     AfpClient Plist NFS)
 
 # Required by shared objects we link
-set(required_dep_libs Jasper PNG TIFF EXPAT)
+set(required_dep_libs PNG EXPAT)
+if(WIN32)
+  message(WARNING "Unresolved dependency: Jasper")
+else()
+  list(APPEND required_dep_libs Jasper TIFF)
+endif()
 
 foreach(dep ${required_dep_libs})
   find_package(${dep} REQUIRED)
@@ -264,7 +269,8 @@ configure_file(${CORE_SOURCE_DIR}/xbmc/DllPaths_generated.h.in
 # Build helpers
 if(NOT CMAKE_CROSSCOMPILING)
   add_executable(JsonSchemaBuilder ${CORE_SOURCE_DIR}/tools/depends/native/JsonSchemaBuilder/src/JsonSchemaBuilder.cpp)
-  add_subdirectory(${CORE_SOURCE_DIR}/tools/depends/native/TexturePacker build/texturepacker)
+  message(WARNING "Texture packer disabled for Windows because of unresolved dependency to giflib")
+  #add_subdirectory(${CORE_SOURCE_DIR}/tools/depends/native/TexturePacker build/texturepacker)
 endif()
 
 # Codegen
