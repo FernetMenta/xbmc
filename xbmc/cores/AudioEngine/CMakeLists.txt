@@ -12,12 +12,10 @@ set(SOURCES AEFactory.cpp
             Utils/AEUtil.cpp
             Utils/AEPackIEC61937.cpp
             Utils/AEBitstreamPacker.cpp
-            Utils/AEELDParser.cpp
             Utils/AEDeviceInfo.cpp
             Utils/AELimiter.cpp
             Encoders/AEEncoderFFmpeg.cpp
             Sinks/AESinkNULL.cpp
-            Sinks/AESinkOSS.cpp
             Engines/ActiveAE/ActiveAE.cpp
             Engines/ActiveAE/ActiveAESink.cpp
             Engines/ActiveAE/ActiveAEStream.cpp
@@ -27,7 +25,9 @@ set(SOURCES AEFactory.cpp
 if(ALSA_FOUND)
   list(APPEND SOURCES Sinks/AESinkALSA.cpp
                       Sinks/alsa/ALSADeviceMonitor.cpp
-                      Sinks/alsa/ALSAHControlMonitor.cpp)
+                      Sinks/alsa/ALSAHControlMonitor.cpp
+                      Sinks/AESinkOSS.cpp
+                      Utils/AEELDParser.cpp)
 endif()
 
 if(PULSEAUDIO_FOUND)
