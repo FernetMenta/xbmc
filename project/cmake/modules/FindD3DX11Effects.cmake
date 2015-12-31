@@ -1,9 +1,10 @@
-# - Try to find D3DX11Effects
+# - Builds D3DX11Effects as external project
 # Once done this will define
 #
 # D3DX11EFFECTS_FOUND - system has D3DX11Effects
 # D3DX11EFFECTS_INCLUDE_DIRS - the D3DX11Effects include directories
-# D3DX11EFFECTS_LIBRARIES - the D3DX11Effects libraries
+#
+# and link Kodi against the D3DX11Effects libraries.
 
 include(ExternalProject)
 ExternalProject_Add(d3dx11effects
