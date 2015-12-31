@@ -20,6 +20,8 @@
 
 #include "DAVDirectory.h"
 
+#include <time.h>
+
 #include "DAVCommon.h"
 #include "DAVFile.h"
 #include "URL.h"
