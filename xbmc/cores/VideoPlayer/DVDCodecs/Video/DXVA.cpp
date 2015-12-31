@@ -888,6 +888,10 @@ static bool CheckCompatibility(AVCodecContext *avctx)
 
 bool CDecoder::Open(AVCodecContext *avctx, AVCodecContext* mainctx, enum AVPixelFormat fmt, unsigned int surfaces)
 {
+  CDVDVideoCodecFFmpeg* videoCodec = (CDVDVideoCodecFFmpeg*)mainctx->opaque;
+  if (videoCodec->m_hints.stills)
+    return false;
+
   if (!CheckCompatibility(avctx))
     return false;
 
