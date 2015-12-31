@@ -53,8 +53,6 @@ set(SOURCES AddonsDirectory.cpp
             ResourceDirectory.cpp
             ResourceFile.cpp
             RSSDirectory.cpp
-            SAPDirectory.cpp
-            SAPFile.cpp
             SFTPDirectory.cpp
             SFTPFile.cpp
             ShoutcastFile.cpp
