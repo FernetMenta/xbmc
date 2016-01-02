@@ -70,3 +70,50 @@ function(find_soname lib)
     set(${lib}_SONAME ${${lib}_SONAME} PARENT_SCOPE)
   endif()
 endfunction()
+
+# Add precompiled header to target
+# Arguments:
+#   target existing target that will be set up to compile with a precompiled header
+#   pch_source the precompiled header source file
+# Optional Arguments:
+#   PCH_TARGET build precompiled header as separate target with the given name
+#              so that the same precompiled header can be used for multiple libraries
+# On return:
+#   Compiles the pch_source into a precompiled header and adds the header to
+#   the given target
+function(add_precompiled_header target pch_source)
+  cmake_parse_arguments(PCH "" "PCH_TARGET" "" ${ARGN})
+
+  get_filename_component(pch_header ${pch_source} NAME_WE)
+  set(pch_header ${pch_header}.h)
+  if(PCH_PCH_TARGET)
+    set(pch_binary ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${PCH_PCH_TARGET}.pch)
+  else()
+    set(pch_binary ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${target}.pch)
+  endif()
+
+  # Set compile options and dependency for sources
+  get_target_property(sources ${target} SOURCES)
+  set_source_files_properties(${sources}
+                              PROPERTIES COMPILE_FLAGS "/Yu\"${pch_header}\" /Fp\"${pch_binary}\" /FI\"${pch_header}\""
+                              OBJECT_DEPENDS "${pch_binary}")
+
+  # Set compile options for precompiled header
+  if(NOT PCH_PCH_TARGET OR NOT TARGET ${PCH_PCH_TARGET}_pch)
+    set_source_files_properties(${pch_source}
+                                PROPERTIES COMPILE_FLAGS "/Yc\"${pch_header}\" /Fp\"${pch_binary}\""
+                                OBJECT_OUTPUTS "${pch_binary}")
+  endif()
+
+  # Compile precompiled header
+  if(PCH_PCH_TARGET)
+    # As own target for usage in multiple libraries
+    if(NOT TARGET ${PCH_PCH_TARGET}_pch)
+      add_library(${PCH_PCH_TARGET}_pch OBJECT ${pch_source})
+    endif()
+    add_dependencies(${target} ${PCH_PCH_TARGET}_pch)
+  else()
+    # As part of the target
+    target_sources(${target} PRIVATE ${pch_source})
+  endif()
+endfunction()
