@@ -17,6 +17,12 @@ function(core_add_library name)
   if("${ARGN}" STREQUAL "")
     set(core_DEPENDS ${name} ${core_DEPENDS} CACHE STRING "" FORCE)
   endif()
+
+  # Add precompiled headers to Kodi main libraries
+  if(WIN32 AND "${CMAKE_CURRENT_LIST_DIR}" MATCHES "^${CORE_SOURCE_DIR}/xbmc")
+    add_precompiled_header(${name} ${CORE_SOURCE_DIR}/xbmc/win32/pch.cpp
+                           PCH_TARGET kodi)
+  endif()
 endfunction()
 
 # Add a test library, and add sources to list for gtest integration macros
