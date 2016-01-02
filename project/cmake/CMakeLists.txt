@@ -49,7 +49,7 @@ option(WITH_ARCH              "build with given arch" OFF)
 option(WITH_CPU               "build with given cpu" OFF)
 option(ENABLE_CCACHE          "Enable Ccache support" ON)
 
-set(CORE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../..)
+get_filename_component(CORE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../.. ABSOLUTE)
 set(CORE_BUILD_DIR build)
 
 include(scripts/common/addoptions.cmake)
