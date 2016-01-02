@@ -87,9 +87,9 @@ function(add_precompiled_header target pch_source)
   get_filename_component(pch_header ${pch_source} NAME_WE)
   set(pch_header ${pch_header}.h)
   if(PCH_PCH_TARGET)
-    set(pch_binary ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${PCH_PCH_TARGET}.pch)
+    set(pch_binary ${PRECOMPILEDHEADER_DIR}/${PCH_PCH_TARGET}.pch)
   else()
-    set(pch_binary ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${target}.pch)
+    set(pch_binary ${PRECOMPILEDHEADER_DIR}/${target}.pch)
   endif()
 
   # Set compile options and dependency for sources
