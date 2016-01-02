@@ -12,7 +12,6 @@ set(SOURCES ActorProtocol.cpp
             CharsetDetection.cpp
             CPUInfo.cpp
             Crc32.cpp
-            CryptThreading.cpp
             DatabaseUtils.cpp
             EndianSwap.cpp
             Environment.cpp
@@ -20,7 +19,6 @@ set(SOURCES ActorProtocol.cpp
             FileOperationJob.cpp
             FileUtils.cpp
             fstrcmp.c
-            GLUtils.cpp
             GroupUtils.cpp
             HTMLUtil.cpp
             HttpHeader.cpp
@@ -83,7 +81,10 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set_source_files_properties(Mime.cpp PROPERTIES COMPILE_FLAGS -O0)
 endif()
 
-if(CORE_SYSTEM_NAME STREQUAL "windows")
+if(NOT CORE_SYSTEM_NAME STREQUAL "windows")
+  list(APPEND SOURCES CryptThreading.cpp
+                      GLUtils.cpp)
+else()
   set_source_files_properties(fstrcmp.c PROPERTIES LANGUAGE CXX)
 endif()
 
