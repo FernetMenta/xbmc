@@ -1663,7 +1663,7 @@ void CVideoPlayer::ProcessVideoData(CDemuxStream* pStream, DemuxPacket* pPacket)
     drop = true;
 
   m_VideoPlayerVideo->SendMessage(new CDVDMsgDemuxerPacket(pPacket, drop));
-  m_CurrentAudio.packets++;
+  m_CurrentVideo.packets++;
 }
 
 void CVideoPlayer::ProcessSubData(CDemuxStream* pStream, DemuxPacket* pPacket)
