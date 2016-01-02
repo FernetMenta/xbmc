@@ -39,7 +39,7 @@ endmacro()
 #   var    the compiler definition to set if type exists
 # On return:
 #   If type was found, the definition is added to SYSTEM_DEFINES
-macro(check_builtin code var)
+macro(check_builtin func var)
   check_cxx_source_compiles("
                              int main()
                              {
