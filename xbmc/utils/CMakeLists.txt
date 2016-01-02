@@ -83,5 +83,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set_source_files_properties(Mime.cpp PROPERTIES COMPILE_FLAGS -O0)
 endif()
 
+if(CORE_SYSTEM_NAME STREQUAL "windows")
+  set_source_files_properties(fstrcmp.c PROPERTIES LANGUAGE CXX)
+endif()
+
 core_add_library(utils)
 add_dependencies(utils libcpluff ffmpeg crossguid)
