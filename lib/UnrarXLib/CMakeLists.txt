@@ -44,3 +44,7 @@ set(SOURCES archive.cpp
 add_definitions(-DSILENT)
 
 core_add_library(unrarxlib)
+
+if(WIN32)
+  add_precompiled_header(unrarxlib rar.cpp)
+endif()
