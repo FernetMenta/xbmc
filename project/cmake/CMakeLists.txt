@@ -151,7 +151,11 @@ if(ENABLE_NONFREE)
 endif()
 
 if(ENABLE_DVDCSS)
-  core_require_dep(LibDvd)
+  if(WIN32)
+    message(WARNING "LibDvd disabled for Windows, needs cmake mingw support")
+  else()
+    core_require_dep(LibDvd)
+  endif()
 endif()
 
 if(ENABLE_OPTICAL)
@@ -271,8 +275,11 @@ configure_file(${CORE_SOURCE_DIR}/xbmc/DllPaths_generated.h.in
 # Build helpers
 if(NOT CMAKE_CROSSCOMPILING)
   add_executable(JsonSchemaBuilder ${CORE_SOURCE_DIR}/tools/depends/native/JsonSchemaBuilder/src/JsonSchemaBuilder.cpp)
-  message(WARNING "Texture packer disabled for Windows because of unresolved dependency to giflib")
-  #add_subdirectory(${CORE_SOURCE_DIR}/tools/depends/native/TexturePacker build/texturepacker)
+  if(WIN32)
+    message(WARNING "Texture packer disabled for Windows because of unresolved dependency to giflib")
+  else()
+    add_subdirectory(${CORE_SOURCE_DIR}/tools/depends/native/TexturePacker build/texturepacker)
+  endif()
 endif()
 
 # Codegen
