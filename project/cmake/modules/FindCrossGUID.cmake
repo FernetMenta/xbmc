@@ -29,8 +29,9 @@ else()
 endif()
 
 # Temporarily disable as UUID dependency cannot be resolved on Windows at the moment
-if(NOT WIN32)
+if(WIN32)
   message(WARNING "Missing UUID dependency for Windows")
+else()
   find_package(UUID REQUIRED)
   list(APPEND CROSSGUID_INCLUDE_DIRS ${UUID_INCLUDE_DIRS})
   list(APPEND CROSSGUID_LIBRARIES ${UUID_LIBRARIES})
