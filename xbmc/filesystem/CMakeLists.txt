@@ -57,8 +57,6 @@ set(SOURCES AddonsDirectory.cpp
             SFTPFile.cpp
             ShoutcastFile.cpp
             SmartPlaylistDirectory.cpp
-            SMBDirectory.cpp
-            SMBFile.cpp
             SourcesDirectory.cpp
             SpecialProtocol.cpp
             SpecialProtocolDirectory.cpp
@@ -84,6 +82,11 @@ if(OS STREQUAL "Android")
                       AndroidAppFile.cpp
                       APKDirectory.cpp
                       APKFile.cpp)
+endif()
+
+if(NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
+  list(APPEND SOURCES SMBDirectory.cpp
+                      SMBFile.cpp)
 endif()
 
 if(BLURAY_FOUND)
