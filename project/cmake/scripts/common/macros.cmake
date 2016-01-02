@@ -14,7 +14,7 @@ include(${CORE_SOURCE_DIR}/project/cmake/scripts/${CORE_SYSTEM_NAME}/macros.cmak
 function(core_add_library name)
   add_library(${name} STATIC ${SOURCES})
   set_target_properties(${name} PROPERTIES PREFIX "")
-  if("${ARGN}" STREQUAL "")
+  if(ARGN STREQUAL "")
     set(core_DEPENDS ${name} ${core_DEPENDS} CACHE STRING "" FORCE)
   endif()
 
