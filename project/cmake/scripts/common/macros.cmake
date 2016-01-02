@@ -20,7 +20,7 @@ function(core_add_library name)
 
   # Add precompiled headers to Kodi main libraries
   if(WIN32 AND "${CMAKE_CURRENT_LIST_DIR}" MATCHES "^${CORE_SOURCE_DIR}/xbmc")
-    add_precompiled_header(${name} ${CORE_SOURCE_DIR}/xbmc/win32/pch.cpp
+    add_precompiled_header(${name} pch.h ${CORE_SOURCE_DIR}/xbmc/win32/pch.cpp
                            PCH_TARGET kodi)
   endif()
 endfunction()
