@@ -8,6 +8,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 set(PLATFORM_DIR win32)
 add_options(CXX ALL_BUILDS "/wd\"4996\"")
+
+# Precompiled headers fail with per target output directory. (needs CMake 3.1)
+set(CMAKE_CFG_INTDIR ${CMAKE_BUILD_TYPE}/objs)
+set(CMAKE_COMPILE_PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${CMAKE_CFG_INTDIR})
+
 set(CMAKE_SYSTEM_NAME Windows)
 list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PROJECT_SOURCE_DIR}/../BuildDependencies)
 list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PROJECT_SOURCE_DIR}/../../lib/win32)
