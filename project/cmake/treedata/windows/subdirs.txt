@@ -6,5 +6,6 @@ xbmc/powermanagement/windows powermanagement/windows
 xbmc/storage/windows         storage/windows
 xbmc/filesystem/win32        filesystem/win32
 xbmc/utils/win32             utils_win32
-xbmc/platform/win32          win32
+xbmc/platform/posix          platform_posix
+xbmc/platform/win32          platform_win32
 xbmc/windowing/windows       windowing/windows
