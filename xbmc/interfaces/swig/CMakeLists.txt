@@ -1,9 +1,20 @@
 macro(generate_file file)
+  set(classpath ${GROOVY_DIR}/groovy-all-${GROOVY_VER}.jar
+                ${GROOVY_DIR}/commons-lang-${COMMONS_VER}.jar
+                ${CORE_SOURCE_DIR}/tools/codegenerator
+                ${CMAKE_CURRENT_SOURCE_DIR}/../python)
+  if(NOT WIN32)
+    set(devnull "/dev/null")
+    string(REPLACE ";" ":" classpath "${classpath}")
+  else()
+    set(devnull "nul")
+  endif()
+
   add_custom_command(OUTPUT ${file}.cpp
                      COMMAND ${SWIG_EXECUTABLE}
                      ARGS -w401 -c++ -o ${file}.xml -xml -I${CORE_SOURCE_DIR}/xbmc -xmllang python ${CMAKE_CURRENT_SOURCE_DIR}/../swig/${file}
                      COMMAND ${Java_JAVA_EXECUTABLE}
-                     ARGS -cp ${GROOVY_DIR}/groovy-all-${GROOVY_VER}.jar:${GROOVY_DIR}/commons-lang-${COMMONS_VER}.jar:${CORE_SOURCE_DIR}/tools/codegenerator:${CMAKE_CURRENT_SOURCE_DIR}/../python groovy.ui.GroovyMain ${CORE_SOURCE_DIR}/tools/codegenerator/Generator.groovy ${file}.xml ${CMAKE_CURRENT_SOURCE_DIR}/../python/PythonSwig.cpp.template ${file}.cpp ${CMAKE_CURRENT_BINARY_DIR}/doxygenxml > /dev/null
+                     ARGS -cp "${classpath}" groovy.ui.GroovyMain ${CORE_SOURCE_DIR}/tools/codegenerator/Generator.groovy ${file}.xml ${CMAKE_CURRENT_SOURCE_DIR}/../python/PythonSwig.cpp.template ${file}.cpp ${CMAKE_CURRENT_BINARY_DIR}/doxygenxml > ${devnull}
                      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file} ${INTERFACE_FILES} ${CMAKE_CURRENT_BINARY_DIR}/.doxygen-gen
                      IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/../swig/${file})
   list(APPEND SOURCES ${file}.cpp)
