@@ -335,3 +335,8 @@ if(VERBOSE)
   message("CMAKE_DL_LIBS: ${CMAKE_DL_LIBS}")
 endif()
 message("#-----------------------#")
+
+    get_cmake_property(_variableNames VARIABLES)
+    foreach (_variableName ${_variableNames})
+        message(STATUS "${_variableName}=${${_variableName}}")
+    endforeach()
