@@ -53,3 +53,21 @@ endforeach()
 foreach(_lib ${NODEFAULTLIBS_DEBUG})
   set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:\"${_lib}\"")
 endforeach()
+
+set(WIN_LIBRARIES d3d11.lib
+                  DInput8.lib
+                  DSound.lib
+                  winmm.lib
+                  CrossGuidd.lib
+                  ws2_32.lib
+                  Mpr.lib
+                  Iphlpapi.lib
+                  PowrProf.lib
+                  setupapi.lib
+                  dwmapi.lib
+                  strmiids.lib
+                  dxguid.lib
+                  mfuuid.lib
+                  comctl32.lib
+                  yajl.lib)
+list(APPEND DEPLIBS ${WIN_LIBRARIES})
