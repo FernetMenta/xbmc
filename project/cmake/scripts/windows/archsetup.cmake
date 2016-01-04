@@ -44,3 +44,12 @@ foreach(CompilerFlag CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEA
                       CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
   string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
 endforeach()
+
+set(_nodefaultlibs_RELEASE libc msvcrt libci msvcprt)
+set(_nodefaultlibs_DEBUG libc msvcrt libcmt libcpmt msvcrtd msvcprtd)
+foreach(_lib ${NODEFAULTLIBS_RELEASE})
+  set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /NODEFAULTLIB:\"${_lib}\"")
+endforeach()
+foreach(_lib ${NODEFAULTLIBS_DEBUG})
+  set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:\"${_lib}\"")
+endforeach()
