@@ -31,3 +31,10 @@ else()
     message(WARNING "unknown CPU: ${CPU}")
   endif()
 endif()
+
+# For #pragma comment(lib X)
+# TODO: It would certainly be better to handle these libraries via CMake modules.
+link_directories(${PROJECT_SOURCE_DIR}/../../lib/win32/ffmpeg/.libs
+                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib
+                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Release-vc120
+                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Debug-vc120)
