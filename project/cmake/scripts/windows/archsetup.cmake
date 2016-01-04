@@ -38,3 +38,9 @@ link_directories(${PROJECT_SOURCE_DIR}/../../lib/win32/ffmpeg/.libs
                  ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib
                  ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Release-vc120
                  ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Debug-vc120)
+
+# Compile with /MT (to be compatible with the dependent libraries)
+foreach(CompilerFlag CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+                      CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+  string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+endforeach()
