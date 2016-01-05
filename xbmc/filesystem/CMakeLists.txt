@@ -85,7 +85,8 @@ if(OS STREQUAL "Android")
 endif()
 
 if(NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
-  list(APPEND SOURCES SMBDirectory.cpp
+  list(APPEND SOURCES NFSFile.cpp
+                      SMBDirectory.cpp
                       SMBFile.cpp)
 endif()
 
