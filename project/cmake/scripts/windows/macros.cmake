@@ -79,11 +79,13 @@ endfunction()
 # Optional Arguments:
 #   PCH_TARGET build precompiled header as separate target with the given name
 #              so that the same precompiled header can be used for multiple libraries
+#   EXCLUDE_SOURCES if not all target sources shall use the precompiled header,
+#                   the relevant files can be listed here
 # On return:
 #   Compiles the pch_source into a precompiled header and adds the header to
 #   the given target
 function(add_precompiled_header target pch_header pch_source)
-  cmake_parse_arguments(PCH "" "PCH_TARGET" "" ${ARGN})
+  cmake_parse_arguments(PCH "" "PCH_TARGET" "EXCLUDE_SOURCES" ${ARGN})
 
   if(PCH_PCH_TARGET)
     set(pch_binary ${PRECOMPILEDHEADER_DIR}/${PCH_PCH_TARGET}.pch)
@@ -94,6 +96,9 @@ function(add_precompiled_header target pch_header pch_source)
   # Set compile options and dependency for sources
   get_target_property(sources ${target} SOURCES)
   list(REMOVE_ITEM sources ${pch_source})
+  foreach(exclude_source IN LISTS PCH_EXCLUDE_SOURCES)
+    list(REMOVE_ITEM sources ${exclude_source})
+  endforeach()
   set_source_files_properties(${sources}
                               PROPERTIES COMPILE_FLAGS "/Yu\"${pch_header}\" /Fp\"${pch_binary}\" /FI\"${pch_header}\""
                               OBJECT_DEPENDS "${pch_binary}")
