@@ -103,8 +103,36 @@ if(WIN32)
   list(APPEND SOURCES D3DResource.cpp
                       GUIFontTTFDX.cpp
                       GUITextureD3D.cpp
+                      GUIShaderDX.cpp
                       TextureDX.cpp)
 endif()
 
 core_add_library(guilib)
 add_dependencies(guilib libcpluff ffmpeg)
+
+if(WIN32)
+  set(SHADERS_VERTEX guishader_vert.hlsl)
+  set(SHADERS_PIXEL guishader_checkerboard_right.hlsl
+                    guishader_checkerboard_left.hlsl
+                    guishader_default.hlsl
+                    guishader_fonts.hlsl
+                    guishader_interlaced_right.hlsl
+                    guishader_interlaced_left.hlsl
+                    guishader_multi_texture_blend.hlsl
+                    guishader_texture.hlsl
+                    guishader_texture_noblend.hlsl
+                    guishader_video.hlsl
+                    guishader_video_control.hlsl)
+  foreach(shader ${SHADERS_VERTEX})
+    add_shader_dx(guilib
+                  ${CORE_SOURCE_DIR}/system/shaders/${shader}
+                  vs_4_0_level_9_1
+                  VS)
+  endforeach()
+  foreach(shader ${SHADERS_PIXEL})
+    add_shader_dx(guilib
+                  ${CORE_SOURCE_DIR}/system/shaders/${shader}
+                  ps_4_0_level_9_3
+                  PS)
+  endforeach()
+endif()
