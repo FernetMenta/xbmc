@@ -46,5 +46,6 @@ add_definitions(-DSILENT -D_XBMC)
 core_add_library(unrarxlib)
 
 if(WIN32)
-  add_precompiled_header(unrarxlib rar.hpp rar.cpp)
+  add_precompiled_header(unrarxlib rar.hpp rar.cpp
+                         EXCLUDE_SOURCES consio.cpp global.cpp)
 endif()
