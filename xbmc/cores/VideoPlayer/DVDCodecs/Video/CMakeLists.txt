@@ -16,7 +16,7 @@ if(OPENMAX_FOUND)
                       OpenMaxVideo.cpp)
 endif()
 
-if(DXVA_FOUND)
+if(WIN32)
   list(APPEND SOURCES DXVA.cpp)
 endif()
 
