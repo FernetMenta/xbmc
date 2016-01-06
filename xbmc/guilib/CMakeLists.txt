@@ -1,5 +1,4 @@
-set(SOURCES cximage.cpp
-            DDSImage.cpp
+set(SOURCES DDSImage.cpp
             DirectXGraphics.cpp
             DirtyRegionSolvers.cpp
             DirtyRegionTracker.cpp
@@ -65,7 +64,6 @@ set(SOURCES cximage.cpp
             GUIWrappingListContainer.cpp
             imagefactory.cpp
             IWindowManagerCallback.cpp
-            JpegIO.cpp
             LocalizeStrings.cpp
             Resolution.cpp
             Shader.cpp
