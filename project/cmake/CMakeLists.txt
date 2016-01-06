@@ -99,9 +99,10 @@ else()
 endif()
 
 # Optional dependencies
-set(optional_deps MicroHttpd MySqlClient SSH
+set(optional_deps MicroHttpd SSH
                   Alsa UDev Dbus Avahi Wayland
                   PulseAudio VDPAU VAAPI)
+find_package(MySqlClient)
 
 # Required, dyloaded deps
 set(required_dyload Curl ASS)

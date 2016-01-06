@@ -9,3 +9,6 @@ if(MYSQLCLIENT_FOUND)
 endif()
 
 core_add_library(dbwrappers)
+if(MYSQLCLIENT_FOUND)
+  target_link_libraries(dbwrappers PRIVATE MySQL::MySQLClient)
+endif()
