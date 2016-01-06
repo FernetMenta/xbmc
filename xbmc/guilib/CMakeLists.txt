@@ -132,7 +132,7 @@ if(WIN32)
   foreach(shader ${SHADERS_PIXEL})
     add_shader_dx(guilib
                   ${CORE_SOURCE_DIR}/system/shaders/${shader}
-                  ps_4_0_level_9_3
+                  ps_4_0_level_9_1
                   PS)
   endforeach()
 endif()
