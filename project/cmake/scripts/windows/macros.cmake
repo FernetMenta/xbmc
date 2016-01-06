@@ -79,11 +79,13 @@ endfunction()
 # Optional Arguments:
 #   PCH_TARGET build precompiled header as separate target with the given name
 #              so that the same precompiled header can be used for multiple libraries
+#   EXCLUDE_SOURCES if not all target sources shall use the precompiled header,
+#                   the relevant files can be listed here
 # On return:
 #   Compiles the pch_source into a precompiled header and adds the header to
 #   the given target
 function(add_precompiled_header target pch_header pch_source)
-  cmake_parse_arguments(PCH "" "PCH_TARGET" "" ${ARGN})
+  cmake_parse_arguments(PCH "" "PCH_TARGET" "EXCLUDE_SOURCES" ${ARGN})
 
   if(PCH_PCH_TARGET)
     set(pch_binary ${PRECOMPILEDHEADER_DIR}/${PCH_PCH_TARGET}.pch)
@@ -94,6 +96,9 @@ function(add_precompiled_header target pch_header pch_source)
   # Set compile options and dependency for sources
   get_target_property(sources ${target} SOURCES)
   list(REMOVE_ITEM sources ${pch_source})
+  foreach(exclude_source IN LISTS PCH_EXCLUDE_SOURCES)
+    list(REMOVE_ITEM sources ${exclude_source})
+  endforeach()
   set_source_files_properties(${sources}
                               PROPERTIES COMPILE_FLAGS "/Yu\"${pch_header}\" /Fp\"${pch_binary}\" /FI\"${pch_header}\""
                               OBJECT_DEPENDS "${pch_binary}")
@@ -116,4 +121,31 @@ function(add_precompiled_header target pch_header pch_source)
     # As part of the target
     target_sources(${target} PRIVATE ${pch_source})
   endif()
+endfunction()
+
+# Adds an FX-compiled shader to a target
+#   Creates a custom command that FX-compiles the given shader and adds the
+#   generated header file to the given target.
+# Arguments:
+#   target Target to add the FX-compiled shader to
+#   hlsl HLSL shader input file
+#   profile HLSL profile that specifies the shader model
+#   entrypoint Shader entry point
+# On return:
+#   FXC_FILE is set to the name of the generated header file.
+find_program(FXC fxc)
+function(add_shader_dx target hlsl profile entrypoint)
+  get_filename_component(file ${hlsl} NAME_WE)
+  add_custom_command(OUTPUT ${file}.h
+                     COMMAND ${FXC} /Fh ${file}.h
+                                    /E ${entrypoint}
+                                    /T ${profile}
+                                    /Vn ${file}
+                                    /Qstrip_reflect
+                                    ${hlsl}
+                     DEPENDS ${hlsl}
+                     COMMENT "FX compile ${hlsl}"
+                     VERBATIM)
+  target_sources(${target} PRIVATE ${file}.h)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 endfunction()

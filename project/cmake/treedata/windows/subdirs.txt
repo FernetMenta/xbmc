@@ -1,5 +1,7 @@
 xbmc/win32                   win32support
 xbmc/input/windows           input/windows
+xbmc/input/touch             input/touch
+xbmc/input/touch/generic     input/touch/generic
 xbmc/network/windows         network/windows
 xbmc/peripherals/bus/win32   peripherals/bus/win32
 xbmc/powermanagement/windows powermanagement/windows
@@ -8,4 +10,6 @@ xbmc/filesystem/win32        filesystem/win32
 xbmc/utils/win32             utils_win32
 xbmc/platform/posix          platform_posix
 xbmc/platform/win32          platform_win32
+xbmc/rendering/dx            rendering_dx
+xbmc/threads/platform/win    threads_win
 xbmc/windowing/windows       windowing/windows

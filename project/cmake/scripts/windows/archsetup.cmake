@@ -16,7 +16,8 @@ set(CMAKE_COMPILE_PDB_OUTPUT_DIRECTORY ${PRECOMPILEDHEADER_DIR})
 set(CMAKE_SYSTEM_NAME Windows)
 list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PROJECT_SOURCE_DIR}/../BuildDependencies)
 list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PROJECT_SOURCE_DIR}/../../lib/win32)
-list(APPEND CMAKE_SYSTEM_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/${CMAKE_BUILD_TYPE}-vc120)
+list(APPEND CMAKE_SYSTEM_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Release-vc120
+                                      ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Debug-vc120)
 set(JPEG_NAMES ${JPEG_NAMES} jpeg-static)
 set(PYTHON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../BuildDependencies/include/python)
 if(WITH_ARCH)
@@ -30,3 +31,43 @@ else()
     message(WARNING "unknown CPU: ${CPU}")
   endif()
 endif()
+
+# For #pragma comment(lib X)
+# TODO: It would certainly be better to handle these libraries via CMake modules.
+link_directories(${PROJECT_SOURCE_DIR}/../../lib/win32/ffmpeg/.libs
+                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib
+                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Release-vc120
+                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Debug-vc120)
+
+# Compile with /MT (to be compatible with the dependent libraries)
+foreach(CompilerFlag CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+                      CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+  string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+endforeach()
+
+set(_nodefaultlibs_RELEASE libc msvcrt libci msvcprt)
+set(_nodefaultlibs_DEBUG libc msvcrt libcmt libcpmt msvcrtd msvcprtd)
+foreach(_lib ${NODEFAULTLIBS_RELEASE})
+  set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /NODEFAULTLIB:\"${_lib}\"")
+endforeach()
+foreach(_lib ${NODEFAULTLIBS_DEBUG})
+  set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:\"${_lib}\"")
+endforeach()
+
+set(WIN_LIBRARIES d3d11.lib
+                  DInput8.lib
+                  DSound.lib
+                  winmm.lib
+                  CrossGuidd.lib
+                  ws2_32.lib
+                  Mpr.lib
+                  Iphlpapi.lib
+                  PowrProf.lib
+                  setupapi.lib
+                  dwmapi.lib
+                  strmiids.lib
+                  dxguid.lib
+                  mfuuid.lib
+                  comctl32.lib
+                  yajl.lib)
+list(APPEND DEPLIBS ${WIN_LIBRARIES})
