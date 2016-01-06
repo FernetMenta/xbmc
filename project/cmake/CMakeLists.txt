@@ -253,11 +253,6 @@ endforeach()
 add_custom_target(pack-skins ALL
                   DEPENDS ${TEXTUREPACKER_BIN} export-files ${XBT_FILES})
 
-set(CXIMAGE_DEPLIBS ${ZLIB_LIBRARIES} ${JPEG_LIBRARIES}
-                    ${TIFF_LIBRARIES} ${PNG_LIBRARIES}
-                    ${JASPER_LIBRARIES} )
-
-core_link_library(cximage system/ImageLib "nowrap" "${CXIMAGE_DEPLIBS}")
 core_link_library(exif system/libexif)
 
 core_link_library(XBMC_addon addons/library.xbmc.addon/libXBMC_addon)
