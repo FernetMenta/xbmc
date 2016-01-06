@@ -14,10 +14,12 @@ set(PRECOMPILEDHEADER_DIR ${PROJECT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/objs)
 set(CMAKE_COMPILE_PDB_OUTPUT_DIRECTORY ${PRECOMPILEDHEADER_DIR})
 
 set(CMAKE_SYSTEM_NAME Windows)
-list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PROJECT_SOURCE_DIR}/../BuildDependencies)
 list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PROJECT_SOURCE_DIR}/../../lib/win32)
-list(APPEND CMAKE_SYSTEM_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Release-vc120
-                                      ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Debug-vc120)
+list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PROJECT_SOURCE_DIR}/../BuildDependencies)
+set(CONFIGURATION_LIBDIR lib/${CMAKE_BUILD_TYPE}-vc120)
+set(CONFIGURATION_LIBDIR_RELEASE lib/Release-vc120)
+set(CONFIGURATION_LIBDIR_DEBUG lib/Debug-vc120)
+
 set(JPEG_NAMES ${JPEG_NAMES} jpeg-static)
 set(PYTHON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../BuildDependencies/include/python)
 if(WITH_ARCH)
@@ -36,8 +38,7 @@ endif()
 # TODO: It would certainly be better to handle these libraries via CMake modules.
 link_directories(${PROJECT_SOURCE_DIR}/../../lib/win32/ffmpeg/.libs
                  ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib
-                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Release-vc120
-                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib/Debug-vc120)
+                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/${CONFIGURATION_LIBDIR})
 
 # Compile with /MT (to be compatible with the dependent libraries)
 foreach(CompilerFlag CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
