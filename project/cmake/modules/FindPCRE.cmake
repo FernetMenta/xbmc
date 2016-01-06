@@ -7,11 +7,11 @@
 #
 # PCRE_FOUND - system has libpcrecpp
 # PCRE_INCLUDE_DIRS - the libpcrecpp include directory
-# PCRE_LIBRARIES - The libpcrecpp libraries
+# PCRE_LIBRARIES - the libpcrecpp libraries
 #
 # and the following imported targets::
 #
-#   Foo::Foo   - The Foo library
+#   PCRE::PCRE   - The PCRE library
 
 if(PKG_CONFIG_FOUND)
   pkg_check_modules(PC_PCRE libpcrecpp)
