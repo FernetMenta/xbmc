@@ -82,6 +82,8 @@ if(CMAKE_CROSSCOMPILING)
   endif()
   core_require_dep(Squish)
   set(TEXTUREPACKER_BIN ${NATIVEPREFIX}/bin/TexturePacker)
+elseif(WIN32)
+  set(TexturePacker ${CORE_SOURCE_DIR}/tools/TexturePacker/TexturePacker.exe)
 else()
   set(TEXTUREPACKER_BIN TexturePacker)
 endif()
@@ -271,10 +273,11 @@ configure_file(${CORE_SOURCE_DIR}/xbmc/DllPaths_generated.h.in
 # Build helpers
 if(NOT CMAKE_CROSSCOMPILING)
   add_executable(JsonSchemaBuilder ${CORE_SOURCE_DIR}/tools/depends/native/JsonSchemaBuilder/src/JsonSchemaBuilder.cpp)
-  if(WIN32)
-    message(WARNING "Texture packer disabled for Windows because of unresolved dependency to giflib")
-  else()
+  if(NOT WIN32)
     add_subdirectory(${CORE_SOURCE_DIR}/tools/depends/native/TexturePacker build/texturepacker)
+  else()
+    # Texture packer cannot be built on Windows due to missing giflib-static.lib in dependencies
+    # Use downloaded exe instead.
   endif()
 endif()
 
