@@ -93,7 +93,7 @@ if(GLES_FOUND)
                       GUIShader.cpp)
 endif()
 
-if(GIF_FOUND)
+if(GIF_FOUND OR WIN32)
   list(APPEND SOURCES Gif.cpp)
 endif()
 
