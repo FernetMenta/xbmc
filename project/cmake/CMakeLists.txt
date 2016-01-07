@@ -93,10 +93,10 @@ list(APPEND DEPLIBS ${CMAKE_THREAD_LIBS_INIT})
 
 # Required dependencies
 set(required_deps Sqlite3 FreeType PCRE Cpluff
-                  TinyXML Python Yajl ZLIB Xslt
+                  TinyXML Python Yajl Xslt
                   JPEG Lzo2 Fribidi TagLib Boost FFMPEG CrossGUID)
 if(NOT WIN32)
-  list(APPEND required_deps LibSmbClient OpenSSL)
+  list(APPEND required_deps LibSmbClient OpenSSL ZLIB)
 else()
   list(APPEND required_deps D3DX11Effects)
 endif()
