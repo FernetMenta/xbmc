@@ -10,6 +10,7 @@ set(SOURCES AddonCallbacksAddon.cpp
             AddonInstaller.cpp
             AddonManager.cpp
             AddonStatusHandler.cpp
+            AddonSystemSettings.cpp
             AddonVersion.cpp
             AudioDecoder.cpp
             AudioEncoder.cpp
