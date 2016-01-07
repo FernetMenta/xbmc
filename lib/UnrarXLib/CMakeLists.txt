@@ -41,7 +41,10 @@ set(SOURCES archive.cpp
             unpack.cpp
             volume.cpp)
 
-add_definitions(-DSILENT -D_XBMC)
+add_definitions(-DSILENT)
+if(WIN32)
+  add_definitions(-D_XBMC)
+endif()
 
 core_add_library(unrarxlib)
 
