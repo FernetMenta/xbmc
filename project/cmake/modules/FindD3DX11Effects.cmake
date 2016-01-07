@@ -17,6 +17,5 @@ ExternalProject_Add(d3dx11effects
 
 set(D3DX11EFFECTS_FOUND 1)
 set(D3DX11EFFECTS_INCLUDE_DIRS ${CORE_SOURCE_DIR}/lib/win32/Effects11/inc)
+set(D3DX11EFFECTS_LIBRARIES ${CORE_SOURCE_DIR}/lib/win32/Effects11/libs/Effects11/${CMAKE_BUILD_TYPE}/Effects11.lib)
 mark_as_advanced(D3DX11EFFECTS_FOUND)
-
-# TODO: core_link_library
