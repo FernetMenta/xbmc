@@ -9,6 +9,8 @@
 function(pack_xbt input output)
   if(CMAKE_CROSSCOMPILING)
     set(TexturePacker ${TEXTUREPACKER_BIN})
+  elseif(WIN32)
+    set(TexturePacker ${CORE_SOURCE_DIR}/tools/TexturePacker/TexturePacker.exe)
   else()
     set(TexturePacker ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/texturepacker/TexturePacker)
   endif()
