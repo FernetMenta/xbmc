@@ -3,6 +3,7 @@ xbmc/input/windows           input/windows
 xbmc/input/touch             input/touch
 xbmc/input/touch/generic     input/touch/generic
 xbmc/network/windows         network/windows
+xbmc/network/mdns            network/mdns
 xbmc/peripherals/bus/win32   peripherals/bus/win32
 xbmc/powermanagement/windows powermanagement/windows
 xbmc/storage/windows         storage/windows
