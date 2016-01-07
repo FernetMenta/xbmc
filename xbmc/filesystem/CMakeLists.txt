@@ -37,6 +37,8 @@ set(SOURCES AddonsDirectory.cpp
             MusicDatabaseFile.cpp
             MusicFileDirectory.cpp
             MusicSearchDirectory.cpp
+            NFSDirectory.cpp
+            NFSFile.cpp
             NptXbmcFile.cpp
             OverrideDirectory.cpp
             OverrideFile.cpp
@@ -85,8 +87,7 @@ if(OS STREQUAL "Android")
 endif()
 
 if(NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
-  list(APPEND SOURCES NFSFile.cpp
-                      SMBDirectory.cpp
+  list(APPEND SOURCES SMBDirectory.cpp
                       SMBFile.cpp)
 endif()
 
