@@ -61,10 +61,10 @@ endif()
 
 # NODEFAULTLIB option
 set(_nodefaultlibs_RELEASE libc msvcrt libci msvcprt)
-set(_nodefaultlibs_DEBUG libc msvcrt libcmt libcpmt msvcrtd msvcprtd)
-foreach(_lib ${NODEFAULTLIBS_RELEASE})
+set(_nodefaultlibs_DEBUG libcpmt libc msvcrt libcmt msvcrtd msvcprtd)
+foreach(_lib ${_nodefaultlibs_RELEASE})
   set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /NODEFAULTLIB:\"${_lib}\"")
 endforeach()
-foreach(_lib ${NODEFAULTLIBS_DEBUG})
+foreach(_lib ${_nodefaultlibs_DEBUG})
   set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:\"${_lib}\"")
 endforeach()
