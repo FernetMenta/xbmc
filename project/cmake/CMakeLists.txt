@@ -115,11 +115,6 @@ set(dyload_optional RTMP CEC Bluray
 
 # Required by shared objects we link
 set(required_dep_libs PNG EXPAT)
-if(WIN32)
-  message(WARNING "Unresolved dependency: Jasper")
-else()
-  list(APPEND required_dep_libs Jasper TIFF)
-endif()
 
 foreach(dep ${required_dep_libs})
   find_package(${dep} REQUIRED)
