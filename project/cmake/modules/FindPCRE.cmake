@@ -8,6 +8,7 @@
 # PCRE_FOUND - system has libpcrecpp
 # PCRE_INCLUDE_DIRS - the libpcrecpp include directory
 # PCRE_LIBRARIES - the libpcrecpp libraries
+# PCRE_DEFINITIONS - the libpcrecpp definitions
 #
 # and the following imported targets::
 #
@@ -46,6 +47,9 @@ find_package_handle_standard_args(PCRE
 if(PCRE_FOUND)
   set(PCRE_LIBRARIES ${PCRECPP_LIBRARY} ${PCRE_LIBRARY})
   set(PCRE_INCLUDE_DIRS ${PCRE_INCLUDE_DIR})
+  if(WIN32)
+    set(PCRE_DEFINITIONS -DPCRE_STATIC=1)
+  endif()
 
   if(NOT TARGET PCRE::PCRE)
     add_library(PCRE::PCRE UNKNOWN IMPORTED)
@@ -61,6 +65,11 @@ if(PCRE_FOUND)
     endif()
     set_target_properties(PCRE::PCRE PROPERTIES
                                      INTERFACE_INCLUDE_DIRECTORIES "${PCRE_INCLUDE_DIR}")
+    if(WIN32)
+      set_target_properties(PCRE::PCRE PROPERTIES
+                                       INTERFACE_COMPILE_DEFINITIONS PCRE_STATIC=1)
+    endif()
+
   endif()
   if(NOT TARGET PCRE::PCRECPP)
     add_library(PCRE::PCRECPP UNKNOWN IMPORTED)
@@ -75,7 +84,6 @@ if(PCRE_FOUND)
                                           IMPORTED_LOCATION "${PCRECPP_LIBRARY_DEBUG}")
     endif()
     set_target_properties(PCRE::PCRECPP PROPERTIES
-                                        INTERFACE_INCLUDE_DIRECTORIES "${PCRE_INCLUDE_DIR}"
                                         INTERFACE_LINK_LIBRARIES PCRE::PCRE)
   endif()
 endif()
