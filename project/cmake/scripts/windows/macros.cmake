@@ -115,9 +115,11 @@ function(add_precompiled_header target pch_header pch_source)
     # As own target for usage in multiple libraries
     if(NOT TARGET ${PCH_PCH_TARGET}_pch)
       add_library(${PCH_PCH_TARGET}_pch STATIC ${pch_source})
+      set_target_properties(${PCH_PCH_TARGET}_pch PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY ${PRECOMPILEDHEADER_DIR})
     endif()
     # From VS2012 onwards, precompiled headers have to be linked against (LNK2011).
     target_link_libraries(${target} PUBLIC ${PCH_PCH_TARGET}_pch)
+    set_target_properties(${target} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY ${PRECOMPILEDHEADER_DIR})
   else()
     # As part of the target
     target_sources(${target} PRIVATE ${pch_source})
@@ -149,4 +151,22 @@ function(add_shader_dx target hlsl profile entrypoint)
                      VERBATIM)
   target_sources(${target} PRIVATE ${file}.h)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+endfunction()
+
+# Copies the main dlls to the root of the buildtree
+# On return:
+#   files added to ${install_data}, mirror in build tree
+function(copy_main_dlls_to_buildtree)
+  set(dir ${PROJECT_SOURCE_DIR}/../Win32BuildSetup/dependencies)
+  file(GLOB_RECURSE files ${dir}/*)
+  foreach(file ${files})
+    copy_file_to_buildtree(${file} ${dir})
+  endforeach()
+
+  if(D3DCOMPILER_DLL)
+    get_filename_component(d3dcompiler_dir ${D3DCOMPILER_DLL} DIRECTORY)
+    copy_file_to_buildtree(${D3DCOMPILER_DLL} ${d3dcompiler_dir})
+  endif()
+
+  set(install_data ${install_data} PARENT_SCOPE)
 endfunction()

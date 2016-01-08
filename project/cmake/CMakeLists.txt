@@ -115,11 +115,6 @@ set(dyload_optional RTMP CEC Bluray
 
 # Required by shared objects we link
 set(required_dep_libs PNG EXPAT)
-if(WIN32)
-  message(WARNING "Unresolved dependency: Jasper")
-else()
-  list(APPEND required_dep_libs Jasper TIFF)
-endif()
 
 foreach(dep ${required_dep_libs})
   find_package(${dep} REQUIRED)
@@ -154,11 +149,7 @@ if(ENABLE_NONFREE)
 endif()
 
 if(ENABLE_DVDCSS)
-  if(WIN32)
-    message(WARNING "LibDvd disabled for Windows, needs cmake mingw support")
-  else()
-    core_require_dep(LibDvd)
-  endif()
+  core_require_dep(LibDvd)
 endif()
 
 if(ENABLE_OPTICAL)
@@ -289,6 +280,9 @@ add_executable(${APP_NAME_LC}.bin $<TARGET_OBJECTS:compileinfo>)
 target_link_libraries(${APP_NAME_LC}.bin ${SYSTEM_LDFLAGS} -Wl,--whole-archive ${core_DEPENDS} -Wl,--no-whole-archive
                       ${DEPLIBS} ${CMAKE_DL_LIBS})
 add_dependencies(${APP_NAME_LC}.bin export-files)
+if(WIN32)
+  copy_main_dlls_to_buildtree()
+endif()
 
 # testing
 if(NOT CMAKE_CROSSCOMPILING) # Cannot execute tests when cross compiling
@@ -321,17 +315,17 @@ endif()
 include(scripts/${CORE_SYSTEM_NAME}/install.cmake)
 
 # Status
-message("#---- CONFIGURATION ----#")
+message(STATUS "#---- CONFIGURATION ----#")
 foreach(msg ${final_message})
   message(STATUS ${msg})
 endforeach()
 
 if(VERBOSE)
-  message("\n#---- Internal Variables ----# ")
-  message("DEPLIBS: ${DEPLIBS}")
-  message("SYSTEM_LDFLAGS: ${SYSTEM_LDFLAGS}")
-  message("core_DEPENDS: ${core_DEPENDS}")
-  message("CMAKE_DL_LIBS: ${CMAKE_DL_LIBS}")
+  message(STATUS "\n#---- Internal Variables ----# ")
+  message(STATUS "DEPLIBS: ${DEPLIBS}")
+  message(STATUS "SYSTEM_LDFLAGS: ${SYSTEM_LDFLAGS}")
+  message(STATUS "core_DEPENDS: ${core_DEPENDS}")
+  message(STATUS "CMAKE_DL_LIBS: ${CMAKE_DL_LIBS}")
 endif()
-message("#-----------------------#")
+message(STATUS "#-----------------------#")
 
