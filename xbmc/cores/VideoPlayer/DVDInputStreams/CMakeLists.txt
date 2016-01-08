@@ -16,4 +16,8 @@ if(BLURAY_FOUND)
 endif()
 
 core_add_library(dvdinputstreams)
-add_dependencies(dvdinputstreams libcpluff dvdnav ffmpeg)
+add_dependencies(dvdinputstreams libcpluff ffmpeg)
+
+if(NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
+  add_dependencies(dvdinputstreams dvdnav)
+endif()
