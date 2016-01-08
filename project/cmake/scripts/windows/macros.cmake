@@ -114,9 +114,10 @@ function(add_precompiled_header target pch_header pch_source)
   if(PCH_PCH_TARGET)
     # As own target for usage in multiple libraries
     if(NOT TARGET ${PCH_PCH_TARGET}_pch)
-      add_library(${PCH_PCH_TARGET}_pch OBJECT ${pch_source})
+      add_library(${PCH_PCH_TARGET}_pch STATIC ${pch_source})
     endif()
-    add_dependencies(${target} ${PCH_PCH_TARGET}_pch)
+    # From VS2012 onwards, precompiled headers have to be linked against (LNK2011).
+    target_link_libraries(${target} PUBLIC ${PCH_PCH_TARGET}_pch)
   else()
     # As part of the target
     target_sources(${target} PRIVATE ${pch_source})

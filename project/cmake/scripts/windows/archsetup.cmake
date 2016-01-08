@@ -46,29 +46,33 @@ foreach(CompilerFlag CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEA
   string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
 endforeach()
 
+# Additional libraries
+set(_libraries_RELEASE d3d11.lib DInput8.lib DSound.lib winmm.lib CrossGuid.lib
+                       Mpr.lib Iphlpapi.lib PowrProf.lib setupapi.lib dwmapi.lib
+                       yajl.lib dxguid.lib DelayImp.lib)
+set(_libraries_DEBUG d3d11.lib DInput8.lib DSound.lib winmm.lib CrossGuidd.lib
+                     Mpr.lib Iphlpapi.lib PowrProf.lib setupapi.lib dwmapi.lib
+                     yajl.lib dxguid.lib DelayImp.lib)
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  list(APPEND DEPLIBS ${_libraries_RELEASE})
+elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  list(APPEND DEPLIBS ${_libraries_DEBUG})
+endif()
+
+# NODEFAULTLIB option
 set(_nodefaultlibs_RELEASE libc msvcrt libci msvcprt)
-set(_nodefaultlibs_DEBUG libc msvcrt libcmt libcpmt msvcrtd msvcprtd)
-foreach(_lib ${NODEFAULTLIBS_RELEASE})
+set(_nodefaultlibs_DEBUG libcpmt libc msvcrt libcmt msvcrtd msvcprtd)
+foreach(_lib ${_nodefaultlibs_RELEASE})
   set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /NODEFAULTLIB:\"${_lib}\"")
 endforeach()
-foreach(_lib ${NODEFAULTLIBS_DEBUG})
+foreach(_lib ${_nodefaultlibs_DEBUG})
   set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:\"${_lib}\"")
 endforeach()
 
-set(WIN_LIBRARIES d3d11.lib
-                  DInput8.lib
-                  DSound.lib
-                  winmm.lib
-                  CrossGuidd.lib
-                  ws2_32.lib
-                  Mpr.lib
-                  Iphlpapi.lib
-                  PowrProf.lib
-                  setupapi.lib
-                  dwmapi.lib
-                  strmiids.lib
-                  dxguid.lib
-                  mfuuid.lib
-                  comctl32.lib
-                  yajl.lib)
-list(APPEND DEPLIBS ${WIN_LIBRARIES})
+#DELAYLOAD option
+set(_delayloadlibs libxslt.dll dnssd.dll dwmapi.dll ssh.dll sqlite3.dll
+                   avcodec-56.dll avfilter-5.dll avformat-56.dll avutil-54.dll
+                   postproc-53.dll swresample-1.dll swscale-3.dll d3dcompiler_4.dll)
+foreach(_lib ${_delayloadlibs})
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DELAYLOAD:\"${_lib}\"")
+endforeach()
