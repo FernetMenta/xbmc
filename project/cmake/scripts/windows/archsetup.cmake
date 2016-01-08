@@ -49,10 +49,10 @@ endforeach()
 # Additional libraries
 set(_libraries_RELEASE d3d11.lib DInput8.lib DSound.lib winmm.lib CrossGuid.lib
                        Mpr.lib Iphlpapi.lib PowrProf.lib setupapi.lib dwmapi.lib
-                       yajl.lib dxguid.lib)
+                       yajl.lib dxguid.lib DelayImp.lib)
 set(_libraries_DEBUG d3d11.lib DInput8.lib DSound.lib winmm.lib CrossGuidd.lib
                      Mpr.lib Iphlpapi.lib PowrProf.lib setupapi.lib dwmapi.lib
-                     yajl.lib dxguid.lib)
+                     yajl.lib dxguid.lib DelayImp.lib)
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   list(APPEND DEPLIBS ${_libraries_RELEASE})
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -67,4 +67,12 @@ foreach(_lib ${_nodefaultlibs_RELEASE})
 endforeach()
 foreach(_lib ${_nodefaultlibs_DEBUG})
   set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:\"${_lib}\"")
+endforeach()
+
+#DELAYLOAD option
+set(_delayloadlibs libxslt.dll dnssd.dll dwmapi.dll ssh.dll sqlite3.dll
+                   avcodec-56.dll avfilter-5.dll avformat-56.dll avutil-54.dll
+                   postproc-53.dll swresample-1.dll swscale-3.dll d3dcompiler_4.dll)
+foreach(_lib ${_delayloadlibs})
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DELAYLOAD:\"${_lib}\"")
 endforeach()
