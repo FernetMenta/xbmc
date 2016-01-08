@@ -149,11 +149,7 @@ if(ENABLE_NONFREE)
 endif()
 
 if(ENABLE_DVDCSS)
-  if(WIN32)
-    message(WARNING "LibDvd disabled for Windows, needs cmake mingw support")
-  else()
-    core_require_dep(LibDvd)
-  endif()
+  core_require_dep(LibDvd)
 endif()
 
 if(ENABLE_OPTICAL)
