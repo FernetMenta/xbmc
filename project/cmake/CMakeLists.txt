@@ -280,6 +280,9 @@ add_executable(${APP_NAME_LC}.bin $<TARGET_OBJECTS:compileinfo>)
 target_link_libraries(${APP_NAME_LC}.bin ${SYSTEM_LDFLAGS} -Wl,--whole-archive ${core_DEPENDS} -Wl,--no-whole-archive
                       ${DEPLIBS} ${CMAKE_DL_LIBS})
 add_dependencies(${APP_NAME_LC}.bin export-files)
+if(WIN32)
+  copy_main_dlls_to_buildtree()
+endif()
 
 # testing
 if(NOT CMAKE_CROSSCOMPILING) # Cannot execute tests when cross compiling
