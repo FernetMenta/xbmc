@@ -11,7 +11,6 @@ add_options(CXX ALL_BUILDS "/wd\"4996\"")
 
 # Precompiled headers fail with per target output directory. (needs CMake 3.1)
 set(PRECOMPILEDHEADER_DIR ${PROJECT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/objs)
-set(CMAKE_COMPILE_PDB_OUTPUT_DIRECTORY ${PRECOMPILEDHEADER_DIR})
 
 set(CMAKE_SYSTEM_NAME Windows)
 list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PROJECT_SOURCE_DIR}/../../lib/win32)
@@ -45,6 +44,11 @@ foreach(CompilerFlag CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEA
                      CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
   string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
 endforeach()
+
+# Make sure /FS is set for Visual Studio in order to prevent simultanious access to pdb files.
+if(CMAKE_GENERATOR MATCHES "Visual Studio")
+  set(CMAKE_CXX_FLAGS "/MP /FS ${CMAKE_CXX_FLAGS}")
+endif()
 
 # Additional libraries
 set(_libraries_RELEASE d3d11.lib DInput8.lib DSound.lib winmm.lib CrossGuid.lib
