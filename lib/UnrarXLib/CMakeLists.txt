@@ -41,8 +41,9 @@ set(SOURCES archive.cpp
             unpack.cpp
             volume.cpp)
 
-add_definitions(-DSILENT)
-if(WIN32)
+if(NOT WIN32)
+  add_definitions(-DSILENT)
+else()
   add_definitions(-D_XBMC)
 endif()
 
