@@ -15,7 +15,7 @@
 #   Plist::Plist   - The Plist library
 
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules(PC_PLIST libplist)
+  pkg_check_modules(PC_PLIST libplist QUIET)
 endif()
 
 find_path(PLIST_INCLUDE_DIR plist/plist.h
@@ -47,7 +47,7 @@ if(PLIST_FOUND)
     add_library(Plist::Plist UNKNOWN IMPORTED)
     if(PLIST_LIBRARY)
       set_target_properties(Plist::Plist PROPERTIES
-                                         IMPORTED_LOCATION "${PLIST_LIBRARY_RELEASE}")
+                                         IMPORTED_LOCATION "${PLIST_LIBRARY}")
     endif()
     set_target_properties(Plist::Plist PROPERTIES
                                        INTERFACE_INCLUDE_DIRECTORIES "${PLIST_INCLUDE_DIR}"
