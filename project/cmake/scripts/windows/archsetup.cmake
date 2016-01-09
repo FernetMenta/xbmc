@@ -1,14 +1,11 @@
-set(ARCH_DEFINES -D_WINDOWS -DTARGET_WINDOWS)
-set(SYSTEM_DEFINES -DNOMINMAX -D_USE_32BIT_TIME_T -DHAS_DX -D__STDC_CONSTANT_MACROS
-                   -DTAGLIB_STATIC -DNPT_CONFIG_ENABLE_LOGGING
-                   -DPLT_HTTP_DEFAULT_USER_AGENT="UPnP/1.0 DLNADOC/1.50 Kodi"
-                   -DPLT_HTTP_DEFAULT_SERVER="UPnP/1.0 DLNADOC/1.50 Kodi"
-                   -DBUILDING_WITH_CMAKE)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    list(APPEND SYSTEM_DEFINES -DD3D_DEBUG_INFO -D_SECURE_SCL=0 -D_HAS_ITERATOR_DEBUGGING=0)
-endif()
+# -------- Architecture settings ---------
+
+set(ARCH win32)
+
+
+# -------- Paths (mainly for find_package) ---------
+
 set(PLATFORM_DIR win32)
-add_options(CXX ALL_BUILDS "/wd\"4996\"")
 
 # Precompiled headers fail with per target output directory. (needs CMake 3.1)
 set(PRECOMPILEDHEADER_DIR ${PROJECT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/objs)
@@ -22,23 +19,20 @@ set(CONFIGURATION_LIBDIR_DEBUG lib/Debug-vc120)
 
 set(JPEG_NAMES ${JPEG_NAMES} jpeg-static)
 set(PYTHON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../BuildDependencies/include/python)
-if(WITH_ARCH)
-  set(ARCH ${WITH_ARCH})
-else()
-  if(CPU STREQUAL "AMD64")
-    set(ARCH x86_64-windows)
-  elseif(CPU MATCHES "i.86")
-    set(ARCH i486-windows)
-  else()
-    message(WARNING "unknown CPU: ${CPU}")
-  endif()
-endif()
 
-# For #pragma comment(lib X)
-# TODO: It would certainly be better to handle these libraries via CMake modules.
-link_directories(${PROJECT_SOURCE_DIR}/../../lib/win32/ffmpeg/.libs
-                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib
-                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/${CONFIGURATION_LIBDIR})
+
+# -------- Compiler options ---------
+
+add_options(CXX ALL_BUILDS "/wd\"4996\"")
+set(ARCH_DEFINES -D_WINDOWS -DTARGET_WINDOWS)
+set(SYSTEM_DEFINES -DNOMINMAX -D_USE_32BIT_TIME_T -DHAS_DX -D__STDC_CONSTANT_MACROS
+                   -DTAGLIB_STATIC -DNPT_CONFIG_ENABLE_LOGGING
+                   -DPLT_HTTP_DEFAULT_USER_AGENT="UPnP/1.0 DLNADOC/1.50 Kodi"
+                   -DPLT_HTTP_DEFAULT_SERVER="UPnP/1.0 DLNADOC/1.50 Kodi"
+                   -DBUILDING_WITH_CMAKE)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  list(APPEND SYSTEM_DEFINES -DD3D_DEBUG_INFO -D_SECURE_SCL=0 -D_HAS_ITERATOR_DEBUGGING=0)
+endif()
 
 # Compile with /MT (to be compatible with the dependent libraries)
 foreach(CompilerFlag CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
@@ -50,6 +44,15 @@ endforeach()
 if(CMAKE_GENERATOR MATCHES "Visual Studio")
   set(CMAKE_CXX_FLAGS "/MP /FS ${CMAKE_CXX_FLAGS}")
 endif()
+
+
+# -------- Linker options ---------
+
+# For #pragma comment(lib X)
+# TODO: It would certainly be better to handle these libraries via CMake modules.
+link_directories(${PROJECT_SOURCE_DIR}/../../lib/win32/ffmpeg/.libs
+                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/lib
+                 ${PROJECT_SOURCE_DIR}/../BuildDependencies/${CONFIGURATION_LIBDIR})
 
 # Additional libraries
 list(APPEND DEPLIBS d3d11.lib DInput8.lib DSound.lib winmm.lib Mpr.lib Iphlpapi.lib
