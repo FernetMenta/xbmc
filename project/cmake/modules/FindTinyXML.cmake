@@ -15,7 +15,7 @@
 #   TinyXML::TinyXML   - The TinyXML library
 
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules(PC_TINYXML tinyxml)
+  pkg_check_modules(PC_TINYXML tinyxml QUIET)
 endif()
 
 find_path(TINYXML_INCLUDE_DIR tinyxml.h
