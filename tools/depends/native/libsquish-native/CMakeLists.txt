@@ -26,7 +26,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 add_definitions(-DNDEBUG)
 
 if(SQUISH_NATIVE)
-  core_add_library(squish-native 1)
+  core_add_library(squish-native NO_MAIN_DEPENDS)
 else()
   if(NOT BOOTSTRAP_IN_TREE)
     core_add_library(squish)
