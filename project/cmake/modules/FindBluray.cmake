@@ -15,7 +15,7 @@
 #   Bluray::Bluray   - The libblueray library
 
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules(BLURAY libbluray>=0.7.0)
+  pkg_check_modules(BLURAY libbluray>=0.7.0 QUIET)
 endif()
 
 find_path(BLURAY_INCLUDE_DIR libbluray/bluray.h
