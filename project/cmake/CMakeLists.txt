@@ -55,6 +55,7 @@ endif()
 get_filename_component(CORE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../.. ABSOLUTE)
 set(CORE_BUILD_DIR build)
 
+include(scripts/common/generatorsetup.cmake)
 include(scripts/common/addoptions.cmake)
 include(scripts/common/archsetup.cmake)
 include(scripts/common/macros.cmake)
@@ -211,7 +212,7 @@ list(APPEND install_data addons/xbmc.addon/addon.xml)
 add_library(compileinfo OBJECT ${CORE_BUILD_DIR}/xbmc/CompileInfo.cpp)
 
 include_directories(${INCLUDES} ${SYSTEM_INCLUDES})
-add_definitions(${ARCH_DEFINES} ${SYSTEM_DEFINES} ${DEP_DEFINES} ${PATH_DEFINES})
+add_compile_options(${ARCH_DEFINES} "${SYSTEM_DEFINES}" ${DEP_DEFINES} ${PATH_DEFINES})
 
 set(core_DEPENDS "" CACHE STRING "" FORCE)
 set(test_archives "" CACHE STRING "" FORCE)
