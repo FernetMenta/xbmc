@@ -8,4 +8,4 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}
 
 set(CMAKE_POSITION_INDEPENDENT_CODE 1)
 
-core_add_library(XBMC_pvr 1)
+core_add_library(XBMC_pvr NO_MAIN_DEPENDS)
