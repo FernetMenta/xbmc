@@ -74,7 +74,7 @@ foreach(_lib ${_nodefaultlibs_DEBUG})
   set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:\"${_lib}\"")
 endforeach()
 
-#DELAYLOAD option
+# DELAYLOAD option
 set(_delayloadlibs libxslt.dll dnssd.dll dwmapi.dll ssh.dll sqlite3.dll
                    avcodec-56.dll avfilter-5.dll avformat-56.dll avutil-54.dll
                    postproc-53.dll swresample-1.dll swscale-3.dll d3dcompiler_4.dll)
