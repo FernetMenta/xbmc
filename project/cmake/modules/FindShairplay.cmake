@@ -52,7 +52,7 @@ if(SHAIRPLAY_FOUND)
     add_library(Shairplay::Shairplay UNKNOWN IMPORTED)
     if(SHAIRPLAY_LIBRARY)
       set_target_properties(Shairplay::Shairplay PROPERTIES
-                                                 IMPORTED_LOCATION "${SHAIRPLAY_LIBRARY_RELEASE}")
+                                                 IMPORTED_LOCATION "${SHAIRPLAY_LIBRARY}")
     endif()
     set_target_properties(Shairplay::Shairplay PROPERTIES
                                                INTERFACE_INCLUDE_DIRECTORIES "${SHAIRPLAY_INCLUDE_DIR}"
