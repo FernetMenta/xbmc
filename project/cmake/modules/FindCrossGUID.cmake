@@ -22,10 +22,30 @@ if(ENABLE_INTERNAL_CROSSGUID)
   set(CROSSGUID_FOUND 1)
   set(CROSSGUID_LIBRARIES ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/lib/libcrossguid.a)
   set(CROSSGUID_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/include)
+
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(CROSSGUID DEFAULT_MSG CROSSGUID_INCLUDE_DIRS CROSSGUID_LIBRARIES)
+  mark_as_advanced(CROSSGUID_INCLUDE_DIRS CROSSGUID_LIBRARIES CROSSGUID_DEFINITIONS CROSSGUID_FOUND)
 else()
-  find_path(CROSSGUID_INCLUDE_DIRS guid.h)
-  find_library(CROSSGUID_LIBRARIES crossguid)
-  add_custom_target(crossguid DEPENDS ${CROSSGUID_LIBRARIES})
+  find_path(CROSSGUID_INCLUDE_DIR guid.h)
+
+  find_library(CROSSGUID_LIBRARY_RELEASE NAMES crossguid
+                                         ${CONFIGURATION_LIBDIR_RELEASE})
+  find_library(CROSSGUID_LIBRARY_DEBUG NAMES crossguidd
+                                       ${CONFIGURATION_LIBDIR_DEBUG})
+
+  include(SelectLibraryConfigurations)
+  select_library_configurations(CROSSGUID)
+
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(CROSSGUID
+                                    REQUIRED_VARS CROSSGUID_LIBRARY CROSSGUID_INCLUDE_DIR)
+
+  if(CROSSGUID_FOUND)
+    set(CROSSGUID_LIBRARIES ${CROSSGUID_LIBRARY})
+    set(CROSSGUID_INCLUDE_DIRS ${CROSSGUID_INCLUDE_DIR})
+  endif()
+  mark_as_advanced(CROSSGUID_INCLUDE_DIR CROSSGUID_LIBRARY)
 endif()
 
 if(NOT WIN32)
@@ -33,7 +53,3 @@ if(NOT WIN32)
   list(APPEND CROSSGUID_INCLUDE_DIRS ${UUID_INCLUDE_DIRS})
   list(APPEND CROSSGUID_LIBRARIES ${UUID_LIBRARIES})
 endif()
-
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(CROSSGUID DEFAULT_MSG CROSSGUID_INCLUDE_DIRS CROSSGUID_LIBRARIES)
-mark_as_advanced(CROSSGUID_INCLUDE_DIRS CROSSGUID_LIBRARIES CROSSGUID_DEFINITIONS CROSSGUID_FOUND)

@@ -52,17 +52,8 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio")
 endif()
 
 # Additional libraries
-set(_libraries_RELEASE d3d11.lib DInput8.lib DSound.lib winmm.lib CrossGuid.lib
-                       Mpr.lib Iphlpapi.lib PowrProf.lib setupapi.lib dwmapi.lib
-                       yajl.lib dxguid.lib DelayImp.lib)
-set(_libraries_DEBUG d3d11.lib DInput8.lib DSound.lib winmm.lib CrossGuidd.lib
-                     Mpr.lib Iphlpapi.lib PowrProf.lib setupapi.lib dwmapi.lib
-                     yajl.lib dxguid.lib DelayImp.lib)
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  list(APPEND DEPLIBS ${_libraries_RELEASE})
-elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  list(APPEND DEPLIBS ${_libraries_DEBUG})
-endif()
+list(APPEND DEPLIBS d3d11.lib DInput8.lib DSound.lib winmm.lib Mpr.lib Iphlpapi.lib
+                    PowrProf.lib setupapi.lib dwmapi.lib yajl.lib dxguid.lib DelayImp.lib)
 
 # NODEFAULTLIB option
 set(_nodefaultlibs_RELEASE libc msvcrt libci msvcprt)
