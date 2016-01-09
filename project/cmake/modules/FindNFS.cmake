@@ -15,7 +15,7 @@
 #   NFS::NFS   - The libnfs library
 
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules(NFS libnfs)
+  pkg_check_modules(NFS libnfs QUIET)
 endif()
 
 find_path(NFS_INCLUDE_DIR nfsc/libnfs.h

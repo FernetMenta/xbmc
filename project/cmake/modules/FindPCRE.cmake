@@ -16,7 +16,7 @@
 #   PCRE::PCRE    - The PCRE library
 
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules(PC_PCRE libpcrecpp)
+  pkg_check_modules(PC_PCRE libpcrecpp QUIET)
 endif()
 
 find_path(PCRE_INCLUDE_DIR pcrecpp.h
