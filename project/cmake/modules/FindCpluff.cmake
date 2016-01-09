@@ -33,7 +33,7 @@ else()
                       CONFIGURE_COMMAND ""
                       # TODO: Building the project directly from lib/cpluff/libcpluff/win32/cpluff.vcxproj
                       #       fails becaue it imports XBMC.defaults.props
-                      BUILD_COMMAND devenv /build ${CMAKE_BUILD_TYPE}
+                      BUILD_COMMAND devenv /build ${CORE_BUILD_CONFIG}
                                            ${CORE_SOURCE_DIR}/project/VS2010Express/XBMC\ for\ Windows.sln
                                            /project cpluff
                       INSTALL_COMMAND "")
