@@ -10,11 +10,13 @@ include(${CORE_SOURCE_DIR}/project/cmake/scripts/${CORE_SYSTEM_NAME}/macros.cmak
 #   NO_MAIN_DEPENDS if specified, the library is not added to main depends
 # Implicit arguments:
 #   SOURCES the sources of the library
+#   HEADERS the headers of the library (only for IDE support)
+#   OTHERS  other library related files (only for IDE support)
 # On return:
 #   Library will be built, optionally added to ${core_DEPENDS}
 function(core_add_library name)
   cmake_parse_arguments(arg "NO_MAIN_DEPENDS" "" "" ${ARGN})
-  add_library(${name} STATIC ${SOURCES})
+  add_library(${name} STATIC ${SOURCES} ${HEADERS} ${OTHERS})
   set_target_properties(${name} PROPERTIES PREFIX "")
   if(NOT arg_NO_MAIN_DEPENDS)
     set(core_DEPENDS ${name} ${core_DEPENDS} CACHE STRING "" FORCE)
