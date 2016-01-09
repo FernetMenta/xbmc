@@ -48,6 +48,8 @@ endif()
 
 # -------- Linker options ---------
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO")
+
 # For #pragma comment(lib X)
 # TODO: It would certainly be better to handle these libraries via CMake modules.
 link_directories(${PROJECT_SOURCE_DIR}/../../lib/win32/ffmpeg/.libs
