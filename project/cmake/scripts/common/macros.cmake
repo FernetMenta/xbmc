@@ -6,15 +6,17 @@ include(${CORE_SOURCE_DIR}/project/cmake/scripts/${CORE_SYSTEM_NAME}/macros.cmak
 # Add a library, optionally as a dependency of the main application
 # Arguments:
 #   name name of the library to add
-#   if another argument is given, library is not added to main depends
+# Optional Arguments:
+#   NO_MAIN_DEPENDS if specified, the library is not added to main depends
 # Implicit arguments:
 #   SOURCES the sources of the library
 # On return:
 #   Library will be built, optionally added to ${core_DEPENDS}
 function(core_add_library name)
+  cmake_parse_arguments(arg "NO_MAIN_DEPENDS" "" "" ${ARGN})
   add_library(${name} STATIC ${SOURCES})
   set_target_properties(${name} PROPERTIES PREFIX "")
-  if(ARGN STREQUAL "")
+  if(NOT arg_NO_MAIN_DEPENDS)
     set(core_DEPENDS ${name} ${core_DEPENDS} CACHE STRING "" FORCE)
   endif()
 
@@ -27,7 +29,7 @@ endfunction()
 
 # Add a test library, and add sources to list for gtest integration macros
 function(core_add_test_library name)
-  core_add_library(${name} 1)
+  core_add_library(${name} NO_MAIN_DEPENDS)
   set_target_properties(${name} PROPERTIES EXCLUDE_FROM_ALL 1)
   foreach(src ${SOURCES})
     set(test_sources ${CMAKE_CURRENT_SOURCE_DIR}/${src} ${test_sources} CACHE STRING "" FORCE)

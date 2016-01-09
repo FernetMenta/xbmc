@@ -6,4 +6,4 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
 
 add_options(CXX ALL_BUILDS "-fPIC")
 
-core_add_library(XBMC_addon 1)
+core_add_library(XBMC_addon NO_MAIN_DEPENDS)
