@@ -89,4 +89,8 @@ else()
 endif()
 
 core_add_library(utils)
-add_dependencies(utils libcpluff ffmpeg crossguid)
+add_dependencies(utils libcpluff ffmpeg)
+
+if(ENABLE_INTERNAL_CROSSGUID)
+  add_dependencies(utils crossguid)
+endif()
