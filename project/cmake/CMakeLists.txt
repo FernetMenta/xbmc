@@ -210,6 +210,7 @@ add_custom_command(OUTPUT ${CORE_BUILD_DIR}/xbmc/CompileInfo.cpp
                           ${CORE_SOURCE_DIR}/xbmc/CompileInfo.cpp.in)
 list(APPEND install_data addons/xbmc.addon/addon.xml)
 add_library(compileinfo OBJECT ${CORE_BUILD_DIR}/xbmc/CompileInfo.cpp)
+target_compile_options(compileinfo PRIVATE "${SYSTEM_DEFINES}")
 
 include_directories(${INCLUDES} ${SYSTEM_INCLUDES})
 add_compile_options(${ARCH_DEFINES} "${SYSTEM_DEFINES}" ${DEP_DEFINES} ${PATH_DEFINES})
