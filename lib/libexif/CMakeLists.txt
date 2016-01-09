@@ -7,4 +7,4 @@ set(CMAKE_POSITION_INDEPENDENT_CODE 1)
 
 add_definitions(-D_LINUX -D_DLL)
 
-core_add_library(exif 1)
+core_add_library(exif NO_MAIN_DEPENDS)
