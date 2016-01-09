@@ -10,7 +10,7 @@ ExternalProject_Add(d3dx11effects
             SOURCE_DIR ${CORE_SOURCE_DIR}/lib/win32/Effects11
             PREFIX ${CORE_BUILD_DIR}/Effects11
             CONFIGURE_COMMAND ""
-            BUILD_COMMAND devenv /build ${CMAKE_BUILD_TYPE}
+            BUILD_COMMAND devenv /build ${CORE_BUILD_CONFIG}
                           ${CORE_SOURCE_DIR}/lib/win32/Effects11/Effects11_2013.sln
             INSTALL_COMMAND "")
 
