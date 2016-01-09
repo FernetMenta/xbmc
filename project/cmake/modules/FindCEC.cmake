@@ -15,7 +15,7 @@
 #   CEC::CEC   - The libCEC library
 
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules(PC_CEC libCEC>=3.0.0)
+  pkg_check_modules(PC_CEC libCEC>=3.0.0 QUIET)
 endif()
 
 find_path(CEC_INCLUDE_DIR libCEC/CEC.h
@@ -47,7 +47,7 @@ if(CEC_FOUND)
     add_library(CEC::CEC UNKNOWN IMPORTED)
     if(CEC_LIBRARY)
       set_target_properties(CEC::CEC PROPERTIES
-                                     IMPORTED_LOCATION "${CEC_LIBRARY_RELEASE}")
+                                     IMPORTED_LOCATION "${CEC_LIBRARY}")
     endif()
     set_target_properties(CEC::CEC PROPERTIES
                                    INTERFACE_INCLUDE_DIRECTORIES "${CEC_INCLUDE_DIR}"
