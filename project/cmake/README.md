@@ -11,6 +11,9 @@ For Linux the required dependencies can be found in
 For Windows the dependencies can be found in the
 [Wiki](http://kodi.wiki/view/HOW-TO:Compile_Kodi_for_Windows) (Step 1-4).
 
+For OSX the required dependencies can be found in
+[docs/README.osx](https://github.com/xbmc/xbmc/tree/master/docs/README.osx).
+
 ## Building Kodi
 
 In order to configure Kodi with CMake execute the following.
@@ -32,6 +35,17 @@ On Windows:
 
 ```
 nmake
+```
+
+For OSX the Toolchain file that is generated in the dependency build has to be
+passed to CMake:
+
+```
+mkdir kodi-build
+cd kodi-build
+cmake -DCMAKE_TOOLCHAIN_FILE=../kodi/tools/depends/target/Toolchain.cmake \
+      ../kodi/project/cmake
+make -j$(sysctl -n hw.ncpu)
 ```
 
 ## Debugging the build
