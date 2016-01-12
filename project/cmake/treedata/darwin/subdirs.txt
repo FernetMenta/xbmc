@@ -1,1 +1,8 @@
-xbmc/network/osx network/osx
+xbmc/network/osx             network/osx
+xbmc/peripherals/bus/osx     peripherals/bus/osx
+xbmc/powermanagement/osx     powermanagement/osx
+xbmc/storage/osx             storage/osx
+xbmc/platform/darwin         platform_darwin
+xbmc/platform/darwin/osx     platform_osx
+xbmc/threads/platform/darwin threads_darwin
+xbmc/windowing/osx           windowing/osx
