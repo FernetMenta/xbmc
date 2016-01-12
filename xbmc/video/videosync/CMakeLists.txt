@@ -15,4 +15,12 @@ if(CORE_SYSTEM_NAME STREQUAL "windows")
   list(APPEND SOURCES VideoSyncD3D.cpp)
 endif()
 
+if(CORE_SYSTEM_NAME STREQUAL "darwin")
+  list(APPEND SOURCES VideoSyncOsx.cpp)
+endif()
+
+if(CORE_SYSTEM_NAME STREQUAL "ios")
+  list(APPEND SOURCES VideoSyncIos.cpp)
+endif()
+
 core_add_library(video_sync)

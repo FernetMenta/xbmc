@@ -12,8 +12,12 @@ if(VDPAU_FOUND)
   list(APPEND SOURCES RendererVDPAU.cpp)
 endif()
 
-if(VDA_FOUND)
+if(CORE_SYSTEM_NAME STREQUAL "darwin")
   list(APPEND SOURCES RendererVDA.cpp)
+endif()
+
+if(CORE_SYSTEM_NAME STREQUAL "ios")
+  list(APPEND SOURCES RendererVTB.cpp)
 endif()
 
 if(MMAL_FOUND)
