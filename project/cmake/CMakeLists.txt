@@ -165,7 +165,7 @@ if(NOT SHAIRPLAY_FOUND)
   core_optional_dep(Shairport ENABLE_AIRTUNES)
 endif()
 
-if(NOT WIN32)
+if(NOT WIN32 AND NOT APPLE)
   core_optional_dep(OpenGl)
   if(OPENGL_FOUND)
     core_require_dep(GLEW)
