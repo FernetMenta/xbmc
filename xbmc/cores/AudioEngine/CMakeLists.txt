@@ -48,6 +48,15 @@ if(CORE_SYSTEM_NAME STREQUAL "rbpi")
                       Sinks/AESinkPi.cpp)
 endif()
 
+if(CORE_SYSTEM_NAME STREQUAL "darwin" OR CORE_SYSTEM_NAME STREQUAL "ios")
+  list(APPEND SOURCES Sinks/osx/AEDeviceEnumerationOSX.cpp
+                      Sinks/osx/CoreAudioChannelLayout.cpp
+                      Sinks/osx/CoreAudioDevice.cpp
+                      Sinks/osx/CoreAudioHardware.cpp
+                      Sinks/osx/CoreAudioHelpers.cpp
+                      Sinks/osx/CoreAudioStream.cpp)
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 core_add_library(audioengine)
