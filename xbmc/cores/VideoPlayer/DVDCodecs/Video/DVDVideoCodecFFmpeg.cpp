@@ -607,10 +607,13 @@ int CDVDVideoCodecFFmpeg::Decode(uint8_t* pData, int iSize, double dts, double p
   int result;
   if (m_pHardware)
     result = m_pHardware->Decode(m_pCodecContext, m_pFrame);
-  else if (m_pFilterGraph && !(m_codecControlFlags & DVD_CODEC_CTRL_DRAIN))
+  else if (m_pFilterGraph)
     result = FilterProcess(m_pFrame);
   else
     result = VC_PICTURE | VC_BUFFER;
+
+  if (m_codecControlFlags & DVD_CODEC_CTRL_DRAIN)
+    result &= ~VC_BUFFER;
 
   if (result & VC_FLUSHED)
     Reset();
