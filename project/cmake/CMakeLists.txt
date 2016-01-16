@@ -286,9 +286,15 @@ endif()
 # Codegen
 add_subdirectory(${CORE_SOURCE_DIR}/xbmc/interfaces/swig build/swig)
 
+# Linker flags
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(LD_WHOLEARCHIVE_BEGIN -Wl,--whole-archive)
+  set(LD_WHOLEARCHIVE_END -Wl,--no-whole-archive)
+endif()
+
 # main binary
 add_executable(${APP_NAME_LC}.bin $<TARGET_OBJECTS:compileinfo>)
-target_link_libraries(${APP_NAME_LC}.bin ${SYSTEM_LDFLAGS} -Wl,--whole-archive ${core_DEPENDS} -Wl,--no-whole-archive
+target_link_libraries(${APP_NAME_LC}.bin ${SYSTEM_LDFLAGS} ${LD_WHOLEARCHIVE_BEGIN} ${core_DEPENDS} ${LD_WHOLEARCHIVE_END}
                       ${DEPLIBS} ${CMAKE_DL_LIBS})
 add_dependencies(${APP_NAME_LC}.bin export-files)
 if(WIN32)
@@ -299,7 +305,7 @@ endif()
 if(NOT CMAKE_CROSSCOMPILING) # Cannot execute tests when cross compiling
   copy_files_from_filelist_to_buildtree(${PROJECT_SOURCE_DIR}/installdata/test-reference-data.txt 1)
   add_executable(${APP_NAME_LC}-test EXCLUDE_FROM_ALL ${CORE_SOURCE_DIR}/xbmc/test/xbmc-test.cpp $<TARGET_OBJECTS:compileinfo>)
-  target_link_libraries(${APP_NAME_LC}-test ${SYSTEM_LDFLAGS} -Wl,--whole-archive ${core_DEPENDS} gtest ${test_archives} -Wl,--no-whole-archive
+  target_link_libraries(${APP_NAME_LC}-test ${SYSTEM_LDFLAGS} ${LD_WHOLEARCHIVE_BEGIN} ${core_DEPENDS} gtest ${test_archives} ${LD_WHOLEARCHIVE_END}
                         ${DEPLIBS} ${CMAKE_DL_LIBS})
   enable_testing()
   gtest_add_tests(${APP_NAME_LC}-test "" ${test_sources})
