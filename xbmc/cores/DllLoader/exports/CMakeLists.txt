@@ -4,7 +4,7 @@ set(SOURCES emu_dummy.cpp
 
 core_add_library(dllexports)
 
-if(NOT WIN32)
+if(NOT WIN32 AND NOT APPLE)
   add_options(C ALL_BUILDS "-fPIC")
   add_library(wrapper OBJECT wrapper.c)
 

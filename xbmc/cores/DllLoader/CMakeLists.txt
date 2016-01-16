@@ -8,11 +8,11 @@ set(SOURCES coff.cpp
             dll_util.cpp
             LibraryLoader.cpp)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND SOURCES mmap_anon.c
                       ldt_keeper.c
                       SoLoader.cpp)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+else()
   list(APPEND SOURCES Win32DllLoader.cpp)
 endif()
 
