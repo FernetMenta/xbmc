@@ -109,4 +109,8 @@ include_directories(${CORE_SOURCE_DIR}/lib/libUPnP
 add_definitions(-DNPT_CONFIG_ENABLE_LOGGING)
 
 core_add_library(filesystem)
-add_dependencies(filesystem libcpluff ffmpeg)
+add_dependencies(filesystem libcpluff)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(filesystem ffmpeg)
+endif()

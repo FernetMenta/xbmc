@@ -2,4 +2,7 @@ set(SOURCES PlayerCoreFactory.cpp
             PlayerSelectionRule.cpp)
 
 core_add_library(playercorefactory)
-add_dependencies(playercorefactory ffmpeg)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(playercorefactory ffmpeg)
+endif()

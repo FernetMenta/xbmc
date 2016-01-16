@@ -42,4 +42,7 @@ if(MMAL_FOUND)
 endif()
 
 core_add_library(dvdvideocodecs)
-add_dependencies(dvdvideocodecs ffmpeg)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(dvdvideocodecs ffmpeg)
+endif()

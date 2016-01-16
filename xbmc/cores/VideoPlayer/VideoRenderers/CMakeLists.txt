@@ -31,4 +31,7 @@ endif()
 
 
 core_add_library(videorenderers)
-add_dependencies(videorenderers ffmpeg)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(videorenderers ffmpeg)
+endif()
