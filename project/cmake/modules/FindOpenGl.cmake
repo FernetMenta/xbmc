@@ -5,11 +5,15 @@
 # OPENGL_INCLUDE_DIRS - the OpenGL include directory
 # OPENGL_LIBRARIES - The OpenGL libraries
 
-if(PKG_CONFIG_FOUND)
+if(PKG_CONFIG_FOUND AND NOT APPLE)
   pkg_check_modules (OPENGL gl glu)
   list(APPEND OPENGL_INCLUDE_DIRS "/usr/include")
 else()
+  set(CMAKE_MODULE_PATH "")
   find_package(OpenGL)
+  if(OPENGL_FOUND)
+    set(OPENGL_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR})
+  endif()
 endif()
 
 include(FindPackageHandleStandardArgs)

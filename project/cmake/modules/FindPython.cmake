@@ -30,4 +30,10 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Python DEFAULT_MSG PYTHON_INCLUDE_DIRS PYTHON_LIBRARIES)
 
+if(CORE_SYSTEM_NAME MATCHES "darwin")
+  find_library(FFI_LIBRARY ffi REQUIRED)
+  find_library(INTL_LIBRARY intl)
+  list(APPEND PYTHON_LIBRARIES ${FFI_LIBRARY} ${INTL_LIBRARY})
+endif()
+
 mark_as_advanced(PYTHON_INCLUDE_DIRS PYTHON_LIBRARIES PYTHON_LDFLAGS)
