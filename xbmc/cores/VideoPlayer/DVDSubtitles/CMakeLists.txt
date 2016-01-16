@@ -12,4 +12,7 @@ set(SOURCES DVDFactorySubtitle.cpp
             DVDSubtitleTagSami.cpp)
 
 core_add_library(dvdsubtitles)
-add_dependencies(dvdsubtitles ffmpeg)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(dvdsubtitles ffmpeg)
+endif()
