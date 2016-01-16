@@ -10,4 +10,7 @@ set(SOURCES GUIDialogPictureInfo.cpp
             SlideShowPicture.cpp)
 
 core_add_library(pictures)
-add_dependencies(pictures ffmpeg)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(pictures ffmpeg)
+endif()

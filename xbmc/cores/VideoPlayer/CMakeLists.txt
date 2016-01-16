@@ -16,7 +16,11 @@ set(SOURCES DVDAudio.cpp
             Edl.cpp)
 
 core_add_library(VideoPlayer)
-add_dependencies(VideoPlayer libcpluff ffmpeg)
+add_dependencies(VideoPlayer libcpluff)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(VideoPlayer ffmpeg)
+endif()
 
 if(NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
   add_dependencies(VideoPlayer dvdnav)

@@ -25,4 +25,7 @@ if(MMAL_FOUND)
 endif()
 
 core_add_library(videorenderers_hwdec)
-add_dependencies(videorenderers_hwdec ffmpeg)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(videorenderers_hwdec ffmpeg)
+endif()

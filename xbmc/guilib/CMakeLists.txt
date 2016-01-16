@@ -106,7 +106,11 @@ if(WIN32)
 endif()
 
 core_add_library(guilib)
-add_dependencies(guilib libcpluff ffmpeg)
+add_dependencies(guilib libcpluff)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(guilib ffmpeg)
+endif()
 
 if(WIN32)
   set(SHADERS_VERTEX guishader_vert.hlsl)

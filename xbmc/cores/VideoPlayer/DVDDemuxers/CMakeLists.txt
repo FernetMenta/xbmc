@@ -10,7 +10,11 @@ set(SOURCES DVDDemuxBXA.cpp
             DVDFactoryDemuxer.cpp)
 
 core_add_library(dvddemuxers)
-add_dependencies(dvddemuxers libcpluff ffmpeg)
+add_dependencies(dvddemuxers libcpluff)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(dvddemuxers ffmpeg)
+endif()
 
 if(NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
   add_dependencies(dvddemuxers dvdnav)

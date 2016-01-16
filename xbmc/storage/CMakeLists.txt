@@ -5,7 +5,10 @@ set(SOURCES AutorunMediaJob.cpp
             MediaManager.cpp)
 
 core_add_library(storage)
-add_dependencies(storage ffmpeg)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(storage ffmpeg)
+endif()
 
 if(NOT CMAKE_SYSTEM_NAME MATCHES "Windows")
   add_dependencies(storage dvdnav)
