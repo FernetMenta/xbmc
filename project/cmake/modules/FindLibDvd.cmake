@@ -7,7 +7,7 @@ if(NOT WIN32)
     ExternalProject_ADD(dvdcss SOURCE_DIR ${CORE_SOURCE_DIR}/lib/libdvd/libdvdcss/
                                PREFIX ${CORE_BUILD_DIR}/libdvd
                         PATCH_COMMAND rm -f config.status
-                        UPDATE_COMMAND autoreconf -vif
+                        UPDATE_COMMAND PATH=${NATIVEPREFIX}/bin:$ENV{PATH} autoreconf -vif
                         CONFIGURE_COMMAND  <SOURCE_DIR>/configure
                                           --target=${ARCH}
                                           --host=${ARCH}
@@ -32,7 +32,7 @@ if(NOT WIN32)
   ExternalProject_ADD(dvdread SOURCE_DIR ${CORE_SOURCE_DIR}/lib/libdvd/libdvdread/
                               PREFIX ${CORE_BUILD_DIR}/libdvd
                       PATCH_COMMAND rm -f config.status
-                      UPDATE_COMMAND autoreconf -vif
+                      UPDATE_COMMAND PATH=${NATIVEPREFIX}/bin:$ENV{PATH} autoreconf -vif
                       CONFIGURE_COMMAND <SOURCE_DIR>/configure
                                         --target=${ARCH}
                                         --host=${ARCH}
@@ -53,7 +53,7 @@ if(NOT WIN32)
   ExternalProject_ADD(dvdnav SOURCE_DIR ${CORE_SOURCE_DIR}/lib/libdvd/libdvdnav/
                              PREFIX ${CORE_BUILD_DIR}/libdvd
                       PATCH_COMMAND rm -f config.status
-                      UPDATE_COMMAND autoreconf -vif
+                      UPDATE_COMMAND PATH=${NATIVEPREFIX}/bin:$ENV{PATH} autoreconf -vif
                       CONFIGURE_COMMAND <SOURCE_DIR>/configure
                                         --target=${ARCH}
                                         --host=${ARCH}
@@ -75,7 +75,7 @@ if(NOT WIN32)
 
   foreach(dvdnav_header ${dvdnav_internal_headers})
    add_custom_command(TARGET dvdnav
-                     COMMAND cmake -E copy ${dvdnav_header}
+                     COMMAND ${CMAKE_COMMAND} -E copy ${dvdnav_header}
                              ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/libdvd/include/dvdnav)
   endforeach()
 
