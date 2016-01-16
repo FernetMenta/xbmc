@@ -3,6 +3,10 @@ if(NOT WIN32)
     set(EXTRA_FLAGS "CC=${CMAKE_C_COMPILER}")
   endif()
 
+  if(APPLE)
+      set(CMAKE_LD_FLAGS "-framework IOKit -framework CoreFoundation")
+  endif()
+
   if(ENABLE_DVDCSS)
     ExternalProject_ADD(dvdcss SOURCE_DIR ${CORE_SOURCE_DIR}/lib/libdvd/libdvdcss/
                                PREFIX ${CORE_BUILD_DIR}/libdvd
