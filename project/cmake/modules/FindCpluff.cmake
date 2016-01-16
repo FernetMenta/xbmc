@@ -13,7 +13,7 @@ if(NOT WIN32)
   ExternalProject_Add(libcpluff SOURCE_DIR ${CORE_SOURCE_DIR}/lib/cpluff
                       PREFIX ${CORE_BUILD_DIR}/cpluff
                       PATCH_COMMAND rm -f config.status
-                      UPDATE_COMMAND autoreconf -vif
+                      UPDATE_COMMAND PATH=${NATIVEPREFIX}/bin:$ENV{PATH} autoreconf -vif
                       CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} ${CORE_SOURCE_DIR}/lib/cpluff/configure
                                         --disable-nls
                                         --enable-static
