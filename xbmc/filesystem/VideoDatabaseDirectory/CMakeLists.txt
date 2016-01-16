@@ -1,6 +1,7 @@
 set(SOURCES DirectoryNode.cpp
             DirectoryNodeEpisodes.cpp
             DirectoryNodeGrouped.cpp
+            DirectoryNodeInProgressTvShows.cpp
             DirectoryNodeMoviesOverview.cpp
             DirectoryNodeMusicVideosOverview.cpp
             DirectoryNodeOverview.cpp
