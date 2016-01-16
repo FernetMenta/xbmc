@@ -2,4 +2,7 @@ set(SOURCES DVDAudioCodecFFmpeg.cpp
             DVDAudioCodecPassthrough.cpp)
 
 core_add_library(dvdaudiocodecs)
-add_dependencies(dvdaudiocodecs ffmpeg)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(dvdaudiocodecs ffmpeg)
+endif()

@@ -34,4 +34,8 @@ set(SOURCES Application.cpp
             XBDateTime.cpp)
 
 core_add_library(xbmc)
-add_dependencies(xbmc libcpluff ffmpeg)
+add_dependencies(xbmc libcpluff)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(xbmc ffmpeg)
+endif()

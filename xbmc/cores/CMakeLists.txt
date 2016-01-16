@@ -3,4 +3,6 @@ set(SOURCES DataCacheCore.cpp
 
 core_add_library(cores)
 
-add_dependencies(cores ffmpeg)
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(cores ffmpeg)
+endif()
