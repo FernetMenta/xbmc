@@ -13,4 +13,8 @@ set(SOURCES Bookmark.cpp
             VideoThumbLoader.cpp)
 
 core_add_library(video)
-add_dependencies(video libcpluff ffmpeg)
+add_dependencies(video libcpluff)
+
+if(ENABLE_INTERNAL_FFMPEG)
+  add_dependencies(video ffmpeg)
+endif()
