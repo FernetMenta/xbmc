@@ -55,6 +55,12 @@ if(CORE_SYSTEM_NAME STREQUAL "darwin" OR CORE_SYSTEM_NAME STREQUAL "ios")
                       Sinks/osx/CoreAudioHardware.cpp
                       Sinks/osx/CoreAudioHelpers.cpp
                       Sinks/osx/CoreAudioStream.cpp)
+
+  if(CORE_SYSTEM_NAME STREQUAL "darwin")
+    list(APPEND SOURCES Sinks/AESinkDARWINOSX.cpp)
+  elseif(CORE_SYSTEM_NAME STREQUAL "ios")
+    list(APPEND SOURCES Sinks/AESinkDARWINIOS.mm)
+  endif()
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

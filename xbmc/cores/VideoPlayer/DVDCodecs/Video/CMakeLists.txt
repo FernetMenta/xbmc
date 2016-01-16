@@ -28,7 +28,7 @@ if(VAAPI_FOUND)
   list(APPEND SOURCES VAAPI.cpp)
 endif()
 
-if(VDA_FOUND)
+if(CORE_SYSTEM_NAME STREQUAL "darwin")
   list(APPEND SOURCES DVDVideoCodecVDA.cpp
                       VDA.cpp)
 endif()
