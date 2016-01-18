@@ -2,7 +2,6 @@ set(SOURCES DVDFactoryInputStream.cpp
             DVDInputStream.cpp
             DVDInputStreamFFmpeg.cpp
             DVDInputStreamFile.cpp
-            DVDInputStreamHttp.cpp
             DVDInputStreamMemory.cpp
             DVDInputStreamNavigator.cpp
             DVDInputStreamPVRManager.cpp
