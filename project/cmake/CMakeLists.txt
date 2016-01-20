@@ -202,6 +202,7 @@ if(ENABLE_CCACHE)
   core_optional_dep(CCache)
 endif()
 
+# Compile Info
 add_custom_command(OUTPUT ${CORE_BUILD_DIR}/xbmc/CompileInfo.cpp
                    COMMAND ${CMAKE_COMMAND} -DCORE_SOURCE_DIR=${CORE_SOURCE_DIR}
                                             -DCORE_SYSTEM_NAME=${CORE_SYSTEM_NAME}
@@ -218,6 +219,15 @@ add_custom_command(OUTPUT ${CORE_BUILD_DIR}/xbmc/CompileInfo.cpp
 list(APPEND install_data addons/xbmc.addon/addon.xml)
 add_library(compileinfo OBJECT ${CORE_BUILD_DIR}/xbmc/CompileInfo.cpp)
 target_compile_options(compileinfo PRIVATE "${SYSTEM_DEFINES}")
+
+# RC File
+if(WIN32)
+  configure_file(${CORE_SOURCE_DIR}/xbmc/win32/XBMC_PC.rc.in
+                 ${CORE_BUILD_DIR}/xbmc/win32/XBMC_PC.rc @ONLY)
+  add_library(resources OBJECT ${CORE_BUILD_DIR}/xbmc/win32/XBMC_PC.rc)
+  target_include_directories(resources PRIVATE ${CORE_SOURCE_DIR}/tools/windows/packaging/media)
+  set(RESOURCES $<TARGET_OBJECTS:resources>)
+endif()
 
 include_directories(${INCLUDES} ${SYSTEM_INCLUDES})
 add_compile_options(${ARCH_DEFINES} "${SYSTEM_DEFINES}" ${DEP_DEFINES} ${PATH_DEFINES})
@@ -293,7 +303,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 # main binary
-add_executable(${APP_NAME_LC}.bin $<TARGET_OBJECTS:compileinfo>)
+add_executable(${APP_NAME_LC}.bin $<TARGET_OBJECTS:compileinfo> "${RESOURCES}")
 target_link_libraries(${APP_NAME_LC}.bin ${SYSTEM_LDFLAGS} ${LD_WHOLEARCHIVE_BEGIN} ${core_DEPENDS} ${LD_WHOLEARCHIVE_END}
                       ${DEPLIBS} ${CMAKE_DL_LIBS})
 add_dependencies(${APP_NAME_LC}.bin export-files)
