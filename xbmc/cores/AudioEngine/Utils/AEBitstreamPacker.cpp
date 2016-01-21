@@ -90,6 +90,29 @@ void CAEBitstreamPacker::Pack(CAEStreamInfo &info, uint8_t* data, int size)
   }
 }
 
+void CAEBitstreamPacker::PackPause(CAEStreamInfo &info, unsigned int millis)
+{
+  switch (info.m_type)
+  {
+    case CAEStreamInfo::STREAM_TYPE_TRUEHD:
+    case CAEStreamInfo::STREAM_TYPE_EAC3:
+      m_dataSize = CAEPackIEC61937::PackPause(m_packedBuffer, millis, GetOutputChannelMap(info).Count() * 2, GetOutputRate(info), 4, info.m_sampleRate);
+      break;
+
+    case CAEStreamInfo::STREAM_TYPE_AC3:
+    case CAEStreamInfo::STREAM_TYPE_DTSHD:
+    case CAEStreamInfo::STREAM_TYPE_DTSHD_CORE:
+    case CAEStreamInfo::STREAM_TYPE_DTS_512:
+    case CAEStreamInfo::STREAM_TYPE_DTS_1024:
+    case CAEStreamInfo::STREAM_TYPE_DTS_2048:
+      m_dataSize = CAEPackIEC61937::PackPause(m_packedBuffer, millis, GetOutputChannelMap(info).Count() * 2, GetOutputRate(info), 3, info.m_sampleRate);
+      break;
+
+    default:
+      CLog::Log(LOGERROR, "CAEBitstreamPacker::Pack - no pack function");
+  }
+}
+
 unsigned int CAEBitstreamPacker::GetSize()
 {
   return m_dataSize;
