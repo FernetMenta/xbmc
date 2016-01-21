@@ -2881,12 +2881,10 @@ void CVideoPlayer::SetPlaySpeed(int speed)
   if (IsPlaying())
     m_messenger.Put(new CDVDMsgInt(CDVDMsg::PLAYER_SETSPEED, speed));
   else
+  {
     m_playSpeed = speed;
-
-  m_VideoPlayerAudio->SetSpeed(speed);
-  m_VideoPlayerVideo->SetSpeed(speed);
-  m_streamPlayerSpeed = speed;
-  SynchronizeDemuxer(100);
+    m_streamPlayerSpeed = speed;
+  }
 }
 
 bool CVideoPlayer::CanPause()
