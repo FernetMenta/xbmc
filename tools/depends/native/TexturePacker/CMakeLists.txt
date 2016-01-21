@@ -1,18 +1,3 @@
-set(SOURCES src/md5.cpp
-            src/XBTFWriter.cpp
-            src/TexturePacker.cpp
-            src/DecoderManager.cpp
-            src/decoder/JPGDecoder.cpp
-            src/decoder/PNGDecoder.cpp
-            src/decoder/GifHelper.cpp
-            src/decoder/GIFDecoder.cpp
-            ${CORE_SOURCE_DIR}/xbmc/guilib/XBTF.cpp)
-
-set(CMAKE_POSITITION_INDEPENDENT_CODE 1)
-
-# Fixme
-add_definitions(-DTARGET_POSIX -DUSE_LZO_PACKING)
-
 list(APPEND CMAKE_MODULE_PATH ${CORE_SOURCE_DIR}/project/cmake/modules)
 
 find_package(Lzo2 REQUIRED)
@@ -36,16 +21,32 @@ else()
   endif()
 endif()
 
-include_directories(${PNG_INCLUDE_DIRS}
-                    ${JPEG_INCLUDE_DIR}
-                    ${GIF_INCLUDE_DIR}
-                    ${CORE_SOURCE_DIR}/xbmc
-                    ${CORE_SOURCE_DIR}/lib
-                    ${CMAKE_CURRENT_SOURCE_DIR}/src
-                    ${CMAKE_CURRENT_SOURCE_DIR}/src/decoder)
+set(SOURCES src/md5.cpp
+            src/XBTFWriter.cpp
+            src/TexturePacker.cpp
+            src/DecoderManager.cpp
+            src/decoder/JPGDecoder.cpp
+            src/decoder/PNGDecoder.cpp
+            src/decoder/GifHelper.cpp
+            src/decoder/GIFDecoder.cpp
+            ${CORE_SOURCE_DIR}/xbmc/guilib/XBTF.cpp)
+
+set(CMAKE_POSITITION_INDEPENDENT_CODE 1)
+
 add_executable(TexturePacker ${SOURCES})
-target_link_libraries(TexturePacker ${SYSTEM_LDFLAGS} squish
-                                    ${GIF_LIBRARIES}
-                                    ${PNG_LIBRARIES}
-                                    ${JPEG_LIBRARIES}
-                                    ${LZO2_LIBRARIES})
+target_include_directories(TexturePacker
+                           PRIVATE ${PNG_INCLUDE_DIRS}
+                                    ${JPEG_INCLUDE_DIR}
+                                    ${GIF_INCLUDE_DIR}
+                                    ${CORE_SOURCE_DIR}/xbmc
+                                    ${CORE_SOURCE_DIR}/xbmc/${PLATFORM_DIR}
+                                    ${CORE_SOURCE_DIR}/lib
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/src
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/src/decoder)
+target_link_libraries(TexturePacker
+                      PRIVATE ${SYSTEM_LDFLAGS} squish
+                              ${GIF_LIBRARIES}
+                              ${PNG_LIBRARIES}
+                              ${JPEG_LIBRARIES}
+                              ${LZO2_LIBRARIES})
+target_compile_options(TexturePacker PRIVATE ${ARCH_DEFINES} -DUSE_LZO_PACKING)

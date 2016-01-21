@@ -86,11 +86,6 @@ if(CMAKE_CROSSCOMPILING)
     set(PKG_CONFIG_FOUND TRUE)
   endif()
   core_require_dep(Squish)
-  set(TEXTUREPACKER_BIN ${NATIVEPREFIX}/bin/TexturePacker)
-elseif(WIN32)
-  set(TexturePacker ${CORE_SOURCE_DIR}/tools/TexturePacker/TexturePacker.exe)
-else()
-  set(TEXTUREPACKER_BIN TexturePacker)
 endif()
 
 find_package(Threads REQUIRED)
@@ -120,6 +115,10 @@ set(dyload_optional RTMP CEC Bluray
 
 # Required by shared objects we link
 set(required_dep_libs PNG EXPAT)
+
+# Required tools
+find_package(TexturePacker REQUIRED)
+find_package(JsonSchemaBuilder REQUIRED)
 
 foreach(dep ${required_dep_libs})
   find_package(${dep} REQUIRED)
@@ -266,7 +265,7 @@ foreach(skin ${SKINS})
 endforeach()
 
 add_custom_target(pack-skins ALL
-                  DEPENDS ${TEXTUREPACKER_BIN} export-files ${XBT_FILES})
+                  DEPENDS TexturePacker::TexturePacker export-files ${XBT_FILES})
 
 core_link_library(exif system/libexif)
 
@@ -281,17 +280,6 @@ add_custom_target(wrap-libraries ALL DEPENDS ${WRAP_FILES})
 
 configure_file(${CORE_SOURCE_DIR}/xbmc/DllPaths_generated.h.in
                ${CORE_BUILD_DIR}/DllPaths_generated.h @ONLY)
-
-# Build helpers
-if(NOT CMAKE_CROSSCOMPILING)
-  add_executable(JsonSchemaBuilder ${CORE_SOURCE_DIR}/tools/depends/native/JsonSchemaBuilder/src/JsonSchemaBuilder.cpp)
-  if(NOT WIN32)
-    add_subdirectory(${CORE_SOURCE_DIR}/tools/depends/native/TexturePacker build/texturepacker)
-  else()
-    # Texture packer cannot be built on Windows due to missing giflib-static.lib in dependencies
-    # Use downloaded exe instead.
-  endif()
-endif()
 
 # Codegen
 add_subdirectory(${CORE_SOURCE_DIR}/xbmc/interfaces/swig build/swig)

@@ -4,14 +4,8 @@ set(JSON_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/version.txt
               ${CMAKE_CURRENT_SOURCE_DIR}/types.json
               ${CMAKE_CURRENT_SOURCE_DIR}/notifications.json)
 
-if(CMAKE_CROSSCOMPILING)
-  set(JASONSCHEMABUILDER_BIN ${NATIVEPREFIX}/bin/JsonSchemaBuilder)
-else()
-  set(JASONSCHEMABUILDER_BIN JsonSchemaBuilder)
-endif()
-
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ServiceDescription.h
-                   COMMAND ${JASONSCHEMABUILDER_BIN} ${JSON_SRCS}
+                   COMMAND JsonSchemaBuilder::JsonSchemaBuilder ${JSON_SRCS}
                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}
                    DEPENDS ${JSON_SRCS}
                    COMMENT "Generating ServiceDescription.h")
@@ -33,5 +27,5 @@ list(APPEND install_data addons/xbmc.json/addon.xml)
 set(install_data ${install_data} PARENT_SCOPE)
 
 if(BOOTSTRAP_IN_TREE)
-  add_dependencies(generate_json_header JsonSchemaBuilder)
+  add_dependencies(generate_json_header JsonSchemaBuilder::JsonSchemaBuilder)
 endif()

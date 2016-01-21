@@ -7,18 +7,11 @@
 # On return:
 #   xbt is added to ${XBT_FILES}
 function(pack_xbt input output)
-  if(CMAKE_CROSSCOMPILING)
-    set(TexturePacker ${TEXTUREPACKER_BIN})
-  elseif(WIN32)
-    set(TexturePacker ${CORE_SOURCE_DIR}/tools/TexturePacker/TexturePacker.exe)
-  else()
-    set(TexturePacker ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/texturepacker/TexturePacker)
-  endif()
   file(GLOB_RECURSE MEDIA_FILES ${input}/*)
   get_filename_component(dir ${output} PATH)
   add_custom_command(OUTPUT  ${output}
                      COMMAND ${CMAKE_COMMAND} -E make_directory ${dir}
-                     COMMAND ${TexturePacker}
+                     COMMAND TexturePacker::TexturePacker
                      ARGS    -input ${input}
                              -output ${output}
                              -dupecheck
