@@ -910,16 +910,25 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
     {
       if (frames > 0)
       {
-        if (m_sinkFormat.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_TRUEHD && frames == 61440)
+        if (m_sinkFormat.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_TRUEHD)
         {
-          int offset;
-          int len;
-          m_packer->GetBuffer();
-          for (int i=0; i<24; i++)
+          if (frames == 61440)
           {
-            offset = i*2560;
-            len = (*(buffer[0] + offset+2560-2) << 8) + *(buffer[0] + offset+2560-1);
-            m_packer->Pack(m_sinkFormat.m_streamInfo, buffer[0] + offset, len);
+            int offset;
+            int len;
+            m_packer->GetBuffer();
+            for (int i=0; i<24; i++)
+            {
+              offset = i*2560;
+              len = (*(buffer[0] + offset+2560-2) << 8) + *(buffer[0] + offset+2560-1);
+              m_packer->Pack(m_sinkFormat.m_streamInfo, buffer[0] + offset, len);
+            }
+          }
+          else
+          {
+            m_extError = true;
+            CLog::Log(LOGERROR, "CActiveAESink::OutputSamples - incomplete TrueHD buffer");
+            return 0;
           }
         }
         else
@@ -985,7 +994,7 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
 
   int framesOrPackets;
 
-  while(frames > 0)
+  while (frames > 0)
   {
     maxFrames = std::min(frames, m_sinkFormat.m_frames);
     written = m_sink->AddPackets(buffer, maxFrames, totalFrames - frames);
