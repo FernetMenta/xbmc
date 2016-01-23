@@ -9,6 +9,7 @@ if(ENABLE_INTERNAL_CROSSGUID)
                       URL http://mirrors.kodi.tv/build-deps/sources/crossguid-${CGUID_VER}.tar.gz
                       PREFIX ${CORE_BUILD_DIR}/crossguid
                       CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}
+                                 -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
                       PATCH_COMMAND ${CMAKE_COMMAND} -E copy
                                     ${CORE_SOURCE_DIR}/tools/depends/target/crossguid/CMakeLists.txt
                                     <SOURCE_DIR> &&
