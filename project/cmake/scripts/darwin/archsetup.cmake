@@ -31,5 +31,6 @@ list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${NATIVEPREFIX})
 
 list(APPEND DEPLIBS "-framework DiskArbitration" "-framework IOKit"
                     "-framework IOSurface" "-framework SystemConfiguration"
+                    "-framework ApplicationServices" "-framework AppKit"
                     "-framework CoreAudio" "-framework AudioToolbox"
-                    "-framework CoreGraphics" "-framework AppKit")
+                    "-framework CoreGraphics")
