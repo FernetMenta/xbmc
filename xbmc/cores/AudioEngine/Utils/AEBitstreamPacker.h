@@ -34,6 +34,7 @@ public:
 
   void Pack(CAEStreamInfo &info, uint8_t* data, int size);
   void PackPause(CAEStreamInfo &info, unsigned int millis);
+  void Reset();
   uint8_t* GetBuffer();
   unsigned int GetSize();
   static unsigned int GetOutputRate(CAEStreamInfo &info);

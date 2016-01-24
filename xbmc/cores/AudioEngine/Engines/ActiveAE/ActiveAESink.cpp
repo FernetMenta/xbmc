@@ -213,7 +213,7 @@ bool CActiveAESink::NeedIECPacking()
       }
     }
   }
-  return false;
+  return true;
 }
 
 enum SINK_STATES
@@ -910,6 +910,7 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
     {
       if (frames > 0)
       {
+        m_packer->Reset();
         if (m_sinkFormat.m_streamInfo.m_type == CAEStreamInfo::STREAM_TYPE_TRUEHD)
         {
           if (frames == 61440)

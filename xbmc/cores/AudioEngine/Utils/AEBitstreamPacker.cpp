@@ -128,9 +128,13 @@ unsigned int CAEBitstreamPacker::GetSize()
 
 uint8_t* CAEBitstreamPacker::GetBuffer()
 {
+  return m_packedBuffer;
+}
+
+void CAEBitstreamPacker::Reset()
+{
   m_dataSize = 0;
   m_trueHDPos = 0;
-  return m_packedBuffer;
 }
 
 /* we need to pack 24 TrueHD audio units into the unknown MAT format before packing into IEC61937 */
