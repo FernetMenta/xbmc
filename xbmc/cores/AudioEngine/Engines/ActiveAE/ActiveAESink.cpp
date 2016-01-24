@@ -940,6 +940,8 @@ unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
         // construct a pause burst
         m_packer->PackPause(m_sinkFormat.m_streamInfo, samples->pkt->pause_burst_ms);
       }
+      else
+        m_packer->Reset();
 
       unsigned int size = m_packer->GetSize();
       packBuffer = m_packer->GetBuffer();

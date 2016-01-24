@@ -2308,7 +2308,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
           if (error > stream->m_format.m_streamInfo.GetDuration())
             ret->pkt->pause_burst_ms = stream->m_format.m_streamInfo.GetDuration();
 
-          stream->m_syncError.Correction(ret->pkt->pause_burst_ms);
+          stream->m_syncError.Correction(-ret->pkt->pause_burst_ms);
           error -= ret->pkt->pause_burst_ms;
         }
         else
@@ -2334,21 +2334,33 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
       int framesToSkip = -error / 1000 * buf->pkt->config.sample_rate;
       if (framesToSkip > buf->pkt->nb_samples)
         framesToSkip = buf->pkt->nb_samples;
-      if (m_mode == MODE_TRANSCODE || m_mode == MODE_RAW)
+      if (m_mode == MODE_TRANSCODE)
       {
         if (framesToSkip > (int) (m_encoderFormat.m_frames / 2))
           framesToSkip = buf->pkt->nb_samples;
         else
           framesToSkip = 0;
       }
-      int bytesToSkip = framesToSkip*buf->pkt->bytes_per_sample;
-      for(int i=0; i<buf->pkt->planes; i++)
+      if (m_mode == MODE_RAW)
       {
-        memmove(buf->pkt->data[i], buf->pkt->data[i]+bytesToSkip, buf->pkt->linesize - bytesToSkip);
+        if (-error > stream->m_format.m_streamInfo.GetDuration() / 2)
+        {
+          stream->m_syncError.Correction(stream->m_format.m_streamInfo.GetDuration());
+          error += stream->m_format.m_streamInfo.GetDuration();
+          buf->pkt->nb_samples = 0;
+        }
       }
-      buf->pkt->nb_samples -= framesToSkip;
-      stream->m_syncError.Correction(framesToSkip*1000/buf->pkt->config.sample_rate);
-      error += framesToSkip*1000/buf->pkt->config.sample_rate;
+      else
+      {
+        int bytesToSkip = framesToSkip*buf->pkt->bytes_per_sample;
+        for(int i=0; i<buf->pkt->planes; i++)
+        {
+          memmove(buf->pkt->data[i], buf->pkt->data[i]+bytesToSkip, buf->pkt->linesize - bytesToSkip);
+        }
+        buf->pkt->nb_samples -= framesToSkip;
+        stream->m_syncError.Correction(framesToSkip*1000/buf->pkt->config.sample_rate);
+        error += framesToSkip*1000/buf->pkt->config.sample_rate;
+      }
     }
 
     if (fabs(error) < 30)
