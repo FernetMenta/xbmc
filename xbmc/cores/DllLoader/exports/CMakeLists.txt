@@ -4,6 +4,12 @@ set(SOURCES emu_dummy.cpp
 
 core_add_library(dllexports)
 
+if(APPLE)
+  add_library(wrapper OBJECT wrapper.c)
+  add_custom_target(wrapper.def ALL ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/wrapper_mach_alias wrapper.def)
+  add_dependencies(wrapper.def wrapper)
+endif()
+
 if(NOT WIN32 AND NOT APPLE)
   add_options(C ALL_BUILDS "-fPIC")
   add_library(wrapper OBJECT wrapper.c)
