@@ -278,6 +278,7 @@ core_link_library(XBMC_pvr   addons/library.xbmc.pvr/libXBMC_pvr)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/system/players/VideoPlayer)
 add_custom_target(wrap-libraries ALL DEPENDS ${WRAP_FILES})
 
+set(LIBCEC_SONAME "${CEC_SONAME}")
 configure_file(${CORE_SOURCE_DIR}/xbmc/DllPaths_generated.h.in
                ${CORE_BUILD_DIR}/DllPaths_generated.h @ONLY)
 
