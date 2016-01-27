@@ -19,7 +19,7 @@ if(PLIST_FOUND)
   list(APPEND SOURCES AirPlayServer.cpp)
 endif()
 
-if(SHAIRPLAY_FOUND OR SHAIRPORT_FOUND)
+if(SHAIRPLAY_FOUND)
   list(APPEND SOURCES AirTunesServer.cpp)
 endif()
 

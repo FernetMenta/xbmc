@@ -161,9 +161,8 @@ if(ENABLE_OPTICAL)
   core_require_dep(Cdio)
 endif()
 
-core_optional_dep(Shairplay ENABLE_AIRTUNES)
-if(NOT SHAIRPLAY_FOUND)
-  core_optional_dep(Shairport ENABLE_AIRTUNES)
+if(ENABLE_AIRTUNES)
+  core_require_dyload_dep(Shairplay)
 endif()
 
 if(NOT WIN32)
