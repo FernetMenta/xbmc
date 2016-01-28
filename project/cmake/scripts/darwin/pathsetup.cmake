@@ -1,7 +1,5 @@
 if(NOT prefix)
-  set(prefix ${CMAKE_INSTALL_PREFIX})
-else()
-  set(CMAKE_INSTALL_PREFIX ${prefix})
+  set(prefix ${DEPENDS_PATH})
 endif()
 if(NOT exec_prefix)
   set(exec_prefix \${prefix})
