@@ -612,6 +612,8 @@
 		7CF34DA01930264A00D543C5 /* AudioEncoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CF34D9D1930264A00D543C5 /* AudioEncoder.cpp */; };
 		7CF80DC919710DC2003B2B34 /* KeyboardLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CF80DC719710DC2003B2B34 /* KeyboardLayout.cpp */; };
 		7CF80DCA19710DC2003B2B34 /* KeyboardLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CF80DC719710DC2003B2B34 /* KeyboardLayout.cpp */; };
+		7CFC08381C5BA7D0000E5E73 /* DVDDemuxClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CFC08361C5BA7D0000E5E73 /* DVDDemuxClient.cpp */; };
+		7CFC08391C5BA7D0000E5E73 /* DVDDemuxClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CFC08361C5BA7D0000E5E73 /* DVDDemuxClient.cpp */; };
 		815EE6350E17F1DC009FBE3C /* DVDInputStreamRTMP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 815EE6330E17F1DC009FBE3C /* DVDInputStreamRTMP.cpp */; };
 		83E0B2490F7C95FF0091643F /* Atomics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 83E0B2480F7C95FF0091643F /* Atomics.cpp */; };
 		880DBE4E0DC223FF00E26B71 /* MediaSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 880DBE4B0DC223FF00E26B71 /* MediaSource.cpp */; };
@@ -680,7 +682,6 @@
 		C84828FA156CFD5E005A996F /* GUIEPGGridContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C84828F2156CFD5E005A996F /* GUIEPGGridContainer.cpp */; };
 		C84828FE156CFDC3005A996F /* GUIDialogExtendedProgressBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C84828FC156CFDC3005A996F /* GUIDialogExtendedProgressBar.cpp */; };
 		C8482901156CFE4B005A996F /* Observer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C84828FF156CFE4B005A996F /* Observer.cpp */; };
-		C8482904156CFED9005A996F /* DVDDemuxPVRClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8482902156CFED9005A996F /* DVDDemuxPVRClient.cpp */; };
 		C8482909156CFF24005A996F /* PVRDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8482905156CFF24005A996F /* PVRDirectory.cpp */; };
 		C848290A156CFF24005A996F /* PVRFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8482907156CFF24005A996F /* PVRFile.cpp */; };
 		C8482910156CFFA0005A996F /* DVDInputStreamPVRManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C848290E156CFFA0005A996F /* DVDInputStreamPVRManager.cpp */; };
@@ -1411,7 +1412,6 @@
 		E49911D3174E5D2E00741B6D /* DVDDemuxBXA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AE89ACA41621DAB800E17DBC /* DVDDemuxBXA.cpp */; };
 		E49911D4174E5D2E00741B6D /* DVDDemuxCDDA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF52566B1732C1890094A464 /* DVDDemuxCDDA.cpp */; };
 		E49911D5174E5D2E00741B6D /* DVDDemuxFFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E38E25C20D263DE200618676 /* DVDDemuxFFmpeg.cpp */; };
-		E49911D7174E5D2E00741B6D /* DVDDemuxPVRClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8482902156CFED9005A996F /* DVDDemuxPVRClient.cpp */; };
 		E49911D9174E5D2E00741B6D /* DVDDemuxUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E38E154F0D25F9F900618676 /* DVDDemuxUtils.cpp */; };
 		E49911DA174E5D2E00741B6D /* DVDDemuxVobsub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E33206370D5070AA00435CE3 /* DVDDemuxVobsub.cpp */; };
 		E49911DB174E5D2E00741B6D /* DVDFactoryDemuxer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E38E25BF0D263DC100618676 /* DVDFactoryDemuxer.cpp */; };
@@ -3249,6 +3249,8 @@
 		7CF34D9E1930264A00D543C5 /* AudioEncoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioEncoder.h; sourceTree = "<group>"; };
 		7CF80DC719710DC2003B2B34 /* KeyboardLayout.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = KeyboardLayout.cpp; sourceTree = "<group>"; };
 		7CF80DC819710DC2003B2B34 /* KeyboardLayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KeyboardLayout.h; sourceTree = "<group>"; };
+		7CFC08361C5BA7D0000E5E73 /* DVDDemuxClient.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DVDDemuxClient.cpp; sourceTree = "<group>"; };
+		7CFC08371C5BA7D0000E5E73 /* DVDDemuxClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DVDDemuxClient.h; sourceTree = "<group>"; };
 		815EE6330E17F1DC009FBE3C /* DVDInputStreamRTMP.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DVDInputStreamRTMP.cpp; sourceTree = "<group>"; };
 		815EE6340E17F1DC009FBE3C /* DVDInputStreamRTMP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DVDInputStreamRTMP.h; sourceTree = "<group>"; };
 		82F6F0EA16F269BB0081CC3C /* Buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Buffer.h; path = commons/Buffer.h; sourceTree = "<group>"; };
@@ -3378,8 +3380,6 @@
 		C84828FD156CFDC3005A996F /* GUIDialogExtendedProgressBar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIDialogExtendedProgressBar.h; sourceTree = "<group>"; };
 		C84828FF156CFE4B005A996F /* Observer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Observer.cpp; sourceTree = "<group>"; };
 		C8482900156CFE4B005A996F /* Observer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Observer.h; sourceTree = "<group>"; };
-		C8482902156CFED9005A996F /* DVDDemuxPVRClient.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DVDDemuxPVRClient.cpp; sourceTree = "<group>"; };
-		C8482903156CFED9005A996F /* DVDDemuxPVRClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DVDDemuxPVRClient.h; sourceTree = "<group>"; };
 		C8482905156CFF24005A996F /* PVRDirectory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PVRDirectory.cpp; sourceTree = "<group>"; };
 		C8482906156CFF24005A996F /* PVRDirectory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PVRDirectory.h; sourceTree = "<group>"; };
 		C8482907156CFF24005A996F /* PVRFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PVRFile.cpp; sourceTree = "<group>"; };
@@ -7657,6 +7657,8 @@
 		E38E15480D25F9F900618676 /* DVDDemuxers */ = {
 			isa = PBXGroup;
 			children = (
+				7CFC08361C5BA7D0000E5E73 /* DVDDemuxClient.cpp */,
+				7CFC08371C5BA7D0000E5E73 /* DVDDemuxClient.h */,
 				E38E15490D25F9F900618676 /* DVDDemux.cpp */,
 				E38E154A0D25F9F900618676 /* DVDDemux.h */,
 				AE89ACA41621DAB800E17DBC /* DVDDemuxBXA.cpp */,
@@ -7667,8 +7669,6 @@
 				DF52566C1732C1890094A464 /* DVDDemuxCDDA.h */,
 				E38E25C20D263DE200618676 /* DVDDemuxFFmpeg.cpp */,
 				E38E154C0D25F9F900618676 /* DVDDemuxFFmpeg.h */,
-				C8482902156CFED9005A996F /* DVDDemuxPVRClient.cpp */,
-				C8482903156CFED9005A996F /* DVDDemuxPVRClient.h */,
 				E38E154F0D25F9F900618676 /* DVDDemuxUtils.cpp */,
 				E38E15500D25F9F900618676 /* DVDDemuxUtils.h */,
 				E33206370D5070AA00435CE3 /* DVDDemuxVobsub.cpp */,
@@ -9260,6 +9260,7 @@
 				E38E20660D25F9FD00618676 /* DirectoryNodeRecentlyAddedEpisodes.cpp in Sources */,
 				DF4BF01D1A4EF3410053AC56 /* DVDDemuxCC.cpp in Sources */,
 				7C8E02281BA35D0B0072E8B2 /* GUIBuiltins.cpp in Sources */,
+				7CFC08381C5BA7D0000E5E73 /* DVDDemuxClient.cpp in Sources */,
 				E38E20670D25F9FD00618676 /* DirectoryNodeRecentlyAddedMovies.cpp in Sources */,
 				E38E20680D25F9FD00618676 /* DirectoryNodeRecentlyAddedMusicVideos.cpp in Sources */,
 				E38E20690D25F9FD00618676 /* DirectoryNodeRoot.cpp in Sources */,
@@ -9866,7 +9867,6 @@
 				C84828FE156CFDC3005A996F /* GUIDialogExtendedProgressBar.cpp in Sources */,
 				C8482901156CFE4B005A996F /* Observer.cpp in Sources */,
 				DFC6F4C11AFF7E300039A7FA /* rfft.cpp in Sources */,
-				C8482904156CFED9005A996F /* DVDDemuxPVRClient.cpp in Sources */,
 				C8482909156CFF24005A996F /* PVRDirectory.cpp in Sources */,
 				C848290A156CFF24005A996F /* PVRFile.cpp in Sources */,
 				C8482910156CFFA0005A996F /* DVDInputStreamPVRManager.cpp in Sources */,
@@ -10320,7 +10320,6 @@
 				E49911D3174E5D2E00741B6D /* DVDDemuxBXA.cpp in Sources */,
 				E49911D4174E5D2E00741B6D /* DVDDemuxCDDA.cpp in Sources */,
 				E49911D5174E5D2E00741B6D /* DVDDemuxFFmpeg.cpp in Sources */,
-				E49911D7174E5D2E00741B6D /* DVDDemuxPVRClient.cpp in Sources */,
 				E49911D9174E5D2E00741B6D /* DVDDemuxUtils.cpp in Sources */,
 				E49911DA174E5D2E00741B6D /* DVDDemuxVobsub.cpp in Sources */,
 				E49911DB174E5D2E00741B6D /* DVDFactoryDemuxer.cpp in Sources */,
@@ -10747,6 +10746,7 @@
 				E49913AB174E5F2100741B6D /* ZeroconfOSX.cpp in Sources */,
 				E49913AC174E5F3300741B6D /* UPnP.cpp in Sources */,
 				E49913AD174E5F3300741B6D /* UPnPInternal.cpp in Sources */,
+				7CFC08391C5BA7D0000E5E73 /* DVDDemuxClient.cpp in Sources */,
 				E49913AE174E5F3300741B6D /* UPnPPlayer.cpp in Sources */,
 				E49913AF174E5F3300741B6D /* UPnPRenderer.cpp in Sources */,
 				E49913B0174E5F3300741B6D /* UPnPServer.cpp in Sources */,

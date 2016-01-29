@@ -40,6 +40,7 @@ class CDVDInputStreamPVRManager
   : public CDVDInputStream
   , public CDVDInputStream::IDisplayTime
   , public CDVDInputStream::ISeekable
+  , public CDVDInputStream::IDemux
 {
 public:
   CDVDInputStreamPVRManager(IVideoPlayer* pPlayer, CFileItem& fileitem);
@@ -88,7 +89,14 @@ public:
   /* returns m_pOtherStream */
   CDVDInputStream* GetOtherStream();
 
-  void ResetScanTimeout(unsigned int iTimeoutMs);
+  void ResetScanTimeout(unsigned int iTimeoutMs) override;
+
+  // Demux interface
+  virtual DemuxPacket* Read() override;
+  virtual CDemuxStream* GetStream(int iStreamId) override;
+  virtual int GetNrOfStreams() override;
+  virtual void SetSpeed(int iSpeed) override;
+  virtual bool SeekTime(int time, bool backward = false, double* startpts = NULL) override;
 
 protected:
   bool CloseAndOpen(const char* strFile);

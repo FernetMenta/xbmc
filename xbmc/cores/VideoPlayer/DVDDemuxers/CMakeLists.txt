@@ -3,7 +3,7 @@ set(SOURCES DVDDemuxBXA.cpp
             DVDDemuxCDDA.cpp
             DVDDemux.cpp
             DVDDemuxFFmpeg.cpp
-            DVDDemuxPVRClient.cpp
+            DVDDemuxClient.cpp
             DVDDemuxUtils.cpp
             DVDDemuxVobsub.cpp
             DVDFactoryDemuxer.cpp)

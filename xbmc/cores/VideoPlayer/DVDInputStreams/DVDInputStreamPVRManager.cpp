@@ -401,3 +401,37 @@ bool CDVDInputStreamPVRManager::IsRealtime()
 {
   return g_PVRClients->IsRealTimeStream();
 }
+
+DemuxPacket* CDVDInputStreamPVRManager::Read()
+{
+  return nullptr;
+}
+
+CDemuxStream* CDVDInputStreamPVRManager::GetStream(int iStreamId)
+{
+  return nullptr;
+}
+
+int CDVDInputStreamPVRManager::GetNrOfStreams()
+{
+  return 0;
+}
+
+void CDVDInputStreamPVRManager::SetSpeed(int Speed)
+{
+  PVR_CLIENT client;
+  if (g_PVRClients->GetPlayingClient(client))
+  {
+    client->SetSpeed(Speed);
+  }
+}
+
+bool CDVDInputStreamPVRManager::SeekTime(int timems, bool backwards, double *startpts)
+{
+  PVR_CLIENT client;
+  if (g_PVRClients->GetPlayingClient(client))
+  {
+    return client->SeekTime(timems, backwards, startpts);
+  }
+  return false;
+}

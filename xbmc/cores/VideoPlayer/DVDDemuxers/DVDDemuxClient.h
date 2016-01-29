@@ -28,65 +28,65 @@ extern "C" {
 #include "libavformat/avformat.h"
 }
 
-class CDVDDemuxPVRClient;
+class CDVDDemuxClient;
 struct PVR_STREAM_PROPERTIES;
 
-class CDemuxStreamPVRInternal
+class CDemuxStreamClientInternal
 {
 public:
-  CDemuxStreamPVRInternal(CDVDDemuxPVRClient *parent);
-  ~CDemuxStreamPVRInternal();
+  CDemuxStreamClientInternal(CDVDDemuxClient *parent);
+  ~CDemuxStreamClientInternal();
 
   void DisposeParser();
 
-  CDVDDemuxPVRClient  * m_parent;
-  AVCodecParserContext* m_parser;
-  AVCodecContext      * m_context;
-  bool                  m_parser_split;
+  CDVDDemuxClient *m_parent;
+  AVCodecParserContext *m_parser;
+  AVCodecContext *m_context;
+  bool m_parser_split;
 };
 
-class CDemuxStreamVideoPVRClient
+class CDemuxStreamVideoClient
   : public CDemuxStreamVideo
-  , public CDemuxStreamPVRInternal
+  , public CDemuxStreamClientInternal
 {
 public:
-  CDemuxStreamVideoPVRClient(CDVDDemuxPVRClient *parent)
-    : CDemuxStreamPVRInternal(parent)
+  CDemuxStreamVideoClient(CDVDDemuxClient *parent)
+    : CDemuxStreamClientInternal(parent)
   {}
   virtual std::string GetStreamInfo() override;
 };
 
-class CDemuxStreamAudioPVRClient
+class CDemuxStreamAudioClient
   : public CDemuxStreamAudio
-  , public CDemuxStreamPVRInternal
+  , public CDemuxStreamClientInternal
 {
 public:
-  CDemuxStreamAudioPVRClient(CDVDDemuxPVRClient *parent)
-    : CDemuxStreamPVRInternal(parent)
+  CDemuxStreamAudioClient(CDVDDemuxClient *parent)
+    : CDemuxStreamClientInternal(parent)
   {}
   virtual std::string GetStreamInfo() override;
 };
 
-class CDemuxStreamSubtitlePVRClient
+class CDemuxStreamSubtitleClient
   : public CDemuxStreamSubtitle
-  , public CDemuxStreamPVRInternal
+  , public CDemuxStreamClientInternal
 {
 public:
-  CDemuxStreamSubtitlePVRClient(CDVDDemuxPVRClient *parent)
-    : CDemuxStreamPVRInternal(parent)
+  CDemuxStreamSubtitleClient(CDVDDemuxClient *parent)
+    : CDemuxStreamClientInternal(parent)
   {}
   virtual std::string GetStreamInfo() override;
 };
 
 
-class CDVDDemuxPVRClient : public CDVDDemux
+class CDVDDemuxClient : public CDVDDemux
 {
-  friend class CDemuxStreamPVRInternal;
+  friend class CDemuxStreamClientInternal;
 
 public:
 
-  CDVDDemuxPVRClient();
-  ~CDVDDemuxPVRClient();
+  CDVDDemuxClient();
+  ~CDVDDemuxClient();
 
   bool Open(CDVDInputStream* pInput);
   void Dispose();
