@@ -15,6 +15,7 @@ set(SOURCES Application.cpp
             GUIInfoManager.cpp
             GUILargeTextureManager.cpp
             GUIPassword.cpp
+            InfoScanner.cpp
             LangInfo.cpp
             MediaSource.cpp
             NfoFile.cpp

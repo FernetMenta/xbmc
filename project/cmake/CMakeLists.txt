@@ -20,7 +20,6 @@ option(ENABLE_MYSQLCLIENT "Enable MySql support?" ON)
 option(ENABLE_AVAHI       "Enable Avahi support?" ON)
 option(ENABLE_RTMP        "Enable RTMP support?" ON)
 option(ENABLE_BLURAY      "Enable BluRay support?" ON)
-option(ENABLE_AFPCLIENT   "Enable AFP support?" ON)
 option(ENABLE_PLIST       "Enable AirPlay support?" ON)
 option(ENABLE_NFS         "Enable NFS support?" ON)
 option(ENABLE_AIRTUNES    "Enable AirTunes support?" ON)
@@ -110,8 +109,7 @@ set(optional_deps MicroHttpd MySqlClient SSH
 set(required_dyload Curl ASS)
 
 # Optional, dyloaded deps
-set(dyload_optional RTMP CEC Bluray
-                    AfpClient Plist NFS)
+set(dyload_optional RTMP CEC Bluray Plist NFS)
 
 # Required by shared objects we link
 set(required_dep_libs PNG EXPAT)
@@ -161,9 +159,8 @@ if(ENABLE_OPTICAL)
   core_require_dep(Cdio)
 endif()
 
-core_optional_dep(Shairplay ENABLE_AIRTUNES)
-if(NOT SHAIRPLAY_FOUND)
-  core_optional_dep(Shairport ENABLE_AIRTUNES)
+if(ENABLE_AIRTUNES)
+  core_require_dyload_dep(Shairplay)
 endif()
 
 if(NOT WIN32)
@@ -278,6 +275,7 @@ core_link_library(XBMC_pvr   addons/library.xbmc.pvr/libXBMC_pvr)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/system/players/VideoPlayer)
 add_custom_target(wrap-libraries ALL DEPENDS ${WRAP_FILES})
 
+set(LIBCEC_SONAME "${CEC_SONAME}")
 configure_file(${CORE_SOURCE_DIR}/xbmc/DllPaths_generated.h.in
                ${CORE_BUILD_DIR}/DllPaths_generated.h @ONLY)
 

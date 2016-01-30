@@ -14,12 +14,12 @@ function(core_link_library lib wraplib)
     set(check_arg ${ARGV3})
     set(data_arg ${ARGV4})
   endif()
-  if(check_arg STREQUAL "export")
+  if(check_arg STREQUAL export)
     set(export ${export}
         -Wl,--version-script=${ARGV3})
-  elseif(check_arg STREQUAL "nowrap")
+  elseif(check_arg STREQUAL nowrap)
     set(export ${data_arg})
-  elseif(check_arg STREQUAL "extras")
+  elseif(check_arg STREQUAL extras)
     foreach(arg ${data_arg})
       list(APPEND export ${arg})
     endforeach()
@@ -48,34 +48,48 @@ function(core_link_library lib wraplib)
 endfunction()
 
 function(find_soname lib)
-  if(ARGV1)
-    set(liblow ${ARGV1})
-  else()
-    string(TOLOWER ${lib} liblow)
-  endif()
+  string(TOLOWER ${lib} liblow)
   if(${lib}_LDFLAGS)
     set(link_lib "${${lib}_LDFLAGS}")
   else()
-    if(IS_ABSOLUTE "${${lib}_LIBRARIES}")
-      set(link_lib "${${lib}_LIBRARIES}")
-    else()
-      set(link_lib -l${${lib}_LIBRARIES})
-    endif()
+    set(link_lib "${${lib}_LIBRARIES}")
   endif()
-  execute_process(COMMAND ${CMAKE_C_COMPILER} -nostdlib -o /dev/null -Wl,-M ${link_lib} 
-                  COMMAND grep LOAD.*${liblow}
+
+  execute_process(COMMAND ${CMAKE_C_COMPILER} -print-search-dirs
+                  COMMAND fgrep libraries:
+                  COMMAND sed "s/[^=]*=\\(.*\\)/\\1/"
+                  COMMAND sed "s/:/ /g"
                   ERROR_QUIET
-                  OUTPUT_VARIABLE ${lib}_FILENAME)
-  string(REPLACE "LOAD " "" ${lib}_FILENAME "${${lib}_FILENAME}")
-  string(STRIP "${${lib}_FILENAME}" ${lib}_FILENAME)
-  if(${lib}_FILENAME)
-    execute_process(COMMAND objdump -p ${${lib}_FILENAME}
-                    COMMAND grep SONAME.*${liblow}
-                    ERROR_QUIET
-                    OUTPUT_VARIABLE ${lib}_SONAME)
-    string(REPLACE "SONAME " "" ${lib}_SONAME ${${lib}_SONAME})
-    string(STRIP ${${lib}_SONAME} ${lib}_SONAME)
-    message(STATUS "${lib} soname: ${${lib}_SONAME}")
-    set(${lib}_SONAME ${${lib}_SONAME} PARENT_SCOPE)
-  endif()
+                  OUTPUT_VARIABLE cc_lib_path
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND echo ${link_lib}
+                  COMMAND sed "s/-L[ ]*//g"
+                  COMMAND sed "s/-l[^ ]*//g"
+                  ERROR_QUIET
+                  OUTPUT_VARIABLE env_lib_path
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+  foreach(path ${cc_lib_path} ${env_lib_path})
+    if(IS_DIRECTORY ${path})
+      execute_process(COMMAND ls -- ${path}/lib${liblow}.dylib
+                      ERROR_QUIET
+                      OUTPUT_VARIABLE lib_file
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    else()
+      set(lib_file ${path})
+    endif()
+    if(lib_file)
+      # we want the path/name that is embedded in the dylib
+      execute_process(COMMAND otool -L ${lib_file}
+                      COMMAND grep -v lib${liblow}.dylib
+                      COMMAND grep ${liblow}
+                      COMMAND awk "{V=1; print $V}"
+                      ERROR_QUIET
+                      OUTPUT_VARIABLE filename
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+      get_filename_component(${lib}_SONAME "${filename}" NAME)
+      message(STATUS "${lib} soname: ${${lib}_SONAME}")
+    endif()
+  endforeach()
+  set(${lib}_SONAME ${${lib}_SONAME} PARENT_SCOPE)
 endfunction()

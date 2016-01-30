@@ -63,7 +63,6 @@ set(SOURCES ActorProtocol.cpp
             SystemInfo.cpp
             Temperature.cpp
             TextSearch.cpp
-            TimeSmoother.cpp
             TimeUtils.cpp
             URIUtils.cpp
             UrlOptions.cpp
