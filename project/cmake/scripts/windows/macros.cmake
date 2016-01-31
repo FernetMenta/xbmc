@@ -39,36 +39,8 @@ function(core_link_library lib wraplib)
 endfunction()
 
 function(find_soname lib)
-  if(ARGV1)
-    set(liblow ${ARGV1})
-  else()
-    string(TOLOWER ${lib} liblow)
-  endif()
-  if(${lib}_LDFLAGS)
-    set(link_lib "${${lib}_LDFLAGS}")
-  else()
-    if(IS_ABSOLUTE "${${lib}_LIBRARIES}")
-      set(link_lib "${${lib}_LIBRARIES}")
-    else()
-      set(link_lib -l${${lib}_LIBRARIES})
-    endif()
-  endif()
-  execute_process(COMMAND ${CMAKE_C_COMPILER} -nostdlib -o /dev/null -Wl,-M ${link_lib} 
-                  COMMAND grep LOAD.*${liblow}
-                  ERROR_QUIET
-                  OUTPUT_VARIABLE ${lib}_FILENAME)
-  string(REPLACE "LOAD " "" ${lib}_FILENAME "${${lib}_FILENAME}")
-  string(STRIP "${${lib}_FILENAME}" ${lib}_FILENAME)
-  if(${lib}_FILENAME)
-    execute_process(COMMAND objdump -p ${${lib}_FILENAME}
-                    COMMAND grep SONAME.*${liblow}
-                    ERROR_QUIET
-                    OUTPUT_VARIABLE ${lib}_SONAME)
-    string(REPLACE "SONAME " "" ${lib}_SONAME ${${lib}_SONAME})
-    string(STRIP ${${lib}_SONAME} ${lib}_SONAME)
-    message(STATUS "${lib} soname: ${${lib}_SONAME}")
-    set(${lib}_SONAME ${${lib}_SONAME} PARENT_SCOPE)
-  endif()
+  # Windows uses hardcoded dlls in xbmc/DllPaths_win32.h.
+  # Therefore the output of this function is unused.
 endfunction()
 
 # Add precompiled header to target
