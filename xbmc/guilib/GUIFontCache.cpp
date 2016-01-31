@@ -28,10 +28,11 @@ class CGUIFontCacheImpl
 {
   struct EntryList
   {
-    typedef std::multimap<size_t, CGUIFontCacheEntry<Position, Value>*> HashMap;
-    typedef std::multimap<size_t, typename HashMap::iterator> AgeMap;
+    using HashMap = std::multimap<size_t, CGUIFontCacheEntry<Position, Value>*>;
+    using HashIter = typename HashMap::iterator;
+    using AgeMap = std::multimap<size_t, HashIter>;
 
-    typename HashMap::iterator Insert(size_t hash, CGUIFontCacheEntry<Position, Value> *v)
+    HashIter Insert(size_t hash, CGUIFontCacheEntry<Position, Value> *v)
     {
       auto r (hashMap.insert(typename HashMap::value_type(hash, v)));
       if (r->second)
@@ -49,9 +50,8 @@ class CGUIFontCacheImpl
     {
       CGUIFontCacheHash<Position> hashGen;
       CGUIFontCacheKeysMatch<Position> keyMatch;
-      typename HashMap::iterator ret;
       auto range = hashMap.equal_range(hashGen(key));
-      for (ret = range.first; ret != range.second; ++ret)
+      for (auto ret = range.first; ret != range.second; ++ret)
       {
         if (keyMatch(ret->second->m_key, key))
         {
@@ -60,11 +60,10 @@ class CGUIFontCacheImpl
       }
       return hashMap.end();
     }
-    void UpdateAge(typename HashMap::iterator it, size_t millis)
+    void UpdateAge(HashIter it, size_t millis)
     {
       auto range = ageMap.equal_range(millis);
-      typename AgeMap::iterator ageit;
-      for (ageit = range.first; ageit != range.second; ++ageit)
+      for (auto ageit = range.first; ageit != range.second; ++ageit)
       {
         if (ageit->second == it)
         {
