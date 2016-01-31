@@ -13,7 +13,7 @@ if(NOT TARGET JsonSchemaBuilder::JsonSchemaBuilder)
     set_target_properties(JsonSchemaBuilder::JsonSchemaBuilder PROPERTIES
                                                                IMPORTED_LOCATION "${NATIVEPREFIX}/bin/JsonSchemaBuilder")
   else()
-    add_executable(JsonSchemaBuilder ${CORE_SOURCE_DIR}/tools/depends/native/JsonSchemaBuilder/src/JsonSchemaBuilder.cpp)
+    add_subdirectory(${CORE_SOURCE_DIR}/tools/depends/native/JsonSchemaBuilder build/jsonschemabuilder)
     add_executable(JsonSchemaBuilder::JsonSchemaBuilder ALIAS JsonSchemaBuilder)
   endif()
 endif()
