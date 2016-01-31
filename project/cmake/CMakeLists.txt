@@ -106,7 +106,7 @@ set(optional_deps MicroHttpd MySqlClient SSH
                   PulseAudio VDPAU VAAPI)
 
 # Required, dyloaded deps
-set(required_dyload Curl ASS)
+set(required_dyload Curl ASS GIF)
 
 # Optional, dyloaded deps
 set(dyload_optional RTMP CEC Bluray Plist NFS)
