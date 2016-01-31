@@ -325,6 +325,11 @@ if(ENABLE_X11 AND XRANDR_FOUND)
   target_link_libraries(kodi-xrandr ${SYSTEM_LDFLAGS} ${X_LIBRARIES} m ${XRANDR_LIBRARIES})
 endif()
 
+# XBMCHelper
+if(APPLE)
+  add_subdirectory(${CORE_SOURCE_DIR}/tools/EventClients/Clients/OSXRemote build/XBMCHelper)
+endif()
+
 include(scripts/${CORE_SYSTEM_NAME}/install.cmake)
 
 # Status
