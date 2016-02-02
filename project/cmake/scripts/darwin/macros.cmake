@@ -1,11 +1,19 @@
 function(core_link_library lib wraplib)
+  if(CMAKE_GENERATOR MATCHES "Unix Makefiles")
+    set(wrapper_obj cores/dll-loader/exports/CMakeFiles/wrapper.dir/wrapper.c.o)
+  elseif(CMAKE_GENERATOR MATCHES "Xcode")
+    set(wrapper_obj cores/dll-loader/exports/kodi.build/$(CONFIGURATION)/wrapper.build/Objects-$(CURRENT_VARIANT)/$(CURRENT_ARCH)/wrapper.o)
+  else()
+    message(FATAL_ERROR "Unsupported generator in core_link_library")
+  endif()
+
   set(export -bundle -undefined dynamic_lookup -read_only_relocs suppress
              -Wl,-alias_list,${CORE_BUILD_DIR}/cores/dll-loader/exports/wrapper.def
-             ${CORE_BUILD_DIR}/cores/dll-loader/exports/CMakeFiles/wrapper.dir/wrapper.c.o)
+             ${CORE_BUILD_DIR}/${wrapper_obj})
   set(check_arg "")
   if(TARGET ${lib})
     set(target ${lib})
-    set(link_lib ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/${lib}/${lib}.a)
+    set(link_lib $<TARGET_FILE:${lib}>)
     set(check_arg ${ARGV2})
     set(data_arg  ${ARGV3})
   else()
