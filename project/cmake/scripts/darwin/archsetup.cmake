@@ -34,3 +34,10 @@ list(APPEND DEPLIBS "-framework DiskArbitration" "-framework IOKit"
                     "-framework ApplicationServices" "-framework AppKit"
                     "-framework CoreAudio" "-framework AudioToolbox"
                     "-framework CoreGraphics")
+
+# Xcode generator will not trigger the compilation of the main executable
+# because it does not contain sources but has all symbols in linked libraries.
+if(CMAKE_GENERATOR MATCHES "Xcode")
+  file(WRITE dummy.cpp)
+  list(APPEND RESOURCES dummy.cpp)
+endif()
