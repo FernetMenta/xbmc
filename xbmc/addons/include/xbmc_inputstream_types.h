@@ -75,6 +75,10 @@ struct DemuxPacket;
 extern "C" {
 #endif
 
+  static const unsigned int INPUTSTREAM_ADDON_URL_STRING_LENGTH             = 1024;
+  static const unsigned int INPUTSTREAM_ADDON_LICENSE_SYSTEM_STRING_LENGTH  = 128;
+  static const unsigned int INPUTSTREAM_ADDON_LICENSE_KEY_STRING_LENGTH     = 1024;
+
   /*!
    * @brief INPUTSTREAM add-on error codes
    */
@@ -130,6 +134,18 @@ extern "C" {
      } stream[INPUTSTREAM_STREAM_MAX_STREAMS];      /*!< @brief (required) the streams */
    } ATTRIBUTE_PACKED INPUTSTREAM_STREAM_PROPERTIES;
 
+  /*!
+   * @brief Representation of a input stream.
+   */
+  typedef struct INPUTSTREAM_STREAM
+  {
+    char         strStreamURL[INPUTSTREAM_ADDON_URL_STRING_LENGTH];                   /*!< @brief the URL of this stream. */
+
+    char         strLicenseSystem[INPUTSTREAM_ADDON_LICENSE_SYSTEM_STRING_LENGTH];    /*!< @brief the license system for decrypting data. 
+                                                                                       This is normaly the hex string of the reverse URL (com.widevine.aplha) */
+    char         strLicenseKey[INPUTSTREAM_ADDON_LICENSE_KEY_STRING_LENGTH];          /*!< @brief the license key for decrypting data. */
+  } ATTRIBUTE_PACKED INPUTSTREAM_STREAM;
+   
   /*!
    * @brief Structure to transfer the methods from xbmc_inputstream_dll.h to XBMC
    */
