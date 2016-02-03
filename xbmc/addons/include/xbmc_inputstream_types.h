@@ -98,7 +98,7 @@ extern "C" {
 
   /*!
    * @brief INPUTSTREAM add-on capabilities. All capabilities are set to "false" as default.
-   * If a capabilty is set to true, then the corresponding methods from xbmc_demux_dll.h need to be implemented.
+   * If a capabilty is set to true, then the corresponding methods from xbmc_inputstream_dll.h need to be implemented.
    */
   typedef struct INPUTSTREAM_ADDON_CAPABILITIES
   {
@@ -131,7 +131,7 @@ extern "C" {
    } ATTRIBUTE_PACKED INPUTSTREAM_STREAM_PROPERTIES;
 
   /*!
-   * @brief Structure to transfer the methods from xbmc_demux_dll.h to XBMC
+   * @brief Structure to transfer the methods from xbmc_inputstream_dll.h to XBMC
    */
   typedef struct InputStreamClient
   {
