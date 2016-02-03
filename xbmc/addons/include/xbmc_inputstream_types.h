@@ -76,8 +76,13 @@ extern "C" {
 #endif
 
   static const unsigned int INPUTSTREAM_ADDON_URL_STRING_LENGTH             = 1024;
-  static const unsigned int INPUTSTREAM_ADDON_LICENSE_SYSTEM_STRING_LENGTH  = 128;
-  static const unsigned int INPUTSTREAM_ADDON_LICENSE_KEY_STRING_LENGTH     = 1024;
+
+  static const unsigned int INPUTSTREAM_ADDON_MAX_MIME_TYPES                = 4;
+  static const unsigned int INPUTSTREAM_ADDON_MIME_TYPE_LENGTH              = 64;
+
+  static const unsigned int INPUTSTREAM_ADDON_MAX_LISTITEM_ENTRIES          = 4;
+  static const unsigned int INPUTSTREAM_ADDON_LISTITEM_KEY_LENGTH           = 128;
+  static const unsigned int INPUTSTREAM_ADDON_LISTITEM_VALUE_LENGTH         = 1024;
 
   /*!
    * @brief INPUTSTREAM add-on error codes
@@ -92,21 +97,19 @@ extern "C" {
   } INPUTSTREAM_ERROR;
 
   /*!
-   * @brief Properties passed to the Create() method of an add-on.
-   */
-  typedef struct INPUTSTREAM_PROPERTIES
-  {
-    const char* strUserPath;           /*!< @brief path to the user profile */
-    const char* strClientPath;         /*!< @brief path to this add-on */
-  } INPUTSTREAM_PROPERTIES;
-
-  /*!
    * @brief INPUTSTREAM add-on capabilities. All capabilities are set to "false" as default.
    * If a capabilty is set to true, then the corresponding methods from xbmc_inputstream_dll.h need to be implemented.
    */
   typedef struct INPUTSTREAM_ADDON_CAPABILITIES
   {
     bool bHandlesDemuxing;              /*!< @brief true if this add-on demultiplexes packets. */
+    
+    char supportedMimeTypes[INPUTSTREAM_ADDON_MAX_MIME_TYPES][INPUTSTREAM_ADDON_MIME_TYPE_LENGTH]; /*!< @brief supported mime types. */
+    unsigned int iCountMimeTypes; /*!< @brief number of supported mime types (max. INPUTSTREAM_ADDON_MAX_MIME_TYPES). */
+    
+    /*!< @brief supported list item keys. Corresponding values will be passed in OpenStream(INPUTSTREAM_STREAM) */
+    char supportedListItemKeys[INPUTSTREAM_ADDON_MAX_LISTITEM_VALUES][INPUTSTREAM_ADDON_LISTITEM_KEY_LENGTH]; 
+    unsigned int iCountListItemKeys; /*!< @brief number of supported ListItem keys (max. INPUTSTREAM_ADDON_MAX_LISTITEM_ENTRIES). */
   } ATTRIBUTE_PACKED INPUTSTREAM_ADDON_CAPABILITIES;
 
   /*!
@@ -140,10 +143,9 @@ extern "C" {
   typedef struct INPUTSTREAM_STREAM
   {
     char         strStreamURL[INPUTSTREAM_ADDON_URL_STRING_LENGTH];                   /*!< @brief the URL of this stream. */
-
-    char         strLicenseSystem[INPUTSTREAM_ADDON_LICENSE_SYSTEM_STRING_LENGTH];    /*!< @brief the license system for decrypting data. 
-                                                                                       This is normaly the hex string of the reverse URL (com.widevine.aplha) */
-    char         strLicenseKey[INPUTSTREAM_ADDON_LICENSE_KEY_STRING_LENGTH];          /*!< @brief the license key for decrypting data. */
+    
+    char         strListItemValues[INPUTSTREAM_ADDON_MAX_LISTITEM_ENTRIES][INPUTSTREAM_ADDON_LISTITEM_VALUE_LENGTH];
+    unsigned int iCountListItemValues;
   } ATTRIBUTE_PACKED INPUTSTREAM_STREAM;
    
   /*!
