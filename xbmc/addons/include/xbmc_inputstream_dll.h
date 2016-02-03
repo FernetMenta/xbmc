@@ -34,17 +34,17 @@ extern "C"
   /*! @name InputStream add-on methods */
   //@{
   /*!
-   * Get the XBMC_DEMUX_API_VERSION that was used to compile this add-on.
+   * Get the XBMC_INPUTSTREAM_API_VERSION that was used to compile this add-on.
    * Used to check if this add-on is compatible with XBMC.
-   * @return The XBMC_DEMUX_API_VERSION that was used to compile this add-on.
+   * @return The XBMC_INPUTSTREAM_API_VERSION that was used to compile this add-on.
    * @remarks Valid implementation required.
    */
   const char* GetInputStreamAPIVersion(void);
 
   /*!
-   * Get the XBMC_DEMUX_MIN_API_VERSION that was used to compile this add-on.
+   * Get the XBMC_INPUTSTREAM_MIN_API_VERSION that was used to compile this add-on.
    * Used to check if this add-on is compatible with XBMC.
-   * @return The XBMC_DEMUX_MIN_API_VERSION that was used to compile this add-on.
+   * @return The XBMC_INPUTSTREAM_MIN_API_VERSION that was used to compile this add-on.
    * @remarks Valid implementation required.
    */
   const char* GetMininumInputStreamAPIVersion(void);
