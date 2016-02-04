@@ -76,12 +76,7 @@ extern "C" {
 #endif
 
   static const unsigned int INPUTSTREAM_ADDON_URL_STRING_LENGTH             = 1024;
-
-  static const unsigned int INPUTSTREAM_ADDON_MAX_MIME_TYPES                = 4;
-  static const unsigned int INPUTSTREAM_ADDON_MIME_TYPE_LENGTH              = 64;
-
   static const unsigned int INPUTSTREAM_ADDON_MAX_LISTITEM_ENTRIES          = 4;
-  static const unsigned int INPUTSTREAM_ADDON_LISTITEM_KEY_LENGTH           = 128;
   static const unsigned int INPUTSTREAM_ADDON_LISTITEM_VALUE_LENGTH         = 1024;
 
   /*!
@@ -104,11 +99,13 @@ extern "C" {
   {
     bool bHandlesDemuxing;              /*!< @brief true if this add-on demultiplexes packets. */
     
-    char supportedMimeTypes[INPUTSTREAM_ADDON_MAX_MIME_TYPES][INPUTSTREAM_ADDON_MIME_TYPE_LENGTH]; /*!< @brief supported mime types. */
-    unsigned int iCountMimeTypes; /*!< @brief number of supported mime types (max. INPUTSTREAM_ADDON_MAX_MIME_TYPES). */
+    char** supportedMimeTypes;          /*!< @brief list of char* mime types allowed by this addon. */
+    unsigned int iCountMimeTypes;       /*!< @brief number of supported mime types. */
     
-    /*!< @brief supported list item keys. Corresponding values will be passed in OpenStream(INPUTSTREAM_STREAM) */
-    char supportedListItemKeys[INPUTSTREAM_ADDON_MAX_LISTITEM_VALUES][INPUTSTREAM_ADDON_LISTITEM_KEY_LENGTH]; 
+    char** supportedURLPrefixes;        /*!< @brief list of char* URL prefixes allowed by this addon. */
+    unsigned int iCountURLPrefixes;     /*!< @brief number of supported URL prefixes. */
+
+    char* supportedListItemKeys[INPUTSTREAM_ADDON_MAX_LISTITEM_VALUES]; /*!< @brief supported list item keys. */ 
     unsigned int iCountListItemKeys; /*!< @brief number of supported ListItem keys (max. INPUTSTREAM_ADDON_MAX_LISTITEM_ENTRIES). */
   } ATTRIBUTE_PACKED INPUTSTREAM_ADDON_CAPABILITIES;
 
