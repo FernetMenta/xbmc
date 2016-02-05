@@ -38,6 +38,7 @@
 #include "DllLibCPluff.h"
 #include "events/AddonManagementEvent.h"
 #include "events/EventLog.h"
+#include "InputStream.h"
 #include "LangInfo.h"
 #include "PluginSource.h"
 #include "Repository.h"
