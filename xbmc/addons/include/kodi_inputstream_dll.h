@@ -20,8 +20,8 @@
  *
  */
 
+#include "kodi_inputstream_types.h"
 #include "xbmc_addon_dll.h"
-#include "xbmc_inputstream_types.h"
 
 /*!
  * Functions that the InputStream client add-on must implement, but some can be empty.
@@ -214,15 +214,8 @@ extern "C"
    * Called by XBMC to assign the function pointers of this add-on to pClient.
    * @param pClient The struct to assign the function pointers to.
    */
-  void __declspec(dllexport) get_addon(struct InputStreamClient* pClient)
+  void __declspec(dllexport) get_addon(struct InputStream* pClient)
   {
-    pClient->GetInputStreamAPIVersion               = GetInputStreamAPIVersion;
-    pClient->GetMininumInputStreamAPIVersion        = GetMininumInputStreamAPIVersion;
-    pClient->GetGUIAPIVersion               = GetGUIAPIVersion;
-    pClient->GetMininumGUIAPIVersion        = GetMininumGUIAPIVersion;
-    pClient->GetAddonCapabilities           = GetAddonCapabilities;
-    pClient->GetStreamProperties            = GetStreamProperties;
-
     pClient->OpenStream                     = OpenLiveStream;
     pClient->CloseStream                    = CloseLiveStream;
     pClient->ReadStream                     = ReadLiveStream;

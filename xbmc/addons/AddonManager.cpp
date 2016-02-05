@@ -37,6 +37,7 @@
 #include "DllLibCPluff.h"
 #include "events/AddonManagementEvent.h"
 #include "events/EventLog.h"
+#include "InputStream.h"
 #include "LangInfo.h"
 #include "PluginSource.h"
 #include "Repository.h"
@@ -173,6 +174,8 @@ AddonPtr CAddonMgr::Factory(const cp_extension_t *props)
           return AddonPtr(new CAudioEncoder(props));
         else if (type == ADDON_AUDIODECODER)
           return AddonPtr(new CAudioDecoder(props));
+        else if (type == ADDON_INPUTSTREAM)
+          return AddonPtr(new CInputStream(props));
         else
           return AddonPtr(new CScreenSaver(props));
       }
@@ -915,6 +918,8 @@ AddonPtr CAddonMgr::AddonFromProps(AddonProps& addonProps)
       return AddonPtr(new CRepository(addonProps));
     case ADDON_CONTEXT_ITEM:
       return AddonPtr(new CContextMenuAddon(addonProps));
+    case ADDON_INPUTSTREAM:
+      return AddonPtr(new CInputStream(addonProps));
     default:
       break;
   }

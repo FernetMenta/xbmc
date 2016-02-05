@@ -103,6 +103,7 @@ static const TypeMapping types[] =
    {"kodi.resource.language",            ADDON_RESOURCE_LANGUAGE,   24026, "DefaultAddonLanguage.png" },
    {"kodi.resource.uisounds",            ADDON_RESOURCE_UISOUNDS,   24006, "DefaultAddonUISounds.png" },
    {"kodi.adsp",                         ADDON_ADSPDLL,             24135, "DefaultAddonAudioDSP.png" },
+   {"kodi.inputstream",                  ADDON_INPUTSTREAM,         24048, "DefaultAddonInputstream.png" },
   };
 
 const std::string TranslateType(const ADDON::TYPE &type, bool pretty/*=false*/)
@@ -404,6 +405,7 @@ void CAddon::BuildLibName(const cp_extension_t *extension)
       case ADDON_SERVICE:
       case ADDON_REPOSITORY:
       case ADDON_CONTEXT_ITEM:
+      case ADDON_INPUTSTREAM:
         m_strLibName = CAddonMgr::GetInstance().GetExtValue(extension->configuration, "@library");
         break;
       default:
