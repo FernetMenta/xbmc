@@ -131,6 +131,7 @@ AddonPtr CAddonMgr::Factory(const cp_extension_t *props)
     case ADDON_ADSPDLL:
     case ADDON_AUDIOENCODER:
     case ADDON_AUDIODECODER:
+    case ADDON_INPUTSTREAM:
       { // begin temporary platform handling for Dlls
         // ideally platforms issues will be handled by C-Pluff
         // this is not an attempt at a solution
