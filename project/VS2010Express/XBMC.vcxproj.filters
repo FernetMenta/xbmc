@@ -373,6 +373,9 @@
     <Filter Include="cores\VideoPlayer\VideoRenderers\VideoShaders">
       <UniqueIdentifier>{0dde0eba-c702-41fb-92a8-38cc21839a62}</UniqueIdentifier>
     </Filter>
+    <Filter Include="addons\include">
+      <UniqueIdentifier>{353ba04b-a59a-4fb3-90d0-630277d5305b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\xbmc\win32\pch.cpp">
@@ -3222,6 +3225,9 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\cores\VideoPlayer\DVDDemuxers\DVDDemuxClient.cpp">
       <Filter>cores\VideoPlayer\DVDDemuxers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\addons\InputStream.cpp">
+      <Filter>addons</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -6244,6 +6250,75 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\VideoPlayer\DVDDemuxers\DVDDemuxClient.h">
       <Filter>cores\VideoPlayer\DVDDemuxers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\kodi_adsp_dll.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\kodi_adsp_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\kodi_audiodec_dll.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\kodi_audiodec_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\kodi_audioengine_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\kodi_inputstream_dll.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\kodi_inputstream_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\kodi_vfs_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_addon_cpp_dll.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_addon_dll.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_addon_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_audioenc_dll.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_audioenc_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_codec_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_epg_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_pvr_dll.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_pvr_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_scr_dll.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_scr_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_stream_utils.hpp">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_vis_dll.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\include\xbmc_vis_types.h">
+      <Filter>addons\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\addons\InputStream.h">
+      <Filter>addons</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
