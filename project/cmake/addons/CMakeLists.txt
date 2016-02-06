@@ -210,27 +210,40 @@ if(NOT addons)
 
   # now look for all the addons to be built again
   file(GLOB_RECURSE addons ${ADDONS_DEFINITION_DIR}/*.txt)
-
+  
+  # set(addons "inputstream.mpd")
+  # message(STATUS "-------- addons ${addons} - def ${ADDONS_DEFINITION_DIR}")
+  
   if(NOT addons)
     message(FATAL_ERROR "No addons available to be built")
   endif()
 endif()
 
+#set(addons "inputstream.mpd")
+message(STATUS "-------- addons ${addons}")
+ 
 foreach(addon ${addons})
+message(STATUS "------------- ${addon}") 
   if(NOT (addon MATCHES platforms.txt))
     file(STRINGS ${addon} def)
     separate_arguments(def)
     list(GET def 0 id)
 
+	
     set(ADDON_FOUND FALSE)
     # try to find a perfect match
     list(FIND ADDONS_TO_BUILD ${id} idx)
+	
+	message(STATUS "Pattern ${ADDONS_TO_BUILD} matches ${id}, building addon: ${idx}")
+	
     if(idx GREATER -1 OR "${ADDONS_TO_BUILD}" STREQUAL "all")
       set(ADDON_FOUND TRUE)
+	  message(STATUS "aaaaaaaaaaaa")
     # Maybe we have a regex
     elseif(id MATCHES "${ADDONS_TO_BUILD}")
       message(STATUS "Pattern ${ADDONS_TO_BUILD} matches ${id}, building addon")
       set(ADDON_FOUND TRUE)
+	  message(STATUS "ssssssssssssssssssss")
     endif()
 
     if(ADDON_FOUND)
