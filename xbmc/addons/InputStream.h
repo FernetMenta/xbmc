@@ -20,6 +20,8 @@
 
 #include "AddonDll.h"
 #include "include/kodi_inputstream_types.h"
+#include "FileItem.h"
+#include <map>
 
 typedef DllAddon<InputStream, INPUTSTREAM_PROPS> DllInputStream;
 namespace ADDON
@@ -31,16 +33,15 @@ namespace ADDON
   public:
     CInputStream(const AddonProps &props)
       : InputStreamDll(props)
-      , m_context{nullptr}
     {};
     CInputStream(const cp_extension_t *ext);
     virtual ~CInputStream() {}
     virtual AddonPtr Clone() const;
 
+    bool Supports(CFileItem &fileitem);
+
   protected:
-    std::string m_extension;
-    std::string m_mimetype;
-    void* m_context;
+    std::map<std::string, std::string> m_fileItemProps;
   };
 
 } /*namespace ADDON*/
