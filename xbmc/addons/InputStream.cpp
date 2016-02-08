@@ -17,6 +17,7 @@
  *
  */
 #include "InputStream.h"
+#include "utils/StringUtils.h"
 
 
 namespace ADDON
@@ -25,6 +26,7 @@ namespace ADDON
 CInputStream::CInputStream(const cp_extension_t* ext) : InputStreamDll(ext)
 {
   std::string props = CAddonMgr::GetInstance().GetExtValue(ext->configuration, "@listitemprops");
+  m_fileItemProps = StringUtils::Tokenize(props, ",");
 }
 
 AddonPtr CInputStream::Clone() const
