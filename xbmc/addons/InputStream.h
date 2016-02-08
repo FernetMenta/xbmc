@@ -21,7 +21,7 @@
 #include "AddonDll.h"
 #include "include/kodi_inputstream_types.h"
 #include "FileItem.h"
-#include <map>
+#include <vector>
 
 typedef DllAddon<InputStream, INPUTSTREAM_PROPS> DllInputStream;
 namespace ADDON
@@ -41,7 +41,7 @@ namespace ADDON
     bool Supports(CFileItem &fileitem);
 
   protected:
-    std::map<std::string, std::string> m_fileItemProps;
+    std::vector<std::string> m_fileItemProps;
   };
 
 } /*namespace ADDON*/

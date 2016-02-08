@@ -32,18 +32,39 @@
 extern "C"
 {
   /*!
-  * Open a stream.
-  * @param stream The stream to open including license string.
-  * @return True if the stream has been opened successfully, false otherwise.
-  * @remarks
-  */
-  bool OpenStream(const char*);
+   * Open a stream.
+   * @param props
+   * @return True if the stream has been opened successfully, false otherwise.
+   * @remarks
+   */
+  bool Open(INPUTSTREAM& props);
 
   /*!
-  * Close an open stream.
-  * @remarks
-  */
-  void CloseStream(void);
+   * Close an open stream.
+   * @remarks
+   */
+  void Close(void);
+
+  /*!
+   * Get IDs of available streams
+   * @remarks
+   */
+  INPUTSTREAM_IDS GetStreamIds();
+
+  /*!
+   * Get stream properties of a stream.
+   * @param streamId unique id of stream
+   * @return struc of stream properties
+   * @remarks
+   */
+  INPUTSTREAM_INFO GetStream(int streamid);
+
+  /*!
+   * Enable or disable a stream.
+   * A disabled stream does not send demux packets
+   * @remarks
+   */
+  void EnableStream(int streamid);
 
   /*!
   * Read from an open stream.
@@ -160,6 +181,11 @@ extern "C"
   */
   void __declspec(dllexport) get_addon(struct InputStream* pClient)
   {
+    pClient->Open = Open;
+    pClient->Close = Close;
+    pClient->GetStreamIds = GetStreamIds;
+    pClient->GetStream = GetStream;
+    pClient->EnableStream = EnableStream;
     pClient->OpenStream = OpenStream;
     pClient->CloseStream = CloseStream;
     pClient->ReadStream = ReadStream;
