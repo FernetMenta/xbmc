@@ -123,6 +123,25 @@ public:
     return m_Callbacks != nullptr;
   }
 
+  /*!
+   * @brief Allocate a demux packet. Free with FreeDemuxPacket
+   * @param iDataSize The size of the data that will go into the packet
+   * @return The allocated packet
+   */
+  DemuxPacket* AllocateDemuxPacket(int iDataSize)
+  {
+    return INPUTSTREAM_allocate_demux_packet(m_Handle, m_Callbacks, iDataSize);
+  }
+
+  /*!
+   * @brief Free a packet that was allocated with AllocateDemuxPacket
+   * @param pPacket The packet to free
+   */
+  void FreeDemuxPacket(DemuxPacket* pPacket)
+  {
+    return INPUTSTREAM_free_demux_packet(m_Handle, m_Callbacks, pPacket);
+  }
+
 protected:
   void* (*INPUTSTREAM_register_me)(void*);
   void (*INPUTSTREAM_unregister_me)(void*, void*);
