@@ -23,10 +23,10 @@
 #include "FileItem.h"
 #include <vector>
 
-typedef DllAddon<InputStream, INPUTSTREAM_PROPS> DllInputStream;
+typedef DllAddon<InputStreamAddonFunctions, INPUTSTREAM_PROPS> DllInputStream;
 namespace ADDON
 {
-  typedef CAddonDll<DllInputStream, InputStream, INPUTSTREAM_PROPS> InputStreamDll;
+  typedef CAddonDll<DllInputStream, InputStreamAddonFunctions, INPUTSTREAM_PROPS> InputStreamDll;
 
   class CInputStream : public InputStreamDll
   {
