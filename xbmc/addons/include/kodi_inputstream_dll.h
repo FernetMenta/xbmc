@@ -224,8 +224,6 @@ extern "C"
     pClient->CanPauseStream = CanPauseStream;
     pClient->CanSeekStream = CanSeekStream;
 
-    pClient->OpenStream = OpenStream;
-    pClient->CloseStream = CloseStream;
     pClient->ReadStream = ReadStream;
     pClient->SeekStream = SeekStream;
     pClient->PositionStream = PositionStream;

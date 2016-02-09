@@ -86,7 +86,7 @@ extern "C" {
     } m_streamType;
 
     char m_codecName[32];                /*!< @brief (required) name of codec according to ffmpeg */
-    const int m_pID;                     /*!< @brief (required) physical index */
+    unsigned int m_pID;                  /*!< @brief (required) physical index */
     char m_language[4];                  /*!< @brief ISO 639 3-letter language code (empty string if undefined) */
 
     unsigned int m_FpsScale;             /*!< @brief Scale of 1000 and a rate of 29970 will result in 29.97 fps */
@@ -111,22 +111,22 @@ extern "C" {
     void (__cdecl* Close)(void);
 
     // IDemux
-    INPUTSTREAM_IDS (__cdecl* GetStreamsIds)();
-    INPUTSTREAM_INFO (__cdecl* GetStream)(int);
+    struct INPUTSTREAM_IDS (__cdecl* GetStreamIds)();
+    struct INPUTSTREAM_INFO (__cdecl* GetStream)(int);
     void (__cdecl* EnableStream)(int, bool);
     void (__cdecl* DemuxReset)(void);
     void (__cdecl* DemuxAbort)(void);
     void (__cdecl* DemuxFlush)(void);
     DemuxPacket* (__cdecl* DemuxRead)(void);
     bool (__cdecl* DemuxSeekTime)(int, bool, double*);
-    void (__cdecl* demuxSetSpeed)(int);
+    void (__cdecl* DemuxSetSpeed)(int);
 
     // IDisplayTime
-    int GetTotalTime();
-    int GetTime();
+    int (__cdecl* GetTotalTime)(void);
+    int (__cdecl* GetTime)(void);
 
     // ISeekTime
-    bool SeekTime(int ms);
+    bool (__cdecl* SeekTime)(int);
 
     // ISeekable (mandatory)
     bool (__cdecl* CanPauseStream)(void);
