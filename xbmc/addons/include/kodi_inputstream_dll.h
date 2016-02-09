@@ -45,6 +45,7 @@ extern "C"
    */
   void Close(void);
 
+  
   /*!
    * Get IDs of available streams
    * @remarks
@@ -62,10 +63,97 @@ extern "C"
   /*!
    * Enable or disable a stream.
    * A disabled stream does not send demux packets
+   * @param streamId unique id of stream
+   * @param enable true for enable, false for disable
    * @remarks
    */
-  void EnableStream(int streamid);
+  void EnableStream(int streamid, bool enable);
 
+  /*!
+   * Reset the demultiplexer in the add-on.
+   * @remarks Required if bHandlesDemuxing is set to true.
+   */
+  void DemuxReset(void);
+
+  /*!
+   * Abort the demultiplexer thread in the add-on.
+   * @remarks Required if bHandlesDemuxing is set to true.
+   */
+  void DemuxAbort(void);
+
+  /*!
+   * Flush all data that's currently in the demultiplexer buffer in the add-on.
+   * @remarks Required if bHandlesDemuxing is set to true.
+   */
+  void DemuxFlush(void);
+
+  /*!
+   * Read the next packet from the demultiplexer, if there is one.
+   * @return The next packet.
+   *         If there is no next packet, then the add-on should return the
+   *         packet created by calling AllocateDemuxPacket(0) on the callback.
+   *         If the stream changed and XBMC's player needs to be reinitialised,
+   *         then, the add-on should call AllocateDemuxPacket(0) on the
+   *         callback, and set the streamid to DMX_SPECIALID_STREAMCHANGE and
+   *         return the value.
+   *         The add-on should return NULL if an error occured.
+   * @remarks Return NULL if this add-on won't provide this function.
+   */
+  DemuxPacket* DemuxRead(void);
+
+  /*!
+   * Notify the InputStream addon/demuxer that XBMC wishes to seek the stream by time
+   * Demuxer is required to set stream to an IDR frame
+   * @param time The absolute time since stream start
+   * @param backwards True to seek to keyframe BEFORE time, else AFTER
+   * @param startpts can be updated to point to where display should start
+   * @return True if the seek operation was possible
+   * @remarks Optional, and only used if addon has its own demuxer.
+   */
+  bool DemuxSeekTime(int time, bool backwards, double *startpts);
+
+  /*!
+   * Notify the InputStream addon/demuxer that XBMC wishes to change playback speed
+   * @param speed The requested playback speed
+   * @remarks Optional, and only used if addon has its own demuxer.
+   */
+  void DemuxSetSpeed(int speed);
+
+
+  /*!
+   * Totel time in ms
+   * @remarks
+   */
+  int GetTotalTime();
+
+  /*!
+   * Playing time in ms
+   * @remarks
+   */
+  int GetTime();
+
+  /*!
+   * Positions inputstream to playing time given in ms
+   * @remarks
+   */
+  bool SeekTime(int ms);
+
+
+  /*!
+   * Check if the backend support pausing the currently playing stream
+   * This will enable/disable the pause button in XBMC based on the return value
+   * @return false if the InputStream addon/backend does not support pausing, true if possible
+   */
+  bool CanPauseStream();
+
+  /*!
+   * Check if the backend supports seeking for the currently playing stream
+   * This will enable/disable the rewind/forward buttons in XBMC based on the return value
+   * @return false if the InputStream addon/backend does not support seeking, true if possible
+   */
+  bool CanSeekStream();
+
+  
   /*!
   * Read from an open stream.
   * @param pBuffer The buffer to store the data in.
@@ -96,78 +184,12 @@ extern "C"
   */
   long long LengthStream(void);
 
-  /** @name InputStreamInputStreamInputStreamInputStream demultiplexer methods
-  *  @remarks Only used by XBMC is bHandlesDemuxing is set to true.
-  */
-  //@{
-  /*!
-  * Reset the demultiplexer in the add-on.
-  * @remarks Required if bHandlesDemuxing is set to true.
-  */
-  void DemuxReset(void);
-
-  /*!
-  * Abort the demultiplexer thread in the add-on.
-  * @remarks Required if bHandlesDemuxing is set to true.
-  */
-  void DemuxAbort(void);
-
-  /*!
-  * Flush all data that's currently in the demultiplexer buffer in the add-on.
-  * @remarks Required if bHandlesDemuxing is set to true.
-  */
-  void DemuxFlush(void);
-
-  /*!
-  * Read the next packet from the demultiplexer, if there is one.
-  * @return The next packet.
-  *         If there is no next packet, then the add-on should return the
-  *         packet created by calling AllocateDemuxPacket(0) on the callback.
-  *         If the stream changed and XBMC's player needs to be reinitialised,
-  *         then, the add-on should call AllocateDemuxPacket(0) on the
-  *         callback, and set the streamid to DMX_SPECIALID_STREAMCHANGE and
-  *         return the value.
-  *         The add-on should return NULL if an error occured.
-  * @remarks Return NULL if this add-on won't provide this function.
-  */
-  DemuxPacket* DemuxRead(void);
-  //@}
-
-  /*!
-  * Check if the backend support pausing the currently playing stream
-  * This will enable/disable the pause button in XBMC based on the return value
-  * @return false if the InputStream addon/backend does not support pausing, true if possible
-  */
-  bool CanPauseStream();
-
-  /*!
-  * Check if the backend supports seeking for the currently playing stream
-  * This will enable/disable the rewind/forward buttons in XBMC based on the return value
-  * @return false if the InputStream addon/backend does not support seeking, true if possible
-  */
-  bool CanSeekStream();
 
   /*!
   * @brief Notify the InputStream addon that XBMC (un)paused the currently playing stream
   */
   void PauseStream(bool bPaused);
 
-  /*!
-  * Notify the InputStream addon/demuxer that XBMC wishes to seek the stream by time
-  * @param time The absolute time since stream start
-  * @param backwards True to seek to keyframe BEFORE time, else AFTER
-  * @param startpts can be updated to point to where display should start
-  * @return True if the seek operation was possible
-  * @remarks Optional, and only used if addon has its own demuxer. Return False if this add-on won't provide this function.
-  */
-  bool SeekTime(int time, bool backwards, double *startpts);
-
-  /*!
-  * Notify the InputStream addon/demuxer that XBMC wishes to change playback speed
-  * @param speed The requested playback speed
-  * @remarks Optional, and only used if addon has its own demuxer.
-  */
-  void SetSpeed(int speed);
 
   /*!
   *  Check for real-time streaming
@@ -179,30 +201,36 @@ extern "C"
   * Called by XBMC to assign the function pointers of this add-on to pClient.
   * @param pClient The struct to assign the function pointers to.
   */
-  void __declspec(dllexport) get_addon(struct InputStream* pClient)
+  void __declspec(dllexport) get_addon(struct InputStreamAddonFunctions* pClient)
   {
     pClient->Open = Open;
     pClient->Close = Close;
+
     pClient->GetStreamIds = GetStreamIds;
     pClient->GetStream = GetStream;
     pClient->EnableStream = EnableStream;
+    pClient->DemuxReset = DemuxReset;
+    pClient->DemuxAbort = DemuxAbort;
+    pClient->DemuxFlush = DemuxFlush;
+    pClient->DemuxRead = DemuxRead;
+    pClient->DemuxSeekTime = DemuxSeekTime;
+    pClient->DemuxSetSpeed = DemuxSetSpeed;
+
+    pClient->GetTotalTime = GetTotalTime;
+    pClient->GetTime = GetTime;
+
+    pClient->SeekTime = SeekTime;
+
+    pClient->CanPauseStream = CanPauseStream;
+    pClient->CanSeekStream = CanSeekStream;
+
     pClient->OpenStream = OpenStream;
     pClient->CloseStream = CloseStream;
     pClient->ReadStream = ReadStream;
     pClient->SeekStream = SeekStream;
     pClient->PositionStream = PositionStream;
     pClient->LengthStream = LengthStream;
-    pClient->CanPauseStream = CanPauseStream;
     pClient->PauseStream = PauseStream;
-    pClient->CanSeekStream = CanSeekStream;
-    pClient->SeekTime = SeekTime;
-    pClient->SetSpeed = SetSpeed;
-
-    pClient->DemuxReset = DemuxReset;
-    pClient->DemuxAbort = DemuxAbort;
-    pClient->DemuxFlush = DemuxFlush;
-    pClient->DemuxRead = DemuxRead;
-
     pClient->IsRealTimeStream = IsRealTimeStream;
   };
 };

@@ -30,12 +30,25 @@ extern "C" {
 
   // this are properties given to the addon on create
   // at this time we have no parameters for the addon
-  struct INPUTSTREAM_PROPS
+  typedef struct INPUTSTREAM_PROPS
   {
     int dummy;
-  };
+  } INPUTSTREAM_PROPS;
 
-  struct INPUTSTREAM
+  /*!
+   * @brief InputStream add-on capabilities. All capabilities are set to "false" as default.
+   */
+  typedef struct INPUTSTREAM_CAPABILITIES
+  {
+    bool m_supportsIDemux;                  /*!< @brief supports interface IDemux */
+    bool m_supportsISeekTime;               /*!< @brief supports interface ISeekTime */
+    bool m_supportsIDisplayTime;            /*!< @brief supports interface IDisplayTime */
+  } INPUTSTREAM_CAPABILITIES;
+
+  /*!
+   * @brief structure of key/value pairs passed to addon on Open()
+   */
+  typedef struct INPUTSTREAM
   {
     static const unsigned int MAX_INFO_COUNT = 8;
 
@@ -47,15 +60,22 @@ extern "C" {
       const char *m_strKey;
       const char *m_strValue;
     } m_ListItemProperties[MAX_INFO_COUNT];
-  };
+  } INPUTSTREAM;
 
-  struct INPUTSTREAM_IDS
+  /*!
+   * @brief Array of stream IDs
+   */
+  typedef struct INPUTSTREAM_IDS
   {
     static const unsigned int MAX_STREAM_COUNT = 32;
+    unsigned int m_streamCount;
     unsigned int m_streamIds[MAX_STREAM_COUNT];
-  };
+  } INPUTSTREAM_IDS;
 
-  struct INPUTSTREAM_INFO
+  /*!
+   * @brief stream properties
+   */
+  typedef struct INPUTSTREAM_INFO
   {
     enum STREAM_TYPE
     {
@@ -80,33 +100,45 @@ extern "C" {
     unsigned int m_BitRate;              /*!< @brief (required) bit rate */
     unsigned int m_BitsPerSample;        /*!< @brief (required) bits per sample */
     unsigned int m_BlockAlign;
-  };
+  } INPUTSTREAM_INFO;
 
   /*!
    * @brief Structure to transfer the methods from xbmc_inputstream_dll.h to XBMC
    */
-  typedef struct InputStream
+  typedef struct InputStreamAddonFunctions
   {
     bool (__cdecl* Open)(INPUTSTREAM&);
     void (__cdecl* Close)(void);
+
+    // IDemux
     INPUTSTREAM_IDS (__cdecl* GetStreamsIds)();
     INPUTSTREAM_INFO (__cdecl* GetStream)(int);
-    void (__cdecl* EnableStream)(bool);
-    int (__cdecl* ReadStream)(unsigned char*, unsigned int);
-    long long (__cdecl* SeekStream)(long long, int);
-    long long (__cdecl* PositionStream)(void);
-    long long (__cdecl* LengthStream)(void);
+    void (__cdecl* EnableStream)(int, bool);
     void (__cdecl* DemuxReset)(void);
     void (__cdecl* DemuxAbort)(void);
     void (__cdecl* DemuxFlush)(void);
     DemuxPacket* (__cdecl* DemuxRead)(void);
+    bool (__cdecl* DemuxSeekTime)(int, bool, double*);
+    void (__cdecl* demuxSetSpeed)(int);
+
+    // IDisplayTime
+    int GetTotalTime();
+    int GetTime();
+
+    // ISeekTime
+    bool SeekTime(int ms);
+
+    // ISeekable (mandatory)
     bool (__cdecl* CanPauseStream)(void);
-    void (__cdecl* PauseStream)(bool);
     bool (__cdecl* CanSeekStream)(void);
-    bool (__cdecl* SeekTime)(int, bool, double*);
-    void (__cdecl* SetSpeed)(int);
+
+    int (__cdecl* ReadStream)(unsigned char*, unsigned int);
+    long long (__cdecl* SeekStream)(long long, int);
+    long long (__cdecl* PositionStream)(void);
+    long long (__cdecl* LengthStream)(void);
+    void (__cdecl* PauseStream)(bool);
     bool (__cdecl* IsRealTimeStream)(void);
-  } InputStream;
+  } InputStreamAddonFunctions;
 
 #ifdef __cplusplus
 }
