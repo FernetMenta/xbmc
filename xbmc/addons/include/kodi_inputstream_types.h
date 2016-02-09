@@ -109,6 +109,7 @@ extern "C" {
   {
     bool (__cdecl* Open)(INPUTSTREAM&);
     void (__cdecl* Close)(void);
+    struct INPUTSTREAM_CAPABILITIES (__cdecl* GetCapabilities)(void);
 
     // IDemux
     struct INPUTSTREAM_IDS (__cdecl* GetStreamIds)();

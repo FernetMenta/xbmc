@@ -45,7 +45,13 @@ extern "C"
    */
   void Close(void);
 
-  
+  /*!
+  * Get Capabilities of this addon.
+  * @remarks
+  */
+  struct INPUTSTREAM_CAPABILITIES GetCapabilities();
+
+
   /*!
    * Get IDs of available streams
    * @remarks
@@ -205,6 +211,7 @@ extern "C"
   {
     pClient->Open = Open;
     pClient->Close = Close;
+    pClient->GetCapabilities = GetCapabilities;
 
     pClient->GetStreamIds = GetStreamIds;
     pClient->GetStream = GetStream;
