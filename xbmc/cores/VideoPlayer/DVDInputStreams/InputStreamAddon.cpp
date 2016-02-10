@@ -21,14 +21,16 @@
 #include "InputStreamAddon.h"
 #include "addons/InputStream.h"
 
-CInputStreamAddon::CInputStreamAddon(CFileItem& fileitem)
-: CDVDInputStream(DVDSTREAM_TYPE_ADDON, fileitem)
+CInputStreamAddon::CInputStreamAddon(CFileItem& fileitem, ADDON::CInputStream *inputStream)
+: CDVDInputStream(DVDSTREAM_TYPE_ADDON, fileitem), m_addon(inputStream)
 {
 }
 
 CInputStreamAddon::~CInputStreamAddon()
 {
   Close();
+  m_addon->Stop();
+  delete m_addon;
 }
 
 bool CInputStreamAddon::IsEOF()

@@ -113,6 +113,7 @@ extern "C" {
   {
     bool (__cdecl* Open)(INPUTSTREAM&);
     void (__cdecl* Close)(void);
+    const char* (__cdecl* GetPath)(void);
     struct INPUTSTREAM_CAPABILITIES (__cdecl* GetCapabilities)(void);
 
     // IDemux
@@ -144,8 +145,6 @@ extern "C" {
     void (__cdecl* PauseStream)(bool);
     bool (__cdecl* IsRealTimeStream)(void);
   } InputStreamAddonFunctions;
-
-#ifdef __cplusplus
 }
-#endif
+
 
