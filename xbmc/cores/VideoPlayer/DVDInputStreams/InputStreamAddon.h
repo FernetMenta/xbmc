@@ -21,6 +21,7 @@
 #pragma once
 
 #include "DVDInputStream.h"
+#include "addons/InputStream.h"
 
 //! \brief Input stream class
 class CInputStreamAddon
@@ -31,7 +32,7 @@ class CInputStreamAddon
 {
 public:
   //! \brief constructor
-  CInputStreamAddon(CFileItem& fileitem);
+  CInputStreamAddon(CFileItem& fileitem, ADDON::CInputStream *inputStream);
 
   //! \brief Destructor.
   virtual ~CInputStreamAddon();
@@ -74,5 +75,6 @@ public:
   virtual void FlushDemux() override;
 
 protected:
+  ADDON::CInputStream *m_addon;
 
 };

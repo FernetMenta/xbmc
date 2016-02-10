@@ -51,10 +51,13 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IVideoPlayer* pPlayer
   for (size_t i=0; i<addons.size(); ++i)
   {
     std::shared_ptr<ADDON::CInputStream> input(std::static_pointer_cast<ADDON::CInputStream>(addons[i]));
-    if (input->Supports(fileitem))
+    ADDON::CInputStream* clone = new ADDON::CInputStream(*input);
+    clone->Create();
+    if (clone->Supports(fileitem))
     {
-      return new CInputStreamAddon(fileitem);
+      return new CInputStreamAddon(fileitem, clone);
     }
+    delete clone;
   }
 
   if (fileitem.IsDiscImage())

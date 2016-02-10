@@ -424,6 +424,7 @@ void CAddon::BuildLibName(const cp_extension_t *extension)
         case ADDON_PVRDLL:
         case ADDON_VIZ:
         case ADDON_SCREENSAVER:
+        case ADDON_INPUTSTREAM:
           m_strLibName = CAddonMgr::GetInstance().GetPlatformLibraryName(extension->configuration);
           break;
         default:

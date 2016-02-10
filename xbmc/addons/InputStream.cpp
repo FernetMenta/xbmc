@@ -27,6 +27,11 @@ CInputStream::CInputStream(const cp_extension_t* ext) : InputStreamDll(ext)
 {
   std::string props = CAddonMgr::GetInstance().GetExtValue(ext->configuration, "@listitemprops");
   m_fileItemProps = StringUtils::Tokenize(props, ",");
+  for (auto &key : m_fileItemProps)
+  {
+    StringUtils::Trim(key);
+  }
+  m_pInfo = new INPUTSTREAM_INFO;
 }
 
 AddonPtr CInputStream::Clone() const
@@ -37,7 +42,25 @@ AddonPtr CInputStream::Clone() const
 
 bool CInputStream::Supports(CFileItem &fileitem)
 {
-  return false;
+  std::string path;
+  try
+  {
+    path = m_pStruct->GetPath();
+  }
+  catch (std::exception &e)
+  {
+    return false;
+  }
+
+  if (path.compare(0, path.length(), fileitem.GetPath()) != 0)
+    return false;
+
+  for (auto &key : m_fileItemProps)
+  {
+    if (fileitem.GetProperty(key).isNull())
+      return false;
+  }
+  return true;
 }
 
 } /*namespace ADDON*/

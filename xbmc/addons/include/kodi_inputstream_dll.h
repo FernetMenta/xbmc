@@ -46,6 +46,12 @@ extern "C"
   void Close(void);
 
   /*!
+   * Get path/url for this addon.
+   * @remarks
+   */
+  const char* GetPath(void);
+
+  /*!
   * Get Capabilities of this addon.
   * @remarks
   */
@@ -211,6 +217,7 @@ extern "C"
   {
     pClient->Open = Open;
     pClient->Close = Close;
+    pClient->GetPath = GetPath;
     pClient->GetCapabilities = GetCapabilities;
 
     pClient->GetStreamIds = GetStreamIds;
