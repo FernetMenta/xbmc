@@ -20,6 +20,10 @@
  *
  */
 
+#ifndef __cdecl
+#define __cdecl
+#endif
+
 #ifdef BUILD_KODI_ADDON
 #include "DVDDemuxPacket.h"
 #else
