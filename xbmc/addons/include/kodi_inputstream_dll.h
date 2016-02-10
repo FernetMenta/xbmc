@@ -217,7 +217,7 @@ extern "C"
   {
     pClient->Open = Open;
     pClient->Close = Close;
-    pClient->GetPath = GetPath;
+    pClient->GetPathList = GetPathList;
     pClient->GetCapabilities = GetCapabilities;
 
     pClient->GetStreamIds = GetStreamIds;
