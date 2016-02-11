@@ -34,10 +34,10 @@
 #endif
 
 #ifdef _WIN32
-#define CODEC_HELPER_DLL "\\library.xbmc.codec\\libKODI_inputstream" ADDON_HELPER_EXT
+#define INPUTSTREAM_HELPER_DLL "\\library.kodi.inputstream\\libKODI_inputstream" ADDON_HELPER_EXT
 #else
-#define CODEC_HELPER_DLL_NAME "libKODI_inputstream-" ADDON_HELPER_ARCH ADDON_HELPER_EXT
-#define CODEC_HELPER_DLL "/library.kodi.inputstream/" CODEC_HELPER_DLL_NAME
+#define INPUTSTREAM_HELPER_DLL_NAME "libKODI_inputstream-" ADDON_HELPER_ARCH ADDON_HELPER_EXT
+#define INPUTSTREAM_HELPER_DLL "/library.kodi.inputstream/" INPUTSTREAM_HELPER_DLL_NAME
 #endif
 
 class CHelper_libKODI_inputstream
@@ -69,16 +69,7 @@ public:
 
     std::string libBasePath;
     libBasePath  = ((cb_array*)m_Handle)->libPath;
-    libBasePath += CODEC_HELPER_DLL;
-
-#if defined(ANDROID)
-      struct stat st;
-      if(stat(libBasePath.c_str(),&st) != 0)
-      {
-        std::string tempbin = getenv("XBMC_ANDROID_LIBS");
-        libBasePath = tempbin + "/" + CODEC_HELPER_DLL_NAME;
-      }
-#endif
+    libBasePath += INPUTSTREAM_HELPER_DLL;
 
     m_libKODI_inputstream = dlopen(libBasePath.c_str(), RTLD_LAZY);
     if (m_libKODI_inputstream == nullptr)
