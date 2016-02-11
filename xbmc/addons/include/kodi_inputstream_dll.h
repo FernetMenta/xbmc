@@ -49,7 +49,7 @@ extern "C"
    * Get path/url for this addon.
    * @remarks
    */
-  const char* GetPath(void);
+  const char* GetPathList(void);
 
   /*!
   * Get Capabilities of this addon.

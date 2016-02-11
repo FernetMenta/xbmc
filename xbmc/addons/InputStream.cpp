@@ -31,7 +31,6 @@ CInputStream::CInputStream(const cp_extension_t* ext) : InputStreamDll(ext)
   {
     StringUtils::Trim(key);
   }
-  m_pInfo = new INPUTSTREAM_INFO;
 }
 
 AddonPtr CInputStream::Clone() const
@@ -45,7 +44,7 @@ bool CInputStream::Supports(CFileItem &fileitem)
   std::string path;
   try
   {
-    path = m_pStruct->GetPath();
+    path = m_pStruct->GetPathList();
   }
   catch (std::exception &e)
   {
