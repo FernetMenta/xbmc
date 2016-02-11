@@ -39,9 +39,17 @@ namespace ADDON
     virtual AddonPtr Clone() const;
 
     bool Supports(CFileItem &fileitem);
+    bool Open(CFileItem &fileitem);
+    void Close();
+
+    bool HasDemux() { return m_caps.m_supportsIDemux; };
+    bool HasSeekTime() { return m_caps.m_supportsISeekTime; };
+    bool HasDisplayTime() { return m_caps.m_supportsIDisplayTime; };
 
   protected:
     std::vector<std::string> m_fileItemProps;
+    std::vector<std::string> m_pathList;
+    INPUTSTREAM_CAPABILITIES m_caps;
   };
 
 } /*namespace ADDON*/

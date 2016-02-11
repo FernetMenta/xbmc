@@ -33,19 +33,22 @@ CInputStreamAddon::~CInputStreamAddon()
   delete m_addon;
 }
 
-bool CInputStreamAddon::IsEOF()
-{
-  return false;
-}
-
 bool CInputStreamAddon::Open()
 {
+  if (m_addon)
+    return m_addon->Open(m_item);
   return false;
 }
 
 void CInputStreamAddon::Close()
 {
+  if (m_addon)
+    return m_addon->Close();
+}
 
+bool CInputStreamAddon::IsEOF()
+{
+  return false;
 }
 
 int CInputStreamAddon::Read(uint8_t* buf, int buf_size)

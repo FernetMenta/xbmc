@@ -41,17 +41,32 @@ AddonPtr CInputStream::Clone() const
 
 bool CInputStream::Supports(CFileItem &fileitem)
 {
-  std::string path;
+  std::string pathList;
   try
   {
-    path = m_pStruct->GetPathList();
+    pathList = m_pStruct->GetPathList();
   }
   catch (std::exception &e)
   {
     return false;
   }
 
-  if (path.compare(0, path.length(), fileitem.GetPath()) != 0)
+  m_pathList = StringUtils::Tokenize(pathList, ",");
+  for (auto &path : m_pathList)
+  {
+    StringUtils::Trim(path);
+  }
+
+  bool match = false;
+  for (auto &path : m_pathList)
+  {
+    if (path.compare(0, path.length(), fileitem.GetPath()) == 0)
+    {
+      match = true;
+      break;
+    }
+  }
+  if (!match)
     return false;
 
   for (auto &key : m_fileItemProps)
@@ -60,6 +75,46 @@ bool CInputStream::Supports(CFileItem &fileitem)
       return false;
   }
   return true;
+}
+
+bool CInputStream::Open(CFileItem &fileitem)
+{
+  INPUTSTREAM props;
+  props.m_nCountInfoValues = 0;
+  for (auto &key : m_fileItemProps)
+  {
+    if (fileitem.GetProperty(key).isNull())
+      return false;
+    props.m_ListItemProperties[props.m_nCountInfoValues].m_strKey = key.c_str();
+    props.m_ListItemProperties[props.m_nCountInfoValues].m_strValue = fileitem.GetProperty(key).asString().c_str();
+    props.m_nCountInfoValues++;
+  }
+  props.m_strURL = fileitem.GetPath().c_str();
+
+  bool ret = false;
+  try
+  {
+    ret = m_pStruct->Open(props);
+    if (ret)
+      m_caps = m_pStruct->GetCapabilities();
+  }
+  catch (std::exception &e)
+  {
+    return false;
+  }
+  return ret;
+}
+
+void CInputStream::Close()
+{
+  try
+  {
+    m_pStruct->Close();;
+  }
+  catch (std::exception &e)
+  {
+    ;
+  }
 }
 
 } /*namespace ADDON*/

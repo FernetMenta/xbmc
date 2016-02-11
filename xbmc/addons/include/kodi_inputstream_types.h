@@ -56,7 +56,7 @@ extern "C" {
   {
     static const unsigned int MAX_INFO_COUNT = 8;
 
-    char *m_strURL;
+    const char *m_strURL;
 
     unsigned int m_nCountInfoValues;
     struct LISTITEMPROPERTY
