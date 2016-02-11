@@ -83,6 +83,7 @@ extern "C" {
   {
     enum STREAM_TYPE
     {
+      TYPE_NONE,
       TYPE_VIDEO,
       TYPE_AUDIO,
       TYPE_SUBTITLE,
