@@ -30,6 +30,7 @@ CInputStream::CInputStream(const cp_extension_t* ext) : InputStreamDll(ext)
   for (auto &key : m_fileItemProps)
   {
     StringUtils::Trim(key);
+    key = std::string(ext->plugin->identifier) + "." + key;
   }
 }
 
@@ -69,11 +70,6 @@ bool CInputStream::Supports(CFileItem &fileitem)
   if (!match)
     return false;
 
-  for (auto &key : m_fileItemProps)
-  {
-    if (fileitem.GetProperty(key).isNull())
-      return false;
-  }
   return true;
 }
 
@@ -84,7 +80,7 @@ bool CInputStream::Open(CFileItem &fileitem)
   for (auto &key : m_fileItemProps)
   {
     if (fileitem.GetProperty(key).isNull())
-      return false;
+      continue;
     props.m_ListItemProperties[props.m_nCountInfoValues].m_strKey = key.c_str();
     props.m_ListItemProperties[props.m_nCountInfoValues].m_strValue = fileitem.GetProperty(key).asString().c_str();
     props.m_nCountInfoValues++;
