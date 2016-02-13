@@ -225,7 +225,29 @@ CDemuxStream* CInputStream::GetStream(int iStreamId)
 
 DemuxPacket* CInputStream::ReadDemux()
 {
-  return nullptr;
+  DemuxPacket* pPacket = nullptr;
+  try
+  {
+    pPacket = m_pStruct->DemuxRead();
+  }
+  catch (std::exception &e)
+  {
+    return nullptr;
+  }
+
+  if (!pPacket)
+  {
+    return nullptr;
+  }
+  else if (pPacket->iStreamId == DMX_SPECIALID_STREAMINFO)
+  {
+    UpdateStreams();
+  }
+  else if (pPacket->iStreamId == DMX_SPECIALID_STREAMCHANGE)
+  {
+    UpdateStreams();
+  }
+  return pPacket;
 }
 
 } /*namespace ADDON*/

@@ -24,6 +24,7 @@
 CInputStreamAddon::CInputStreamAddon(CFileItem& fileitem, ADDON::CInputStream *inputStream)
 : CDVDInputStream(DVDSTREAM_TYPE_ADDON, fileitem), m_addon(inputStream)
 {
+  m_hasDemux = false;
 }
 
 CInputStreamAddon::~CInputStreamAddon()
@@ -35,9 +36,14 @@ CInputStreamAddon::~CInputStreamAddon()
 
 bool CInputStreamAddon::Open()
 {
+  bool ret = false;
   if (m_addon)
-    return m_addon->Open(m_item);
-  return false;
+    ret = m_addon->Open(m_item);
+  if (ret)
+  {
+    m_hasDemux = m_addon->HasDemux();
+  }
+  return ret;
 }
 
 void CInputStreamAddon::Close()
@@ -88,9 +94,22 @@ bool CInputStreamAddon::CanPause()
 }
 
 // IDemux
+CDVDInputStream::IDemux* CInputStreamAddon::GetIDemux()
+{
+  if (!m_addon)
+    return nullptr;
+  if (!m_hasDemux)
+    return nullptr;
+
+  return this;
+}
+
 bool CInputStreamAddon::OpenDemux()
 {
-  return false;
+  if (m_hasDemux)
+    return true;
+  else
+    return false;
 }
 
 DemuxPacket* CInputStreamAddon::ReadDemux()

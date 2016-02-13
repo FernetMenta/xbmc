@@ -65,6 +65,7 @@ public:
   virtual bool CanPause() override;
 
   //IDemux
+  CDVDInputStream::IDemux* GetIDemux() override;
   virtual bool OpenDemux() override;
   virtual DemuxPacket* ReadDemux() override;
   virtual CDemuxStream* GetStream(int iStreamId) override;
@@ -76,5 +77,5 @@ public:
 
 protected:
   ADDON::CInputStream *m_addon;
-
+  bool m_hasDemux;
 };
