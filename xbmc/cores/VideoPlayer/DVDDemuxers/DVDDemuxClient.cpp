@@ -164,7 +164,10 @@ bool CDVDDemuxClient::Open(CDVDInputStream* pInput)
   if (!m_IDemux)
     return false;
 
-  return m_IDemux->OpenDemux();
+  bool ret = m_IDemux->OpenDemux();
+  if (ret)
+    RequestStreams();
+  return ret;
 }
 
 void CDVDDemuxClient::Dispose()

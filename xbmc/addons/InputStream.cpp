@@ -62,7 +62,7 @@ bool CInputStream::Supports(CFileItem &fileitem)
   bool match = false;
   for (auto &path : m_pathList)
   {
-    if (path.compare(0, path.length(), fileitem.GetPath()) == 0)
+    if (fileitem.GetPath().compare(0, path.length(), path) == 0)
     {
       match = true;
       break;
@@ -143,6 +143,7 @@ void CInputStream::UpdateStreams()
     try
     {
       stream = m_pStruct->GetStream(streamIDs.m_streamIds[i]);
+      m_pStruct->EnableStream(streamIDs.m_streamIds[i], true);
     }
     catch (std::exception &e)
     {
@@ -153,7 +154,9 @@ void CInputStream::UpdateStreams()
     if (stream.m_streamType == INPUTSTREAM_INFO::TYPE_NONE)
       continue;
 
-    AVCodec *codec = avcodec_find_decoder_by_name(stream.m_codecName);
+    std::string codecName(stream.m_codecName);
+    StringUtils::ToLower(codecName);
+    AVCodec *codec = avcodec_find_decoder_by_name(codecName.c_str());
     if (!codec)
       continue;
 
@@ -246,6 +249,17 @@ DemuxPacket* CInputStream::ReadDemux()
   else if (pPacket->iStreamId == DMX_SPECIALID_STREAMCHANGE)
   {
     UpdateStreams();
+  }
+
+  int id = 0;;
+  for (auto &stream : m_streams)
+  {
+    if (stream.second->iPhysicalId == pPacket->iStreamId)
+    {
+      pPacket->iStreamId = id;
+      return pPacket;
+    }
+    id++;
   }
   return pPacket;
 }
