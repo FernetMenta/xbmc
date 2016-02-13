@@ -18,6 +18,7 @@
  */
 #include "InputStream.h"
 #include "utils/StringUtils.h"
+#include "cores/VideoPlayer/DVDDemuxers/DVDDemux.h"
 
 
 namespace ADDON
@@ -98,6 +99,8 @@ bool CInputStream::Open(CFileItem &fileitem)
   {
     return false;
   }
+
+  UpdateStreams();
   return ret;
 }
 
@@ -105,12 +108,124 @@ void CInputStream::Close()
 {
   try
   {
-    m_pStruct->Close();;
+    m_pStruct->Close();
   }
   catch (std::exception &e)
   {
     ;
   }
+}
+
+void CInputStream::UpdateStreams()
+{
+  DisposeStreams();
+
+  INPUTSTREAM_IDS streamIDs;
+  try
+  {
+    streamIDs = m_pStruct->GetStreamIds();
+  }
+  catch (std::exception &e)
+  {
+    DisposeStreams();
+    return;
+  }
+
+  if (streamIDs.m_streamCount > INPUTSTREAM_IDS::MAX_STREAM_COUNT)
+  {
+    DisposeStreams();
+    return;
+  }
+
+  for (int i=0; i<streamIDs.m_streamCount; i++)
+  {
+    INPUTSTREAM_INFO stream;
+    try
+    {
+      stream = m_pStruct->GetStream(streamIDs.m_streamIds[i]);
+    }
+    catch (std::exception &e)
+    {
+      DisposeStreams();
+      return;
+    }
+
+    if (stream.m_streamType == INPUTSTREAM_INFO::TYPE_NONE)
+      continue;
+
+    AVCodec *codec = avcodec_find_decoder_by_name(stream.m_codecName);
+    if (!codec)
+      continue;
+
+    CDemuxStream *demuxStream;
+
+    if (stream.m_streamType == INPUTSTREAM_INFO::TYPE_AUDIO)
+    {
+      CDemuxStreamAudio *audioStream = new CDemuxStreamAudio();
+
+      audioStream->iChannels = stream.m_Channels;
+      audioStream->iSampleRate = stream.m_SampleRate;
+      audioStream->iBlockAlign = stream.m_BlockAlign;
+      audioStream->iBitRate = stream.m_BitRate;
+      audioStream->iBitsPerSample = stream.m_BitsPerSample;
+      demuxStream = audioStream;
+    }
+    else if (stream.m_streamType == INPUTSTREAM_INFO::TYPE_VIDEO)
+    {
+      CDemuxStreamVideo *videoStream = new CDemuxStreamVideo();
+
+      videoStream->iFpsScale = stream.m_FpsScale;
+      videoStream->iFpsRate = stream.m_FpsRate;
+      videoStream->iHeight = stream.m_Width;
+      videoStream->iWidth = stream.m_Height;
+      videoStream->fAspect = stream.m_Aspect;
+      videoStream->stereo_mode = "mono";
+      demuxStream = videoStream;
+    }
+    else if (stream.m_streamType == INPUTSTREAM_INFO::TYPE_SUBTITLE)
+    {
+      // TODO needs identifier in INPUTSTREAM_INFO
+      continue;
+    }
+    else
+      continue;
+
+    demuxStream->iId = i;
+    demuxStream->codec = codec->id;
+    demuxStream->iPhysicalId = streamIDs.m_streamIds[i];
+    demuxStream->language[0] = stream.m_language[0];
+    demuxStream->language[1] = stream.m_language[1];
+    demuxStream->language[2] = stream.m_language[2];
+    demuxStream->language[3] = stream.m_language[3];
+
+    m_streams[i] = demuxStream;
+  }
+}
+
+void CInputStream::DisposeStreams()
+{
+  for (auto &stream : m_streams)
+    delete stream.second;
+  m_streams.clear();
+}
+
+int CInputStream::GetNrOfStreams()
+{
+  return m_streams.size();
+}
+
+CDemuxStream* CInputStream::GetStream(int iStreamId)
+{
+  std::map<int, CDemuxStream*>::iterator it = m_streams.find(iStreamId);
+  if (it != m_streams.end())
+    return it->second;
+
+  return nullptr;
+}
+
+DemuxPacket* CInputStream::ReadDemux()
+{
+  return nullptr;
 }
 
 } /*namespace ADDON*/

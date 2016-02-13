@@ -22,8 +22,12 @@
 #include "include/kodi_inputstream_types.h"
 #include "FileItem.h"
 #include <vector>
+#include <map>
 
 typedef DllAddon<InputStreamAddonFunctions, INPUTSTREAM_PROPS> DllInputStream;
+
+class CDemuxStream;
+
 namespace ADDON
 {
   typedef CAddonDll<DllInputStream, InputStreamAddonFunctions, INPUTSTREAM_PROPS> InputStreamDll;
@@ -46,10 +50,18 @@ namespace ADDON
     bool HasSeekTime() { return m_caps.m_supportsISeekTime; };
     bool HasDisplayTime() { return m_caps.m_supportsIDisplayTime; };
 
+    int GetNrOfStreams();
+    CDemuxStream* GetStream(int iStreamId);
+    DemuxPacket* ReadDemux();
+
   protected:
+    void UpdateStreams();
+    void DisposeStreams();
+
     std::vector<std::string> m_fileItemProps;
     std::vector<std::string> m_pathList;
     INPUTSTREAM_CAPABILITIES m_caps;
+    std::map<int, CDemuxStream*> m_streams;
   };
 
 } /*namespace ADDON*/

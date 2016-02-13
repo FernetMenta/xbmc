@@ -87,6 +87,7 @@ bool CInputStreamAddon::CanPause()
   return false;
 }
 
+// IDemux
 bool CInputStreamAddon::OpenDemux()
 {
   return false;
@@ -94,17 +95,27 @@ bool CInputStreamAddon::OpenDemux()
 
 DemuxPacket* CInputStreamAddon::ReadDemux()
 {
-  return nullptr;
+  if (!m_addon)
+    return nullptr;
+
+  return m_addon->ReadDemux();
 }
 
 CDemuxStream* CInputStreamAddon::GetStream(int iStreamId)
 {
-  return nullptr;
+  if (!m_addon)
+    return nullptr;
+
+  return m_addon->GetStream(iStreamId);
 }
 
 int CInputStreamAddon::GetNrOfStreams()
 {
-  return 0;
+  if (!m_addon)
+    return 0;
+
+  int count = m_addon->GetNrOfStreams();
+  return count;
 }
 
 void CInputStreamAddon::SetSpeed(int iSpeed)
