@@ -24,14 +24,23 @@
 namespace ADDON
 {
 
-CInputStream::CInputStream(const cp_extension_t* ext) : InputStreamDll(ext)
+std::unique_ptr<CInputStream> CInputStream::FromExtension(AddonProps props, const cp_extension_t* ext)
 {
-  std::string props = CAddonMgr::GetInstance().GetExtValue(ext->configuration, "@listitemprops");
-  m_fileItemProps = StringUtils::Tokenize(props, ",");
+  std::string listitemprops = CAddonMgr::GetInstance().GetExtValue(ext->configuration, "@listitemprops");
+  std::string name(ext->plugin->identifier);
+  return std::unique_ptr<CInputStream>(new CInputStream(std::move(props),
+                                                        std::move(name),
+                                                        std::move(listitemprops)));
+}
+
+CInputStream::CInputStream(AddonProps props, std::string name, std::string listitemprops)
+: InputStreamDll(std::move(props))
+{
+  m_fileItemProps = StringUtils::Tokenize(listitemprops, ",");
   for (auto &key : m_fileItemProps)
   {
     StringUtils::Trim(key);
-    key = std::string(ext->plugin->identifier) + "." + key;
+    key = name + "." + key;
   }
 }
 
