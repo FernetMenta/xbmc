@@ -93,7 +93,7 @@ extern "C" {
     char m_codecName[32];                /*!< @brief (required) name of codec according to ffmpeg */
     unsigned int m_pID;                  /*!< @brief (required) physical index */
 
-    uint8_t *m_ExtraData;
+    const uint8_t *m_ExtraData;
     unsigned int m_ExtraSize;
 
     char m_language[4];                  /*!< @brief ISO 639 3-letter language code (empty string if undefined) */
