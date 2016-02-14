@@ -210,6 +210,14 @@ void CInputStream::UpdateStreams()
     demuxStream->language[2] = stream.m_language[2];
     demuxStream->language[3] = stream.m_language[3];
 
+    if (stream.m_ExtraData && stream.m_ExtraSize)
+    {
+      demuxStream->ExtraData = new uint8_t[stream.m_ExtraSize];
+      demuxStream->ExtraSize = stream.m_ExtraSize;
+      for (unsigned int j=0; j<stream.m_ExtraSize; j++)
+        demuxStream->ExtraData[j] = stream.m_ExtraData[j];
+    }
+
     m_streams[i] = demuxStream;
   }
 }
