@@ -780,41 +780,8 @@ void CCurlFile::ParseAndCorrectUrl(CURL &url2)
     if (!options.empty())
     {
       // set xbmc headers
-      for (std::map<std::string,std::string>::const_iterator it = options.begin(); it != options.end(); ++it)
-      {
-        std::string name = it->first; StringUtils::ToLower(name);
-        const std::string &value = it->second;
-
-        if (name == "auth")
-        {
-          m_httpauth = value;
-          StringUtils::ToLower(m_httpauth);
-          if(m_httpauth.empty())
-            m_httpauth = "any";
-        }
-        else if (name == "referer")
-          SetReferer(value);
-        else if (name == "user-agent")
-          SetUserAgent(value);
-        else if (name == "cookie")
-          SetCookie(value);
-        else if (name == "encoding")
-          SetContentEncoding(value);
-        else if (name == "noshout" && value == "true")
-          m_skipshout = true;
-        else if (name == "seekable" && value == "0")
-          m_seekable = false;
-        else if (name == "accept-charset")
-          SetAcceptCharset(value);
-        else if (name == "httpproxy")
-          SetStreamProxy(value, PROXY_HTTP);
-        else if (name == "sslcipherlist")
-          m_cipherlist = value;
-        else if (name == "connection-timeout")
-          m_connecttimeout = strtol(value.c_str(), NULL, 10);
-        else
-          SetRequestHeader(it->first, value);
-      }
+      for (std::map<std::string, std::string>::const_iterator it = options.begin(); it != options.end(); ++it)
+        AddTransferOption(it->first, it->second);
     }
   }
   
@@ -1844,4 +1811,42 @@ int CCurlFile::IoControl(EIoControl request, void* param)
     return m_seekable ? 1 : 0;
 
   return -1;
+}
+
+bool CCurlFile::AddTransferOption(const std::string &name, const std::string &value)
+{
+  std::string lowerName(name);
+  StringUtils::ToLower(lowerName);
+
+  if (lowerName == "auth")
+  {
+    m_httpauth = value;
+    StringUtils::ToLower(m_httpauth);
+    if (m_httpauth.empty())
+      m_httpauth = "any";
+  }
+  else if (lowerName == "referer")
+    SetReferer(value);
+  else if (lowerName == "user-agent")
+    SetUserAgent(value);
+  else if (lowerName == "cookie")
+    SetCookie(value);
+  else if (lowerName == "encoding")
+    SetContentEncoding(value);
+  else if (lowerName == "noshout" && value == "true")
+    m_skipshout = true;
+  else if (lowerName == "seekable" && value == "0")
+    m_seekable = false;
+  else if (lowerName == "accept-charset")
+    SetAcceptCharset(value);
+  else if (lowerName == "httpproxy")
+    SetStreamProxy(value, PROXY_HTTP);
+  else if (lowerName == "sslcipherlist")
+    m_cipherlist = value;
+  else if (lowerName == "connection-timeout")
+    m_connecttimeout = strtol(value.c_str(), NULL, 10);
+  else
+    SetRequestHeader(name, value);
+
+  return true;
 }

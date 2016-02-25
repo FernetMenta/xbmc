@@ -909,6 +909,11 @@ std::string CFile::GetContentCharset(void)
   return m_pFile->GetContentCharset();
 }
 
+bool CFile::AddTransferOption(const char *name, const char *value)
+{
+  return m_pFile ? m_pFile->AddTransferOption(name, value):false;
+}
+
 ssize_t CFile::LoadFile(const std::string &filename, auto_buffer& outputBuffer)
 {
   const CURL pathToUrl(filename);

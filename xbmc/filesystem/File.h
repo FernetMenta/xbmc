@@ -115,8 +115,8 @@ public:
   int GetChunkSize();
   std::string GetContentMimeType(void);
   std::string GetContentCharset(void);
+  bool AddTransferOption(const char *name, const char *value);
   ssize_t LoadFile(const std::string &filename, auto_buffer& outputBuffer);
-
 
   // will return a size, that is aligned to chunk size
   // but always greater or equal to the file's chunk size

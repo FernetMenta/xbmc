@@ -593,6 +593,13 @@ void CAddonCallbacksAddon::FreeDirectory(const void* addonData, VFSDirEntry* ite
 
 bool CAddonCallbacksAddon::AddTransferOption(const void* addonData, void* file, const char *name, const char *value)
 {
+  CAddonCallbacks* helper = (CAddonCallbacks*)addonData;
+  if (!helper)
+    return false;
+
+  CFile* cfile = (CFile*)file;
+  if (cfile)
+    return cfile->AddTransferOption(name, value);
   return false;
 }
 

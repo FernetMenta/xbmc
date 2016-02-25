@@ -131,6 +131,7 @@ public:
 
   virtual std::string GetContent()                           { return "application/octet-stream"; }
   virtual std::string GetContentCharset(void)                { return ""; }
+  virtual bool AddTransferOption(const std::string &name, const std::string &value) { return false; };
 };
 
 class CRedirectException
