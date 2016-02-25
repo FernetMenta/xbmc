@@ -124,20 +124,20 @@ DLLEXPORT void XBMC_free_string(void* hdl, void* cb, char* str)
   ((CB_AddOnLib*)cb)->FreeString(((AddonCB*)hdl)->addonData, str);
 }
 
-DLLEXPORT void* XBMC_open_file(void *hdl, void* cb, const char* strFileName, unsigned int flags)
+DLLEXPORT void* XBMC_open_file(void *hdl, void* cb, const char* strFileName, unsigned int flags, const char* strProtocolOptions)
 {
   if (cb == NULL)
     return NULL;
 
-  return ((CB_AddOnLib*)cb)->OpenFile(((AddonCB*)hdl)->addonData, strFileName, flags);
+  return ((CB_AddOnLib*)cb)->OpenFile(((AddonCB*)hdl)->addonData, strFileName, flags, strProtocolOptions);
 }
 
-DLLEXPORT void* XBMC_open_file_for_write(void *hdl, void* cb, const char* strFileName, bool bOverWrite)
+DLLEXPORT void* XBMC_open_file_for_write(void *hdl, void* cb, const char* strFileName, bool bOverWrite, const char* strProtocolOptions)
 {
   if (cb == NULL)
     return NULL;
 
-  return ((CB_AddOnLib*)cb)->OpenFileForWrite(((AddonCB*)hdl)->addonData, strFileName, bOverWrite);
+  return ((CB_AddOnLib*)cb)->OpenFileForWrite(((AddonCB*)hdl)->addonData, strFileName, bOverWrite, strProtocolOptions);
 }
 
 DLLEXPORT ssize_t XBMC_read_file(void *hdl, void* cb, void* file, void* lpBuf, size_t uiBufSize)
