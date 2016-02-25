@@ -68,6 +68,7 @@ public:
   static bool RemoveDirectory(const void* addonData, const char *strPath);
   static bool GetDirectory(const void* addondata, const char* strPath, const char* mask, VFSDirEntry** items, unsigned int* num_items);
   static void FreeDirectory(const void* addondata, VFSDirEntry* items, unsigned int num_items);
+  static bool AddTransferOption(const void* addondata, void* file, const char *name, const char *value);
 
 private:
   CB_AddOnLib  *m_callbacks; /*!< callback addresses */

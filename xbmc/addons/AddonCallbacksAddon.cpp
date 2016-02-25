@@ -75,6 +75,7 @@ CAddonCallbacksAddon::CAddonCallbacksAddon(CAddon* addon)
   m_callbacks->RemoveDirectory    = RemoveDirectory;
   m_callbacks->GetDirectory       = GetDirectory;
   m_callbacks->FreeDirectory      = FreeDirectory;
+  m_callbacks->AddTransferOption  = AddTransferOption;
 }
 
 CAddonCallbacksAddon::~CAddonCallbacksAddon()
@@ -588,6 +589,11 @@ void CAddonCallbacksAddon::FreeDirectory(const void* addonData, VFSDirEntry* ite
     free(items[i].path);
   }
   delete[] items;
+}
+
+bool CAddonCallbacksAddon::AddTransferOption(const void* addonData, void* file, const char *name, const char *value)
+{
+  return false;
 }
 
 }; /* namespace ADDON */

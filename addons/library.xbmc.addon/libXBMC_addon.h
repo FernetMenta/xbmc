@@ -274,6 +274,10 @@ namespace ADDON
         dlsym(m_libXBMC_addon, "XBMC_free_directory");
       if (XBMC_free_directory == NULL) { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
+      XBMC_add_transfer_option = (bool(*)(void* HANDLE, void* CB, void* file, const char *name, const char *value))
+        dlsym(m_libXBMC_addon, "XBMC_add_transfer_option");
+      if (XBMC_add_transfer_option == NULL) { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
+
       m_Callbacks = XBMC_register_me(m_Handle);
       return m_Callbacks != NULL;
     }
@@ -596,6 +600,16 @@ namespace ADDON
       return XBMC_free_directory(m_Handle, m_Callbacks, items, num_items);
     }
 
+    /*!
+    * @brief Adds options for stream transfer (curl e.g)
+    * @param name The name of the option
+    * @param value The value of the option
+    */
+    bool AddTransferOption(void* file, const char *name, const char *value)
+    {
+      return XBMC_add_transfer_option(m_Handle, m_Callbacks, file, name, value);
+    }
+
   protected:
     void* (*XBMC_register_me)(void *HANDLE);
     void (*XBMC_unregister_me)(void *HANDLE, void* CB);
@@ -628,6 +642,7 @@ namespace ADDON
     bool (*XBMC_remove_directory)(void *HANDLE, void* CB, const char* strPath);
     bool (*XBMC_get_directory)(void *HANDLE, void* CB, const char* strPath, const char* mask, VFSDirEntry** items, unsigned int* num_items);
     void (*XBMC_free_directory)(void *HANDLE, void* CB, VFSDirEntry* items, unsigned int num_items);
+    bool(*XBMC_add_transfer_option)(void *HANDLE, void* CB, void* file, const char *name, const char *value);
   private:
     void *m_libXBMC_addon;
     void *m_Handle;

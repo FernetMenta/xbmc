@@ -292,4 +292,13 @@ DLLEXPORT void XBMC_free_directory(void *hdl, void* cb, VFSDirEntry* items, unsi
   ((CB_AddOnLib*)cb)->FreeDirectory(((AddonCB*)hdl)->addonData, items, num_items);
 }
 
+DLLEXPORT bool XBMC_add_transfer_option(void *hdl, void* cb, void* file, const char *name, const char *value)
+{
+  if (cb == NULL)
+    return false;
+
+  return ((CB_AddOnLib*)cb)->AddTransferOption(((AddonCB*)hdl)->addonData, file, name, value);
+}
+
+
 };

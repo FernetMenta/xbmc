@@ -71,6 +71,7 @@ typedef bool (*AddOnDirectoryExists)(const void* addonData, const char *strPath)
 typedef bool (*AddOnRemoveDirectory)(const void* addonData, const char *strPath);
 typedef bool (*AddOnGetDirectory)(const void* addonData, const char *strPath, const char* mask, VFSDirEntry** items, unsigned int* num_items);
 typedef void (*AddOnFreeDirectory)(const void* addonData, VFSDirEntry* items, unsigned int num_items);
+typedef bool(*AddOnAddTransferOption)(const void* addonData, void* file, const char *name, const char *value);
 
 typedef struct CB_AddOn
 {
@@ -104,6 +105,7 @@ typedef struct CB_AddOn
   AddOnRemoveDirectory    RemoveDirectory;
   AddOnGetDirectory       GetDirectory;
   AddOnFreeDirectory      FreeDirectory;
+  AddOnAddTransferOption  AddTransferOption;
 } CB_AddOnLib;
 
 typedef xbmc_codec_t (*CODECGetCodecByName)(const void* addonData, const char* strCodecName);
