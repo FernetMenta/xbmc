@@ -20,7 +20,7 @@
 #include "utils/StringUtils.h"
 #include "utils/log.h"
 #include "cores/VideoPlayer/DVDDemuxers/DVDDemux.h"
-
+#include "utils/RegExp.h"
 
 namespace ADDON
 {
@@ -68,6 +68,9 @@ bool CInputStream::Supports(CFileItem &fileitem)
   if (!match)
     return false;
 
+  if (!m_pStruct)
+    return true;
+
   std::string pathList;
   try
   {
@@ -85,21 +88,20 @@ bool CInputStream::Supports(CFileItem &fileitem)
   }
 
   match = false;
+
   for (auto &path : m_pathList)
   {
     if (path.empty())
       continue;
 
-    if (fileitem.GetPath().compare(0, path.length(), path) == 0)
+    CRegExp r(true, CRegExp::asciiOnly, path.c_str());
+    if (r.RegFind(path.c_str()) == 0 && r.GetFindLen() > 6)
     {
       match = true;
       break;
     }
   }
-  if (!match)
-    return false;
-
-  return true;
+  return match;
 }
 
 bool CInputStream::Open(CFileItem &fileitem)
