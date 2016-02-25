@@ -32,6 +32,7 @@
 #include "utils/StringUtils.h"
 #include "utils/XMLUtils.h"
 #include "addons/include/kodi_vfs_types.h"
+#include "URL.h"
 
 using namespace XFILE;
 
@@ -304,28 +305,40 @@ void CAddonCallbacksAddon::FreeString(const void* addonData, char* str)
   free(str);
 }
 
-void* CAddonCallbacksAddon::OpenFile(const void* addonData, const char* strFileName, unsigned int flags)
+void* CAddonCallbacksAddon::OpenFile(const void* addonData, const char* strFileName, unsigned int flags, const char* strPotocolOptions)
 {
   CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
   if (!helper)
     return NULL;
 
   CFile* file = new CFile;
-  if (file->Open(strFileName, flags))
+
+  CURL url(strFileName);
+  
+  if (strPotocolOptions)
+    url.SetProtocolOptions(strPotocolOptions);
+  
+  if (file->Open(url, flags))
     return ((void*)file);
 
   delete file;
   return NULL;
 }
 
-void* CAddonCallbacksAddon::OpenFileForWrite(const void* addonData, const char* strFileName, bool bOverwrite)
+void* CAddonCallbacksAddon::OpenFileForWrite(const void* addonData, const char* strFileName, bool bOverwrite, const char* strPotocolOptions)
 {
   CAddonCallbacks* helper = (CAddonCallbacks*) addonData;
   if (!helper)
     return NULL;
 
   CFile* file = new CFile;
-  if (file->OpenForWrite(strFileName, bOverwrite))
+  
+  CURL url(strFileName);
+
+  if (strPotocolOptions)
+    url.SetProtocolOptions(strPotocolOptions);
+
+  if (file->OpenForWrite(url, bOverwrite))
     return ((void*)file);
 
   delete file;

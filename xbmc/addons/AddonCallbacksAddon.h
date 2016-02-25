@@ -47,8 +47,8 @@ public:
   static void FreeString(const void* addonData, char* str);
 
   // file operations
-  static void* OpenFile(const void* addonData, const char* strFileName, unsigned int flags);
-  static void* OpenFileForWrite(const void* addonData, const char* strFileName, bool bOverwrite);
+  static void* OpenFile(const void* addonData, const char* strFileName, unsigned int flags, const char* strProtocolOptions);
+  static void* OpenFileForWrite(const void* addonData, const char* strFileName, bool bOverwrite, const char* strProtocolOptions);
   static ssize_t ReadFile(const void* addonData, void* file, void* lpBuf, size_t uiBufSize);
   static bool ReadFileString(const void* addonData, void* file, char *szLine, int iLineLength);
   static ssize_t WriteFile(const void* addonData, void* file, const void* lpBuf, size_t uiBufSize);

@@ -190,11 +190,11 @@ namespace ADDON
         dlsym(m_libXBMC_addon, "XBMC_get_dvd_menu_language");
       if (XBMC_get_dvd_menu_language == NULL) { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-      XBMC_open_file = (void* (*)(void* HANDLE, void* CB, const char* strFileName, unsigned int flags))
+      XBMC_open_file = (void* (*)(void* HANDLE, void* CB, const char* strFileName, unsigned int flags, const char* strProtocolOptions))
         dlsym(m_libXBMC_addon, "XBMC_open_file");
       if (XBMC_open_file == NULL) { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
-      XBMC_open_file_for_write = (void* (*)(void* HANDLE, void* CB, const char* strFileName, bool bOverWrite))
+      XBMC_open_file_for_write = (void* (*)(void* HANDLE, void* CB, const char* strFileName, bool bOverWrite, const char* strProtocolOptions))
         dlsym(m_libXBMC_addon, "XBMC_open_file_for_write");
       if (XBMC_open_file_for_write == NULL) { fprintf(stderr, "Unable to assign function %s\n", dlerror()); return false; }
 
@@ -374,9 +374,9 @@ namespace ADDON
      * @param flags The flags to pass. Documented in XBMC's File.h
      * @return A handle for the file, or NULL if it couldn't be opened.
      */
-    void* OpenFile(const char* strFileName, unsigned int flags)
+    void* OpenFile(const char* strFileName, unsigned int flags, const char* strProtocolOptions=0)
     {
-      return XBMC_open_file(m_Handle, m_Callbacks, strFileName, flags);
+      return XBMC_open_file(m_Handle, m_Callbacks, strFileName, flags, strProtocolOptions);
     }
 
     /*!
@@ -385,9 +385,9 @@ namespace ADDON
      * @param bOverWrite True to overwrite, false otherwise.
      * @return A handle for the file, or NULL if it couldn't be opened.
      */
-    void* OpenFileForWrite(const char* strFileName, bool bOverWrite)
+    void* OpenFileForWrite(const char* strFileName, bool bOverWrite, const char* strProtocolOptions=0)
     {
-      return XBMC_open_file_for_write(m_Handle, m_Callbacks, strFileName, bOverWrite);
+      return XBMC_open_file_for_write(m_Handle, m_Callbacks, strFileName, bOverWrite, strProtocolOptions);
     }
 
     /*!
@@ -607,8 +607,8 @@ namespace ADDON
     char* (*XBMC_get_localized_string)(void *HANDLE, void* CB, int dwCode);
     char* (*XBMC_get_dvd_menu_language)(void *HANDLE, void* CB);
     void (*XBMC_free_string)(void *HANDLE, void* CB, char* str);
-    void* (*XBMC_open_file)(void *HANDLE, void* CB, const char* strFileName, unsigned int flags);
-    void* (*XBMC_open_file_for_write)(void *HANDLE, void* CB, const char* strFileName, bool bOverWrite);
+    void* (*XBMC_open_file)(void *HANDLE, void* CB, const char* strFileName, unsigned int flags, const char* strProtocolOptions);
+    void* (*XBMC_open_file_for_write)(void *HANDLE, void* CB, const char* strFileName, bool bOverWrite, const char* strProtocolOptions);
     ssize_t (*XBMC_read_file)(void *HANDLE, void* CB, void* file, void* lpBuf, size_t uiBufSize);
     bool (*XBMC_read_file_string)(void *HANDLE, void* CB, void* file, char *szLine, int iLineLength);
     ssize_t(*XBMC_write_file)(void *HANDLE, void* CB, void* file, const void* lpBuf, size_t uiBufSize);

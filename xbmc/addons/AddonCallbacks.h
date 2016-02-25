@@ -50,8 +50,8 @@ typedef char* (*AddOnGetLocalizedString)(const void* addonData, long dwCode);
 typedef char* (*AddOnGetDVDMenuLanguage)(const void* addonData);
 typedef void (*AddOnFreeString)(const void* addonData, char* str);
 
-typedef void* (*AddOnOpenFile)(const void* addonData, const char* strFileName, unsigned int flags);
-typedef void* (*AddOnOpenFileForWrite)(const void* addonData, const char* strFileName, bool bOverWrite);
+typedef void* (*AddOnOpenFile)(const void* addonData, const char* strFileName, unsigned int flags, const char* strProtocolOptions);
+typedef void* (*AddOnOpenFileForWrite)(const void* addonData, const char* strFileName, bool bOverWrite, const char* strProtocolOptions);
 typedef ssize_t (*AddOnReadFile)(const void* addonData, void* file, void* lpBuf, size_t uiBufSize);
 typedef bool (*AddOnReadFileString)(const void* addonData, void* file, char *szLine, int iLineLength);
 typedef ssize_t (*AddOnWriteFile)(const void* addonData, void* file, const void* lpBuf, size_t uiBufSize);
