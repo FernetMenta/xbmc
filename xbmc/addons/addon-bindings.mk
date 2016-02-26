@@ -29,3 +29,4 @@ BINDINGS+=addons/library.xbmc.codec/libXBMC_codec.h
 BINDINGS+=addons/library.kodi.inputstream/libKODI_inputstream.h
 BINDINGS+=xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxPacket.h
 BINDINGS+=xbmc/cores/AudioEngine/Utils/AEChannelData.h
+BINDINGS+=xbmc/filesystem/IFileTypes.h
