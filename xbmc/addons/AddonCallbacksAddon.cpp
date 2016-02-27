@@ -446,11 +446,11 @@ double CAddonCallbacksAddon::GetFileDownloadSpeed(const void* addonData, void* f
 {
   CAddonCallbacks* helper = (CAddonCallbacks*)addonData;
   if (!helper)
-    return 0;
+    return 0.0f;
 
   CFile* cfile = (CFile*)file;
   if (!cfile)
-    return 0;
+    return 0.0f;
 
   return cfile->GetDownloadSpeed();
 }
@@ -628,11 +628,11 @@ bool CAddonCallbacksAddon::CURLAddOption(const void* addonData, void* file, XFIL
 {
   CAddonCallbacks* helper = (CAddonCallbacks*)addonData;
   if (!helper)
-    return 0;
+    return false;
 
   CFile* cfile = (CFile*)file;
   if (!cfile)
-    return 0;
+    return false;
 
   return cfile->CURLAddOption(type, name, value);
 }
@@ -641,11 +641,11 @@ bool CAddonCallbacksAddon::CURLOpen(const void* addonData, void* file, unsigned 
 {
   CAddonCallbacks* helper = (CAddonCallbacks*)addonData;
   if (!helper)
-    return 0;
+    return false;
 
   CFile* cfile = (CFile*)file;
   if (!cfile)
-    return 0;
+    return false;
 
   return cfile->CURLOpen(flags);
 }

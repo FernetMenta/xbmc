@@ -311,7 +311,7 @@ DLLEXPORT void* XBMC_curl_create(void *hdl, void* cb, const char* strURL)
 DLLEXPORT bool XBMC_curl_add_option(void *hdl, void* cb, void *file, XFILE::CURLOPTIONTYPE type, const char* name, const char *value)
 {
   if (cb == NULL)
-    return NULL;
+    return false;
 
   return ((CB_AddOnLib*)cb)->CURLAddOption(((AddonCB*)hdl)->addonData, file, type, name, value);
 }
@@ -319,7 +319,7 @@ DLLEXPORT bool XBMC_curl_add_option(void *hdl, void* cb, void *file, XFILE::CURL
 DLLEXPORT bool XBMC_curl_open(void *hdl, void* cb, void *file, unsigned int flags)
 {
   if (cb == NULL)
-    return NULL;
+    return false;
 
   return ((CB_AddOnLib*)cb)->CURLOpen(((AddonCB*)hdl)->addonData, file, flags);
 }
