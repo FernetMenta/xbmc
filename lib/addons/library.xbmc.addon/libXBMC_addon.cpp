@@ -124,20 +124,20 @@ DLLEXPORT void XBMC_free_string(void* hdl, void* cb, char* str)
   ((CB_AddOnLib*)cb)->FreeString(((AddonCB*)hdl)->addonData, str);
 }
 
-DLLEXPORT void* XBMC_open_file(void *hdl, void* cb, const char* strFileName, unsigned int flags, const char* strProtocolOptions)
+DLLEXPORT void* XBMC_open_file(void *hdl, void* cb, const char* strFileName, unsigned int flags)
 {
   if (cb == NULL)
     return NULL;
 
-  return ((CB_AddOnLib*)cb)->OpenFile(((AddonCB*)hdl)->addonData, strFileName, flags, strProtocolOptions);
+  return ((CB_AddOnLib*)cb)->OpenFile(((AddonCB*)hdl)->addonData, strFileName, flags);
 }
 
-DLLEXPORT void* XBMC_open_file_for_write(void *hdl, void* cb, const char* strFileName, bool bOverWrite, const char* strProtocolOptions)
+DLLEXPORT void* XBMC_open_file_for_write(void *hdl, void* cb, const char* strFileName, bool bOverWrite)
 {
   if (cb == NULL)
     return NULL;
 
-  return ((CB_AddOnLib*)cb)->OpenFileForWrite(((AddonCB*)hdl)->addonData, strFileName, bOverWrite, strProtocolOptions);
+  return ((CB_AddOnLib*)cb)->OpenFileForWrite(((AddonCB*)hdl)->addonData, strFileName, bOverWrite);
 }
 
 DLLEXPORT ssize_t XBMC_read_file(void *hdl, void* cb, void* file, void* lpBuf, size_t uiBufSize)
@@ -202,6 +202,14 @@ DLLEXPORT int64_t XBMC_get_file_length(void *hdl, void* cb, void* file)
     return 0;
 
   return ((CB_AddOnLib*)cb)->GetFileLength(((AddonCB*)hdl)->addonData, file);
+}
+
+DLLEXPORT double XBMC_get_file_download_speed(void *hdl, void* cb, void* file)
+{
+  if (cb == NULL)
+    return 0.0f;
+
+  return ((CB_AddOnLib*)cb)->GetFileDownloadSpeed(((AddonCB*)hdl)->addonData, file);
 }
 
 DLLEXPORT void XBMC_close_file(void *hdl, void* cb, void* file)
@@ -290,6 +298,30 @@ DLLEXPORT void XBMC_free_directory(void *hdl, void* cb, VFSDirEntry* items, unsi
     return;
 
   ((CB_AddOnLib*)cb)->FreeDirectory(((AddonCB*)hdl)->addonData, items, num_items);
+}
+
+DLLEXPORT void* XBMC_curl_create(void *hdl, void* cb, const char* strURL)
+{
+  if (cb == NULL)
+    return NULL;
+
+  return ((CB_AddOnLib*)cb)->CURLCreate(((AddonCB*)hdl)->addonData, strURL);
+}
+
+DLLEXPORT bool XBMC_curl_add_option(void *hdl, void* cb, void *file, XFILE::CURLOPTIONTYPE type, const char* name, const char *value)
+{
+  if (cb == NULL)
+    return NULL;
+
+  return ((CB_AddOnLib*)cb)->CURLAddOption(((AddonCB*)hdl)->addonData, file, type, name, value);
+}
+
+DLLEXPORT bool XBMC_curl_open(void *hdl, void* cb, void *file, unsigned int flags)
+{
+  if (cb == NULL)
+    return NULL;
+
+  return ((CB_AddOnLib*)cb)->CURLOpen(((AddonCB*)hdl)->addonData, file, flags);
 }
 
 };
