@@ -72,25 +72,25 @@ enum StreamSource {
 class CDemuxStream
 {
 public:
-  CDemuxStream()
+  CDemuxStream(StreamType tp = STREAM_NONE)
+    : iId(0)
+    , iPhysicalId(0)
+    , codec((AVCodecID)0) // AV_CODEC_ID_NONE
+    , codec_fourcc(0)
+    , profile(FF_PROFILE_UNKNOWN)
+    , level(FF_LEVEL_UNKNOWN)
+    , type(tp)
+    , source(STREAM_SOURCE_NONE)
+    , iDuration(0)
+    , pPrivate(NULL)
+    , ExtraData(NULL)
+    , ExtraSize(0)
+    , disabled(false)
+    , changes(0)
+    , flags(FLAG_NONE)
+    , realtime(false)
   {
-    iId = 0;
-    iPhysicalId = 0;
-    codec = (AVCodecID)0; // AV_CODEC_ID_NONE
-    codec_fourcc = 0;
-    profile = FF_PROFILE_UNKNOWN;
-    level = FF_LEVEL_UNKNOWN;
-    type = STREAM_NONE;
-    source = STREAM_SOURCE_NONE;
-    iDuration = 0;
-    pPrivate = NULL;
-    ExtraData = NULL;
-    ExtraSize = 0;
     memset(language, 0, sizeof(language));
-    disabled = false;
-    changes = 0;
-    flags = FLAG_NONE;
-    realtime = false;
   }
 
   virtual ~CDemuxStream()
@@ -98,11 +98,7 @@ public:
     delete [] ExtraData;
   }
 
-  virtual std::string GetStreamInfo()
-  {
-    return "";
-  }
-
+  virtual std::string GetStreamInfo();
   virtual std::string GetStreamName();
 
   int iId;         // most of the time starting from 0
@@ -125,6 +121,9 @@ public:
 
   int  changes; // increment on change which player may need to know about
 
+  std::string streamInfo;
+  std::string streamName;
+  
   enum EFlags
   { FLAG_NONE             = 0x0000 
   , FLAG_DEFAULT          = 0x0001
@@ -142,24 +141,26 @@ public:
 class CDemuxStreamVideo : public CDemuxStream
 {
 public:
-  CDemuxStreamVideo() : CDemuxStream()
+  CDemuxStreamVideo()
+    : CDemuxStream(STREAM_VIDEO)
+    , iFpsScale(0)
+    , iFpsRate(0)
+    , irFpsScale(0)
+    , irFpsRate(0)
+    , iHeight(0)
+    , iWidth(0)
+    , fAspect(0.0)
+    , bVFR(false)
+    , bPTSInvalid(false)
+    , bForcedAspect(false)
+    , iOrientation(0)
+    , iBitsPerPixel(0)
   {
-    iFpsScale = 0;
-    iFpsRate = 0;
-    irFpsScale = 0;
-    irFpsRate = 0;
-    iHeight = 0;
-    iWidth = 0;
-    fAspect = 0.0;
-    bVFR = false;
-    bPTSInvalid = false;
-    bForcedAspect = false;
-    type = STREAM_VIDEO;
-    iOrientation = 0;
-    iBitsPerPixel = 0;
   }
 
   virtual ~CDemuxStreamVideo() {}
+  virtual std::string GetStreamInfo() override;
+
   int iFpsScale; // scale of 1000 and a rate of 29970 will result in 29.97 fps
   int iFpsRate;
   int irFpsScale;
@@ -178,20 +179,20 @@ public:
 class CDemuxStreamAudio : public CDemuxStream
 {
 public:
-  CDemuxStreamAudio() : CDemuxStream()
+  CDemuxStreamAudio() : CDemuxStream(STREAM_AUDIO)
+    , iChannels(0)
+    , iSampleRate(0)
+    , iBlockAlign(0)
+    , iBitRate(0)
+    , iBitsPerSample(0)
+    , iChannelLayout(0)
   {
-    iChannels = 0;
-    iSampleRate = 0;
-    iBlockAlign = 0;
-    iBitRate = 0;
-    iBitsPerSample = 0;
-    iChannelLayout = 0;
-    type = STREAM_AUDIO;
   }
 
   virtual ~CDemuxStreamAudio() {}
 
-  std::string GetStreamType();
+  std::string GetStreamTypeName();
+  virtual std::string GetStreamInfo() override;
 
   int iChannels;
   int iSampleRate;
@@ -204,20 +205,16 @@ public:
 class CDemuxStreamSubtitle : public CDemuxStream
 {
 public:
-  CDemuxStreamSubtitle() : CDemuxStream()
-  {
-    type = STREAM_SUBTITLE;
-  }
+  CDemuxStreamSubtitle() : CDemuxStream(STREAM_SUBTITLE){}
 };
 
 class CDemuxStreamTeletext : public CDemuxStream
 {
 public:
-  CDemuxStreamTeletext() : CDemuxStream()
+  CDemuxStreamTeletext() : CDemuxStream(STREAM_TELETEXT)
   {
-    type = STREAM_TELETEXT;
+    streamInfo = "Teletext Data Stream";
   }
-  virtual std::string GetStreamInfo();
 };
 
 class CDemuxStreamRadioRDS : public CDemuxStream
@@ -226,8 +223,8 @@ public:
   CDemuxStreamRadioRDS() : CDemuxStream()
   {
     type = STREAM_RADIO_RDS;
+    streamInfo = "Radio Data Stream (RDS)";
   }
-  virtual std::string GetStreamInfo();
 };
 
 class CDVDDemux

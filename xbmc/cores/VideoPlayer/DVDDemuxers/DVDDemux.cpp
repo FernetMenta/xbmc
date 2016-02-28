@@ -20,19 +20,34 @@
 
 #include "DVDDemux.h"
 
-std::string CDemuxStreamTeletext::GetStreamInfo()
+int CDVDDemux::GetNrOfSubtitleStreams()
 {
-  return "Teletext Data Stream";
+  int iCounter = 0;
+
+  for (int i = 0; i < GetNrOfStreams(); i++)
+  {
+    CDemuxStream* pStream = GetStream(i);
+    if (pStream->type == STREAM_SUBTITLE) iCounter++;
+  }
+
+  return iCounter;
 }
 
-std::string CDemuxStreamRadioRDS::GetStreamInfo()
+std::string CDemuxStream::GetStreamInfo()
 {
-  return "Radio Data Stream (RDS)";
+  return streamInfo;
 }
 
-std::string CDemuxStreamAudio::GetStreamType()
+std::string CDemuxStream::GetStreamName()
 {
-  char sInfo[64] = {0};
+  return streamName;
+}
+
+/**************************    AUDIO   **************************/
+
+std::string CDemuxStreamAudio::GetStreamTypeName()
+{
+  char sInfo[64] = { 0 };
 
   if (codec == AV_CODEC_ID_AC3) strcpy(sInfo, "AC3 ");
   else if (codec == AV_CODEC_ID_DTS)
@@ -63,20 +78,58 @@ std::string CDemuxStreamAudio::GetStreamType()
   return sInfo;
 }
 
-int CDVDDemux::GetNrOfSubtitleStreams()
+std::string CDemuxStreamAudio::GetStreamInfo()
 {
-  int iCounter = 0;
+  if (!streamInfo.empty())
+    return streamInfo;
 
-  for (int i = 0; i < GetNrOfStreams(); i++)
+  std::string strInfo;
+  switch (codec)
   {
-    CDemuxStream* pStream = GetStream(i);
-    if (pStream->type == STREAM_SUBTITLE) iCounter++;
+  case AV_CODEC_ID_AC3:
+    strInfo = "ac3";
+    break;
+  case AV_CODEC_ID_EAC3:
+    strInfo = "eac3";
+    break;
+  case AV_CODEC_ID_MP2:
+    strInfo = "mpeg2audio";
+    break;
+  case AV_CODEC_ID_AAC:
+    strInfo = "aac";
+    break;
+  case AV_CODEC_ID_DTS:
+    strInfo = "dts";
+    break;
+  default:
+    break;
   }
 
-  return iCounter;
+  return strInfo;
 }
 
-std::string CDemuxStream::GetStreamName()
+/**************************    VIDEO   **************************/
+
+std::string CDemuxStreamVideo::GetStreamInfo()
 {
-  return "";
+  if (!streamInfo.empty())
+    return streamInfo;
+
+  std::string strInfo;
+  switch (codec)
+  {
+  case AV_CODEC_ID_MPEG2VIDEO:
+    strInfo = "mpeg2video";
+    break;
+  case AV_CODEC_ID_H264:
+    strInfo = "h264";
+    break;
+  case AV_CODEC_ID_HEVC:
+    strInfo = "hevc";
+    break;
+  default:
+    break;
+  }
+
+  return strInfo;
 }

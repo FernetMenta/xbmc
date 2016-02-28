@@ -24,17 +24,6 @@
 #include "../DVDClock.h"
 
 // CDDA audio demuxer based on AirTunes audio Demuxer.
-
-class CDemuxStreamAudioCDDA
-  : public CDemuxStreamAudio
-{
-public:
-  void GetStreamInfo(std::string& strInfo)
-  {
-    strInfo = "pcm";
-  }
-};
-
 CDVDDemuxCDDA::CDVDDemuxCDDA() : CDVDDemux()
 {
   m_pInput = NULL;
@@ -58,7 +47,7 @@ bool CDVDDemuxCDDA::Open(CDVDInputStream* pInput)
 
   m_pInput = pInput;
 
-  m_stream = new CDemuxStreamAudioCDDA();
+  m_stream = new CDemuxStreamAudio();
 
   if(!m_stream)
     return false;
@@ -69,7 +58,7 @@ bool CDVDDemuxCDDA::Open(CDVDInputStream* pInput)
   m_stream->iChannels       = 2;
   m_stream->type            = STREAM_AUDIO;
   m_stream->codec           = AV_CODEC_ID_PCM_S16LE;
-
+  m_stream->streamInfo =    "pcm";
   return true;
 }
 

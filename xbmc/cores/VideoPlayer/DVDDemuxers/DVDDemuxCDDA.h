@@ -57,5 +57,5 @@ protected:
   CDVDInputStream* m_pInput;
   int64_t m_bytes;
 
-  CDemuxStreamAudioCDDA *m_stream;
+  CDemuxStreamAudio *m_stream;
 };

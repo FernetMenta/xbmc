@@ -26,6 +26,21 @@ extern "C" {
 #include "libavformat/avformat.h"
 }
 
+class CDemuxStreamClientInternal
+{
+  friend class CDVDDemuxClient;
+public:
+  CDemuxStreamClientInternal();
+  ~CDemuxStreamClientInternal();
+
+  void DisposeParser();
+
+private:
+  AVCodecParserContext *m_parser;
+  AVCodecContext *m_context;
+  bool m_parser_split;
+};
+
 class CDVDDemuxClient : public CDVDDemux
 {
 public:

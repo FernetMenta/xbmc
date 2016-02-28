@@ -77,75 +77,6 @@ static const struct StereoModeConversionMap WmvToInternalStereoModeMap[] =
 
 #define FF_MAX_EXTRADATA_SIZE ((1 << 28) - FF_INPUT_BUFFER_PADDING_SIZE)
 
-std::string CDemuxStreamAudioFFmpeg::GetStreamInfo()
-{
-  if(!m_stream)
-    return "";
-  char temp[128];
-  avcodec_string(temp, 128, m_stream->codec, 0);
-
-  return temp;
-}
-
-std::string CDemuxStreamAudioFFmpeg::GetStreamName()
-{
-  if(!m_stream)
-    return "";
-  if(!m_description.empty())
-    return m_description;
-  else
-    return CDemuxStream::GetStreamName();
-}
-
-std::string CDemuxStreamSubtitleFFmpeg::GetStreamName()
-{
-  if(!m_stream)
-    return "";
-  if(!m_description.empty())
-    return m_description;
-  else
-    return CDemuxStream::GetStreamName();
-}
-
-std::string CDemuxStreamVideoFFmpeg::GetStreamInfo()
-{
-  if(!m_stream)
-    return "";
-  char temp[128];
-  avcodec_string(temp, 128, m_stream->codec, 0);
-  
-  return temp;
-}
-
-std::string CDemuxStreamVideoFFmpeg::GetStreamName()
-{
-  if (!m_stream)
-    return "";
-  if (!m_description.empty())
-    return m_description;
-  else
-    return CDemuxStream::GetStreamName();
-}
-
-std::string CDemuxStreamSubtitleFFmpeg::GetStreamInfo()
-{
-  if(!m_stream)
-    return "";
-  char temp[128];
-  avcodec_string(temp, 128, m_stream->codec, 0);
-  
-  return temp;
-}
-
-static int interrupt_cb(void* ctx)
-{
-  CDVDDemuxFFmpeg* demuxer = static_cast<CDVDDemuxFFmpeg*>(ctx);
-  if(demuxer && demuxer->Aborted())
-    return 1;
-  return 0;
-}
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /*
@@ -154,6 +85,14 @@ static int dvd_file_open(URLContext *h, const char *filename, int flags)
   return -1;
 }
 */
+
+static int interrupt_cb(void* ctx)
+{
+  CDVDDemuxFFmpeg* demuxer = static_cast<CDVDDemuxFFmpeg*>(ctx);
+  if (demuxer && demuxer->Aborted())
+    return 1;
+  return 0;
+}
 
 static int dvd_file_read(void *h, uint8_t* buf, int size)
 {
@@ -1136,7 +1075,7 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int iId)
     {
     case AVMEDIA_TYPE_AUDIO:
       {
-        CDemuxStreamAudioFFmpeg* st = new CDemuxStreamAudioFFmpeg(this, pStream);
+        CDemuxStreamAudio* st = new CDemuxStreamAudio();
         stream = st;
         st->iChannels = pStream->codec->channels;
         st->iSampleRate = pStream->codec->sample_rate;
@@ -1148,13 +1087,13 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int iId)
           st->iBitsPerSample = pStream->codec->bits_per_coded_sample;
 	
         if(av_dict_get(pStream->metadata, "title", NULL, 0))
-          st->m_description = av_dict_get(pStream->metadata, "title", NULL, 0)->value;
+          st->streamName = av_dict_get(pStream->metadata, "title", NULL, 0)->value;
 
         break;
       }
     case AVMEDIA_TYPE_VIDEO:
       {
-        CDemuxStreamVideoFFmpeg* st = new CDemuxStreamVideoFFmpeg(this, pStream);
+        CDemuxStreamVideo* st = new CDemuxStreamVideo();
         stream = st;
         if(strcmp(m_pFormatContext->iformat->name, "flv") == 0)
           st->bVFR = true;
@@ -1243,7 +1182,7 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int iId)
           }
         }
         if (av_dict_get(pStream->metadata, "title", NULL, 0))
-          st->m_description = av_dict_get(pStream->metadata, "title", NULL, 0)->value;
+          st->streamName = av_dict_get(pStream->metadata, "title", NULL, 0)->value;
 
         break;
       }
@@ -1264,11 +1203,11 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int iId)
         }
         else
         {
-          CDemuxStreamSubtitleFFmpeg* st = new CDemuxStreamSubtitleFFmpeg(this, pStream);
+          CDemuxStreamSubtitle* st = new CDemuxStreamSubtitle();
           stream = st;
 	    
           if(av_dict_get(pStream->metadata, "title", NULL, 0))
-            st->m_description = av_dict_get(pStream->metadata, "title", NULL, 0)->value;
+            st->streamName = av_dict_get(pStream->metadata, "title", NULL, 0)->value;
 	
           break;
         }
@@ -1337,6 +1276,10 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int iId)
       stream->ExtraData = new uint8_t[pStream->codec->extradata_size];
       memcpy(stream->ExtraData, pStream->codec->extradata, pStream->codec->extradata_size);
     }
+
+    char temp[128];
+    avcodec_string(temp, 128, pStream->codec, 0);
+    stream->streamInfo = temp;
 
 #ifdef HAVE_LIBBLURAY
     if( m_pInput->IsStreamType(DVDSTREAM_TYPE_BLURAY) )

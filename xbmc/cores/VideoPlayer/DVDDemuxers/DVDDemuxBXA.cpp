@@ -25,24 +25,6 @@
 #include "../DVDClock.h"
 
 // AirTunes audio Demuxer.
-
-class CDemuxStreamAudioBXA
-  : public CDemuxStreamAudio
-{
-  CDVDDemuxBXA  *m_parent;
-  std::string    m_codec;
-public:
-  CDemuxStreamAudioBXA(CDVDDemuxBXA *parent, const std::string& codec)
-    : m_parent(parent)
-    , m_codec(codec)
-
-  {}
-  void GetStreamInfo(std::string& strInfo)
-  {
-    strInfo = StringUtils::Format("%s", m_codec.c_str());
-  }
-};
-
 CDVDDemuxBXA::CDVDDemuxBXA() : CDVDDemux()
 {
   m_pInput = NULL;
@@ -77,7 +59,7 @@ bool CDVDDemuxBXA::Open(CDVDInputStream* pInput)
 
   m_pInput = pInput;
 
-  m_stream = new CDemuxStreamAudioBXA(this, "BXA");
+  m_stream = new CDemuxStreamAudio();
 
   if(!m_stream)
     return false;
@@ -88,6 +70,7 @@ bool CDVDDemuxBXA::Open(CDVDInputStream* pInput)
   m_stream->iChannels       = m_header.channels;
   m_stream->type            = STREAM_AUDIO;
   m_stream->codec           = AV_CODEC_ID_PCM_S16LE;
+  m_stream->streamInfo      = "BXA";
 
   return true;
 }

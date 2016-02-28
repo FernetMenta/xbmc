@@ -27,120 +27,38 @@
 
 #define FF_MAX_EXTRADATA_SIZE ((1 << 28) - FF_INPUT_BUFFER_PADDING_SIZE)
 
-
-class CDemuxStreamClientInternal
-{
-public:
-  CDemuxStreamClientInternal()
+CDemuxStreamClientInternal::CDemuxStreamClientInternal()
   : m_parser(nullptr)
   , m_context(nullptr)
   , m_parser_split(false)
   {
   }
 
-  ~CDemuxStreamClientInternal()
-  {
-    DisposeParser();
-  }
-
-  void DisposeParser()
-  {
-    if (m_parser)
-    {
-      av_parser_close(m_parser);
-      m_parser = nullptr;
-    }
-    if (m_context)
-    {
-      avcodec_close(m_context);
-      m_context = nullptr;
-    }
-  }
-
-  AVCodecParserContext *m_parser;
-  AVCodecContext *m_context;
-  bool m_parser_split;
-};
-
-class CDemuxStreamVideoClient
-: public CDemuxStreamVideo
-, public CDemuxStreamClientInternal
+CDemuxStreamClientInternal::~CDemuxStreamClientInternal()
 {
-public:
-  CDemuxStreamVideoClient() {}
-  virtual std::string GetStreamInfo() override;
-};
-
-class CDemuxStreamAudioClient
-: public CDemuxStreamAudio
-, public CDemuxStreamClientInternal
-{
-public:
-  CDemuxStreamAudioClient() {}
-  virtual std::string GetStreamInfo() override;
-};
-
-class CDemuxStreamSubtitleClient
-: public CDemuxStreamSubtitle
-, public CDemuxStreamClientInternal
-{
-public:
-  CDemuxStreamSubtitleClient() {}
-  virtual std::string GetStreamInfo() override;
-};
-
-std::string CDemuxStreamVideoClient::GetStreamInfo()
-{
-  std::string strInfo;
-  switch (codec)
-  {
-    case AV_CODEC_ID_MPEG2VIDEO:
-      strInfo = "mpeg2video";
-      break;
-    case AV_CODEC_ID_H264:
-      strInfo = "h264";
-      break;
-    case AV_CODEC_ID_HEVC:
-      strInfo = "hevc";
-      break;
-    default:
-      break;
-  }
-
-  return strInfo;
+  DisposeParser();
 }
 
-std::string CDemuxStreamAudioClient::GetStreamInfo()
+void CDemuxStreamClientInternal::DisposeParser()
 {
-  std::string strInfo;
-  switch (codec)
+  if (m_parser)
   {
-    case AV_CODEC_ID_AC3:
-      strInfo = "ac3";
-      break;
-    case AV_CODEC_ID_EAC3:
-      strInfo = "eac3";
-      break;
-    case AV_CODEC_ID_MP2:
-      strInfo = "mpeg2audio";
-      break;
-    case AV_CODEC_ID_AAC:
-      strInfo = "aac";
-      break;
-    case AV_CODEC_ID_DTS:
-      strInfo = "dts";
-      break;
-    default:
-      break;
+    av_parser_close(m_parser);
+    m_parser = nullptr;
   }
-
-  return strInfo;
+  if (m_context)
+  {
+    avcodec_close(m_context);
+    m_context = nullptr;
+  }
 }
 
-std::string CDemuxStreamSubtitleClient::GetStreamInfo()
+template <class T>
+class CDemuxStreamClientInternalSub : public CDemuxStreamClientInternal, public T
 {
-  return "";
-}
+};
+
+/**************************   CDVDDemuxClient   **********************/
 
 CDVDDemuxClient::CDVDDemuxClient() : CDVDDemux()
 {
@@ -299,7 +217,7 @@ void CDVDDemuxClient::ParsePacket(DemuxPacket* pkt)
     {
       case STREAM_AUDIO:
       {
-        CDemuxStreamAudioClient* sta = static_cast<CDemuxStreamAudioClient*>(st);
+        CDemuxStreamClientInternalSub<CDemuxStreamAudio>* sta = static_cast<CDemuxStreamClientInternalSub<CDemuxStreamAudio>*>(st);
         if (stream->m_context->channels != sta->iChannels &&
             stream->m_context->channels != 0)
         {
@@ -320,7 +238,7 @@ void CDVDDemuxClient::ParsePacket(DemuxPacket* pkt)
       }
       case STREAM_VIDEO:
       {
-        CDemuxStreamVideoClient* stv = static_cast<CDemuxStreamVideoClient*>(st);
+        CDemuxStreamClientInternalSub<CDemuxStreamVideo>* stv = static_cast<CDemuxStreamClientInternalSub<CDemuxStreamVideo>*>(st);
         if (stream->m_context->width != stv->iWidth &&
             stream->m_context->width != 0)
         {
@@ -412,16 +330,16 @@ void CDVDDemuxClient::RequestStreams()
         DisposeStreams();
         return;
       }
-      CDemuxStreamAudioClient* st = nullptr;
+      CDemuxStreamClientInternalSub<CDemuxStreamAudio>* st = nullptr;
       if (m_streams[i])
       {
-        st = dynamic_cast<CDemuxStreamAudioClient*>(m_streams[i]);
+        st = dynamic_cast<CDemuxStreamClientInternalSub<CDemuxStreamAudio>*>(m_streams[i]);
         if (!st || (st->codec != source->codec))
           DisposeStream(i);
       }
       if (!m_streams[i])
       {
-        st = new CDemuxStreamAudioClient();
+        st = new CDemuxStreamClientInternalSub<CDemuxStreamAudio>();
         st->m_parser = av_parser_init(source->codec);
         if(st->m_parser)
           st->m_parser->flags |= PARSER_FLAG_COMPLETE_FRAMES;
@@ -451,10 +369,10 @@ void CDVDDemuxClient::RequestStreams()
         DisposeStreams();
         return;
       }
-      CDemuxStreamVideoClient* st = nullptr;
+      CDemuxStreamClientInternalSub<CDemuxStreamVideo>* st = nullptr;
       if (m_streams[i])
       {
-        st = dynamic_cast<CDemuxStreamVideoClient*>(m_streams[i]);
+        st = dynamic_cast<CDemuxStreamClientInternalSub<CDemuxStreamVideo>*>(m_streams[i]);
         if (!st
             || (st->codec != source->codec)
             || (st->iWidth != source->iWidth)
@@ -463,7 +381,7 @@ void CDVDDemuxClient::RequestStreams()
       }
       if (!m_streams[i])
       {
-        st = new CDemuxStreamVideoClient();
+        st = new CDemuxStreamClientInternalSub<CDemuxStreamVideo>();
         st->m_parser = av_parser_init(source->codec);
         if(st->m_parser)
           st->m_parser->flags |= PARSER_FLAG_COMPLETE_FRAMES;
@@ -493,16 +411,16 @@ void CDVDDemuxClient::RequestStreams()
         DisposeStreams();
         return;
       }
-      CDemuxStreamSubtitleClient* st = nullptr;
+      CDemuxStreamClientInternalSub<CDemuxStreamSubtitle>* st = nullptr;
       if (m_streams[i])
       {
-        st = dynamic_cast<CDemuxStreamSubtitleClient*>(m_streams[i]);
+        st = dynamic_cast<CDemuxStreamClientInternalSub<CDemuxStreamSubtitle>*>(m_streams[i]);
         if (!st || (st->codec != source->codec))
           DisposeStream(i);
       }
       if (!m_streams[i])
       {
-        st = new CDemuxStreamSubtitleClient();
+        st = new CDemuxStreamClientInternalSub<CDemuxStreamSubtitle>();
       }
       if (source->ExtraSize == 4)
       {

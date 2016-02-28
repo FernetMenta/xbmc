@@ -49,8 +49,6 @@ typedef struct
 
 #define BXA_PACKET_TYPE_FMT_DEMUX 1
 
-class CDemuxStreamAudioBXA;
-
 class CDVDDemuxBXA : public CDVDDemux
 {
 public:
@@ -77,7 +75,7 @@ protected:
   CDVDInputStream* m_pInput;
   int64_t m_bytes;
 
-  CDemuxStreamAudioBXA *m_stream;
+  CDemuxStreamAudio *m_stream;
 
   Demux_BXA_FmtHeader m_header;
 };

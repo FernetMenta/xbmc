@@ -522,8 +522,7 @@ void CSelectionStreams::Update(CDVDInputStream* input, CDVDDemux* demuxer, std::
       }
       if(stream->type == STREAM_AUDIO)
       {
-        std::string type;
-        type = ((CDemuxStreamAudio*)stream)->GetStreamType();
+        std::string type = ((CDemuxStreamAudio*)stream)->GetStreamTypeName();
         if(type.length() > 0)
         {
           if(s.name.length() > 0)
