@@ -258,8 +258,8 @@ void CInputStream::UpdateStreams()
 
       videoStream->iFpsScale = stream.m_FpsScale;
       videoStream->iFpsRate = stream.m_FpsRate;
-      videoStream->iHeight = stream.m_Width;
-      videoStream->iWidth = stream.m_Height;
+      videoStream->iHeight = stream.m_Height;
+      videoStream->iWidth = stream.m_Width;
       videoStream->fAspect = stream.m_Aspect;
       videoStream->stereo_mode = "mono";
       demuxStream = videoStream;

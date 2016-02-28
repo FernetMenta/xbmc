@@ -105,6 +105,18 @@ std::string CDemuxStreamAudio::GetStreamInfo()
     break;
   }
 
+  char buffer[64];
+  if (iSampleRate > 0)
+  {
+    sprintf(buffer, ", %d Hz", iSampleRate);
+    strInfo += buffer;
+  }
+
+  if (iChannels == 1) strInfo += ", mono";
+  else if (iChannels == 2) ", stereo";
+  else if (iChannels == 6) ", 5.1";
+  else if (iChannels == 8) ", 7.1";
+
   return strInfo;
 }
 
@@ -128,7 +140,15 @@ std::string CDemuxStreamVideo::GetStreamInfo()
     strInfo = "hevc";
     break;
   default:
+    strInfo = "[unknown]";
     break;
+  }
+
+  char buffer[64];
+  if (iWidth > 0 || iHeight > 0)
+  {
+    sprintf(buffer, ", %dx%d [SAR ? DAR ?]", iWidth, iHeight);
+    strInfo += buffer;
   }
 
   return strInfo;
