@@ -58,7 +58,6 @@ bool CDVDDemuxCDDA::Open(CDVDInputStream* pInput)
   m_stream->iChannels       = 2;
   m_stream->type            = STREAM_AUDIO;
   m_stream->codec           = AV_CODEC_ID_PCM_S16LE;
-  m_stream->streamInfo =    "pcm";
   return true;
 }
 

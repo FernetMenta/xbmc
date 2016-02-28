@@ -168,27 +168,20 @@ public:
   }
 };
 
-typedef struct SelectionStream
+class SelectionStream : public DemuxSelectInfo
 {
-  StreamType   type = STREAM_NONE;
-  int          type_index = 0;
+public:
+  SelectionStream() : source(0), type_index(0){};
+
   std::string  filename;
   std::string  filename2;  // for vobsub subtitles, 2 files are necessary (idx/sub)
-  std::string  language;
-  std::string  name;
-  CDemuxStream::EFlags flags = CDemuxStream::FLAG_NONE;
-  int          source = 0;
-  int          id = 0;
+  int          source;
+  int          type_index;
   std::string  codec;
-  int          channels = 0;
-  int          bitrate = 0;
-  int          width = 0;
-  int          height = 0;
   CRect        SrcRect;
   CRect        DestRect;
-  std::string  stereo_mode;
-  float        aspect_ratio = 0.0f;
-} SelectionStream;
+  std::string stereo_mode;
+};
 
 typedef std::vector<SelectionStream> SelectionStreams;
 

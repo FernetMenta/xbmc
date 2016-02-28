@@ -1277,10 +1277,6 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int iId)
       memcpy(stream->ExtraData, pStream->codec->extradata, pStream->codec->extradata_size);
     }
 
-    char temp[128];
-    avcodec_string(temp, 128, pStream->codec, 0);
-    stream->streamInfo = temp;
-
 #ifdef HAVE_LIBBLURAY
     if( m_pInput->IsStreamType(DVDSTREAM_TYPE_BLURAY) )
       static_cast<CDVDInputStreamBluray*>(m_pInput)->GetStreamInfo(pStream->id, stream->language);

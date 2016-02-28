@@ -65,6 +65,8 @@ enum StreamSource {
 
 #define STREAM_SOURCE_MASK(a) ((a) & 0xf00)
 
+class DemuxSelectInfo;
+
 /*
  * CDemuxStream
  * Base class for all demuxer streams
@@ -98,8 +100,7 @@ public:
     delete [] ExtraData;
   }
 
-  virtual std::string GetStreamInfo();
-  virtual std::string GetStreamName();
+  virtual void GetSelectionInfo(DemuxSelectInfo &info);
 
   int iId;         // most of the time starting from 0
   int iPhysicalId; // id
@@ -121,7 +122,6 @@ public:
 
   int  changes; // increment on change which player may need to know about
 
-  std::string streamInfo;
   std::string streamName;
   
   enum EFlags
@@ -136,6 +136,32 @@ public:
   , FLAG_HEARING_IMPAIRED = 0x0080
   , FLAG_VISUAL_IMPAIRED  = 0x0100
   } flags;
+};
+
+class DemuxSelectInfo
+{
+public:
+  DemuxSelectInfo()
+    : type(STREAM_NONE)
+    , flags(CDemuxStream::FLAG_NONE)
+    , id(0)
+    , channels(0)
+    , bitrate(0)
+    , width(0)
+    , height(0)
+    , aspect_ratio(0.0f)
+  {};
+
+  StreamType   type;;
+  std::string  language;
+  std::string  name;
+  CDemuxStream::EFlags flags = CDemuxStream::FLAG_NONE;
+  int id;
+  int channels;
+  int bitrate;
+  int width;
+  int height;
+  float aspect_ratio;
 };
 
 class CDemuxStreamVideo : public CDemuxStream
@@ -159,7 +185,7 @@ public:
   }
 
   virtual ~CDemuxStreamVideo() {}
-  virtual std::string GetStreamInfo() override;
+  virtual void GetSelectionInfo(DemuxSelectInfo &info)override;
 
   int iFpsScale; // scale of 1000 and a rate of 29970 will result in 29.97 fps
   int iFpsRate;
@@ -190,9 +216,7 @@ public:
   }
 
   virtual ~CDemuxStreamAudio() {}
-
-  std::string GetStreamTypeName();
-  virtual std::string GetStreamInfo() override;
+  virtual void GetSelectionInfo(DemuxSelectInfo &info)override;
 
   int iChannels;
   int iSampleRate;
@@ -211,20 +235,13 @@ public:
 class CDemuxStreamTeletext : public CDemuxStream
 {
 public:
-  CDemuxStreamTeletext() : CDemuxStream(STREAM_TELETEXT)
-  {
-    streamInfo = "Teletext Data Stream";
-  }
+  CDemuxStreamTeletext() : CDemuxStream(STREAM_TELETEXT){}
 };
 
 class CDemuxStreamRadioRDS : public CDemuxStream
 {
 public:
-  CDemuxStreamRadioRDS() : CDemuxStream()
-  {
-    type = STREAM_RADIO_RDS;
-    streamInfo = "Radio Data Stream (RDS)";
-  }
+  CDemuxStreamRadioRDS() : CDemuxStream(STREAM_RADIO_RDS){}
 };
 
 class CDVDDemux

@@ -70,7 +70,6 @@ bool CDVDDemuxBXA::Open(CDVDInputStream* pInput)
   m_stream->iChannels       = m_header.channels;
   m_stream->type            = STREAM_AUDIO;
   m_stream->codec           = AV_CODEC_ID_PCM_S16LE;
-  m_stream->streamInfo      = "BXA";
 
   return true;
 }

@@ -505,32 +505,12 @@ void CSelectionStreams::Update(CDVDInputStream* input, CDVDDemux* demuxer, std::
       stream->source = source;
 
       SelectionStream s;
-      s.source   = source;
-      s.type     = stream->type;
-      s.id       = stream->iId;
-      s.language = g_LangCodeExpander.ConvertToISO6392T(stream->language);
-      s.flags    = stream->flags;
+      
+      s.source = source;
       s.filename = demuxer->GetFileName();
       s.filename2 = filename2;
-      s.name = stream->GetStreamName();
-      s.codec    = demuxer->GetStreamCodecName(stream->iId);
-      s.channels = 0; // Default to 0. Overwrite if STREAM_AUDIO below.
-      if(stream->type == STREAM_VIDEO)
-      {
-        s.width = ((CDemuxStreamVideo*)stream)->iWidth;
-        s.height = ((CDemuxStreamVideo*)stream)->iHeight;
-      }
-      if(stream->type == STREAM_AUDIO)
-      {
-        std::string type = ((CDemuxStreamAudio*)stream)->GetStreamTypeName();
-        if(type.length() > 0)
-        {
-          if(s.name.length() > 0)
-            s.name += " - ";
-          s.name += type;
-        }
-        s.channels = ((CDemuxStreamAudio*)stream)->iChannels;
-      }
+      s.codec = demuxer->GetStreamCodecName(stream->iId);
+      stream->GetSelectionInfo(s);
       Update(s);
     }
   }
@@ -4723,23 +4703,8 @@ void CVideoPlayer::UpdatePlayState(double timeout)
   if(state.time_total <= 0)
     state.canseek  = false;
 
-  if (m_CurrentAudio.id >= 0 && m_pDemuxer)
-  {
-    CDemuxStream* pStream = m_pDemuxer->GetStream(m_CurrentAudio.id);
-    if (pStream && pStream->type == STREAM_AUDIO)
-      state.demux_audio = ((CDemuxStreamAudio*)pStream)->GetStreamInfo();
-  }
-  else
-    state.demux_audio = "";
-
-  if (m_CurrentVideo.id >= 0 && m_pDemuxer)
-  {
-    CDemuxStream* pStream = m_pDemuxer->GetStream(m_CurrentVideo.id);
-    if (pStream && pStream->type == STREAM_VIDEO)
-      state.demux_video = ((CDemuxStreamVideo*)pStream)->GetStreamInfo();
-  }
-  else
-    state.demux_video = "";
+  state.demux_audio = "";
+  state.demux_video = "";
 
   double level, delay, offset;
   if(GetCachingTimes(level, delay, offset))

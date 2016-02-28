@@ -19,6 +19,7 @@
  */
 
 #include "DVDDemux.h"
+#include "utils/LangCodeExpander.h"
 
 int CDVDDemux::GetNrOfSubtitleStreams()
 {
@@ -33,123 +34,108 @@ int CDVDDemux::GetNrOfSubtitleStreams()
   return iCounter;
 }
 
-std::string CDemuxStream::GetStreamInfo()
+void CDemuxStream::GetSelectionInfo(DemuxSelectInfo &info)
 {
-  return streamInfo;
-}
-
-std::string CDemuxStream::GetStreamName()
-{
-  return streamName;
+  info.type = type;
+  info.id = iId;
+  info.language = g_LangCodeExpander.ConvertToISO6392T(language);
+  info.flags = flags;
+  info.channels = 0;
+  info.width = 0;
+  info.height = 0;
 }
 
 /**************************    AUDIO   **************************/
 
-std::string CDemuxStreamAudio::GetStreamTypeName()
+void CDemuxStreamAudio::GetSelectionInfo(DemuxSelectInfo &info)
 {
-  char sInfo[64] = { 0 };
+  CDemuxStream::GetSelectionInfo(info);
 
-  if (codec == AV_CODEC_ID_AC3) strcpy(sInfo, "AC3 ");
-  else if (codec == AV_CODEC_ID_DTS)
+  info.channels = iChannels;
+
+  if (streamName.empty())
   {
+    switch (codec)
+    {
+    case AV_CODEC_ID_AC3:
+      info.name = "AC3";
+      break;
+    case AV_CODEC_ID_EAC3:
+      info.name = "EAC3";
+      break;
+    case AV_CODEC_ID_MP2:
+      info.name = "MPEG2";
+      break;
+    case AV_CODEC_ID_AAC:
+      info.name = "AAC";
+      break;
+    case AV_CODEC_ID_DTS:
 #ifdef FF_PROFILE_DTS_HD_MA
-    if (profile == FF_PROFILE_DTS_HD_MA)
-      strcpy(sInfo, "DTS-HD MA ");
-    else if (profile == FF_PROFILE_DTS_HD_HRA)
-      strcpy(sInfo, "DTS-HD HRA ");
-    else
+      if (profile == FF_PROFILE_DTS_HD_MA)
+        info.name = "DTS-HD MA ";
+      else if (profile == FF_PROFILE_DTS_HD_HRA)
+        info.name = "DTS-HD HRA ";
+      else
 #endif
-      strcpy(sInfo, "DTS ");
+      info.name = "DTS";
+      break;
+    case AV_CODEC_ID_TRUEHD:
+      info.name = "Dolby TrueHD ";
+      break;
+    default:
+      info.name = "[???]";
+      break;
+    }
   }
-  else if (codec == AV_CODEC_ID_MP2) strcpy(sInfo, "MP2 ");
-  else if (codec == AV_CODEC_ID_TRUEHD) strcpy(sInfo, "Dolby TrueHD ");
-  else strcpy(sInfo, "");
+  else
+    info.name = streamName;
 
-  if (iChannels == 1) strcat(sInfo, "Mono");
-  else if (iChannels == 2) strcat(sInfo, "Stereo");
-  else if (iChannels == 6) strcat(sInfo, "5.1");
-  else if (iChannels == 8) strcat(sInfo, "7.1");
+  info.name += " - ";
+
+  if (iChannels == 1) info.name += "Mono";
+  else if (iChannels == 2) info.name += "Stereo";
+  else if (iChannels == 6) info.name += "5.1";
+  else if (iChannels == 8) info.name += "7.1";
   else if (iChannels != 0)
   {
     char temp[32];
-    sprintf(temp, " %d%s", iChannels, "-chs");
-    strcat(sInfo, temp);
+    sprintf(temp, " %d-chs", iChannels);
+    info.name += temp;
   }
-  return sInfo;
-}
-
-std::string CDemuxStreamAudio::GetStreamInfo()
-{
-  if (!streamInfo.empty())
-    return streamInfo;
-
-  std::string strInfo;
-  switch (codec)
-  {
-  case AV_CODEC_ID_AC3:
-    strInfo = "ac3";
-    break;
-  case AV_CODEC_ID_EAC3:
-    strInfo = "eac3";
-    break;
-  case AV_CODEC_ID_MP2:
-    strInfo = "mpeg2audio";
-    break;
-  case AV_CODEC_ID_AAC:
-    strInfo = "aac";
-    break;
-  case AV_CODEC_ID_DTS:
-    strInfo = "dts";
-    break;
-  default:
-    break;
-  }
-
-  char buffer[64];
-  if (iSampleRate > 0)
-  {
-    sprintf(buffer, ", %d Hz", iSampleRate);
-    strInfo += buffer;
-  }
-
-  if (iChannels == 1) strInfo += ", mono";
-  else if (iChannels == 2) ", stereo";
-  else if (iChannels == 6) ", 5.1";
-  else if (iChannels == 8) ", 7.1";
-
-  return strInfo;
 }
 
 /**************************    VIDEO   **************************/
 
-std::string CDemuxStreamVideo::GetStreamInfo()
+void CDemuxStreamVideo::GetSelectionInfo(DemuxSelectInfo &info)
 {
-  if (!streamInfo.empty())
-    return streamInfo;
+  CDemuxStream::GetSelectionInfo(info);
 
-  std::string strInfo;
-  switch (codec)
+  if (streamName.empty())
   {
-  case AV_CODEC_ID_MPEG2VIDEO:
-    strInfo = "mpeg2video";
-    break;
-  case AV_CODEC_ID_H264:
-    strInfo = "h264";
-    break;
-  case AV_CODEC_ID_HEVC:
-    strInfo = "hevc";
-    break;
-  default:
-    strInfo = "[unknown]";
-    break;
+    switch (codec)
+    {
+    case AV_CODEC_ID_MPEG2VIDEO:
+      info.name = "MPEG2";
+      break;
+    case AV_CODEC_ID_H264:
+      info.name = "H264";
+      break;
+    case AV_CODEC_ID_HEVC:
+      info.name = "HEVC";
+      break;
+    default:
+      info.name = "[???]";
+      break;
+    }
   }
+  else
+    info.name = streamName;
 
-  char buffer[64];
   if (iWidth > 0 || iHeight > 0)
   {
-    sprintf(buffer, ", %dx%d [SAR ? DAR ?]", iWidth, iHeight);
-    strInfo += buffer;
+    info.name += " - ";
+    char buffer[64];
+    sprintf(buffer, ", %dx%d", iWidth, iHeight);
+    info.name += buffer;
   }
-
-  return strInfo;
 }
