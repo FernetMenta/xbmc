@@ -110,6 +110,10 @@ void CDemuxStreamVideo::GetSelectionInfo(DemuxSelectInfo &info)
 {
   CDemuxStream::GetSelectionInfo(info);
 
+  info.width = iWidth;
+  info.height = iHeight;
+  info.aspect_ratio = fAspect;
+
   if (streamName.empty())
   {
     switch (codec)
@@ -133,7 +137,6 @@ void CDemuxStreamVideo::GetSelectionInfo(DemuxSelectInfo &info)
 
   if (iWidth > 0 || iHeight > 0)
   {
-    info.name += " - ";
     char buffer[64];
     sprintf(buffer, ", %dx%d", iWidth, iHeight);
     info.name += buffer;
