@@ -409,7 +409,7 @@ void CGUIDialogVideoSettings::VideoStreamsOptionFiller(const CSetting *setting, 
     g_application.m_pPlayer->GetVideoStreamInfo(i, info);
 
     g_LangCodeExpander.Lookup(info.language, strLanguage);
-
+    
     if (!info.name.empty())
     {
       if (!strLanguage.empty())
@@ -421,11 +421,6 @@ void CGUIDialogVideoSettings::VideoStreamsOptionFiller(const CSetting *setting, 
     {      
         strItem = strLanguage;
     }
-
-    if (info.videoCodecName.empty())
-      strItem += StringUtils::Format(" (%ix%i)", info.width, info.height);
-    else
-      strItem += StringUtils::Format(" (%s, %ix%i)", info.videoCodecName.c_str(), info.width, info.height);
 
     strItem += StringUtils::Format(" (%i/%i)", i + 1, videoStreamCount);
     list.push_back(make_pair(strItem, i));
