@@ -3077,18 +3077,12 @@ bool CVideoPlayer::SeekScene(bool bPlus)
 
 void CVideoPlayer::GetAudioInfo(std::string& strAudioInfo)
 {
-  { CSingleLock lock(m_StateSection);
-    strAudioInfo = StringUtils::Format("D(%s)", m_State.demux_audio.c_str());
-  }
-  strAudioInfo += StringUtils::Format("\nP(%s)", m_VideoPlayerAudio->GetPlayerInfo().c_str());
+  strAudioInfo += StringUtils::Format("PA(%s)", m_VideoPlayerAudio->GetPlayerInfo().c_str());
 }
 
 void CVideoPlayer::GetVideoInfo(std::string& strVideoInfo)
 {
-  { CSingleLock lock(m_StateSection);
-    strVideoInfo = StringUtils::Format("D(%s)", m_State.demux_video.c_str());
-  }
-  strVideoInfo += StringUtils::Format("\nP(%s)", m_VideoPlayerVideo->GetPlayerInfo().c_str());
+  strVideoInfo += StringUtils::Format("PV(%s)", m_VideoPlayerVideo->GetPlayerInfo().c_str());
 }
 
 void CVideoPlayer::GetGeneralInfo(std::string& strGeneralInfo)
@@ -4702,9 +4696,6 @@ void CVideoPlayer::UpdatePlayState(double timeout)
 
   if(state.time_total <= 0)
     state.canseek  = false;
-
-  state.demux_audio = "";
-  state.demux_video = "";
 
   double level, delay, offset;
   if(GetCachingTimes(level, delay, offset))
