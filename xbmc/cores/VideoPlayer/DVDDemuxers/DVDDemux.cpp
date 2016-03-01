@@ -48,9 +48,9 @@ void CDemuxStream::GetSelectionInfo(DemuxSelectInfo &info)
 
 bool CDemuxStream::SetCodecName(const std::string avCodecName, const std::string internalCodecName)
 {
-  std::string codecName(avCodecName);
-  StringUtils::ToLower(codecName);
-  AVCodec *avcodec = avcodec_find_decoder_by_name(codecName.c_str());
+  std::string lowerName(avCodecName);
+  StringUtils::ToLower(lowerName);
+  AVCodec *avcodec = avcodec_find_decoder_by_name(lowerName.c_str());
   if (!avcodec)
     return false;
   
