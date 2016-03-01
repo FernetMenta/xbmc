@@ -233,12 +233,6 @@ void CInputStream::UpdateStreams()
     if (stream.m_streamType == INPUTSTREAM_INFO::TYPE_NONE)
       continue;
 
-    std::string codecName(stream.m_codecName);
-    StringUtils::ToLower(codecName);
-    AVCodec *codec = avcodec_find_decoder_by_name(codecName.c_str());
-    if (!codec)
-      continue;
-
     CDemuxStream *demuxStream;
 
     if (stream.m_streamType == INPUTSTREAM_INFO::TYPE_AUDIO)
@@ -272,8 +266,11 @@ void CInputStream::UpdateStreams()
     else
       continue;
 
+    if (!demuxStream->SetCodecName(stream.m_codecName, stream.m_codecInternalName))
+      continue;
+
     demuxStream->iId = i;
-    demuxStream->codec = codec->id;
+    demuxStream->bandwidth = stream.m_Bandwidth;
     demuxStream->iPhysicalId = streamIDs.m_streamIds[i];
     demuxStream->language[0] = stream.m_language[0];
     demuxStream->language[1] = stream.m_language[1];

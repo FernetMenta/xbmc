@@ -20,6 +20,7 @@
 
 #include "DVDDemux.h"
 #include "utils/LangCodeExpander.h"
+#include "utils/StringUtils.h"
 
 int CDVDDemux::GetNrOfSubtitleStreams()
 {
@@ -45,6 +46,21 @@ void CDemuxStream::GetSelectionInfo(DemuxSelectInfo &info)
   info.height = 0;
 }
 
+bool CDemuxStream::SetCodecName(const std::string avCodecName, const std::string internalCodecName)
+{
+  std::string codecName(avCodecName);
+  StringUtils::ToLower(codecName);
+  AVCodec *avcodec = avcodec_find_decoder_by_name(codecName.c_str());
+  if (!avcodec)
+    return false;
+  
+  codec = avcodec->id;
+
+  codecName = internalCodecName;
+  
+  return true;
+}
+
 /**************************    AUDIO   **************************/
 
 void CDemuxStreamAudio::GetSelectionInfo(DemuxSelectInfo &info)
@@ -57,18 +73,6 @@ void CDemuxStreamAudio::GetSelectionInfo(DemuxSelectInfo &info)
   {
     switch (codec)
     {
-    case AV_CODEC_ID_AC3:
-      info.name = "AC3";
-      break;
-    case AV_CODEC_ID_EAC3:
-      info.name = "EAC3";
-      break;
-    case AV_CODEC_ID_MP2:
-      info.name = "MPEG2";
-      break;
-    case AV_CODEC_ID_AAC:
-      info.name = "AAC";
-      break;
     case AV_CODEC_ID_DTS:
 #ifdef FF_PROFILE_DTS_HD_MA
       if (profile == FF_PROFILE_DTS_HD_MA)
@@ -83,23 +87,21 @@ void CDemuxStreamAudio::GetSelectionInfo(DemuxSelectInfo &info)
       info.name = "Dolby TrueHD ";
       break;
     default:
-      info.name = "[???]";
+      info.name = codecName;
       break;
     }
   }
   else
     info.name = streamName;
 
-  info.name += " - ";
-
-  if (iChannels == 1) info.name += "Mono";
-  else if (iChannels == 2) info.name += "Stereo";
-  else if (iChannels == 6) info.name += "5.1";
-  else if (iChannels == 8) info.name += "7.1";
+  if (iChannels == 1) info.name += " - Mono";
+  else if (iChannels == 2) info.name += " - Stereo";
+  else if (iChannels == 6) info.name += " - 5.1";
+  else if (iChannels == 8) info.name += " - 7.1";
   else if (iChannels != 0)
   {
     char temp[32];
-    sprintf(temp, " %d-chs", iChannels);
+    sprintf(temp, " - %d-chs", iChannels);
     info.name += temp;
   }
 }
@@ -115,23 +117,7 @@ void CDemuxStreamVideo::GetSelectionInfo(DemuxSelectInfo &info)
   info.aspect_ratio = fAspect;
 
   if (streamName.empty())
-  {
-    switch (codec)
-    {
-    case AV_CODEC_ID_MPEG2VIDEO:
-      info.name = "MPEG2";
-      break;
-    case AV_CODEC_ID_H264:
-      info.name = "H264";
-      break;
-    case AV_CODEC_ID_HEVC:
-      info.name = "HEVC";
-      break;
-    default:
-      info.name = "[???]";
-      break;
-    }
-  }
+    info.name = codecName;
   else
     info.name = streamName;
 

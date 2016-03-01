@@ -91,6 +91,7 @@ public:
     , changes(0)
     , flags(FLAG_NONE)
     , realtime(false)
+    , bandwidth(0)
   {
     memset(language, 0, sizeof(language));
   }
@@ -101,6 +102,7 @@ public:
   }
 
   virtual void GetSelectionInfo(DemuxSelectInfo &info);
+  virtual bool SetCodecName(const std::string avCodecName, const std::string internalCodecName);
 
   int iId;         // most of the time starting from 0
   int iPhysicalId; // id
@@ -111,6 +113,7 @@ public:
   StreamType type;
   int source;
   bool realtime;
+  unsigned int bandwidth;
 
   int iDuration; // in mseconds
   void* pPrivate; // private pointer for the demuxer
@@ -123,6 +126,7 @@ public:
   int  changes; // increment on change which player may need to know about
 
   std::string streamName;
+  std::string codecName;
   
   enum EFlags
   { FLAG_NONE             = 0x0000 
