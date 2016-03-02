@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string>
-#include "../../../addons/library.kodi.inputstream/libKODI_inputstream.h"
+#include "addons/kodi-addon-dev-kit/include/kodi/libKODI_inputstream.h"
 #include "addons/AddonCallbacks.h"
 
 #ifdef _WIN32
