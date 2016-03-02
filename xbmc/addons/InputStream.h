@@ -19,7 +19,7 @@
 #pragma once
 
 #include "AddonDll.h"
-#include "include/kodi_inputstream_types.h"
+#include "addons/kodi-addon-dev-kit/include/kodi/kodi_inputstream_types.h"
 #include "FileItem.h"
 #include <vector>
 #include <map>
