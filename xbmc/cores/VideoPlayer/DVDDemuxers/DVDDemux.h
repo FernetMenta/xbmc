@@ -91,6 +91,7 @@ public:
     changes = 0;
     flags = FLAG_NONE;
     realtime = false;
+    bandwidth = 0;
   }
 
   virtual ~CDemuxStream()
@@ -109,6 +110,7 @@ public:
   StreamType type;
   int source;
   bool realtime;
+  unsigned int bandwidth;
 
   int iDuration; // in mseconds
   void* pPrivate; // private pointer for the demuxer
@@ -117,6 +119,8 @@ public:
 
   char language[4]; // ISO 639 3-letter language code (empty string if undefined)
   bool disabled; // set when stream is disabled. (when no decoder exists)
+
+  std::string codecName;
 
   int  changes; // increment on change which player may need to know about
 

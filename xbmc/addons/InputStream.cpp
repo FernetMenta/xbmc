@@ -258,8 +258,8 @@ void CInputStream::UpdateStreams()
 
       videoStream->iFpsScale = stream.m_FpsScale;
       videoStream->iFpsRate = stream.m_FpsRate;
-      videoStream->iHeight = stream.m_Width;
-      videoStream->iWidth = stream.m_Height;
+      videoStream->iWidth = stream.m_Width;
+      videoStream->iHeight = stream.m_Height;
       videoStream->fAspect = stream.m_Aspect;
       videoStream->stereo_mode = "mono";
       demuxStream = videoStream;
@@ -274,6 +274,8 @@ void CInputStream::UpdateStreams()
 
     demuxStream->iId = i;
     demuxStream->codec = codec->id;
+    demuxStream->bandwidth = stream.m_Bandwidth;
+    demuxStream->codecName = stream.m_codecInternalName;
     demuxStream->iPhysicalId = streamIDs.m_streamIds[i];
     demuxStream->language[0] = stream.m_language[0];
     demuxStream->language[1] = stream.m_language[1];
