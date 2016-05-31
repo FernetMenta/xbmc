@@ -25,6 +25,7 @@
 #include "windowing/WindowingFactory.h"
 #include "guilib/GraphicContext.h"
 #include "guilib/TextureManager.h"
+#include "cores/VideoPlayer/Process/ProcessInfo.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
 #include "DVDVideoCodecFFmpeg.h"
 #include "DVDClock.h"

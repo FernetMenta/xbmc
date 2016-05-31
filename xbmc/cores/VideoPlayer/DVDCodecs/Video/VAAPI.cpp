@@ -24,6 +24,7 @@
 #include "DVDVideoCodec.h"
 #include "cores/VideoPlayer/DVDCodecs/DVDCodecUtils.h"
 #include "cores/VideoPlayer/DVDClock.h"
+#include "cores/VideoPlayer/Process/ProcessInfo.h"
 #include "utils/log.h"
 #include "utils/StringUtils.h"
 #include "threads/SingleLock.h"
@@ -2016,6 +2017,7 @@ void COutput::InitCycle()
       delete m_pp;
       m_pp = NULL;
       DropVppProcessedPictures();
+      m_processInfo.SetVideoDeintMethod("unknown");
     }
     if (!m_pp)
     {
@@ -2034,6 +2036,17 @@ void COutput::InitCycle()
       {
         m_pp->Init(method);
         m_currentDiMethod = method;
+
+        if (method == VS_INTERLACEMETHOD_DEINTERLACE)
+          m_processInfo.SetVideoDeintMethod("yadif");
+        else if (method == VS_INTERLACEMETHOD_RENDER_BOB)
+          m_processInfo.SetVideoDeintMethod("render-bob");
+        else if (method == VS_INTERLACEMETHOD_VAAPI_BOB)
+          m_processInfo.SetVideoDeintMethod("vaapi-bob");
+        else if (method == VS_INTERLACEMETHOD_VAAPI_MADI)
+          m_processInfo.SetVideoDeintMethod("vaapi-madi");
+        else if (method == VS_INTERLACEMETHOD_VAAPI_MACI)
+          m_processInfo.SetVideoDeintMethod("vaapi-maci");
       }
       else
       {
@@ -2066,6 +2079,7 @@ void COutput::InitCycle()
       {
         m_pp->Init(method);
         m_currentDiMethod = method;
+        m_processInfo.SetVideoDeintMethod("none");
       }
       else
       {
