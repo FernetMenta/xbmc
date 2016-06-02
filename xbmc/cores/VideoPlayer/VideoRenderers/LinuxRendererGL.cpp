@@ -49,7 +49,6 @@
 #include "cores/IPlayer.h"
 #include "cores/VideoPlayer/DVDCodecs/DVDCodecUtils.h"
 #include "cores/FFmpeg.h"
-#include "ColorManager.h"
 
 extern "C" {
 #include "libswscale/swscale.h"
@@ -158,6 +157,7 @@ CLinuxRendererGL::CLinuxRendererGL()
   m_nonLinStretchGui = false;
   m_pixelRatio = 0.0f;
 
+  m_ColorManager = new CColorManager();
   m_tCLUTTex = 0;
   m_CLUT = NULL;
   m_CLUTsize = 0;
@@ -192,6 +192,11 @@ CLinuxRendererGL::~CLinuxRendererGL()
     m_pYUVShader->Free();
     delete m_pYUVShader;
     m_pYUVShader = NULL;
+  }
+
+  if (m_ColorManager)
+  {
+    delete m_ColorManager;
   }
 }
 
@@ -307,10 +312,9 @@ bool CLinuxRendererGL::Configure(unsigned int width, unsigned int height, unsign
 #endif
 
   // load 3DLUT
-  CColorManager &cms = CColorManager::Get();
-  if (cms.IsEnabled())
+  if (m_ColorManager->IsEnabled())
   {
-    if (!cms.CheckConfiguration(m_cmsToken, m_iFlags))
+    if (!m_ColorManager->CheckConfiguration(m_cmsToken, m_iFlags))
     {
       CLog::Log(LOGDEBUG, "CMS configuration changed, reload LUT");
       if (!LoadCLUT())
@@ -737,8 +741,8 @@ void CLinuxRendererGL::UpdateVideoFilter()
   bool pixelRatioChanged    = (CDisplaySettings::GetInstance().GetPixelRatio() > 1.001f || CDisplaySettings::GetInstance().GetPixelRatio() < 0.999f) !=
                               (m_pixelRatio > 1.001f || m_pixelRatio < 0.999f);
   bool nonLinStretchChanged = false;
-  bool cmsChanged           = (m_cmsOn != CColorManager::Get().IsEnabled())
-                              || (m_cmsOn && !CColorManager::Get().CheckConfiguration(m_cmsToken, m_iFlags));
+  bool cmsChanged           = (m_cmsOn != m_ColorManager->IsEnabled())
+                              || (m_cmsOn && !m_ColorManager->CheckConfiguration(m_cmsToken, m_iFlags));
   if (m_nonLinStretchGui != CDisplaySettings::GetInstance().IsNonLinearStretched() || pixelRatioChanged)
   {
     m_nonLinStretchGui   = CDisplaySettings::GetInstance().IsNonLinearStretched();
@@ -770,9 +774,9 @@ void CLinuxRendererGL::UpdateVideoFilter()
 
   if (cmsChanged)
   {
-    if (CColorManager::Get().IsEnabled())
+    if (m_ColorManager->IsEnabled())
     {
-      if (!CColorManager::Get().CheckConfiguration(m_cmsToken, m_iFlags))
+      if (!m_ColorManager->CheckConfiguration(m_cmsToken, m_iFlags))
       {
         CLog::Log(LOGDEBUG, "CMS configuration changed, reload LUT");
         LoadCLUT();
@@ -864,7 +868,13 @@ void CLinuxRendererGL::UpdateVideoFilter()
     }
 
     GLSLOutput *out;
-    out = new GLSLOutput(3, m_useDithering, m_ditherDepth, m_cmsOn ? m_fullRange : false, m_tCLUTTex, m_CLUTsize, m_iFlags);
+    out = new GLSLOutput(3,
+        m_useDithering,
+        m_ditherDepth,
+        m_cmsOn ? m_fullRange : false,
+        m_cmsOn ? m_tCLUTTex : 0,
+        m_CLUTsize,
+        m_iFlags);
     m_pVideoFilterShader = new ConvolutionFilterShader(m_scalingMethod, m_nonLinStretch, out);
     if (!m_pVideoFilterShader->CompileAndLink())
     {
@@ -933,7 +943,13 @@ void CLinuxRendererGL::LoadShaders(int field)
         // if single pass, create GLSLOutput helper and pass it to YUV2RGB shader
         GLSLOutput *out = nullptr;
         if (m_renderQuality == RQ_SINGLEPASS)
-          out = new GLSLOutput(3, m_useDithering, m_ditherDepth, m_cmsOn ? m_fullRange : false, m_tCLUTTex, m_CLUTsize, m_iFlags);
+          out = new GLSLOutput(3,
+              m_useDithering,
+              m_ditherDepth,
+              m_cmsOn ? m_fullRange : false,
+              m_cmsOn ? m_tCLUTTex : 0,
+              m_CLUTsize,
+              m_iFlags);
         m_pYUVShader = new YUV2RGBProgressiveShader(m_textureTarget==GL_TEXTURE_RECTANGLE_ARB, m_iFlags, m_format,
                                                     m_nonLinStretch && m_renderQuality == RQ_SINGLEPASS,
                                                     out);
@@ -2598,9 +2614,8 @@ bool CLinuxRendererGL::LoadCLUT()
 {
   DeleteCLUT();
 
-  CColorManager &cms = CColorManager::Get();
   // load 3DLUT
-  if ( !cms.GetVideo3dLut(m_iFlags, &m_cmsToken, &m_CLUTsize, &m_CLUT) )
+  if ( !m_ColorManager->GetVideo3dLut(m_iFlags, &m_cmsToken, &m_CLUTsize, &m_CLUT) )
   {
     CLog::Log(LOGERROR, "Error loading the LUT");
     return false;

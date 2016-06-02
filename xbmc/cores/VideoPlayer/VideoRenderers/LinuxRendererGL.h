@@ -32,6 +32,7 @@
 #include "RenderFormats.h"
 #include "guilib/GraphicContext.h"
 #include "BaseRenderer.h"
+#include "ColorManager.h"
 
 #include "threads/Event.h"
 
@@ -280,6 +281,7 @@ protected:
   float m_pixelRatio;
 
   // color management
+  CColorManager *m_ColorManager;
   GLuint    m_tCLUTTex;
   uint16_t *m_CLUT;
   int       m_CLUTsize;
