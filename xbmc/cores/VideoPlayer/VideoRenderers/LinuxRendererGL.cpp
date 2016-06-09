@@ -194,10 +194,7 @@ CLinuxRendererGL::~CLinuxRendererGL()
     m_pYUVShader = NULL;
   }
 
-  if (m_ColorManager)
-  {
-    delete m_ColorManager;
-  }
+  delete m_ColorManager;
 }
 
 bool CLinuxRendererGL::ValidateRenderer()
