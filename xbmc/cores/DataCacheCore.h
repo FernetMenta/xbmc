@@ -28,6 +28,7 @@ class CDataCacheCore
 {
 public:
   CDataCacheCore();
+  static CDataCacheCore& GetInstance();
   bool HasAVInfoChanges();
   void SignalVideoInfoChange();
   void SignalAudioInfoChange();
@@ -80,5 +81,3 @@ protected:
     int bitsPerSample;
   } m_playerAudioInfo;
 };
-
-extern CDataCacheCore g_dataCacheCore;
