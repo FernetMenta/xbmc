@@ -120,6 +120,8 @@ double CVideoPlayerVideo::GetOutputDelay()
 
 bool CVideoPlayerVideo::OpenStream( CDVDStreamInfo &hint )
 {
+  m_processInfo.ResetVideoCodecInfo();
+
   CRenderInfo info;
   info = m_renderManager.GetRenderInfo();
 
@@ -899,6 +901,9 @@ int CVideoPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
     m_droppingStats.AddOutputDropGain(pts, 1);
     return EOS_DROPPED;
   }
+
+  m_processInfo.SetVideoDimensions(pPicture->iWidth, pPicture->iHeight);
+  m_processInfo.SetVideoAspectRatio((float)pPicture->iDisplayWidth / (float)pPicture->iDisplayHeight);
 
   m_renderManager.FlipPage(m_bAbortOutput, pts, -1, mDisplayField);
 

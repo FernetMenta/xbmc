@@ -90,6 +90,8 @@ CVideoPlayerAudio::~CVideoPlayerAudio()
 
 bool CVideoPlayerAudio::OpenStream(CDVDStreamInfo &hints)
 {
+  m_processInfo.ResetAudioCodecInfo();
+
   CLog::Log(LOGNOTICE, "Finding audio codec for: %i", hints.codec);
   bool allowpassthrough = !CSettings::GetInstance().GetBool(CSettings::SETTING_VIDEOPLAYER_USEDISPLAYASCLOCK);
   if (hints.realtime)
@@ -452,8 +454,8 @@ void CVideoPlayerAudio::Process()
           m_streaminfo.channels = audioframe.format.m_channelLayout.Count();
 
 
-          m_processInfo.SetAudioChannels(audioframe.audioFormat.m_channelLayout);
-          m_processInfo.SetAudioSampleRate(audioframe.audioFormat.m_sampleRate);
+          m_processInfo.SetAudioChannels(audioframe.format.m_channelLayout);
+          m_processInfo.SetAudioSampleRate(audioframe.format.m_sampleRate);
           m_processInfo.SetAudioBitsPerSample(audioframe.bits_per_sample);
 
           m_messageParent.Put(new CDVDMsg(CDVDMsg::PLAYER_AVCHANGE));
