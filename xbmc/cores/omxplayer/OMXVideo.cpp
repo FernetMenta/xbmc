@@ -255,6 +255,9 @@ bool COMXVideo::PortSettingsChanged(ResolutionUpdateInfo &resinfo)
     else if (!advanced_deinterlace && half_framerate)
        m_processInfo.SetVideoDeintMethod("bob(x1)");
 
+    if (!half_framerate)
+      resinfo.framerate *= 2.0f;
+
     if (!advanced_deinterlace)
     {
       // Image_fx assumed 3 frames of context. simple deinterlace doesn't require this

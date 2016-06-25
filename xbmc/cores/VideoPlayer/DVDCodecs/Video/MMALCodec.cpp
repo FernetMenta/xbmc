@@ -177,6 +177,10 @@ void CMMALVideo::PortSettingsChanged(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
     m_decoded_height = m_es_format->es->video.crop.height;
     m_decoded_aligned_width = m_es_format->es->video.width;
     m_decoded_aligned_height = m_es_format->es->video.height;
+
+    m_processInfo.SetVideoDimensions(m_decoded_width, m_decoded_height);
+    m_processInfo.SetVideoDAR(m_aspect_ratio);
+
     if (g_advancedSettings.CanLogComponent(LOGVIDEO))
       CLog::Log(LOGDEBUG, "%s::%s format changed: %dx%d (%dx%d) %.2f", CLASSNAME, __func__, m_decoded_width, m_decoded_height, m_decoded_aligned_width, m_decoded_aligned_height, m_aspect_ratio);
   }
