@@ -2880,9 +2880,9 @@ uint8_t **CActiveAE::AllocSoundSample(SampleConfig &config, int &samples, int &b
   planes = av_sample_fmt_is_planar(config.fmt) ? config.channels : 1;
   buffer = new uint8_t*[planes];
 
-  // align buffer to 16 in order to be compatible with sse in CAEConvert
+  // use default ffmpeg buffer alignment (at the moment of writing 32) in order to be compatible with sse in CAEConvert
   av_samples_alloc(buffer, &linesize, config.channels,
-                                 samples, config.fmt, 16);
+                                 samples, config.fmt, 0);
   bytes_per_sample = av_get_bytes_per_sample(config.fmt);
   return buffer;
 }

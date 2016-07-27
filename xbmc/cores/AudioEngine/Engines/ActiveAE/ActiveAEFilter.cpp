@@ -192,7 +192,7 @@ int CActiveAEFilter::ProcessFilter(uint8_t **dst_buffer, int dst_samples, uint8_
     frame->format = m_sampleFormat;
 
     result = avcodec_fill_audio_frame(frame, channels, m_sampleFormat,
-                             src_buffer[0], channels * src_samples * av_get_bytes_per_sample(m_sampleFormat), 1);
+                             src_buffer[0], channels * src_samples * av_get_bytes_per_sample(m_sampleFormat), 0);
     if (result < 0)
     {
       CLog::Log(LOGERROR, "CActiveAEFilter::ProcessFilter - avcodec_fill_audio_frame failed");
