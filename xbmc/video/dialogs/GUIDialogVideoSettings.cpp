@@ -331,7 +331,11 @@ void CGUIDialogVideoSettings::InitializeSettings()
   if (g_application.m_pPlayer->Supports(RENDERFEATURE_STRETCH) || g_application.m_pPlayer->Supports(RENDERFEATURE_PIXEL_RATIO))
   {
     entries.clear();
-    for (int i = 0; i < 7; ++i)
+    for (int i = 0; i < 2; ++i)
+      entries.push_back(std::make_pair(630 + i, i));
+    entries.push_back(std::make_pair(39008, 8));
+    entries.push_back(std::make_pair(39009, 9));
+    for (int i = 2; i < 7; ++i)
       entries.push_back(std::make_pair(630 + i, i));
     AddSpinner(groupVideo, SETTING_VIDEO_VIEW_MODE, 629, 0, videoSettings.m_ViewMode, entries);
   }
