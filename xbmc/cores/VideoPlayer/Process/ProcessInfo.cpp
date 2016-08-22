@@ -186,11 +186,10 @@ bool CProcessInfo::Supports(EINTERLACEMETHOD method)
 {
   CSingleLock lock(m_videoCodecSection);
 
-  for (auto &deint : m_deintMethods)
-  {
-    if (deint == method)
-      return true;
-  }
+  auto it = std::find(m_deintMethods.begin(), m_deintMethods.end(), method);
+  if (it != m_deintMethods.end())
+    return true;
+
   return false;
 }
 
