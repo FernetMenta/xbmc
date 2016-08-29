@@ -1875,6 +1875,11 @@ bool COutput::Init()
   m_pp->PreInit(m_config, &m_diMethods);
   delete m_pp;
 
+  std::list<EINTERLACEMETHOD> deintMethods;
+  deintMethods.assign(m_diMethods.diMethods, m_diMethods.diMethods + m_diMethods.numDiMethods);
+  m_config.processInfo->UpdateDeinterlacingMethods(deintMethods);
+
+
   m_pp = NULL;
 
   m_vaError = false;
