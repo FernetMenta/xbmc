@@ -32,9 +32,6 @@ public:
   CGUIDialogVideoSettings();
   virtual ~CGUIDialogVideoSettings();
 
-  static int GetNextViewMode(int viewMode);
-  static int GetViewModeStringIndex(int viewMode);
-
 protected:
   // implementations of ISettingCallback
   virtual void OnSettingChanged(const CSetting *setting);

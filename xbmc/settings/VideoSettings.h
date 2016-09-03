@@ -61,6 +61,9 @@ public:
   bool m_StereoInvert;
   int m_VideoStream;
 
+  static int GetNextViewMode(int viewMode);
+  static int GetViewModeStringIndex(int viewMode);
+
 private:
 };
 

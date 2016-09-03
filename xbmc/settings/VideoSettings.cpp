@@ -86,3 +86,49 @@ bool CVideoSettings::operator!=(const CVideoSettings &right) const
   if (m_VideoStream != right.m_VideoStream) return true;
   return false;
 }
+
+int CVideoSettings::GetNextViewMode(int viewMode)
+{
+  switch (viewMode)
+  {
+    case ViewModeNormal:
+      return ViewModeZoom;
+    case ViewModeZoom:
+      return ViewModeZoom120Width;
+    case ViewModeZoom120Width:
+      return ViewModeZoom110Width;
+    case ViewModeZoom110Width:
+      return ViewModeStretch4x3;
+    case ViewModeStretch4x3:
+      return ViewModeWideZoom;
+    case ViewModeWideZoom:
+      return ViewModeStretch16x9;
+    case ViewModeStretch16x9:
+      return ViewModeStretch16x9Nonlin;
+    case ViewModeStretch16x9Nonlin:
+      return ViewModeOriginal;
+    case ViewModeOriginal:
+      return ViewModeCustom;
+    default:
+      break;
+  }
+
+  return ViewModeNormal;
+}
+
+int CVideoSettings::GetViewModeStringIndex(int viewMode)
+{
+  switch (viewMode)
+  {
+    case ViewModeStretch16x9Nonlin:
+      return 644;
+    case ViewModeZoom120Width:
+      return 39008;
+    case ViewModeZoom110Width:
+      return 39009;
+    default:
+      break;
+  }
+
+  return 630 + viewMode; // The first view modes were all put in the string resources starting at index 630, put new modes in the switch above
+}
