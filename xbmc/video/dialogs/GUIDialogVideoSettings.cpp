@@ -331,9 +331,12 @@ void CGUIDialogVideoSettings::InitializeSettings()
   if (g_application.m_pPlayer->Supports(RENDERFEATURE_STRETCH) || g_application.m_pPlayer->Supports(RENDERFEATURE_PIXEL_RATIO))
   {
     entries.clear();
-    int i = ViewModeNormal;
-    do entries.push_back(std::make_pair(GetViewModeStringIndex(i), i));
-    while ((i = GetNextViewMode(i)) != ViewModeNormal);
+
+    // add all view modes
+    entries.push_back(std::make_pair(GetViewModeStringIndex(ViewModeNormal), ViewModeNormal));
+    for (int i = GetNextViewMode(ViewModeNormal); i != ViewModeNormal; i = GetNextViewMode(i))
+      entries.push_back(std::make_pair(GetViewModeStringIndex(i), i));
+
     AddSpinner(groupVideo, SETTING_VIDEO_VIEW_MODE, 629, 0, videoSettings.m_ViewMode, entries);
   }
   if (g_application.m_pPlayer->Supports(RENDERFEATURE_ZOOM))
@@ -430,16 +433,26 @@ int CGUIDialogVideoSettings::GetNextViewMode(int viewMode)
 {
   switch (viewMode)
   {
-    case ViewModeNormal:            return ViewModeZoom;
-    case ViewModeZoom:              return ViewModeZoom120Width;
-    case ViewModeZoom120Width:      return ViewModeZoom110Width;
-    case ViewModeZoom110Width:      return ViewModeStretch4x3;
-    case ViewModeStretch4x3:        return ViewModeWideZoom;
-    case ViewModeWideZoom:          return ViewModeStretch16x9;
-    case ViewModeStretch16x9:       return ViewModeStretch16x9Nonlin;
-    case ViewModeStretch16x9Nonlin: return ViewModeOriginal;
-    case ViewModeOriginal:          return ViewModeCustom;
-    default: break;
+    case ViewModeNormal:
+      return ViewModeZoom;
+    case ViewModeZoom:
+      return ViewModeZoom120Width;
+    case ViewModeZoom120Width:
+      return ViewModeZoom110Width;
+    case ViewModeZoom110Width:
+      return ViewModeStretch4x3;
+    case ViewModeStretch4x3:
+      return ViewModeWideZoom;
+    case ViewModeWideZoom:
+      return ViewModeStretch16x9;
+    case ViewModeStretch16x9:
+      return ViewModeStretch16x9Nonlin;
+    case ViewModeStretch16x9Nonlin:
+      return ViewModeOriginal;
+    case ViewModeOriginal:
+      return ViewModeCustom;
+    default:
+      break;
   }
 
   return ViewModeNormal;
@@ -449,10 +462,14 @@ int CGUIDialogVideoSettings::GetViewModeStringIndex(int viewMode)
 {
   switch (viewMode)
   {
-    case ViewModeStretch16x9Nonlin: return 644;
-    case ViewModeZoom120Width:      return 39008;
-    case ViewModeZoom110Width:      return 39009;
-    default: break;
+    case ViewModeStretch16x9Nonlin:
+      return 644;
+    case ViewModeZoom120Width:
+      return 39008;
+    case ViewModeZoom110Width:
+      return 39009;
+    default:
+      break;
   }
 
   return 630 + viewMode; // The first view modes were all put in the string resources starting at index 630, put new modes in the switch above
