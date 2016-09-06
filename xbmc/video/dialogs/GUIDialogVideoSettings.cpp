@@ -333,9 +333,9 @@ void CGUIDialogVideoSettings::InitializeSettings()
     entries.clear();
 
     // add all view modes
-    entries.push_back(std::make_pair(CVideoSettings::GetViewModeStringIndex(ViewModeNormal), ViewModeNormal));
-    for (int i = CVideoSettings::GetNextViewMode(ViewModeNormal); i != ViewModeNormal; i = CVideoSettings::GetNextViewMode(i))
-      entries.push_back(std::make_pair(CVideoSettings::GetViewModeStringIndex(i), i));
+	entries.push_back(std::make_pair(CVideoSettings::m_ViewModeProperties[ViewModeNormal].stringIndex, ViewModeNormal));
+	for (int i = CVideoSettings::m_ViewModeProperties[ViewModeNormal].nextViewMode; i != ViewModeNormal; i = CVideoSettings::m_ViewModeProperties[i].nextViewMode)
+		entries.push_back(std::make_pair(CVideoSettings::m_ViewModeProperties[i].stringIndex, i));
 
     AddSpinner(groupVideo, SETTING_VIDEO_VIEW_MODE, 629, 0, videoSettings.m_ViewMode, entries);
   }

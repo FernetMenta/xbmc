@@ -218,7 +218,7 @@ bool CGUIWindowFullScreen::OnAction(const CAction &action)
       if (m_bShowViewModeInfo)
       {
 #ifdef HAS_VIDEO_PLAYBACK
-        g_application.m_pPlayer->SetRenderViewMode(CVideoSettings::GetNextViewMode(CMediaSettings::GetInstance().GetCurrentVideoSettings().m_ViewMode));
+        g_application.m_pPlayer->SetRenderViewMode(CVideoSettings::m_ViewModeProperties[CMediaSettings::GetInstance().GetCurrentVideoSettings().m_ViewMode].nextViewMode);
 #endif
       }
       m_bShowViewModeInfo = true;
@@ -383,7 +383,7 @@ void CGUIWindowFullScreen::FrameMove()
       // get the "View Mode" string
       std::string strTitle = g_localizeStrings.Get(629);
       const auto& settings = CMediaSettings::GetInstance().GetCurrentVideoSettings();
-      int sId = CVideoSettings::GetViewModeStringIndex(settings.m_ViewMode);
+      int sId = CVideoSettings::m_ViewModeProperties[settings.m_ViewMode].stringIndex;
       std::string strMode = g_localizeStrings.Get(sId);
       std::string strInfo = StringUtils::Format("%s : %s", strTitle.c_str(), strMode.c_str());
       CGUIMessage msg(GUI_MSG_LABEL_SET, GetID(), LABEL_ROW1);

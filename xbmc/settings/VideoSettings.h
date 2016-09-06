@@ -61,8 +61,13 @@ public:
   bool m_StereoInvert;
   int m_VideoStream;
 
-  static int GetNextViewMode(int viewMode);
-  static int GetViewModeStringIndex(int viewMode);
+  typedef struct
+  {
+    const int stringIndex;
+    const int nextViewMode;
+  } ViewModeProperties;
+
+  static const ViewModeProperties m_ViewModeProperties[];
 
 private:
 };

@@ -87,48 +87,16 @@ bool CVideoSettings::operator!=(const CVideoSettings &right) const
   return false;
 }
 
-int CVideoSettings::GetNextViewMode(int viewMode)
+const CVideoSettings::ViewModeProperties CVideoSettings::m_ViewModeProperties[] =
 {
-  switch (viewMode)
-  {
-    case ViewModeNormal:
-      return ViewModeZoom;
-    case ViewModeZoom:
-      return ViewModeZoom120Width;
-    case ViewModeZoom120Width:
-      return ViewModeZoom110Width;
-    case ViewModeZoom110Width:
-      return ViewModeStretch4x3;
-    case ViewModeStretch4x3:
-      return ViewModeWideZoom;
-    case ViewModeWideZoom:
-      return ViewModeStretch16x9;
-    case ViewModeStretch16x9:
-      return ViewModeStretch16x9Nonlin;
-    case ViewModeStretch16x9Nonlin:
-      return ViewModeOriginal;
-    case ViewModeOriginal:
-      return ViewModeCustom;
-    default:
-      break;
-  }
-
-  return ViewModeNormal;
-}
-
-int CVideoSettings::GetViewModeStringIndex(int viewMode)
-{
-  switch (viewMode)
-  {
-    case ViewModeStretch16x9Nonlin:
-      return 644;
-    case ViewModeZoom120Width:
-      return 39008;
-    case ViewModeZoom110Width:
-      return 39009;
-    default:
-      break;
-  }
-
-  return 630 + viewMode; // The first view modes were all put in the string resources starting at index 630, put new modes in the switch above
-}
+  { 630,   ViewModeZoom }, // ViewModeNormal
+  { 631,   ViewModeZoom120Width }, // ViewModeZoom
+  { 632,   ViewModeWideZoom }, // ViewModeStretch4x3
+  { 633,   ViewModeStretch16x9 }, // ViewModeWideZoom
+  { 634,   ViewModeStretch16x9Nonlin }, // ViewModeStretch16x9
+  { 635,   ViewModeCustom }, // ViewModeOriginal
+  { 636,   ViewModeNormal }, // ViewModeCustom
+  { 644,   ViewModeOriginal }, // ViewModeStretch16x9Nonlin
+  { 39008, ViewModeZoom110Width }, // ViewModeZoom120Width
+  { 39009, ViewModeStretch4x3 } // ViewModeZoom110Width
+};
