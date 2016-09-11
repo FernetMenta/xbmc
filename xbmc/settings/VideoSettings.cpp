@@ -86,17 +86,3 @@ bool CVideoSettings::operator!=(const CVideoSettings &right) const
   if (m_VideoStream != right.m_VideoStream) return true;
   return false;
 }
-
-const CVideoSettings::ViewModeProperties CVideoSettings::m_ViewModeProperties[] =
-{
-  { 630,   ViewModeZoom }, // ViewModeNormal
-  { 631,   ViewModeZoom120Width }, // ViewModeZoom
-  { 632,   ViewModeWideZoom }, // ViewModeStretch4x3
-  { 633,   ViewModeStretch16x9 }, // ViewModeWideZoom
-  { 634,   ViewModeStretch16x9Nonlin }, // ViewModeStretch16x9
-  { 635,   ViewModeCustom }, // ViewModeOriginal
-  { 636,   ViewModeNormal }, // ViewModeCustom
-  { 644,   ViewModeOriginal }, // ViewModeStretch16x9Nonlin
-  { 39008, ViewModeZoom110Width }, // ViewModeZoom120Width
-  { 39009, ViewModeStretch4x3 } // ViewModeZoom110Width
-};
