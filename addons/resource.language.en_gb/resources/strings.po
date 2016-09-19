@@ -8726,12 +8726,7 @@ msgstr ""
 
 #: xbmc/video/dialogs/GUIDialogVideoSettings.cpp
 msgctxt "#16320"
-msgid "DXVA - Bob"
-msgstr ""
-
-#: xbmc/video/dialogs/GUIDialogVideoSettings.cpp
-msgctxt "#16321"
-msgid "DXVA - Best"
+msgid "DXVA"
 msgstr ""
 
 #: xbmc/video/dialogs/GUIDialogVideoSettings.cpp
@@ -8752,11 +8747,6 @@ msgstr ""
 #: xbmc/video/dialogs/GUIDialogVideoSettings.cpp
 msgctxt "#16325"
 msgid "VDPAU - Bob"
-msgstr ""
-
-#: xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.cpp
-msgctxt "#16326"
-msgid "DXVA-HD"
 msgstr ""
 
 #: xbmc/video/dialogs/GUIDialogVideoSettings.cpp
