@@ -350,6 +350,7 @@ bool CProcessorHD::OpenProcessor()
   color.YCbCr = { 0.0625f, 0.5f, 0.5f, 1.0f }; // black color
   m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, TRUE, &color);
 
+  m_firstFrame = true;
   return true;
 }
 
@@ -603,6 +604,9 @@ bool CProcessorHD::Render(CRect src, CRect dst, ID3D11Resource* target, ID3D11Vi
   if (flags & RENDER_FLAG_FIELD1 && flags & RENDER_FLAG_TOP)
     dxvaFrameFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_BOTTOM_FIELD_FIRST;
 
+  if (m_firstFrame)
+      dxvaFrameFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+
   bool frameProgressive = dxvaFrameFormat == D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 
   // Progressive or Interlaced video at normal rate.
@@ -661,6 +665,7 @@ bool CProcessorHD::Render(CRect src, CRect dst, ID3D11Resource* target, ID3D11Vi
       CLog::Log(FAILED(hr) ? LOGERROR : LOGWARNING, __FUNCTION__" - Device returns result '%x' while VideoProcessorBlt execution.", hr);
     }
   }
+  m_firstFrame = false;
 
   SAFE_RELEASE(pOutputView);
   SAFE_RELEASE(stream_data.pInputSurface);
