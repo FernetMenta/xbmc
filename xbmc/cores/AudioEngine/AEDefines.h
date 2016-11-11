@@ -22,6 +22,6 @@
 #define AE_AC3_ENCODE_BITRATE 640000
 #define AE_DTS_ENCODE_BITRATE 1411200
 
-#ifdef AE_DEF_OVERRIDES_H
-#include AE_DEF_OVERRIDES_H
+#if __has_include("cores/AudioEngine/AEDefinesOverrides.h")
+#include "cores/AudioEngine/AEDefinesOverrides.h"
 #endif
