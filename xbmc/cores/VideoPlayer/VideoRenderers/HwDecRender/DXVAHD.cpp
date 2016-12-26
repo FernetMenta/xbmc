@@ -212,7 +212,7 @@ bool CProcessorHD::InitProcessor()
 
   CLog::Log(LOGDEBUG, "%s: Selected video processor allows %d future frames and %d past frames.", __FUNCTION__, m_rateCaps.FutureFrames, m_rateCaps.PastFrames);
 
-  m_size = m_max_back_refs + 1 + m_max_fwd_refs + 2;  // refs + 1 display + 2 safety frames
+  m_size = m_max_back_refs + 1 + m_max_fwd_refs + 2 + 2;  // refs + 1 display + 2 safety frames
 
   CLog::Log(LOGDEBUG, "----------- size: %d, back refs: %d, forward refs: %d", m_size, m_max_back_refs, m_max_fwd_refs);
 
