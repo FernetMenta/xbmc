@@ -30,7 +30,7 @@
 
 #define MAX_PLANES 3
 #define MAX_FIELDS 3
-#define NUM_BUFFERS 6
+#define NUM_BUFFERS 8
 
 class CSetting;
 

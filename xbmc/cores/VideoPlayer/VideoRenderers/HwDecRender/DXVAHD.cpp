@@ -214,6 +214,8 @@ bool CProcessorHD::InitProcessor()
 
   m_size = m_max_back_refs + 1 + m_max_fwd_refs + 2;  // refs + 1 display + 2 safety frames
 
+  CLog::Log(LOGDEBUG, "----------- size: %d, back refs: %d, forward refs: %d", m_size, m_max_back_refs, m_max_fwd_refs);
+
   // Get the image filtering capabilities.
   for (long i = 0; i < NUM_FILTERS; i++)
   {
