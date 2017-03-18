@@ -5939,14 +5939,6 @@ std::string CGUIInfoManager::GetLabel(int info, int contextWindow, std::string *
   case PVR_CHANNEL_NUMBER_INPUT:
     strLabel = CPVRGUIActions::GetInstance().GetChannelNumberInputHandler().GetChannelNumberAsString();
     break;
-  case ADSP_ACTIVE_STREAM_TYPE:
-  case ADSP_DETECTED_STREAM_TYPE:
-  case ADSP_MASTER_NAME:
-  case ADSP_MASTER_INFO:
-  case ADSP_MASTER_OWN_ICON:
-  case ADSP_MASTER_OVERRIDE_ICON:
-    CServiceBroker::GetADSP().TranslateCharInfo(info, strLabel);
-    break;
   case WEATHER_CONDITIONS:
     strLabel = g_weatherManager.GetInfo(WEATHER_LABEL_CURRENT_COND);
     StringUtils::Trim(strLabel);
@@ -7037,8 +7029,6 @@ bool CGUIInfoManager::GetBool(int condition1, int contextWindow, const CGUIListI
     bReturn = g_weatherManager.IsFetched();
   else if (condition >= PVR_CONDITIONS_START && condition <= PVR_CONDITIONS_END)
     bReturn = g_PVRManager.TranslateBoolInfo(condition);
-  else if (condition >= ADSP_CONDITIONS_START && condition <= ADSP_CONDITIONS_END)
-    bReturn = CServiceBroker::GetADSP().TranslateBoolInfo(condition);
   else if (condition == SYSTEM_INTERNET_STATE)
   {
     g_sysinfo.GetInfo(condition);
