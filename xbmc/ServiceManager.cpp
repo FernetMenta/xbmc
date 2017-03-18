@@ -21,7 +21,6 @@
 #include "ServiceManager.h"
 #include "addons/BinaryAddonCache.h"
 #include "ContextMenuManager.h"
-#include "cores/AudioEngine/Engines/ActiveAE/AudioDSPAddons/ActiveAEDSP.h"
 #include "cores/AudioEngine/Engines/ActiveAE/ActiveAE.h"
 #include "cores/DataCacheCore.h"
 #include "games/GameServices.h"
@@ -73,7 +72,6 @@ bool CServiceManager::Init2()
     return false;
   }
 
-  m_ADSPManager.reset(new ActiveAE::CActiveAEDSP());
   m_PVRManager.reset(new PVR::CPVRManager());
   m_dataCacheCore.reset(new CDataCacheCore());
 
@@ -117,7 +115,6 @@ bool CServiceManager::StartAudioEngine()
 
 bool CServiceManager::Init3()
 {
-  m_ADSPManager->Init();
   m_PVRManager->Init();
   m_contextMenuManager->Init();
   m_gameServices->Init();
@@ -134,7 +131,6 @@ void CServiceManager::Deinit()
   if (m_PVRManager)
     m_PVRManager->Shutdown();
   m_PVRManager.reset();
-  m_ADSPManager.reset();
   m_addonMgr.reset();
 #ifdef HAS_PYTHON
   CScriptInvocationManager::GetInstance().UnregisterLanguageInvocationHandler(m_XBPython.get());
@@ -169,11 +165,6 @@ XBPython& CServiceManager::GetXBPython()
 PVR::CPVRManager& CServiceManager::GetPVRManager()
 {
   return *m_PVRManager;
-}
-
-ActiveAE::CActiveAEDSP& CServiceManager::GetADSPManager()
-{
-  return *m_ADSPManager;
 }
 
 IAE& CServiceManager::GetActiveAE()

@@ -63,7 +63,6 @@ public:
   static ANNOUNCEMENT::CAnnouncementManager &GetAnnouncementManager();
   static XBPython &GetXBPython();
   static PVR::CPVRManager &GetPVRManager();
-  static ActiveAE::CActiveAEDSP& GetADSP();
   static IAE& GetActiveAE();
   static CContextMenuManager& GetContextMenuManager();
   static CDataCacheCore& GetDataCacheCore();
