@@ -373,6 +373,12 @@ float CAudioDecoder::GetReplayGain(float &peakVal)
   // convert to a gain type
   float replaygain = pow(10.0f, (replaydB - REPLAY_GAIN_DEFAULT_LEVEL)* 0.05f);
 
+  if (peak > 1.0)
+  {
+    peak = 1.0;
+    CLog::Log(LOGWARNING, "AudioDecoder::GetReplayGain - peak value larger than 1.0, setting it to 1.0");
+  }
+
   CLog::Log(LOGDEBUG, "AudioDecoder::GetReplayGain - Final Replaygain applied: %f, Track/Album Gain %f, Peak %f", replaygain, replaydB, peak);
 
   peakVal = peak;
