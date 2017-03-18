@@ -379,6 +379,13 @@ float CAudioDecoder::GetReplayGain(float &peakVal)
     CLog::Log(LOGWARNING, "AudioDecoder::GetReplayGain - peak value larger than 1.0, setting it to 1.0");
   }
 
+  // normalise volume
+  if (replayGainSettings.bAvoidClipping)
+  {
+    if (fabs(peak * replaygain) > 1.0f)
+      replaygain = 1.0f / fabs(peak);
+  }
+
   CLog::Log(LOGDEBUG, "AudioDecoder::GetReplayGain - Final Replaygain applied: %f, Track/Album Gain %f, Peak %f", replaygain, replaydB, peak);
 
   peakVal = peak;

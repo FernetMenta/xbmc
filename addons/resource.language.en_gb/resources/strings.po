@@ -2911,7 +2911,10 @@ msgctxt "#642"
 msgid "Files without ReplayGain information"
 msgstr ""
 
-#empty string with id 643
+#: system/settings/settings.xml
+msgctxt "#643"
+msgid "Avoid clipping on ReplayGained files"
+msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#644"
@@ -18160,7 +18163,11 @@ msgctxt "#36269"
 msgid "Reference volume (PreAmp level) to use for files without encoded ReplayGain information. Default is 89dB as per standard. Change with caution."
 msgstr ""
 
-#empty string with id 36270
+#. Description of setting with label #643 "Avoid clipping on ReplayGained files"
+#: system/settings/settings.xml
+msgctxt "#36270"
+msgid "Reduce the gain if clipping will occur."
+msgstr ""
 
 #. Description of setting with label #13314 "Crossfade between songs"
 #: system/settings/settings.xml
