@@ -70,6 +70,19 @@ public:
     virtual int GetTime() = 0;
   };
 
+  class ITimes
+  {
+    public:
+    struct Times
+    {
+      time_t startTime;
+      double ptsStart;
+      double ptsBegin;
+      double ptsEnd;
+    };
+    virtual void GetTimes(Times &times) = 0;
+  };
+
   class IPosTime
   {
     public:
