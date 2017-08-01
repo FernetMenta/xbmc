@@ -572,6 +572,17 @@ extern "C" {
     } data;
   } ATTRIBUTE_PACKED PVR_MENUHOOK_DATA;
 
+  /*!
+   * @brief times of playing stream
+   */
+  typedef struct PVR_STREAM_TIMES
+  {
+    time_t startTime;
+    int64_t ptsStart;
+    int64_t ptsBegin;
+    int64_t ptsEnd;
+  } ATTRIBUTE_PACKED PVR_STREAM_TIMES;
+
   typedef struct AddonToKodiFuncTable_PVR
   {
     KODI_HANDLE kodiInstance;
@@ -679,6 +690,7 @@ extern "C" {
     void (__cdecl* OnSystemWake)(void);
     void (__cdecl* OnPowerSavingActivated)(void);
     void (__cdecl* OnPowerSavingDeactivated)(void);
+    bool (__cdecl* GetStreamTimes)(PVR_STREAM_TIMES&);
   } KodiToAddonFuncTable_PVR;
 
   typedef struct AddonInstance_PVR

@@ -1484,6 +1484,16 @@ time_t CPVRClient::GetBufferTimeEnd(void) const
   return time;
 }
 
+bool CPVRClient::GetStreamTimes(PVR_STREAM_TIMES &times)
+{
+  bool ret = false;
+  if (IsPlaying())
+  {
+    ret = m_struct.toAddon.GetStreamTimes(times);
+  }
+  return ret;
+}
+
 bool CPVRClient::IsRealTimeStream(void) const
 {
   bool bReturn(false);
