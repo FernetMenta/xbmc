@@ -358,8 +358,10 @@ void CLinuxRendererGLES::Update()
   ValidateRenderTarget();
 }
 
-void CLinuxRendererGLES::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
+void CLinuxRendererGLES::RenderUpdate(int index, bool clear, DWORD flags, DWORD alpha)
 {
+  m_iYV12RenderBuffer = index;
+
   if (!m_bConfigured)
     return;
 
@@ -373,8 +375,7 @@ void CLinuxRendererGLES::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
     return;
   }
 
-  int index = m_iYV12RenderBuffer;
-  YUVBUFFER& buf =  m_buffers[index];
+  YUVBUFFER& buf = m_buffers[index];
 
   if (!buf.fields[FIELD_FULL][0].id)
     return;
