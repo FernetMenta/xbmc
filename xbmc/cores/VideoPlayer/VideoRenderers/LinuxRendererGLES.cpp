@@ -425,16 +425,6 @@ void CLinuxRendererGLES::RenderUpdateVideo(bool clear, DWORD flags, DWORD alpha)
     return;
 }
 
-void CLinuxRendererGLES::FlipPage(int source)
-{
-  if( source >= 0 && source < m_NumYV12Buffers )
-    m_iYV12RenderBuffer = source;
-  else
-    m_iYV12RenderBuffer = NextYV12Texture();
-
-  return;
-}
-
 void CLinuxRendererGLES::UpdateVideoFilter()
 {
   if (m_scalingMethodGui == CMediaSettings::GetInstance().GetCurrentVideoSettings().m_ScalingMethod)
