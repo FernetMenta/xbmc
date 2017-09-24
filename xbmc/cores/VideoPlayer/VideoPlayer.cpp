@@ -3678,7 +3678,6 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
     if (!player->OpenStream(hint))
       return false;
 
-    s.stereo_mode = static_cast<IDVDStreamPlayerVideo*>(player)->GetStereoMode();
     if (s.stereo_mode == "mono")
       s.stereo_mode = "";
 
