@@ -41,7 +41,7 @@ ifeq ($(OS), android)
       ffmpg_config += --cpu=i686 --disable-mmx
     endif
   endif
-  ffmpg_config += --target-os=linux --extra-libs=-liconv
+  ffmpg_config += --target-os=linux --extra-libs=-liconv --disable-linux-perf
 endif
 ifeq ($(OS), ios)
   ifneq ($(CPU), arm64)
