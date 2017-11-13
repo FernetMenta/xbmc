@@ -122,6 +122,9 @@ void TestBasicEnvironment::SetUp()
   g_application.m_ServiceManager->CreateAudioEngine();
   CServiceBroker::GetSettings().Initialize();
 
+  std::unique_ptr<CWinSystemBase> winSystem = CWinSystemBase::CreateWinSystem();
+  g_application.m_ServiceManager->SetWinSystem(std::move(winSystem));
+
   if (!g_application.m_ServiceManager->InitStageTwo(CAppParamParser()))
     exit(1);
 
