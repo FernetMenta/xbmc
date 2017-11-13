@@ -83,7 +83,7 @@
 #include "playlists/SmartPlayList.h"
 #include "playlists/PlayList.h"
 #include "profiles/ProfilesManager.h"
-#include "windowing/WindowingFactory.h"
+#include "windowing/WinSystem.h"
 #include "powermanagement/PowerManager.h"
 #include "powermanagement/DPMSSupport.h"
 #include "settings/Settings.h"
@@ -214,6 +214,11 @@
 #include "utils/AMLUtils.h"
 #endif
 
+//TODO: XInitThreads
+#ifdef HAVE_X11
+#include "X11/Xlib.h"
+#endif
+
 #include "cores/FFmpeg.h"
 #include "utils/CharsetConverter.h"
 #include "pictures/GUIWindowSlideShow.h"
@@ -333,7 +338,7 @@ void CApplication::CApplication::HandleWinEvents()
         break;
       case XBMC_VIDEOMOVE:
       {
-        g_Windowing.OnMove(newEvent.move.x, newEvent.move.y);
+        CServiceBroker::GetWinSystem().OnMove(newEvent.move.x, newEvent.move.y);
       }
         break;
       case XBMC_MODECHANGE:
@@ -423,6 +428,12 @@ bool CApplication::Create(const CAppParamParser &params)
   m_threadID = CThread::GetCurrentThreadId();
 
   m_ServiceManager.reset(new CServiceManager());
+
+  // TODO
+  // some of the serives depend on the WinSystem :(
+  std::unique_ptr<CWinSystemBase> winSystem = CWinSystemBase::CreateWinSystem();
+  m_ServiceManager->SetWinSystem(winSystem);
+  
   if (!m_ServiceManager->InitStageOne())
   {
     return false;
@@ -677,7 +688,7 @@ bool CApplication::CreateGUI()
 
   m_renderGUI = true;
 
-  if (!g_Windowing.InitWindowSystem())
+  if (!CServiceBroker::GetWinSystem().InitWindowSystem())
   {
     CLog::Log(LOGFATAL, "CApplication::Create: Unable to init windowing system");
     return false;
@@ -697,7 +708,7 @@ bool CApplication::CreateGUI()
   }
 
   // update the window resolution
-  g_Windowing.SetWindowResolution(m_ServiceManager->GetSettings().GetInt(CSettings::SETTING_WINDOW_WIDTH), m_ServiceManager->GetSettings().GetInt(CSettings::SETTING_WINDOW_HEIGHT));
+  CServiceBroker::GetWinSystem().SetWindowResolution(m_ServiceManager->GetSettings().GetInt(CSettings::SETTING_WINDOW_WIDTH), m_ServiceManager->GetSettings().GetInt(CSettings::SETTING_WINDOW_HEIGHT));
 
   if (g_advancedSettings.m_startFullScreen && CDisplaySettings::GetInstance().GetCurrentResolution() == RES_WINDOW)
   {
@@ -721,7 +732,7 @@ bool CApplication::CreateGUI()
   // Set default screen saver mode
   auto screensaverModeSetting = std::static_pointer_cast<CSettingString>(m_ServiceManager->GetSettings().GetSetting(CSettings::SETTING_SCREENSAVER_MODE));
   // Can only set this after windowing has been initialized since it depends on it
-  if (g_Windowing.GetOSScreenSaver())
+  if (CServiceBroker::GetWinSystem().GetOSScreenSaver())
   {
     // If OS has a screen saver, use it by default
     screensaverModeSetting->SetDefault("");
@@ -760,13 +771,14 @@ bool CApplication::InitWindow(RESOLUTION res)
     res = CDisplaySettings::GetInstance().GetCurrentResolution();
 
   bool bFullScreen = res != RES_WINDOW;
-  if (!g_Windowing.CreateNewWindow(CSysInfo::GetAppName(), bFullScreen, CDisplaySettings::GetInstance().GetResolutionInfo(res)))
+  if (!CServiceBroker::GetWinSystem().CreateNewWindow(CSysInfo::GetAppName(),
+                                                      bFullScreen, CDisplaySettings::GetInstance().GetResolutionInfo(res)))
   {
     CLog::Log(LOGFATAL, "CApplication::Create: Unable to create window");
     return false;
   }
 
-  if (!g_Windowing.InitRenderSystem())
+  if (!CServiceBroker::GetRenderSystem().InitRenderSystem())
   {
     CLog::Log(LOGFATAL, "CApplication::Create: Unable to init rendering system");
     return false;
@@ -778,7 +790,10 @@ bool CApplication::InitWindow(RESOLUTION res)
 
 bool CApplication::DestroyWindow()
 {
-  return g_Windowing.DestroyWindow();
+  bool ret = CServiceBroker::GetWinSystem().DestroyWindow();
+  std::unique_ptr<CWinSystemBase> winSystem;
+  m_ServiceManager->SetWinSystem(winSystem);
+  return ret;
 }
 
 bool CApplication::InitDirectoriesLinux()
@@ -1880,7 +1895,7 @@ void CApplication::Render()
     ResetScreenSaver();
   }
 
-  if(!g_Windowing.BeginRender())
+  if(!CServiceBroker::GetRenderSystem().BeginRender())
     return;
 
   // render gui layer
@@ -1911,7 +1926,7 @@ void CApplication::Render()
   // render video layer
   g_windowManager.RenderEx();
 
-  g_Windowing.EndRender();
+  CServiceBroker::GetRenderSystem().EndRender();
 
   // reset our info cache - we do this at the end of Render so that it is
   // fresh for the next process(), or after a windowclose animation (where process()
@@ -2758,7 +2773,7 @@ void CApplication::FrameMove(bool processEvents, bool processGUI)
   m_pPlayer->FrameMove();
 
   // this will go away when render systems gets its own thread
-  g_Windowing.DriveRenderLoop();
+  CServiceBroker::GetWinSystem().DriveRenderLoop();
 }
 
 
@@ -2783,9 +2798,9 @@ bool CApplication::Cleanup()
     m_globalScreensaverInhibitor.Release();
     m_screensaverInhibitor.Release();
 
-    g_Windowing.DestroyRenderSystem();
-    g_Windowing.DestroyWindow();
-    g_Windowing.DestroyWindowSystem();
+    CServiceBroker::GetRenderSystem().DestroyRenderSystem();
+    CServiceBroker::GetWinSystem().DestroyWindow();
+    CServiceBroker::GetWinSystem().DestroyWindowSystem();
     g_windowManager.DestroyWindows();
 
     CLog::Log(LOGNOTICE, "unload sections");
@@ -3960,11 +3975,12 @@ bool CApplication::WakeUpScreenSaver(bool bPowerOffKeyPressed /* = false */)
 void CApplication::CheckOSScreenSaverInhibitionSetting()
 {
   // Kodi screen saver overrides OS one: always inhibit OS screen saver then
-  if (!m_ServiceManager->GetSettings().GetString(CSettings::SETTING_SCREENSAVER_MODE).empty() && g_Windowing.GetOSScreenSaver())
+  if (!m_ServiceManager->GetSettings().GetString(CSettings::SETTING_SCREENSAVER_MODE).empty() &&
+      CServiceBroker::GetWinSystem().GetOSScreenSaver())
   {
     if (!m_globalScreensaverInhibitor)
     {
-      m_globalScreensaverInhibitor = g_Windowing.GetOSScreenSaver()->CreateInhibitor();
+      m_globalScreensaverInhibitor = CServiceBroker::GetWinSystem().GetOSScreenSaver()->CreateInhibitor();
     }
   }
   else if (m_globalScreensaverInhibitor)
@@ -3991,10 +4007,10 @@ void CApplication::CheckScreenSaverAndDPMS()
         && !m_ServiceManager->GetSettings().GetString(CSettings::SETTING_MUSICPLAYER_VISUALISATION).empty());
 
   // Handle OS screen saver state
-  if (haveIdleActivity && g_Windowing.GetOSScreenSaver())
+  if (haveIdleActivity && CServiceBroker::GetWinSystem().GetOSScreenSaver())
   {
     // Always inhibit OS screen saver during these kinds of activities
-    m_screensaverInhibitor = g_Windowing.GetOSScreenSaver()->CreateInhibitor();
+    m_screensaverInhibitor = CServiceBroker::GetWinSystem().GetOSScreenSaver()->CreateInhibitor();
   }
   else if (m_screensaverInhibitor)
   {
@@ -4492,7 +4508,7 @@ void CApplication::ProcessSlow()
   // There is an issue on OS X that several system services ask the cursor to become visible
   // during their startup routines.  Given that we can't control this, we hack it in by
   // forcing the
-  if (g_Windowing.IsFullScreen())
+  if (CServiceBroker::GetWinSystem().IsFullScreen())
   { // SDL thinks it's hidden
     Cocoa_HideMouse();
   }
@@ -4980,7 +4996,7 @@ bool CApplication::SwitchToFullScreen(bool force /* = false */)
 
 void CApplication::Minimize()
 {
-  g_Windowing.Minimize();
+  CServiceBroker::GetWinSystem().Minimize();
 }
 
 std::string CApplication::GetCurrentPlayer()

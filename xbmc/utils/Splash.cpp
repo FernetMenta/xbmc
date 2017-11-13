@@ -19,13 +19,15 @@
  */
 
 #include "system.h"
+#include "ServiceBroker.h"
 #include "Splash.h"
 #include "guilib/GUIImage.h"
 #include "guilib/GUILabelControl.h"
 #include "guilib/GUIFontManager.h"
 #include "filesystem/File.h"
 #include "settings/AdvancedSettings.h"
-#include "windowing/WindowingFactory.h"
+
+#include "rendering/RenderSystem.h"
 
 using namespace XFILE;
 
@@ -60,7 +62,7 @@ void CSplash::Show(const std::string& message /* = "" */)
   g_graphicsContext.SetRenderingResolution(res, true);
 
   //render splash image
-  g_Windowing.BeginRender();
+  CServiceBroker::GetRenderSystem().BeginRender();
 
   m_image->AllocResources();
   m_image->Render();
@@ -89,7 +91,7 @@ void CSplash::Show(const std::string& message /* = "" */)
   }
 
   //show it on screen
-  g_Windowing.EndRender();
+  CServiceBroker::GetRenderSystem().EndRender();
   g_graphicsContext.Flip(true, false);
   g_graphicsContext.Unlock();
 }

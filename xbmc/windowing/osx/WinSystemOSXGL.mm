@@ -25,6 +25,14 @@
 #include "rendering/gl/RenderSystemGL.h"
 
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+std::unique_ptr<CWinSystemBase> CWinSystemBase::CreateWinSystem()
+{
+  std::unique_ptr<CWinSystemBase> winSystem(new CWinSystemOSXGL());
+  return winSystem;
+}
+
 CWinSystemOSXGL::CWinSystemOSXGL()
 {
 }
