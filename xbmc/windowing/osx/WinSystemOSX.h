@@ -20,8 +20,6 @@
  *
  */
 
-#if defined(TARGET_DARWIN_OSX)
-
 #include <string>
 #include <vector>
 
@@ -121,5 +119,3 @@ protected:
   bool                         m_delayDispReset;
   XbmcThreads::EndTime         m_dispResetTimer;
 };
-
-#endif
