@@ -23,10 +23,9 @@
 #include "windowing/windows/WinSystemWin32DX.h"
 #elif defined(TARGET_WINDOWS_STORE)
 #include "windowing/win10/WinSystemWin10DX.h"
+#include <agile.h>
 #endif
 #include "xbmc/ServiceBroker.h"
-
-#include <agile.h>
 
 namespace DX
 {
