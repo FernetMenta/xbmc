@@ -38,6 +38,7 @@
 #include "interfaces/python/XBPython.h"
 #include "pvr/PVRManager.h"
 #include "AppParamParser.h"
+#include "windowing/WinSystem.h"
 
 #if defined(TARGET_WINDOWS)
 #include "platform/win32/WIN32Util.h"
