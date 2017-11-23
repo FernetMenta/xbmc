@@ -413,7 +413,7 @@ bool CApplication::Create(const CAppParamParser &params)
   // TODO
   // some of the serives depend on the WinSystem :(
   std::unique_ptr<CWinSystemBase> winSystem = CWinSystemBase::CreateWinSystem();
-  m_ServiceManager->SetWinSystem(winSystem);
+  m_ServiceManager->SetWinSystem(std::move(winSystem));
   
   if (!m_ServiceManager->InitStageOne())
   {
@@ -772,7 +772,7 @@ bool CApplication::DestroyWindow()
 {
   bool ret = CServiceBroker::GetWinSystem().DestroyWindow();
   std::unique_ptr<CWinSystemBase> winSystem;
-  m_ServiceManager->SetWinSystem(winSystem);
+  m_ServiceManager->SetWinSystem(std::move(winSystem));
   return ret;
 }
 

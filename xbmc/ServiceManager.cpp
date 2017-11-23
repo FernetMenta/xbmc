@@ -331,9 +331,9 @@ CWinSystemBase &CServiceManager::GetWinSystem()
   return *m_winSystem.get();
 }
 
-void CServiceManager::SetWinSystem(std::unique_ptr<CWinSystemBase> &winSystem)
+void CServiceManager::SetWinSystem(std::unique_ptr<CWinSystemBase> winSystem)
 {
-  m_winSystem.reset(winSystem.release());
+  m_winSystem = std::move(winSystem);
 }
 
 // deleters for unique_ptr

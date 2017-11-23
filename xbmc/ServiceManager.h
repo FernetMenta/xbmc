@@ -133,7 +133,7 @@ public:
   CFileExtensionProvider &GetFileExtensionProvider();
 
   CWinSystemBase &GetWinSystem();
-  void SetWinSystem(std::unique_ptr<CWinSystemBase> &winSystem);
+  void SetWinSystem(std::unique_ptr<CWinSystemBase> winSystem);
 
 protected:
   struct delete_dataCacheCore
