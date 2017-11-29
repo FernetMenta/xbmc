@@ -344,6 +344,9 @@ public:
   void GetVideoStreamInfo(int streamId, VideoStreamInfo &info) override;
   void SetVideoStream(int iStream) override;
 
+  int GetPrograms(std::vector<ProgramInfo>& programs) override;
+  void SetProgram(int progId) override;
+
   TextCacheStruct_t* GetTeletextCache() override;
   void LoadPage(int p, int sp, unsigned char* buffer) override;
 
@@ -511,6 +514,7 @@ protected:
   CCurrentStream m_CurrentRadioRDS;
 
   CSelectionStreams m_SelectionStreams;
+  std::vector<ProgramInfo> m_programs;
 
   int m_playSpeed;
   int m_streamPlayerSpeed;
@@ -566,13 +570,6 @@ protected:
     int iSelectedVideoStream; // mpeg stream id or angle, -1 if disabled
   } m_dvd;
 
-  friend class CVideoPlayerVideo;
-  friend class CVideoPlayerAudio;
-#ifdef TARGET_RASPBERRY_PI
-  friend class OMXPlayerVideo;
-  friend class OMXPlayerAudio;
-#endif
-
   SPlayerState m_State;
   CCriticalSection m_StateSection;
   XbmcThreads::EndTime m_syncTimer;
@@ -585,7 +582,13 @@ protected:
 
   std::atomic<bool> m_displayLost;
 
+  //@todo remove!
+  // RPI specific stuff
   // omxplayer variables
   struct SOmxPlayerState m_OmxPlayerState;
   bool m_omxplayer_mode;            // using omxplayer acceleration
+#ifdef TARGET_RASPBERRY_PI
+  friend class OMXPlayerVideo;
+  friend class OMXPlayerAudio;
+#endif
 };

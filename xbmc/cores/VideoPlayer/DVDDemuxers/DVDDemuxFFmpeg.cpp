@@ -1256,6 +1256,41 @@ int CDVDDemuxFFmpeg::GetNrOfStreams() const
   return m_streams.size();
 }
 
+int CDVDDemuxFFmpeg::GetPrograms(std::vector<ProgramInfo>& programs)
+{
+  programs.clear();
+  if (!m_pFormatContext || m_pFormatContext->nb_programs <= 1)
+    return 0;
+  
+  for (int i = 0; i < m_pFormatContext->nb_programs; i++)
+  {
+    std::ostringstream os;
+    ProgramInfo prog;
+    prog.id = i;
+    os << i;
+    prog.name = os.str();
+
+    if (!m_pFormatContext->programs[i]->metadata)
+      continue;
+
+    AVDictionaryEntry *tag = av_dict_get(m_pFormatContext->programs[i]->metadata, "", nullptr, AV_DICT_IGNORE_SUFFIX);
+    while (tag)
+    {
+      os << " - " << tag->key << ": " << tag->value;
+      tag = av_dict_get(m_pFormatContext->programs[i]->metadata, nullptr, tag, AV_DICT_IGNORE_SUFFIX);
+    }
+    prog.name = os.str();
+    programs.push_back(prog);
+  }
+  return programs.size();
+}
+
+void CDVDDemuxFFmpeg::SetProgram(int progId)
+{
+  m_program = progId;
+  CreateStreams(progId);
+}
+
 double CDVDDemuxFFmpeg::SelectAspect(AVStream* st, bool& forced)
 {
   // trust matroska container
@@ -1302,7 +1337,7 @@ void CDVDDemuxFFmpeg::CreateStreams(unsigned int program)
   if (m_pFormatContext->nb_programs)
   {
     // check if desired program is available
-    if (program < m_pFormatContext->nb_programs && m_pFormatContext->programs[program]->nb_stream_indexes > 0)
+    if (program < m_pFormatContext->nb_programs)
     {
       m_program = program;
     }

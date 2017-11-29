@@ -104,6 +104,8 @@ public:
   CDemuxStream* GetStream(int iStreamId) const override;
   std::vector<CDemuxStream*> GetStreams() const override;
   int GetNrOfStreams() const override;
+  int GetPrograms(std::vector<ProgramInfo>& programs) override;
+  void SetProgram(int progId) override;
 
   bool SeekChapter(int chapter, double* startpts = NULL) override;
   int GetChapterCount() override;
