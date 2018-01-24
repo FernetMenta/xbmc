@@ -54,7 +54,6 @@
 #include "DVDDemuxers/DVDDemuxCC.h"
 #include "cores/FFmpeg.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
-#include "cores/VideoPlayer/VideoRenderers/RenderFlags.h"
 #include "cores/VideoPlayer/Process/ProcessInfo.h"
 #include "settings/AdvancedSettings.h"
 #include "FileItem.h"
@@ -3663,7 +3662,7 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
     if (CServiceBroker::GetSettings().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) != ADJUST_REFRESHRATE_OFF)
     {
       double framerate = DVD_TIME_BASE / CDVDCodecUtils::NormalizeFrameduration((double)DVD_TIME_BASE * hint.fpsscale / hint.fpsrate);
-      m_renderManager.TriggerUpdateResolution(static_cast<float>(framerate), hint.width, RenderManager::GetStereoModeFlags(hint.stereo_mode));
+      m_renderManager.TriggerUpdateResolution(static_cast<float>(framerate), hint.width, hint.stereo_mode);
     }
   }
 
@@ -3687,9 +3686,6 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
       float fFramesPerSecond = (float)m_CurrentVideo.hint.fpsrate / (float)m_CurrentVideo.hint.fpsscale;
       m_Edl.ReadEditDecisionLists(m_item.GetDynPath(), fFramesPerSecond, m_CurrentVideo.hint.height);
     }
-
-    if (s.stereo_mode == "mono")
-      s.stereo_mode = "";
 
     static_cast<IDVDStreamPlayerVideo*>(player)->SetSpeed(m_streamPlayerSpeed);
     m_CurrentVideo.syncState = IDVDStreamPlayer::SYNC_STARTING;
@@ -4779,7 +4775,8 @@ float CVideoPlayer::GetRenderAspectRatio()
 
 void CVideoPlayer::TriggerUpdateResolution()
 {
-  m_renderManager.TriggerUpdateResolution(0, 0, 0);
+  std::string stereomode;
+  m_renderManager.TriggerUpdateResolution(0, 0, stereomode);
 }
 
 bool CVideoPlayer::IsRenderingVideo()
