@@ -3650,8 +3650,6 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
   if (hint.stereo_mode.empty())
     hint.stereo_mode = CStereoscopicsManager::GetInstance().DetectStereoModeByString(m_item.GetPath());
 
-  SelectionStream& s = m_SelectionStreams.Get(STREAM_VIDEO, 0);
-
   if (hint.flags & AV_DISPOSITION_ATTACHED_PIC)
     return false;
 

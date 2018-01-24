@@ -23,6 +23,7 @@
 #include "RendererMediaCodecSurface.h"
 
 #include "../RenderCapture.h"
+#include "../RenderFlags.h"
 #include "guilib/GraphicContext.h"
 #include "rendering/RenderSystem.h"
 #include "settings/MediaSettings.h"
@@ -58,7 +59,7 @@ bool CRendererMediaCodecSurface::Register()
   return true;
 }
 
-bool CRendererMediaCodecSurface::Configure(const VideoPicture &picture, float fps, unsigned flags, unsigned int orientation)
+bool CRendererMediaCodecSurface::Configure(const VideoPicture &picture, float fps, unsigned int orientation)
 {
   CLog::Log(LOGNOTICE, "CRendererMediaCodecSurface::Configure");
 
@@ -66,8 +67,11 @@ bool CRendererMediaCodecSurface::Configure(const VideoPicture &picture, float fp
   m_sourceHeight = picture.iHeight;
   m_renderOrientation = orientation;
 
-  // Save the flags.
-  m_iFlags = flags;
+  m_iFlags = GetFlagsChromaPosition(picture.chroma_position) |
+             GetFlagsColorMatrix(picture.color_matrix, picture.iWidth, picture.iHeight) |
+             GetFlagsColorPrimaries(picture.color_primaries) |
+             GetFlagsColorTransfer(picture.color_transfer) |
+             GetFlagsStereoMode(picture.stereoMode);
 
   // Calculate the input frame aspect ratio.
   CalculateFrameAspectRatio(picture.iDisplayWidth, picture.iDisplayHeight);
