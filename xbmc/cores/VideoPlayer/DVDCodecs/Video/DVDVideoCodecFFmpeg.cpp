@@ -982,9 +982,9 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(VideoPicture* pVideoPicture)
   pVideoPicture->chroma_position = m_pCodecContext->chroma_sample_location;
   pVideoPicture->color_primaries = m_pCodecContext->color_primaries;
   pVideoPicture->color_transfer = m_pCodecContext->color_trc;
-  pVideoPicture->color_matrix = m_pCodecContext->colorspace;
-  if(m_pCodecContext->color_range == AVCOL_RANGE_JPEG
-  || m_pCodecContext->pix_fmt     == AV_PIX_FMT_YUVJ420P)
+  pVideoPicture->color_space = m_pCodecContext->colorspace;
+  if(m_pCodecContext->color_range == AVCOL_RANGE_JPEG ||
+    m_pCodecContext->pix_fmt     == AV_PIX_FMT_YUVJ420P)
     pVideoPicture->color_range = 1;
   else
     pVideoPicture->color_range = 0;
