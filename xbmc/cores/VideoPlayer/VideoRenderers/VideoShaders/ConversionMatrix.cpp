@@ -42,13 +42,13 @@ const ConvYCbCr BT601YCbCr = {0.299, 0.114};
 const ConvYCbCr BT2020YCbCr = {0.2627, 0.0593};
 const ConvYCbCr ST240YCbCr = {0.212, 0.087};
 
-const Primaries PirmariesBT709 = {{{0.640, 0.330}, {0.300, 0.600}, {0.150, 0.060}},
+const Primaries PrimariesBT709 = {{{0.640, 0.330}, {0.300, 0.600}, {0.150, 0.060}},
   {0.3127, 0.3290} };
-const Primaries PirmariesBT610_525 = {{{0.640, 0.340}, {0.310, 0.595}, {0.155, 0.070}},
+const Primaries PrimariesBT610_525 = {{{0.640, 0.340}, {0.310, 0.595}, {0.155, 0.070}},
   {0.3127, 0.3290} };
-const Primaries PirmariesBT610_625 = {{{0.640, 0.330}, {0.290, 0.600}, {0.150, 0.060}},
+const Primaries PrimariesBT610_625 = {{{0.640, 0.330}, {0.290, 0.600}, {0.150, 0.060}},
   {0.3127, 0.3290} };
-const Primaries PirmariesBT2020 = {{{0.708, 0.292}, {0.170, 0.797}, {0.131, 0.046}},
+const Primaries PrimariesBT2020 = {{{0.708, 0.292}, {0.170, 0.797}, {0.131, 0.046}},
   {0.3127, 0.3290} };
 
 //------------------------------------------------------------------------------
@@ -381,39 +381,39 @@ void CConvertMatrix::GenMat()
     switch (m_colPrimariesSrc)
     {
       case AVCOL_PRI_BT709:
-        primToXYZ = PirmariesBT709;
+        primToXYZ = PrimariesBT709;
         break;
       case AVCOL_PRI_BT470BG:
-        primToXYZ = PirmariesBT610_625;
+        primToXYZ = PrimariesBT610_625;
         break;
       case AVCOL_PRI_SMPTE170M:
       case AVCOL_PRI_SMPTE240M:
-        primToXYZ = PirmariesBT610_525;
+        primToXYZ = PrimariesBT610_525;
         break;
       case AVCOL_PRI_BT2020:
-        primToXYZ = PirmariesBT2020;
+        primToXYZ = PrimariesBT2020;
         break;
       default:
-        primToXYZ = PirmariesBT709;
+        primToXYZ = PrimariesBT709;
         break;
     }
     switch (m_colPrimariesDst)
     {
       case AVCOL_PRI_BT709:
-        primToRGB = PirmariesBT709;
+        primToRGB = PrimariesBT709;
         break;
       case AVCOL_PRI_BT470BG:
-        primToRGB = PirmariesBT610_625;
+        primToRGB = PrimariesBT610_625;
         break;
       case AVCOL_PRI_SMPTE170M:
       case AVCOL_PRI_SMPTE240M:
-        primToRGB = PirmariesBT610_525;
+        primToRGB = PrimariesBT610_525;
         break;
       case AVCOL_PRI_BT2020:
-        primToRGB = PirmariesBT2020;
+        primToRGB = PrimariesBT2020;
         break;
       default:
-        primToRGB = PirmariesBT709;
+        primToRGB = PrimariesBT709;
         break;
     }
     PrimaryToXYZ toXYZ(primToXYZ.primaries, primToXYZ.whitepoint);
