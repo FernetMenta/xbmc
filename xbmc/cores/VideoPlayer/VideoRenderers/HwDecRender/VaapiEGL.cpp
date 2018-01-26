@@ -32,6 +32,11 @@ void CVaapiTexture::Init(InteropInfo &interop)
   m_interop = interop;
 }
 
+int CVaapiTexture::GetBits()
+{
+  return m_bits;
+}
+
 bool CVaapiTexture::Map(CVaapiRenderPicture *pic)
 {
   VAStatus status;
@@ -65,6 +70,7 @@ bool CVaapiTexture::Map(CVaapiRenderPicture *pic)
   {
     case VA_FOURCC('N','V','1','2'):
     {
+      m_bits = 8;
       attrib = attribs;
       *attrib++ = EGL_LINUX_DRM_FOURCC_EXT;
       *attrib++ = fourcc_code('R', '8', ' ', ' ');
@@ -139,6 +145,7 @@ bool CVaapiTexture::Map(CVaapiRenderPicture *pic)
     }
     case VA_FOURCC('P','0','1','0'):
     {
+      m_bits = 10;
       attrib = attribs;
       *attrib++ = EGL_LINUX_DRM_FOURCC_EXT;
       *attrib++ = fourcc_code('R', '1', '6', ' ');
@@ -213,6 +220,7 @@ bool CVaapiTexture::Map(CVaapiRenderPicture *pic)
     }
     case VA_FOURCC('B','G','R','A'):
     {
+      m_bits = 8;
       attrib = attribs;
       *attrib++ = EGL_DRM_BUFFER_FORMAT_MESA;
       *attrib++ = EGL_DRM_BUFFER_FORMAT_ARGB32_MESA;
