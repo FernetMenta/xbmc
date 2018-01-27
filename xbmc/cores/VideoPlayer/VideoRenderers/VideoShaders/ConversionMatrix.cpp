@@ -60,17 +60,17 @@ template <unsigned Order>
 float CalculateDeterminant(float (&src)[Order][Order]);
 
 template <unsigned Order>
-void GetSubmatrix(float (&dest)[Order-1][Order-1], float (&src)[Order][Order], int row, int col)
+void GetSubmatrix(float (&dest)[Order-1][Order-1], float (&src)[Order][Order], unsigned row, unsigned col)
 {
-  int colCount = 0;
-  int rowCount = 0;
+  unsigned colCount = 0;
+  unsigned rowCount = 0;
 
-  for (int i = 0; i < Order; i++)
+  for (unsigned i = 0; i < Order; i++)
   {
     if (i != row)
     {
       colCount = 0;
-      for (int j = 0; j < Order; j++)
+      for (unsigned j = 0; j < Order; j++)
       {
         if (j != col)
         {
@@ -84,7 +84,7 @@ void GetSubmatrix(float (&dest)[Order-1][Order-1], float (&src)[Order][Order], i
 }
 
 template <unsigned Order>
-float CalculateMinor(float (&src)[Order][Order], int row, int col)
+float CalculateMinor(float (&src)[Order][Order], unsigned row, unsigned col)
 {
   float sub[Order-1][Order-1];
   GetSubmatrix<Order>(sub, src, row, col);
@@ -96,7 +96,7 @@ float CalculateDeterminant(float (&src)[Order][Order])
 {
   float det = 0.0f;
 
-  for (int i = 0; i < Order; i++)
+  for (unsigned i = 0; i < Order; i++)
   {
     // Get minor of element (0, i)
     float minor = CalculateMinor<Order>(src, 0, i);
@@ -141,14 +141,14 @@ CMatrix<Order>& CMatrix<Order>::operator=(const CMatrix& src)
 template <unsigned Order>
 CMatrix<Order>& CMatrix<Order>::operator=(const float (&src)[Order-1][Order-1])
 {
-  for (int i=0; i<Order-1; ++i)
-    for (int j=0; j<Order-1; ++j)
+  for (unsigned i=0; i<Order-1; ++i)
+    for (unsigned j=0; j<Order-1; ++j)
       m_mat[i][j] = src[i][j];
 
-  for (int i=0; i<Order; ++i)
+  for (unsigned i=0; i<Order; ++i)
     m_mat[i][Order-1] = 0;
 
-  for (int i=0; i<Order; ++i)
+  for (unsigned i=0; i<Order; ++i)
     m_mat[Order-1][i] = 0;
 
   return *this;
@@ -186,9 +186,9 @@ template <unsigned Order>
 CMatrix<Order> CMatrix<Order>::operator*(const float (&other)[Order][Order])
 {
   CMatrix<Order> ret;
-  for (int i=0; i<Order; ++i)
-    for (int j=0; j<Order; ++j)
-      for (int k=0; k<Order; ++k)
+  for (unsigned i=0; i<Order; ++i)
+    for (unsigned j=0; j<Order; ++j)
+      for (unsigned k=0; k<Order; ++k)
         ret.m_mat[i][j] += m_mat[i][k] * other[k][j];
 
   return ret;
@@ -197,8 +197,8 @@ CMatrix<Order> CMatrix<Order>::operator*(const float (&other)[Order][Order])
 template <unsigned Order>
 void CMatrix<Order>::Copy(float (&dst)[Order][Order], const float (&src)[Order][Order])
 {
-  for (int i=0; i<Order; ++i)
-    for (int j=0; j<Order; ++j)
+  for (unsigned i=0; i<Order; ++i)
+    for (unsigned j=0; j<Order; ++j)
       dst[i][j] = src[i][j];
 }
 
@@ -209,9 +209,9 @@ void CMatrix<Order>::Invert(float (&dst)[Order][Order], float (&src)[Order][Orde
   float det = CalculateDeterminant<Order>(src);
   float inverseDet = 1.0f / det;
 
-  for (int j = 0; j < Order; j++)
+  for (unsigned j = 0; j < Order; j++)
   {
-    for (int i = 0; i < Order; i++)
+    for (unsigned i = 0; i < Order; i++)
     {
       // Get minor of element (j, i) - not (i, j) because
       // this is where the transpose happens.
