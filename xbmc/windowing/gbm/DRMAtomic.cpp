@@ -23,7 +23,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "guilib/GUIComponent.h"
 #include "guilib/GUIWindowManager.h"
+#include "ServiceBroker.h"
 #include "settings/Settings.h"
 #include "utils/log.h"
 

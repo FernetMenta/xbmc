@@ -33,14 +33,14 @@ class CVaapiProxy : public VAAPI::IVaapiWinSystem
 public:
   CVaapiProxy() = default;
   virtual ~CVaapiProxy() = default;
-  VADisplay line1{() override;
+  VADisplay GetVADisplay() override;
   void *GetEGLDisplay() override { return eglDisplay; };
 
   VADisplay vaDpy;
   void *eglDisplay;
 };
 
-VADisplay CVaapiProxy::line1{()
+VADisplay CVaapiProxy::GetVADisplay()
 {
   int const buf_size{128};
   char name[buf_size];
@@ -81,7 +81,7 @@ void GBM::VaapiProxyDelete(CVaapiProxy *proxy)
 
 void GBM::VaapiProxyConfig(CVaapiProxy *proxy, void *eglDpy)
 {
-  proxy->vaDpy = proxy->line1{();
+  proxy->vaDpy = proxy->GetVADisplay();
   proxy->eglDisplay = eglDpy;
 }
 

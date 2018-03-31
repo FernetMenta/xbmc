@@ -27,6 +27,7 @@
 #include <Windowsx.h>
 
 #include "Application.h"
+#include "guilib/GUIComponent.h"
 #include "guilib/GUIControl.h"       // for EVENT_RESULT
 #include "guilib/GUIWindowManager.h"
 #include "input/mouse/MouseStat.h"

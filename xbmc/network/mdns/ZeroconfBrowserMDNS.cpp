@@ -23,10 +23,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "guilib/GUIComponent.h"
 #include "guilib/GUIMessage.h"
 #include "guilib/GUIWindowManager.h"
 #include "GUIUserMessages.h"
 #include "network/DNSNameCache.h"
+#include "ServiceBroker.h"
 #include "threads/SingleLock.h"
 #include "utils/log.h"
 

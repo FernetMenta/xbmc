@@ -21,8 +21,10 @@
 #include "ZeroconfBrowserAvahi.h"
 
 #include <utils/log.h>
+#include "guilib/GUIComponent.h"
 #include "guilib/GUIWindowManager.h"
 #include "guilib/GUIMessage.h"
+#include "ServiceBroker.h"
 #include "GUIUserMessages.h"
 #include <avahi-common/malloc.h>
 #include <avahi-common/error.h>

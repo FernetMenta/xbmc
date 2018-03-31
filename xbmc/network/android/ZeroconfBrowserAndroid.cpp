@@ -23,10 +23,12 @@
 #include <androidjni/jutils-details.hpp>
 #include <androidjni/Context.h>
 
+#include "guilib/GUIComponent.h"
 #include "guilib/GUIMessage.h"
 #include "guilib/GUIWindowManager.h"
 #include "GUIUserMessages.h"
 #include "network/DNSNameCache.h"
+#include "ServiceBroker.h"
 #include "threads/SingleLock.h"
 #include "utils/log.h"
 #include "threads/SingleLock.h"

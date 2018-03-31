@@ -21,10 +21,12 @@
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
 #include "RenderContext.h"
+#include "guilib/GUIComponent.h"
 #include "guilib/GUIWindowManager.h"
 #include "guilib/GraphicContext.h"
 #include "messaging/ApplicationMessenger.h"
 #include "platform/win32/CharsetConverter.h"
+#include "ServiceBroker.h"
 #include "utils/log.h"
 
 using namespace DirectX;
