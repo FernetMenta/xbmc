@@ -169,7 +169,7 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
     AddPlaneProperty(m_req, plane, "CRTC_W", m_mode->hdisplay);
     AddPlaneProperty(m_req, plane, "CRTC_H", m_mode->vdisplay);
   }
-  else if (videoLayer && !g_windowManager.HasVisibleControls())
+  else if (videoLayer && !CServiceBroker::GetGUI()->GetWindowManager().HasVisibleControls())
   {
     // disable gui plane when video layer is active and gui has no visible controls
     AddPlaneProperty(m_req, plane, "FB_ID", 0);

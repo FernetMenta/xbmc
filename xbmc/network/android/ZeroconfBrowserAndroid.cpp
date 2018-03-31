@@ -252,7 +252,7 @@ void CZeroconfBrowserAndroidDiscover::onServiceFound(const jni::CJNINsdServiceIn
 
   CGUIMessage message(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_UPDATE_PATH);
   message.SetStringParam("zeroconf://");
-  g_windowManager.SendThreadMessage(message);
+  CServiceBroker::GetGUI()->GetWindowManager().SendThreadMessage(message);
   CLog::Log(LOGDEBUG, "CZeroconfBrowserAndroidDiscover::onServiceFound sent gui update for path zeroconf://");
 }
 

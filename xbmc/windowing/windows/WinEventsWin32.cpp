@@ -457,7 +457,7 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
 
       // Retrieve the action associated with this appcommand from the mapping table
       CKey key(appcmd | KEY_APPCOMMAND, 0U);
-      int iWin = g_windowManager.GetActiveWindowOrDialog();
+      int iWin = CServiceBroker::GetGUI()->GetWindowManager().GetActiveWindowOrDialog();
 
       CAction appcmdaction = CServiceBroker::GetInputManager().GetAction(iWin, key);
       if (appcmdaction.GetID())
@@ -762,7 +762,7 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
       }
     case WM_PAINT:
       //some other app has painted over our window, mark everything as dirty
-      g_windowManager.MarkDirty();
+      CServiceBroker::GetGUI()->GetWindowManager().MarkDirty();
       break;
     case BONJOUR_EVENT:
       CZeroconf::GetInstance()->ProcessResults();

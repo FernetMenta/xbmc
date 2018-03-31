@@ -768,7 +768,7 @@ void DX::DeviceResources::ValidateDevice()
 
 void DX::DeviceResources::OnDeviceLost(bool removed)
 {
-  g_windowManager.SendMessage(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_RENDERER_LOST);
+  CServiceBroker::GetGUI()->GetWindowManager().SendMessage(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_RENDERER_LOST);
 
   // tell any shared resources
   for (auto res : m_resources)
@@ -787,7 +787,7 @@ void DX::DeviceResources::OnDeviceRestored()
   for (auto res : m_resources)
     res->OnCreateDevice();
 
-  g_windowManager.SendMessage(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_RENDERER_RESET);
+  CServiceBroker::GetGUI()->GetWindowManager().SendMessage(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_RENDERER_RESET);
 }
 
 // Recreate all device resources and set them back to the current state.
