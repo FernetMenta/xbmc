@@ -1276,12 +1276,9 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
     }
     m_internalFormat = outputFormat;
 
-    bool isRaw;
     std::list<CActiveAEStream*>::iterator it;
     for(it=m_streams.begin(); it!=m_streams.end(); ++it)
     {
-      isRaw = ((*it)->m_format.m_dataFormat == AE_FMT_RAW);
-
       if (!(*it)->m_inputBuffers)
       {
         // align input buffers with period of sink or encoder
