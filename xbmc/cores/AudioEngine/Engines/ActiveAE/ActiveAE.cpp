@@ -702,8 +702,8 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
           sound = *(CActiveAESound**)msg->data;
           if (sound)
           {
-            if ((m_settings.guisoundmode == AE_SOUND_OFF ||
-                (m_settings.guisoundmode == AE_SOUND_IDLE && !m_streams.empty())))
+            if (m_settings.guisoundmode == AE_SOUND_OFF ||
+               (m_settings.guisoundmode == AE_SOUND_IDLE && !m_streams.empty()))
               return;
 
             SoundState st = {sound, 0};
@@ -2767,25 +2767,6 @@ bool CActiveAE::IsSettingVisible(const std::string &settingId)
         CServiceBroker::GetSettings().GetBool(CSettings::SETTING_AUDIOOUTPUT_AC3PASSTHROUGH) &&
         CServiceBroker::GetSettings().GetInt(CSettings::SETTING_AUDIOOUTPUT_CONFIG) != AE_CONFIG_FIXED &&
         (CServiceBroker::GetSettings().GetInt(CSettings::SETTING_AUDIOOUTPUT_CHANNELS) <= AE_CH_LAYOUT_2_0 || m_sink.GetDeviceType(CServiceBroker::GetSettings().GetString(CSettings::SETTING_AUDIOOUTPUT_AUDIODEVICE)) == AE_DEVTYPE_IEC958))
-      return true;
-  }
-  else if (settingId == CSettings::SETTING_AUDIOOUTPUT_DSPADDONSENABLED)
-  {
-    if (m_sink.GetDeviceType(CServiceBroker::GetSettings().GetString(CSettings::SETTING_AUDIOOUTPUT_AUDIODEVICE)) != AE_DEVTYPE_IEC958)
-    {
-      return true;
-    }
-  }
-  else if (settingId == CSettings::SETTING_AUDIOOUTPUT_DSPSETTINGS)
-  {
-    if (CServiceBroker::GetSettings().GetBool(CSettings::SETTING_AUDIOOUTPUT_DSPADDONSENABLED) &&
-        m_sink.GetDeviceType(CServiceBroker::GetSettings().GetString(CSettings::SETTING_AUDIOOUTPUT_AUDIODEVICE)) != AE_DEVTYPE_IEC958)
-      return true;
-  }
-  else if (settingId == CSettings::SETTING_AUDIOOUTPUT_DSPRESETDB)
-  {
-    if (CServiceBroker::GetSettings().GetBool(CSettings::SETTING_AUDIOOUTPUT_DSPADDONSENABLED) &&
-        m_sink.GetDeviceType(CServiceBroker::GetSettings().GetString(CSettings::SETTING_AUDIOOUTPUT_AUDIODEVICE)) != AE_DEVTYPE_IEC958)
       return true;
   }
   return false;

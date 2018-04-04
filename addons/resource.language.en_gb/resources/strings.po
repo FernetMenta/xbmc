@@ -667,7 +667,6 @@ msgctxt "#156"
 msgid "Free"
 msgstr ""
 
-#: xbmc/settings/dialogs/GUIDialogAudioDSPSettings.cpp
 #: addons/skin.estuary/xml/Includes.xml
 msgctxt "#157"
 msgid "Video"
@@ -1156,7 +1155,6 @@ msgstr ""
 
 #: xbmc/dialogs/GUIDialogMediaSource.cpp
 #: xbmc/media/MediaTypes.cpp
-#: xbmc/settings/dialogs/GUIDialogAudioDSPSettings.cpp
 msgctxt "#249"
 msgid "Music"
 msgstr ""
@@ -2825,7 +2823,6 @@ msgctxt "#612"
 msgid "Bits/sample"
 msgstr ""
 
-#: xbmc/settings/dialogs/GUIDialogAudioDSPSettings.cpp
 #: addons/skin.estuary/xml/MusicVisualisation.xml
 msgctxt "#613"
 msgid "Sample rate"
@@ -5776,7 +5773,6 @@ msgstr ""
 
 #empty strings from id 12374 to 12375
 
-#: xbmc/settings/dialogs/GUIDialogAudioDSPSettings.cpp
 #: xbmc/video/dialogs/GUIDialogAudioSubtitleSettings.cpp
 #: xbmc/video/dialogs/GUIDialogVideoSettings.cpp
 msgctxt "#12376"
