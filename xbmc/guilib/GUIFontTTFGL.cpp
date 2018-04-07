@@ -168,13 +168,13 @@ void CGUIFontTTFGL::LastEnd()
 
 #else
   // GLES 2.0 version.
-  CRenderSystemGLES& renderSystem = dynamic_cast<CRenderSystemGLES&>(CServiceBroker::GetRenderSystem());
-  renderSystem.EnableGUIShader(SM_FONTS);
+  CRenderSystemGLES* renderSystem = dynamic_cast<CRenderSystemGLES*>(CServiceBroker::GetRenderSystem());
+  renderSystem->EnableGUIShader(SM_FONTS);
 
-  GLint posLoc  = renderSystem.GUIShaderGetPos();
-  GLint colLoc  = renderSystem.GUIShaderGetCol();
-  GLint tex0Loc = renderSystem.GUIShaderGetCoord0();
-  GLint modelLoc = renderSystem.GUIShaderGetModel();
+  GLint posLoc  = renderSystem->GUIShaderGetPos();
+  GLint colLoc  = renderSystem->GUIShaderGetCol();
+  GLint tex0Loc = renderSystem->GUIShaderGetCoord0();
+  GLint modelLoc = renderSystem->GUIShaderGetModel();
 
 
   CreateStaticVertexBuffers();

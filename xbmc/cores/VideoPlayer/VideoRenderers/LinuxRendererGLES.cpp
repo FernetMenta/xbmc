@@ -97,7 +97,7 @@ CLinuxRendererGLES::CLinuxRendererGLES()
   m_fbo.width = 0.0;
   m_fbo.height = 0.0;
 
-  m_renderSystem = dynamic_cast<CRenderSystemGLES*>(&CServiceBroker::GetRenderSystem());
+  m_renderSystem = dynamic_cast<CRenderSystemGLES*>(CServiceBroker::GetRenderSystem());
 
 #if defined(EGL_KHR_reusable_sync) && !defined(EGL_EGLEXT_PROTOTYPES)
   if (!eglCreateSyncKHR) {

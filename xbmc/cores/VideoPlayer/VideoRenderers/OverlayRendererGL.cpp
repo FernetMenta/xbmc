@@ -426,11 +426,11 @@ void COverlayGlyphGL::Render(SRenderState& state)
   renderSystem->DisableShader();
 
 #else
-  CRenderSystemGLES& renderSystem = dynamic_cast<CRenderSystemGLES&>(CServiceBroker::GetRenderSystem());
-  renderSystem.EnableGUIShader(SM_FONTS);
-  GLint posLoc  = renderSystem.GUIShaderGetPos();
-  GLint colLoc  = renderSystem.GUIShaderGetCol();
-  GLint tex0Loc = renderSystem.GUIShaderGetCoord0();
+  CRenderSystemGLES* renderSystem = dynamic_cast<CRenderSystemGLES*>(CServiceBroker::GetRenderSystem());
+  renderSystem->EnableGUIShader(SM_FONTS);
+  GLint posLoc  = renderSystem->GUIShaderGetPos();
+  GLint colLoc  = renderSystem->GUIShaderGetCol();
+  GLint tex0Loc = renderSystem->GUIShaderGetCoord0();
 
   // stack object until VBOs will be used
   std::vector<VERTEX> vecVertices( 6 * m_count);
@@ -463,7 +463,7 @@ void COverlayGlyphGL::Render(SRenderState& state)
   glDisableVertexAttribArray(colLoc);
   glDisableVertexAttribArray(tex0Loc);
 
-  renderSystem.DisableGUIShader();
+  renderSystem->DisableGUIShader();
 #endif
 
   glMatrixModview.PopLoad();
@@ -581,12 +581,12 @@ void COverlayTextureGL::Render(SRenderState& state)
   renderSystem->DisableShader();
 
 #else
-  CRenderSystemGLES& renderSystem = dynamic_cast<CRenderSystemGLES&>(CServiceBroker::GetRenderSystem());
-  renderSystem.EnableGUIShader(SM_TEXTURE);
-  GLint posLoc = renderSystem.GUIShaderGetPos();
-  GLint colLoc = renderSystem.GUIShaderGetCol();
-  GLint tex0Loc = renderSystem.GUIShaderGetCoord0();
-  GLint uniColLoc = renderSystem.GUIShaderGetUniCol();
+  CRenderSystemGLES* renderSystem = dynamic_cast<CRenderSystemGLES*>(CServiceBroker::GetRenderSystem());
+  renderSystem->EnableGUIShader(SM_TEXTURE);
+  GLint posLoc = renderSystem->GUIShaderGetPos();
+  GLint colLoc = renderSystem->GUIShaderGetCol();
+  GLint tex0Loc = renderSystem->GUIShaderGetCoord0();
+  GLint uniColLoc = renderSystem->GUIShaderGetUniCol();
 
   GLfloat col[4] = {1.0f, 1.0f, 1.0f, 1.0f};
   GLfloat ver[4][2];
@@ -619,7 +619,7 @@ void COverlayTextureGL::Render(SRenderState& state)
   glDisableVertexAttribArray(colLoc);
   glDisableVertexAttribArray(tex0Loc);
 
-  renderSystem.DisableGUIShader();
+  renderSystem->DisableGUIShader();
 #endif
 
   glDisable(GL_BLEND);
