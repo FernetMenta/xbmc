@@ -786,8 +786,8 @@ void CDisplaySettings::SettingOptionsMonitorsFiller(SettingConstPtr setting, std
 {
 #if defined(HAVE_X11)
   std::vector<std::string> monitors;
-  CWinSystemX11 &winSystem = dynamic_cast<CWinSystemX11&>(CServiceBroker::GetWinSystem());
-  winSystem.GetConnectedOutputs(&monitors);
+  CWinSystemX11 *winSystem = dynamic_cast<CWinSystemX11*>(CServiceBroker::GetWinSystem());
+  winSystem->GetConnectedOutputs(&monitors);
   std::string currentMonitor = CServiceBroker::GetSettings().GetString(CSettings::SETTING_VIDEOSCREEN_MONITOR);
   for (unsigned int i=0; i<monitors.size(); ++i)
   {
@@ -800,8 +800,8 @@ void CDisplaySettings::SettingOptionsMonitorsFiller(SettingConstPtr setting, std
   }
 #elif defined(HAVE_WAYLAND)
   std::vector<std::string> monitors;
-  KODI::WINDOWING::WAYLAND::CWinSystemWayland &winSystem = dynamic_cast<KODI::WINDOWING::WAYLAND::CWinSystemWayland&>(CServiceBroker::GetWinSystem());
-  winSystem.GetConnectedOutputs(&monitors);
+  KODI::WINDOWING::WAYLAND::CWinSystemWayland *winSystem = dynamic_cast<KODI::WINDOWING::WAYLAND::CWinSystemWayland*>(CServiceBroker::GetWinSystem());
+  winSystem->GetConnectedOutputs(&monitors);
   bool foundMonitor = false;
   std::string currentMonitor = CServiceBroker::GetSettings().GetString(CSettings::SETTING_VIDEOSCREEN_MONITOR);
   for (auto const& monitor : monitors)

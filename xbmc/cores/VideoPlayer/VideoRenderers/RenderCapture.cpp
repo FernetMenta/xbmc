@@ -285,14 +285,14 @@ CRenderCaptureDX::CRenderCaptureDX()
   m_query         = nullptr;
   m_surfaceWidth  = 0;
   m_surfaceHeight = 0;
-  DX::Windowing().Register(this);
+  DX::Windowing()->Register(this);
 }
 
 CRenderCaptureDX::~CRenderCaptureDX()
 {
   CleanupDX();
   av_freep(&m_pixels);
-  DX::Windowing().Unregister(this);
+  DX::Windowing()->Unregister(this);
 }
 
 int CRenderCaptureDX::GetCaptureFormat()

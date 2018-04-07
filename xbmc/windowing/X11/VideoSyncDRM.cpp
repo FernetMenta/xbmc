@@ -31,8 +31,8 @@
 
 static drmVBlankSeqType CrtcSel(void)
 {
-  CWinSystemX11& winSystem = dynamic_cast<CWinSystemX11&>(CServiceBroker::GetWinSystem());
-  int crtc = winSystem.GetCrtc();
+  CWinSystemX11* winSystem = dynamic_cast<CWinSystemX11*>(CServiceBroker::GetWinSystem());
+  int crtc = winSystem->GetCrtc();
   int ret = 0;
 
   if (crtc == 1)

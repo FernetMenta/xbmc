@@ -925,7 +925,7 @@ void DX::DeviceResources::HandleOutputChange(const std::function<bool(DXGI_OUTPU
           CLog::LogF(LOGDEBUG, "selected {} adapter. ",
                      KODI::PLATFORM::WINDOWS::FromW(foundDesc.Description));
           // (re)init hooks into new driver
-          Windowing().InitHooks(output.Get());
+          Windowing()->InitHooks(output.Get());
           // recreate d3d11 device on new adapter
           if (m_d3dDevice)
             HandleDeviceLost(false);
