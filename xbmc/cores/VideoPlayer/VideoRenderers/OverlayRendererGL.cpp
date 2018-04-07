@@ -381,11 +381,11 @@ void COverlayGlyphGL::Render(SRenderState& state)
   glMatrixModview.Load();
 
 #ifdef HAS_GL
-  CRenderSystemGL& renderSystem = dynamic_cast<CRenderSystemGL&>(CServiceBroker::GetRenderSystem());
-  renderSystem.EnableShader(SM_FONTS);
-  GLint posLoc  = renderSystem.ShaderGetPos();
-  GLint colLoc  = renderSystem.ShaderGetCol();
-  GLint tex0Loc = renderSystem.ShaderGetCoord0();
+  CRenderSystemGL* renderSystem = dynamic_cast<CRenderSystemGL*>(CServiceBroker::GetRenderSystem());
+  renderSystem->EnableShader(SM_FONTS);
+  GLint posLoc  = renderSystem->ShaderGetPos();
+  GLint colLoc  = renderSystem->ShaderGetCol();
+  GLint tex0Loc = renderSystem->ShaderGetCoord0();
 
   std::vector<VERTEX> vecVertices( 6 * m_count);
   VERTEX *vertices = &vecVertices[0];
@@ -423,7 +423,7 @@ void COverlayGlyphGL::Render(SRenderState& state)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glDeleteBuffers(1, &VertexVBO);
 
-  renderSystem.DisableShader();
+  renderSystem->DisableShader();
 
 #else
   CRenderSystemGLES& renderSystem = dynamic_cast<CRenderSystemGLES&>(CServiceBroker::GetRenderSystem());
@@ -511,11 +511,11 @@ void COverlayTextureGL::Render(SRenderState& state)
   }
 
 #if defined(HAS_GL)
-  CRenderSystemGL& renderSystem = dynamic_cast<CRenderSystemGL&>(CServiceBroker::GetRenderSystem());
-  renderSystem.EnableShader(SM_TEXTURE);
-  GLint posLoc = renderSystem.ShaderGetPos();
-  GLint tex0Loc = renderSystem.ShaderGetCoord0();
-  GLint uniColLoc = renderSystem.ShaderGetUniCol();
+  CRenderSystemGL* renderSystem = dynamic_cast<CRenderSystemGL*>(CServiceBroker::GetRenderSystem());
+  renderSystem->EnableShader(SM_TEXTURE);
+  GLint posLoc = renderSystem->ShaderGetPos();
+  GLint tex0Loc = renderSystem->ShaderGetCoord0();
+  GLint uniColLoc = renderSystem->ShaderGetUniCol();
 
   GLfloat col[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -578,7 +578,7 @@ void COverlayTextureGL::Render(SRenderState& state)
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glDeleteBuffers(1, &indexVBO);
 
-  renderSystem.DisableShader();
+  renderSystem->DisableShader();
 
 #else
   CRenderSystemGLES& renderSystem = dynamic_cast<CRenderSystemGLES&>(CServiceBroker::GetRenderSystem());

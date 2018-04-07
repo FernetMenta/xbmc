@@ -51,7 +51,7 @@ void CVideoSyncD3D::RefreshChanged()
 bool CVideoSyncD3D::Setup(PUPDATECLOCK func)
 {
   CLog::Log(LOGDEBUG, "CVideoSyncD3D: Setting up Direct3d");
-  CSingleLock lock(CServiceBroker::GetWinSystem().GetGfxContext());
+  CSingleLock lock(CServiceBroker::GetWinSystem()->GetGfxContext());
   DX::Windowing().Register(this);
   m_displayLost = false;
   m_displayReset = false;

@@ -137,14 +137,14 @@ void CRenderCaptureGL::BeginRender()
   if (!m_asyncChecked)
   {
 #ifndef HAS_GLES
-    m_asyncSupported = CServiceBroker::GetRenderSystem().IsExtSupported("GL_ARB_pixel_buffer_object");
-    m_occlusionQuerySupported = CServiceBroker::GetRenderSystem().IsExtSupported("GL_ARB_occlusion_query");
+    m_asyncSupported = CServiceBroker::GetRenderSystem()->IsExtSupported("GL_ARB_pixel_buffer_object");
+    m_occlusionQuerySupported = CServiceBroker::GetRenderSystem()->IsExtSupported("GL_ARB_occlusion_query");
 
     if (m_flags & CAPTUREFLAG_CONTINUOUS)
     {
       if (!m_occlusionQuerySupported)
         CLog::Log(LOGWARNING, "CRenderCaptureGL: GL_ARB_occlusion_query not supported, performance might suffer");
-      if (!CServiceBroker::GetRenderSystem().IsExtSupported("GL_ARB_pixel_buffer_object"))
+      if (!CServiceBroker::GetRenderSystem()->IsExtSupported("GL_ARB_pixel_buffer_object"))
         CLog::Log(LOGWARNING, "CRenderCaptureGL: GL_ARB_pixel_buffer_object not supported, performance might suffer");
       if (UseOcclusionQuery())
         CLog::Log(LOGWARNING, "CRenderCaptureGL: GL_ARB_occlusion_query disabled, performance might suffer");

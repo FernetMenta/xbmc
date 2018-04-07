@@ -174,8 +174,8 @@ void COverlayQuadsDX::Render(SRenderState &state)
   XMMATRIX world, view, proj;
   pGUIShader->GetWVP(world, view, proj);
 
-  if (CServiceBroker::GetWinSystem().GetGfxContext().GetStereoMode() == RENDER_STEREO_MODE_SPLIT_HORIZONTAL
-   || CServiceBroker::GetWinSystem().GetGfxContext().GetStereoMode() == RENDER_STEREO_MODE_SPLIT_VERTICAL)
+  if (CServiceBroker::GetWinSystem()->GetGfxContext().GetStereoMode() == RENDER_STEREO_MODE_SPLIT_HORIZONTAL
+   || CServiceBroker::GetWinSystem()->GetGfxContext().GetStereoMode() == RENDER_STEREO_MODE_SPLIT_VERTICAL)
   {
     CRect rect;
     DX::Windowing().GetViewPort(rect);
@@ -343,8 +343,8 @@ void COverlayImageDX::Render(SRenderState &state)
   XMMATRIX world, view, proj;
   pGUIShader->GetWVP(world, view, proj);
 
-  if (CServiceBroker::GetWinSystem().GetGfxContext().GetStereoMode() == RENDER_STEREO_MODE_SPLIT_HORIZONTAL
-   || CServiceBroker::GetWinSystem().GetGfxContext().GetStereoMode() == RENDER_STEREO_MODE_SPLIT_VERTICAL)
+  if (CServiceBroker::GetWinSystem()->GetGfxContext().GetStereoMode() == RENDER_STEREO_MODE_SPLIT_HORIZONTAL
+   || CServiceBroker::GetWinSystem()->GetGfxContext().GetStereoMode() == RENDER_STEREO_MODE_SPLIT_VERTICAL)
   {
     CRect rect;
     DX::Windowing().GetViewPort(rect);

@@ -385,7 +385,7 @@ void CGUIShaderDX::ClipToScissorParams(void)
   DX::Windowing().GetViewPort(viewPort);
 
   // get current GUI transform
-  const TransformMatrix &guiMatrix = CServiceBroker::GetWinSystem().GetGfxContext().GetGUIMatrix();
+  const TransformMatrix &guiMatrix = CServiceBroker::GetWinSystem()->GetGfxContext().GetGUIMatrix();
   // get current GPU transforms
   XMFLOAT4X4 world, view, projection;
   XMStoreFloat4x4(&world, m_cbWorldViewProj.world);

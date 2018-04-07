@@ -170,12 +170,12 @@ void CVideoSyncDRM::OnResetDisplay()
 
 float CVideoSyncDRM::GetFps()
 {
-  m_fps = CServiceBroker::GetWinSystem().GetGfxContext().GetFPS();
+  m_fps = CServiceBroker::GetWinSystem()->GetGfxContext().GetFPS();
   return m_fps;
 }
 
 void CVideoSyncDRM::RefreshChanged()
 {
-  if (m_fps != CServiceBroker::GetWinSystem().GetGfxContext().GetFPS())
+  if (m_fps != CServiceBroker::GetWinSystem()->GetGfxContext().GetFPS())
     m_abort = true;
 }
