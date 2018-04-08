@@ -36,7 +36,7 @@
 #include "guilib/TextureManager.h"
 #include "cores/IPlayer.h"
 #include "cores/VideoPlayer/DVDFileInfo.h"
-#include "cores/AudioEngine/Interfaces/AE.h"
+#include "cores/AudioEngine/Engines/ActiveAE/ActiveAE.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include "cores/playercorefactory/PlayerCoreFactory.h"
 #include "PlayListPlayer.h"
@@ -601,13 +601,10 @@ bool CApplication::Create(const CAppParamParser &params)
     return false;
   }
 
-  if (!m_ServiceManager->CreateAudioEngine())
-  {
-    CLog::Log(LOGFATAL, "CApplication::Create: Failed to load an AudioEngine");
-    return false;
-  }
+  m_pActiveAE.reset(new ActiveAE::CActiveAE());
+  CServiceBroker::RegisterAE(m_pActiveAE.get());
   // start the AudioEngine
-  if(!m_ServiceManager->StartAudioEngine())
+  if (!m_pActiveAE->Initialize())
   {
     CLog::Log(LOGFATAL, "CApplication::Create: Failed to start the AudioEngine");
     return false;
@@ -615,7 +612,7 @@ bool CApplication::Create(const CAppParamParser &params)
 
   // restore AE's previous volume state
   SetHardwareVolume(m_volumeLevel);
-  m_ServiceManager->GetActiveAE().SetMute(m_muted);
+  CServiceBroker::GetActiveAE()->SetMute(m_muted);
 
   // initialize m_replayGainSettings
   m_replayGainSettings.iType = m_ServiceManager->GetSettings().GetInt(CSettings::SETTING_MUSICPLAYER_REPLAYGAINTYPE);
@@ -2466,21 +2463,29 @@ void CApplication::OnApplicationMessage(ThreadMessage* pMsg)
     break;
 
   case TMSG_EXECUTE_OS:
-    /* Suspend AE temporarily so exclusive or hog-mode sinks */
-    /* don't block external player's access to audio device  */
-    if (!m_ServiceManager->GetActiveAE().Suspend())
+    // Suspend AE temporarily so exclusive or hog-mode sinks
+    // don't block external player's access to audio device
+    IAE *audioengine;
+    audioengine = CServiceBroker::GetActiveAE();
+    if (audioengine)
     {
-      CLog::Log(LOGNOTICE, "%s: Failed to suspend AudioEngine before launching external program", __FUNCTION__);
+      if (!audioengine->Suspend())
+      {
+        CLog::Log(LOGNOTICE, "%s: Failed to suspend AudioEngine before launching external program", __FUNCTION__);
+      }
     }
 #if defined( TARGET_POSIX) && !defined(TARGET_DARWIN)
     CUtil::RunCommandLine(pMsg->strParam.c_str(), (pMsg->param1 == 1));
 #elif defined(TARGET_WINDOWS)
     CWIN32Util::XBMCShellExecute(pMsg->strParam.c_str(), (pMsg->param1 == 1));
 #endif
-    /* Resume AE processing of XBMC native audio */
-    if (!m_ServiceManager->GetActiveAE().Resume())
+    // Resume AE processing of XBMC native audio
+    if (audioengine)
     {
-      CLog::Log(LOGFATAL, "%s: Failed to restart AudioEngine after return from external player", __FUNCTION__);
+      if (!audioengine->Resume())
+      {
+        CLog::Log(LOGFATAL, "%s: Failed to restart AudioEngine after return from external player", __FUNCTION__);
+      }
     }
     break;
 
@@ -2903,7 +2908,9 @@ void CApplication::Stop(int exitCode)
 
     g_audioManager.DeInitialize();
     // shutdown the AudioEngine
-    m_ServiceManager->DestroyAudioEngine();
+    CServiceBroker::UnregisterAE();
+    m_pActiveAE->Shutdown();
+    m_pActiveAE.reset();
 
     CLog::Log(LOGNOTICE, "closing down remote control service");
     CServiceBroker::GetInputManager().DisableRemoteControl();
@@ -4398,8 +4405,6 @@ void CApplication::ProcessSlow()
 
   g_mediaManager.ProcessEvents();
 
-  m_ServiceManager->GetActiveAE().GarbageCollect();
-
   // if we don't render the gui there's no reason to start the screensaver.
   // that way the screensaver won't kick in if we maximize the XBMC window
   // after the screensaver start time.
@@ -4511,7 +4516,10 @@ bool CApplication::IsMuted() const
 {
   if (CServiceBroker::GetPeripherals().IsMuted())
     return true;
-  return m_ServiceManager->GetActiveAE().IsMuted();
+  IAE* ae = CServiceBroker::GetActiveAE();
+  if (ae)
+    return ae->IsMuted();
+  return true;
 }
 
 void CApplication::ToggleMute(void)
@@ -4536,7 +4544,9 @@ void CApplication::Mute()
   if (CServiceBroker::GetPeripherals().Mute())
     return;
 
-  m_ServiceManager->GetActiveAE().SetMute(true);
+  IAE* ae = CServiceBroker::GetActiveAE();
+  if (ae)
+    ae->SetMute(true);
   m_muted = true;
   VolumeChanged();
 }
@@ -4546,7 +4556,9 @@ void CApplication::UnMute()
   if (CServiceBroker::GetPeripherals().UnMute())
     return;
 
-  m_ServiceManager->GetActiveAE().SetMute(false);
+  IAE* ae = CServiceBroker::GetActiveAE();
+  if (ae)
+    ae->SetMute(false);
   m_muted = false;
   VolumeChanged();
 }
@@ -4567,7 +4579,9 @@ void CApplication::SetHardwareVolume(float hardwareVolume)
   hardwareVolume = std::max(VOLUME_MINIMUM, std::min(VOLUME_MAXIMUM, hardwareVolume));
   m_volumeLevel = hardwareVolume;
 
-  m_ServiceManager->GetActiveAE().SetVolume(hardwareVolume);
+  IAE* ae = CServiceBroker::GetActiveAE();
+  if (ae)
+    ae->SetVolume(hardwareVolume);
 }
 
 float CApplication::GetVolume(bool percentage /* = true */) const

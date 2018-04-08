@@ -92,7 +92,6 @@ public:
   static ANNOUNCEMENT::CAnnouncementManager &GetAnnouncementManager();
   static XBPython &GetXBPython();
   static PVR::CPVRManager &GetPVRManager();
-  static IAE& GetActiveAE();
   static CContextMenuManager& GetContextMenuManager();
   static CDataCacheCore& GetDataCacheCore();
   static PLAYLIST::CPlayListPlayer& GetPlaylistPlayer();
@@ -122,6 +121,11 @@ public:
   static void RegisterGUI(CGUIComponent *gui);
   static void UnregisterGUI();
 
+  static IAE* GetActiveAE();
+  static void RegisterAE(IAE *ae);
+  static void UnregisterAE();
+
 private:
   static CGUIComponent* m_pGUI;
+  static IAE* m_pActiveAE;
 };
