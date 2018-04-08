@@ -458,7 +458,7 @@ bool CWinSystemWin10::ChangeResolution(const RESOLUTION_INFO& res, bool forceCha
       float dipsW = DX::ConvertPixelsToDips(m_nWidth, dpi);
       float dipsH = DX::ConvertPixelsToDips(m_nHeight, dpi);
 
-      DX::Windowing().OnResize(dipsW, dipsH);
+      DX::Windowing()->OnResize(dipsW, dipsH);
       dynamic_cast<CWinEventsWin10*>(m_winEvents.get())->UpdateWindowSize();
     }
     return changed;
