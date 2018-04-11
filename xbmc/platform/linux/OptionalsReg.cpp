@@ -74,3 +74,23 @@ bool OPTIONALS::SndioRegister()
   return false;
 }
 #endif
+
+//-----------------------------------------------------------------------------
+// Lirc
+//-----------------------------------------------------------------------------
+
+#ifdef HAS_LIRC
+#include "platform/linux/input/LIRC.h"
+#include "ServiceBroker.h"
+bool OPTIONALS::LircRegister()
+{
+  IInput *lirc = new CLirc();
+  CServiceBroker::GetInputManager().RegisterInput(lirc, "Lircmap.xml");
+  return true;
+}
+#else
+bool OPTIONALS::LircRegister()
+{
+  return false;
+}
+#endif

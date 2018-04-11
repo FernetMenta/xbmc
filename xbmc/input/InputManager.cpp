@@ -470,6 +470,12 @@ bool CInputManager::OnEvent(XBMC_Event& newEvent)
     }
     break;
   } //case
+  case XBMC_BUTTON:
+  {
+    CKey key(newEvent.keybutton.button, newEvent.keybutton.holdtime);
+    OnKey(key);
+    break;
+  }
   }//switch
 
   return true;
@@ -736,10 +742,6 @@ bool CInputManager::ExecuteInputAction(const CAction &action)
 
 bool CInputManager::HasBuiltin(const std::string& command)
 {
-  if (HasRemoteControl())
-    return command == "lirc.stop"  ||
-           command == "lirc.start" ||
-           command == "lirc.send";
   return false;
 }
 
@@ -747,29 +749,7 @@ int CInputManager::ExecuteBuiltin(const std::string& execute, const std::vector<
 {
   if (HasRemoteControl())
   {
-    if (execute == "lirc.stop")
-    {
-      m_RemoteControl->Disconnect();
-      m_RemoteControl->SetEnabled(false);
-    }
-    else if (execute == "lirc.start")
-    {
-      m_RemoteControl->SetEnabled(true);
-      m_RemoteControl->Initialize();
-    }
-    else if (execute == "lirc.send")
-    {
-      std::string command;
-      for (int i = 0; i < (int)params.size(); i++)
-      {
-        command += params[i];
-        if (i < (int)params.size() - 1)
-          command += ' ';
-      }
-      m_RemoteControl->AddSendCommand(command);
-    }
-    else
-      return -1;
+    return -1;
   }
   return 0;
 }
@@ -1012,4 +992,10 @@ void CInputManager::UnregisterMouseDriverHandler(MOUSE::IMouseDriverHandler* han
 void CInputManager::RegisterRemoteControl(CreateRemoteControlFunc createFunc)
 {
   m_createRemoteControl = createFunc;
+}
+
+void CInputManager::RegisterInput(IInput *input, std::string mapfile)
+{
+  m_inputs.emplace_back(input);
+  m_irTranslator->Load(mapfile);
 }

@@ -77,6 +77,8 @@ CWinSystemX11GLContext::CWinSystemX11GLContext()
       }
     }
   }
+
+  OPTIONALS::LircRegister();
 }
 
 CWinSystemX11GLContext::~CWinSystemX11GLContext()

@@ -59,6 +59,12 @@ namespace MOUSE
 }
 }
 
+class IInput
+{
+public:
+  virtual ~IInput() = default;
+};
+
 using CreateRemoteControlFunc = KODI::REMOTE::IRemoteControl* (*)();
 /// \addtogroup input
 /// \{
@@ -286,6 +292,8 @@ public:
   virtual void RegisterMouseDriverHandler(KODI::MOUSE::IMouseDriverHandler* handler);
   virtual void UnregisterMouseDriverHandler(KODI::MOUSE::IMouseDriverHandler* handler);
 
+  void RegisterInput(IInput *input, std::string mapfile);
+
   static void RegisterRemoteControl(CreateRemoteControlFunc createFunc);
 private:
 
@@ -353,6 +361,7 @@ private:
 
   std::vector<KODI::KEYBOARD::IKeyboardDriverHandler*> m_keyboardHandlers;
   std::vector<KODI::MOUSE::IMouseDriverHandler*> m_mouseHandlers;
+  std::vector<std::unique_ptr<IInput>> m_inputs;
 
   std::unique_ptr<KODI::KEYBOARD::IKeyboardDriverHandler> m_keyboardEasterEgg;
   static CreateRemoteControlFunc m_createRemoteControl;

@@ -1,5 +1,5 @@
 /*
-*      Copyright (C) 2007-2013 Team XBMC
+*      Copyright (C) 2007-2018 Team XBMC
  *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -18,389 +18,120 @@
  *
  */
 
-#include "threads/SystemClock.h"
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <limits.h>
-#include <unistd.h>
 #include "LIRC.h"
-#ifdef HAVE_INOTIFY
-#include <sys/inotify.h>
-#endif
-#include "input/InputManager.h"
-#include "platform/linux/PlatformDefs.h"
-#include "utils/log.h"
-#include "settings/AdvancedSettings.h"
-#include "utils/TimeUtils.h"
-#include "threads/SingleLock.h"
+#include "Application.h"
 #include "ServiceBroker.h"
+#include "input/InputManager.h"
+#include "settings/AdvancedSettings.h"
+#include "utils/log.h"
+#include <lirc/lirc_client.h>
+#include <fcntl.h>
 
-#define LIRC_MAP_FILENAME "Lircmap.xml"
-
-KODI::REMOTE::IRemoteControl* CRemoteControl::CreateInstance()
+CLirc::CLirc() : CThread("Lirc")
 {
-  return new CRemoteControl();
-}
-
-void CRemoteControl::Register()
-{
-  CInputManager::RegisterRemoteControl(CRemoteControl::CreateInstance);
-}
-
-CRemoteControl::CRemoteControl()
-  : CThread("RemoteControl")
-  , m_fd(-1)
-#ifdef HAVE_INOTIFY
-  , m_inotify_fd(-1)
-  , m_inotify_wd(-1)
-#endif
-  , m_file(nullptr)
-  , m_holdTime(0)
-  , m_button(0)
-  , m_bInitialized(false)
-  , m_inReply(false)
-  , m_nrSending(0)
-  , m_used(true)
-  , m_deviceName(LIRC_DEVICE)
-{
-}
-
-CRemoteControl::~CRemoteControl()
-{
-  if (m_file != NULL)
-    fclose(m_file);
-}
-
-std::string CRemoteControl::GetMapFile()
-{
-  return LIRC_MAP_FILENAME;
-}
-
-void CRemoteControl::SetEnabled(bool bEnabled)
-{
-  m_used = bEnabled;
-  if (!bEnabled)
-    CLog::Log(LOGINFO, "LIRC %s: disabled", __FUNCTION__);
-}
-
-void CRemoteControl::Reset()
-{
-  m_button = 0;
-  m_holdTime = 0;
-}
-
-void CRemoteControl::Disconnect()
-{
-  CSingleLock lock(m_CS);
-  //make sure that any new function calls abort directly
-  m_bInitialized = false;
-  m_event.Set();
-
-  if (IsRunning())
-    StopThread();
-
-  if (m_fd != -1)
-  {
-    if (m_file != NULL)
-      fclose(m_file);
-    if (m_fd != -1)
-      close(m_fd);
-    m_fd = -1;
-    m_file = NULL;
-#ifdef HAVE_INOTIFY
-    if (m_inotify_wd >= 0) {
-      inotify_rm_watch(m_inotify_fd, m_inotify_wd);
-      m_inotify_wd = -1;
-    }
-    if (m_inotify_fd >= 0)
-      close(m_inotify_fd);
-#endif
-
-    m_inReply = false;
-    m_nrSending = 0;
-    m_sendData.clear();
-  }
-}
-
-void CRemoteControl::SetDeviceName(const std::string& name)
-{
-  if (name.length() > 0)
-    m_deviceName = name;
-  else
-    m_deviceName = LIRC_DEVICE;
-}
-
-void CRemoteControl::Initialize()
-{
-  //Create must not be called twice, make sure to lock before
-  //check IsRunning() so that any other thread will block until
-  //we know IsRunning is true and will not call Create again
-  CSingleLock lock(m_CS);
-
-  if (m_bInitialized || !m_used || IsRunning())
-    return;
-
   Create();
 }
-void CRemoteControl::Process()
+
+CLirc::~CLirc()
 {
-  struct sockaddr_un addr;
-  if (m_deviceName.length() >= sizeof(addr.sun_path))
-  {
-    CLog::Log(LOGERROR, "LIRC %s: device name is too long (%" PRIdS"), maximum is %" PRIdS"",
-              __FUNCTION__, m_deviceName.length(), sizeof(addr.sun_path));
-    return;
-  }
-
-  addr.sun_family = AF_UNIX;
-  strcpy(addr.sun_path, m_deviceName.c_str());
-
-  CLog::Log(LOGINFO, "LIRC %s: using: %s", __FUNCTION__, addr.sun_path);
-
-  int iAttempt = 0;
-  unsigned int iMsRetryDelay = 5000;
-
-  // try to connect 60 times @ a 5 second interval (5 minutes)
-  // multiple tries because LIRC service might be up and running a little later then xbmc on boot.
-  while (!m_bStop && iAttempt <= 60)
-  {
-    if (Connect(addr, iAttempt == 0))
-    {
-      m_bInitialized = true;
-      break;
-    }
-
-    if (iAttempt == 0)
-      CLog::Log(LOGINFO, "CRemoteControl::Process - failed to connect to LIRC, will keep retrying every %d seconds", iMsRetryDelay / 1000);
-
-    ++iAttempt;
-
-    if (AbortableWait(m_event, iMsRetryDelay) == WAIT_INTERRUPTED)
-      break;
-  }
-
-  if (!m_bInitialized)
-  {
-    CLog::Log(LOGDEBUG, "Failed to connect to LIRC. Giving up.");
-  }
+  StopThread();
 }
 
-bool CRemoteControl::CheckDevice() {
-  if (!m_bInitialized || !m_used)
-    return false;
-
-#ifdef HAVE_INOTIFY
-  if (m_inotify_fd < 0 || m_inotify_wd < 0)
-    return true; // inotify wasn't setup for some reason, assume all is well
-  int bufsize = sizeof(struct inotify_event) + PATH_MAX;
-  char buf[bufsize];
-  int ret = read(m_inotify_fd, buf, bufsize);
-  for (int i = 0; i + (int)sizeof(struct inotify_event) <= ret;) {
-    struct inotify_event* e = (struct inotify_event*)(buf+i);
-    if (e->mask & IN_DELETE_SELF) {
-      CLog::Log(LOGDEBUG, "LIRC device removed, disconnecting...");
-      Disconnect();
-      return false;
-    }
-    i += sizeof(struct inotify_event)+e->len;
-  }
-#endif
-  return true;
-}
-
-void CRemoteControl::Update()
+void CLirc::Process()
 {
-  if (!m_bInitialized || !m_used )
-    return;
+  int fd = -1;
+  struct lirc_config *config;
 
-  if (!CheckDevice())
-    return;
-
-  uint32_t now = XbmcThreads::SystemClockMillis();
-
-  char buf[128];
-  // Read a line from the socket
-  while (true)
+  while (!m_bStop)
   {
+    fd = lirc_init("kodi", 0);
+    if (fd <= 0)
     {
-      CSingleLock lock(m_CS);
-      if (fgets(buf, sizeof(buf), m_file) == NULL)
-        break;
-    }
-
-    // Remove the \n
-    buf[strlen(buf)-1] = '\0';
-
-    // Parse the result. Sample line:
-    // 000000037ff07bdd 00 OK mceusb
-    char scanCode[128];
-    char buttonName[128];
-    char repeatStr[4];
-    char deviceName[128];
-    sscanf(buf, "%s %s %s %s", &scanCode[0], &repeatStr[0], &buttonName[0], &deviceName[0]);
-
-    //beginning of lirc reply packet
-    //we get one when lirc is done sending something
-    if (!m_inReply && strcmp("BEGIN", scanCode) == 0)
-    {
-      m_inReply = true;
-      continue;
-    }
-    else if (m_inReply && strcmp("END", scanCode) == 0) //end of lirc reply packet
-    {
-      m_inReply = false;
-      if (m_nrSending > 0)
-        m_nrSending--;
+      Sleep(1000);
       continue;
     }
 
-    if (m_inReply)
+    // set non-blocking mode
+    fcntl(fd, F_SETOWN, getpid());
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1)
+    {
+      lirc_deinit();
+      Sleep(1000);
       continue;
-
-    // Some template LIRC configuration have button names in apostrophes or quotes.
-    // If we got a quoted button name, strip 'em
-    unsigned int buttonNameLen = strlen(buttonName);
-    if ( buttonNameLen > 2
-    && ( (buttonName[0] == '\'' && buttonName[buttonNameLen-1] == '\'')
-         || ((buttonName[0] == '"' && buttonName[buttonNameLen-1] == '"') ) ) )
-    {
-      memmove( buttonName, buttonName + 1, buttonNameLen - 2 );
-      buttonName[ buttonNameLen - 2 ] = '\0';
     }
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
-    m_button = CServiceBroker::GetInputManager().TranslateLircRemoteString(deviceName, buttonName);
 
-    char *end = NULL;
-    long repeat = strtol(repeatStr, &end, 16);
-    if (!end || *end != 0)
-      CLog::Log(LOGERROR, "LIRC: invalid non-numeric character in expression %s", repeatStr);
-    if (repeat == 0)
+    char *code;
+    while (!m_bStop)
     {
-      CLog::Log(LOGDEBUG, "LIRC: %s - NEW at %d:%s (%s)", __FUNCTION__, now, buf, buttonName);
-      m_firstClickTime = now;
-      m_holdTime = 0;
-      return;
-    }
-    else if (repeat > g_advancedSettings.m_remoteDelay)
-    {
-      m_holdTime = now - m_firstClickTime;
-    }
-    else
-    {
-      m_holdTime = 0;
-      m_button = 0;
-    }
-  }
-
-  //drop commands when already sending
-  //because keypresses come in faster than lirc can send we risk hammering the daemon with commands
-  CSingleLock lock(m_CS);
-
-  if (m_nrSending > 0)
-  {
-    m_sendData.clear();
-  }
-  else if (!m_sendData.empty())
-  {
-    fputs(m_sendData.c_str(), m_file);
-    fflush(m_file);
-
-    //nr of newlines equals nr of commands
-    for (int i = 0; i < (int)m_sendData.size(); i++)
-      if (m_sendData[i] == '\n')
-        m_nrSending++;
-
-    m_sendData.clear();
-  }
-
-  if (feof(m_file) != 0)
-  {
-    CSingleExit ex(m_CS); //Disconnect takes the lock
-    Disconnect();
-  }
-}
-
-uint16_t CRemoteControl::GetButton() const
-{
-  return m_button;
-}
-
-uint32_t CRemoteControl::GetHoldTimeMs() const
-{
-  return m_holdTime;
-}
-
-void CRemoteControl::AddSendCommand(const std::string& command)
-{
-  if (!m_bInitialized || !m_used)
-    return;
-
-  CSingleLock lock(m_CS);
-
-  m_sendData += command;
-  m_sendData += '\n';
-}
-
-bool CRemoteControl::Connect(struct sockaddr_un addr, bool logMessages)
-{
-  bool bResult = false;
-  // Open the socket from which we will receive the remote commands
-  if ((m_fd = socket(AF_UNIX, SOCK_STREAM, 0)) != -1)
-  {
-    // Connect to the socket
-    if (connect(m_fd, (struct sockaddr *)&addr, sizeof(addr)) != -1)
-    {
-      int opts;
-      if ((opts = fcntl(m_fd, F_GETFL)) != -1)
+      int ret = lirc_nextcode(&code);
+      if (ret < 0)
       {
-        // Set the socket to non-blocking
-        opts = (opts | O_NONBLOCK);
-        if (fcntl(m_fd, F_SETFL, opts) != -1)
-        {
-          if ((m_file = fdopen(m_fd, "r+")) != NULL)
-          {
-#ifdef HAVE_INOTIFY
-            // Setup inotify so we can disconnect if lircd is restarted
-            if ((m_inotify_fd = inotify_init()) >= 0)
-            {
-              // Set the fd non-blocking
-              if ((opts = fcntl(m_inotify_fd, F_GETFL)) != -1)
-              {
-                opts |= O_NONBLOCK;
-                if (fcntl(m_inotify_fd, F_SETFL, opts) != -1)
-                {
-                  // Set an inotify watch on the lirc device
-                  if ((m_inotify_wd = inotify_add_watch(m_inotify_fd, m_deviceName.c_str(), IN_DELETE_SELF)) != -1)
-                  {
-                    bResult = true;
-                    CLog::Log(LOGINFO, "LIRC %s: successfully started", __FUNCTION__);
-                  }
-                  else
-                    CLog::Log(LOGDEBUG, "LIRC: Failed to initialize Inotify. LIRC device will not be monitored.");
-                }
-              }
-            }
-#else
-            bResult = true;
-            CLog::Log(LOGINFO, "LIRC %s: successfully started", __FUNCTION__);
-#endif
-          }
-          else
-            CLog::Log(LOGERROR, "LIRC %s: fdopen failed: %s", __FUNCTION__, strerror(errno));
-        }
-        else
-          CLog::Log(LOGERROR, "LIRC %s: fcntl(F_SETFL) failed: %s", __FUNCTION__, strerror(errno));
+        lirc_deinit();
+        Sleep(1000);
+        break;
       }
-      else
-        CLog::Log(LOGERROR, "LIRC %s: fcntl(F_GETFL) failed: %s", __FUNCTION__, strerror(errno));
+      if (code == nullptr)
+      {
+        Sleep(100);
+        continue;
+      }
+      ProcessCode(code);
+      free(code);
     }
-    else if (logMessages)
-      CLog::Log(LOGINFO, "LIRC %s: connect failed: %s", __FUNCTION__, strerror(errno));
   }
-  else if (logMessages)
-    CLog::Log(LOGINFO, "LIRC %s: socket failed: %s", __FUNCTION__, strerror(errno));
 
-  return bResult;
+  lirc_deinit();
+}
+
+void CLirc::ProcessCode(char *buf)
+{
+  // Parse the result. Sample line:
+  // 000000037ff07bdd 00 OK mceusb
+  char scanCode[128];
+  char buttonName[128];
+  char repeatStr[4];
+  char deviceName[128];
+  sscanf(buf, "%s %s %s %s", &scanCode[0], &repeatStr[0], &buttonName[0], &deviceName[0]);
+
+  // Some template LIRC configuration have button names in apostrophes or quotes.
+  // If we got a quoted button name, strip 'em
+  unsigned int buttonNameLen = strlen(buttonName);
+  if (buttonNameLen > 2 &&
+      ((buttonName[0] == '\'' && buttonName[buttonNameLen-1] == '\'') ||
+      ((buttonName[0] == '"' && buttonName[buttonNameLen-1] == '"'))))
+  {
+    memmove(buttonName, buttonName + 1, buttonNameLen - 2);
+    buttonName[buttonNameLen - 2] = '\0';
+  }
+
+  int button = CServiceBroker::GetInputManager().TranslateLircRemoteString(deviceName, buttonName);
+
+  char *end = nullptr;
+  long repeat = strtol(repeatStr, &end, 16);
+  if (!end || *end != 0)
+    CLog::Log(LOGERROR, "LIRC: invalid non-numeric character in expression %s", repeatStr);
+
+  if (repeat == 0)
+  {
+    CLog::Log(LOGDEBUG, "LIRC: - NEW %s (%s)", buf, buttonName);
+    m_firstClickTime = XbmcThreads::SystemClockMillis();
+
+    XBMC_Event newEvent;
+    newEvent.type = XBMC_BUTTON;
+    newEvent.keybutton.button = button;
+    newEvent.keybutton.holdtime = 0;
+    g_application.OnEvent(newEvent);
+    return;
+  }
+  else if (repeat > g_advancedSettings.m_remoteDelay)
+  {
+    XBMC_Event newEvent;
+    newEvent.type = XBMC_BUTTON;
+    newEvent.keybutton.button = button;
+    newEvent.keybutton.holdtime = XbmcThreads::SystemClockMillis() - m_firstClickTime;
+    g_application.OnEvent(newEvent);
+  }
 }
