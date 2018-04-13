@@ -20,6 +20,7 @@
 
 #include "OptionalsReg.h"
 
+using namespace KODI;
 
 //-----------------------------------------------------------------------------
 // ALSA
@@ -84,8 +85,9 @@ bool OPTIONALS::SndioRegister()
 #include "ServiceBroker.h"
 bool OPTIONALS::LircRegister()
 {
-  IInput *lirc = new CLirc();
-  CServiceBroker::GetInputManager().RegisterInput(lirc, "Lircmap.xml");
+  std::unique_ptr<INPUT::IInputService> lirc(new CLirc());
+  CServiceBroker::GetInputManager().LoadMapFile("Lircmap.xml");
+  CServiceBroker::GetInputManager().RegisterInputService(std::move(lirc));
   return true;
 }
 #else
