@@ -995,7 +995,7 @@ void CInputManager::RegisterRemoteControl(CreateRemoteControlFunc createFunc)
   m_createRemoteControl = createFunc;
 }
 
-void CInputManager::RegisterInputService(std::unique_ptr<KODI::INPUT::IInputService> inputService)
+void CInputManager::RegisterInputService(std::unique_ptr<INPUT::IInputService> inputService)
 {
   m_inputServices.emplace_back(std::move(inputService));
 }
