@@ -47,8 +47,17 @@ public:
   static uint32_t TranslateUniversalRemoteString(const std::string &szButton);
 
 private:
-  bool LoadIRMap(const std::string &irMapPath);
+  bool LoadIRMap(const std::string &irMapPath, const std::string &remoteMapTag);
   void MapRemote(TiXmlNode *pRemote, const std::string &szDevice);
+
+  /*!
+   * \brief Get the name of the root tag for the given IR map file
+   *
+   * \param irMapName The XML file name
+   *
+   * \return The root tag for the given map file, or empty if unknown
+   */
+  static std::string GetRemoteTag(const std::string &irMapName);
 
   // Construction parameters
   const CProfilesManager &m_profileManager;
