@@ -59,12 +59,14 @@ bool CWinEventsLinux::MessagePump()
 
   bool ret = false;
   XBMC_Event event = {0};
+  std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
   while (1)
   {
     event = m_devices.ReadEvent();
     if (event.type != XBMC_NOEVENT)
     {
-      ret |= g_application.OnEvent(event);
+      if (appPort)
+        ret |= appPort->OnEvent(newEvent);
     }
     else
     {
@@ -77,5 +79,7 @@ bool CWinEventsLinux::MessagePump()
 
 void CWinEventsLinux::MessagePush(XBMC_Event *ev)
 {
-  g_application.OnEvent(*ev);
+  std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
+  if (appPort)
+    appPort->OnEvent(newEvent);
 }

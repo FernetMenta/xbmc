@@ -67,7 +67,7 @@ void CRemoteControlXbox::Initialize()
 {
   auto dispatcher = CoreWindow::GetForCurrentThread()->Dispatcher;
   m_token = dispatcher->AcceleratorKeyActivated += ref new TypedEventHandler<CoreDispatcher^, AcceleratorKeyEventArgs^>
-    ([this](CoreDispatcher^ sender, AcceleratorKeyEventArgs^ args) 
+    ([this](CoreDispatcher^ sender, AcceleratorKeyEventArgs^ args)
   {
     if (IsRemoteDevice(args->DeviceId->Data()))
       HandleAcceleratorKey(sender, args);
@@ -91,7 +91,7 @@ void CRemoteControlXbox::HandleAcceleratorKey(CoreDispatcher^ sender, Accelerato
   auto button = TranslateVirtualKey(args->VirtualKey);
   if (!button)
     return;
-  
+
   XBMC_Event newEvent;
   newEvent.type = XBMC_BUTTON;
   newEvent.keybutton.button = button;
@@ -110,7 +110,11 @@ void CRemoteControlXbox::HandleAcceleratorKey(CoreDispatcher^ sender, Accelerato
     else
       newEvent.keybutton.holdtime = XbmcThreads::SystemClockMillis() - m_firstClickTime;
 
-    g_application.OnEvent(newEvent);
+    std::shared_ptr<CAppInboundProtocol> appPort;
+    appPort = CServiceBroker::GetAppPort();
+    if (appPort)
+      appPort->OnEvent(newEvent);
+
     break;
   }
   case CoreAcceleratorKeyEventType::KeyUp:
@@ -120,7 +124,10 @@ void CRemoteControlXbox::HandleAcceleratorKey(CoreDispatcher^ sender, Accelerato
       newEvent.keybutton.holdtime = XbmcThreads::SystemClockMillis() - m_firstClickTime;
 
     m_lastKey = VirtualKey::None;
-    g_application.OnEvent(newEvent);
+    std::shared_ptr<CAppInboundProtocol> appPort;
+    appPort = CServiceBroker::GetAppPort();
+    if (appPort)
+      appPort->OnEvent(newEvent);
     break;
   }
   case CoreAcceleratorKeyEventType::Character:
@@ -140,7 +147,9 @@ void CRemoteControlXbox::HandleMediaButton(Windows::Media::SystemMediaTransportC
   newEvent.type = XBMC_BUTTON;
   newEvent.keybutton.button = TranslateMediaKey(args->Button);;
   newEvent.keybutton.holdtime = 0;
-  g_application.OnEvent(newEvent);
+  std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
+  if (appPort)
+    appPort->OnEvent(newEvent);
 }
 
 int32_t CRemoteControlXbox::TranslateVirtualKey(Windows::System::VirtualKey vk)
