@@ -28,6 +28,7 @@ set(SOURCES Action.cpp
 set(HEADERS hardware/IHardwareInput.h
             remote/IRemoteControl.h
             remote/IRRemote.h
+            services/IInputService.h
             Action.h
             ActionIDs.h
             ActionTranslator.h

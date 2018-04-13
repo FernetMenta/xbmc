@@ -32,6 +32,7 @@
 #include "input/keyboard/KeyboardEasterEgg.h"
 #include "input/mouse/interfaces/IMouseDriverHandler.h"
 #include "input/mouse/MouseTranslator.h"
+#include "input/services/IInputService.h"
 #include "input/Key.h"
 #include "input/WindowTranslator.h"
 #include "messaging/ApplicationMessenger.h"
@@ -994,8 +995,12 @@ void CInputManager::RegisterRemoteControl(CreateRemoteControlFunc createFunc)
   m_createRemoteControl = createFunc;
 }
 
-void CInputManager::RegisterInput(IInput *input, std::string mapfile)
+void CInputManager::RegisterInputService(std::unique_ptr<KODI::INPUT::IInputService> inputService)
 {
-  m_inputs.emplace_back(input);
+  m_inputServices.emplace_back(std::move(inputService));
+}
+
+void CInputManager::LoadMapFile(const std::string &mapfile)
+{
   m_irTranslator->Load(mapfile);
 }
