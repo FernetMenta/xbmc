@@ -48,6 +48,11 @@ class IWindowKeymap;
 
 namespace KODI
 {
+namespace INPUT
+{
+  class IInputService;
+}
+
 namespace KEYBOARD
 {
   class IKeyboardDriverHandler;
@@ -58,12 +63,6 @@ namespace MOUSE
   class IMouseDriverHandler;
 }
 }
-
-class IInput
-{
-public:
-  virtual ~IInput() = default;
-};
 
 using CreateRemoteControlFunc = KODI::REMOTE::IRemoteControl* (*)();
 /// \addtogroup input
@@ -292,9 +291,18 @@ public:
   virtual void RegisterMouseDriverHandler(KODI::MOUSE::IMouseDriverHandler* handler);
   virtual void UnregisterMouseDriverHandler(KODI::MOUSE::IMouseDriverHandler* handler);
 
-  void RegisterInput(IInput *input, std::string mapfile);
+  void RegisterInputService(std::unique_ptr<KODI::INPUT::IInputService> inputService);
+
+  /*!
+   * \brief Load an input map file
+   *
+   * An attempt to load the map file will be performed by all services that
+   * support loading input maps at runtime.
+   */
+  void LoadMapFile(const std::string &mapfile);
 
   static void RegisterRemoteControl(CreateRemoteControlFunc createFunc);
+
 private:
 
   /*! \brief Process keyboard event and translate into an action
@@ -361,7 +369,7 @@ private:
 
   std::vector<KODI::KEYBOARD::IKeyboardDriverHandler*> m_keyboardHandlers;
   std::vector<KODI::MOUSE::IMouseDriverHandler*> m_mouseHandlers;
-  std::vector<std::unique_ptr<IInput>> m_inputs;
+  std::vector<std::unique_ptr<KODI::INPUT::IInputService>> m_inputServices;
 
   std::unique_ptr<KODI::KEYBOARD::IKeyboardDriverHandler> m_keyboardEasterEgg;
   static CreateRemoteControlFunc m_createRemoteControl;
