@@ -30,6 +30,12 @@
 #include <stdlib.h>
 #include <vector>
 
+// Root tag for Lircmap.xml
+#define LIRC_MAP_TAG  "lircmap"
+
+// Root tag for IRSSmap.xml
+#define IRSS_MAP_TAG  "irssmap"
+
 CIRTranslator::CIRTranslator(const CProfilesManager &profileManager) :
   m_profileManager(profileManager)
 {
@@ -40,19 +46,23 @@ void CIRTranslator::Load(const std::string &irMapName)
   if (irMapName.empty())
     return;
 
+  std::string rootMapTag = GetRemoteTag(irMapName);
+  if (rootMapTag.empty())
+    return;
+
   Clear();
 
   bool success = false;
 
   std::string irMapPath = URIUtils::AddFileToFolder("special://xbmc/system/", irMapName);
   if (XFILE::CFile::Exists(irMapPath))
-    success |= LoadIRMap(irMapPath);
+    success |= LoadIRMap(irMapPath, rootMapTag);
   else
     CLog::Log(LOGDEBUG, "CIRTranslator::Load - no system %s found, skipping", irMapName.c_str());
 
   irMapPath = m_profileManager.GetUserDataItem(irMapName);
   if (XFILE::CFile::Exists(irMapPath))
-    success |= LoadIRMap(irMapPath);
+    success |= LoadIRMap(irMapPath, rootMapTag);
   else
     CLog::Log(LOGDEBUG, "CIRTranslator::Load - no userdata %s found, skipping", irMapName.c_str());
 
@@ -60,12 +70,8 @@ void CIRTranslator::Load(const std::string &irMapName)
     CLog::Log(LOGERROR, "CIRTranslator::Load - unable to load remote map %s", irMapName.c_str());
 }
 
-bool CIRTranslator::LoadIRMap(const std::string &irMapPath)
+bool CIRTranslator::LoadIRMap(const std::string &irMapPath, const std::string &remoteMapTag)
 {
-  std::string remoteMapTag = URIUtils::GetFileName(irMapPath);
-  URIUtils::RemoveExtension(remoteMapTag);
-  StringUtils::ToLower(remoteMapTag);
-
   // Load our xml file, and fill up our mapping tables
   CXBMCTinyXML xmlDoc;
 
@@ -253,4 +259,20 @@ uint32_t CIRTranslator::TranslateUniversalRemoteString(const std::string &szButt
     buttonCode = 0;
 
   return buttonCode;
+}
+
+std::string CIRTranslator::GetRemoteTag(const std::string &irMapName)
+{
+  std::string rootMapTag = irMapName;
+
+  URIUtils::RemoveExtension(rootMapTag);
+  StringUtils::ToLower(rootMapTag);
+
+  if (rootMapTag == LIRC_MAP_TAG ||
+      rootMapTag == IRSS_MAP_TAG)
+  {
+    return rootMapTag;
+  }
+
+  return "";
 }
