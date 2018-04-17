@@ -111,7 +111,7 @@ bool COMXAudioCodecOMX::Open(CDVDStreamInfo &hints)
 
   if( hints.extradata && hints.extrasize > 0 )
   {
-    m_pCodecContext->extradata = (uint8_t*)av_mallocz(hints.extrasize + FF_INPUT_BUFFER_PADDING_SIZE);
+    m_pCodecContext->extradata = (uint8_t*)av_mallocz(hints.extrasize + AV_INPUT_BUFFER_PADDING_SIZE);
     if(m_pCodecContext->extradata)
     {
       m_pCodecContext->extradata_size = hints.extrasize;
@@ -223,7 +223,7 @@ int COMXAudioCodecOMX::GetData(unsigned char** dst, double &dts, double &pts)
 
   if (m_iBufferOutputAlloced < m_iBufferOutputUsed + outputSize)
   {
-     m_pBufferOutput = (unsigned char*)av_realloc(m_pBufferOutput, m_iBufferOutputUsed + outputSize + FF_INPUT_BUFFER_PADDING_SIZE);
+     m_pBufferOutput = (unsigned char*)av_realloc(m_pBufferOutput, m_iBufferOutputUsed + outputSize + AV_INPUT_BUFFER_PADDING_SIZE);
      m_iBufferOutputAlloced = m_iBufferOutputUsed + outputSize;
   }
 
