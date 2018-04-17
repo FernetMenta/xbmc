@@ -102,7 +102,6 @@ externalproject_add(ffmpeg
                       --disable-ffplay
                       --disable-ffmpeg
                       --disable-ffprobe
-                      --disable-ffserver
                       --enable-gpl
                       --enable-runtime-cpudetect
                       --enable-postproc
