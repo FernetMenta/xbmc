@@ -237,6 +237,8 @@ if(NOT FFMPEG_FOUND)
                    -DOS=${OS}
                    -DCMAKE_AR=${CMAKE_AR})
   endif()
+  set(LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS})
+  list(APPEND LINKER_FLAGS ${SYSTEM_LDFLAGS})
 
   externalproject_add(ffmpeg
                       URL ${FFMPEG_URL}
@@ -255,7 +257,7 @@ if(NOT FFMPEG_FOUND)
                                  -DENABLE_CCACHE=${ENABLE_CCACHE}
                                  -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
                                  -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-                                 -DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}
+                                 -DCMAKE_EXE_LINKER_FLAGS=${LINKER_FLAGS}
                                  ${CROSS_ARGS}
                       PATCH_COMMAND ${CMAKE_COMMAND} -E copy
                                     ${CMAKE_SOURCE_DIR}/tools/depends/target/ffmpeg/CMakeLists.txt
