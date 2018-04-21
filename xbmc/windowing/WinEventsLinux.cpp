@@ -66,7 +66,7 @@ bool CWinEventsLinux::MessagePump()
     if (event.type != XBMC_NOEVENT)
     {
       if (appPort)
-        ret |= appPort->OnEvent(newEvent);
+        ret |= appPort->OnEvent(event);
     }
     else
     {
@@ -81,5 +81,5 @@ void CWinEventsLinux::MessagePush(XBMC_Event *ev)
 {
   std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
   if (appPort)
-    appPort->OnEvent(newEvent);
+    appPort->OnEvent(ev);
 }
