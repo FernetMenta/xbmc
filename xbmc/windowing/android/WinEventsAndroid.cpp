@@ -108,7 +108,7 @@ bool CWinEventsAndroid::MessagePump()
 
     std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
     if (appPort)
-      ret |= appPort->OnEvent(newEvent);
+      ret |= appPort->OnEvent(pumpEvent);
 
     if (pumpEvent.type == XBMC_MOUSEBUTTONUP)
       CServiceBroker::GetGUI()->GetWindowManager().SendMessage(GUI_MSG_UNFOCUS_ALL, 0, 0, 0, 0);

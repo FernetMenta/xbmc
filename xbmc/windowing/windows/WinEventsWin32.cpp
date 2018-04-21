@@ -277,6 +277,8 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
   if(g_uQueryCancelAutoPlay != 0 && uMsg == g_uQueryCancelAutoPlay)
     return S_FALSE;
 
+  std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
+
   switch (uMsg)
   {
     case WM_CLOSE:
@@ -291,15 +293,13 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
       }
       newEvent.type = XBMC_QUIT;
       std::shared_ptr<CAppInboundProtocol> appPort;
-      appPort = CServiceBroker::GetAppPort();
       if (appPort)
         appPort->OnEvent(newEvent);
       break;
     case WM_SHOWWINDOW:
       {
         bool active = g_application.GetRenderGUI();
-        std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
-        if (appPort)
+         if (appPort)
           appPort->SetRenderGUI(wParam != 0);
         if (g_application.GetRenderGUI() != active)
           DX::Windowing()->NotifyAppActiveChange(g_application.GetRenderGUI());
@@ -312,7 +312,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
         bool active = g_application.GetRenderGUI();
         if (HIWORD(wParam))
         {
-          std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
           if (appPort)
             appPort->SetRenderGUI(false);
         }
@@ -324,7 +323,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
           {
             if (GetWindowPlacement(hWnd, &lpwndpl))
             {
-              std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
               if (appPort)
                 appPort->SetRenderGUI(lpwndpl.showCmd != SW_HIDE);
             }
@@ -409,8 +407,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
 
       newEvent.type = XBMC_KEYDOWN;
       newEvent.key.keysym = keysym;
-      std::shared_ptr<CAppInboundProtocol> appPort;
-      appPort = CServiceBroker::GetAppPort();
       if (appPort)
         appPort->OnEvent(newEvent);
     }
@@ -454,8 +450,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
       else
         newEvent.type = XBMC_KEYUP;
       newEvent.key.keysym = keysym;
-      std::shared_ptr<CAppInboundProtocol> appPort;
-      appPort = CServiceBroker::GetAppPort();
       if (appPort)
         appPort->OnEvent(newEvent);
     }
@@ -511,8 +505,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
       newEvent.type = XBMC_MOUSEMOTION;
       newEvent.motion.x = GET_X_LPARAM(lParam);
       newEvent.motion.y = GET_Y_LPARAM(lParam);
-      std::shared_ptr<CAppInboundProtocol> appPort;
-      appPort = CServiceBroker::GetAppPort();
       if (appPort)
         appPort->OnEvent(newEvent);
       return(0);
@@ -526,8 +518,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
       if (uMsg == WM_LBUTTONDOWN) newEvent.button.button = XBMC_BUTTON_LEFT;
       else if (uMsg == WM_MBUTTONDOWN) newEvent.button.button = XBMC_BUTTON_MIDDLE;
       else if (uMsg == WM_RBUTTONDOWN) newEvent.button.button = XBMC_BUTTON_RIGHT;
-      std::shared_ptr<CAppInboundProtocol> appPort;
-      appPort = CServiceBroker::GetAppPort();
       if (appPort)
         appPort->OnEvent(newEvent);
       return(0);
@@ -541,8 +531,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
       if (uMsg == WM_LBUTTONUP) newEvent.button.button = XBMC_BUTTON_LEFT;
       else if (uMsg == WM_MBUTTONUP) newEvent.button.button = XBMC_BUTTON_MIDDLE;
       else if (uMsg == WM_RBUTTONUP) newEvent.button.button = XBMC_BUTTON_RIGHT;
-      std::shared_ptr<CAppInboundProtocol> appPort;
-      appPort = CServiceBroker::GetAppPort();
       if (appPort)
         appPort->OnEvent(newEvent);
       return(0);
@@ -560,8 +548,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
         newEvent.button.x = static_cast<uint16_t>(point.x);
         newEvent.button.y = static_cast<uint16_t>(point.y);
         newEvent.button.button = GET_Y_LPARAM(wParam) > 0 ? XBMC_BUTTON_WHEELUP : XBMC_BUTTON_WHEELDOWN;
-        std::shared_ptr<CAppInboundProtocol> appPort;
-        appPort = CServiceBroker::GetAppPort();
         if (appPort)
         {
           appPort->OnEvent(newEvent);
@@ -609,7 +595,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
           // tell the application about new position
           if (g_application.GetRenderGUI() && !DX::Windowing()->IsAlteringWindow())
           {
-            std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
             if (appPort)
               appPort->OnEvent(newEvent);
           }
@@ -626,7 +611,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
           // tell the application about new size
           if (g_application.GetRenderGUI() && !DX::Windowing()->IsAlteringWindow() && newEvent.resize.w > 0 && newEvent.resize.h > 0)
           {
-            std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
             if (appPort)
               appPort->OnEvent(newEvent);
           }
@@ -641,7 +625,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
           DX::Windowing()->SetMinimized(true);
           if (!g_application.GetRenderGUI())
           {
-            std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
             if (appPort)
               appPort->SetRenderGUI(false);
           }
@@ -652,7 +635,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
         DX::Windowing()->SetMinimized(false);
         if (!g_application.GetRenderGUI())
         {
-          std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
           if (appPort)
             appPort->SetRenderGUI(true);
         }
@@ -685,7 +667,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
           // tell application about size changes
           if (g_application.GetRenderGUI() && !DX::Windowing()->IsAlteringWindow() && newEvent.resize.w > 0 && newEvent.resize.h > 0)
           {
-            std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
             if (appPort)
               appPort->OnEvent(newEvent);
           }
@@ -713,7 +694,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
           DX::Windowing()->OnMove(newEvent.move.x, newEvent.move.y);
           if (g_application.GetRenderGUI() && !DX::Windowing()->IsAlteringWindow())
           {
-            std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
             if (appPort)
               appPort->OnEvent(newEvent);
           }

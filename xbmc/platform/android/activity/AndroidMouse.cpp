@@ -22,6 +22,7 @@
 #include "AndroidExtra.h"
 #include "XBMCApp.h"
 #include "Application.h"
+#include "AppInboundProtocol.h"
 #include "guilib/GUIWindowManager.h"
 #include "input/mouse/MouseStat.h"
 #include "ServiceBroker.h"
