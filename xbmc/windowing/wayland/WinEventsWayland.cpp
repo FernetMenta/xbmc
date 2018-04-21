@@ -274,7 +274,7 @@ bool CWinEventsWayland::MessagePump()
     }
 
     if (appPort)
-      appPort->OnEvent(newEvent);
+      appPort->OnEvent(event);
   }
 
   return true;
