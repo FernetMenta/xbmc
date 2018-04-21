@@ -292,14 +292,13 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
           CLog::LogF(LOGNOTICE, "UnregisterDeviceNotification failed (%d)", GetLastError());
       }
       newEvent.type = XBMC_QUIT;
-      std::shared_ptr<CAppInboundProtocol> appPort;
       if (appPort)
         appPort->OnEvent(newEvent);
       break;
     case WM_SHOWWINDOW:
       {
         bool active = g_application.GetRenderGUI();
-         if (appPort)
+        if (appPort)
           appPort->SetRenderGUI(wParam != 0);
         if (g_application.GetRenderGUI() != active)
           DX::Windowing()->NotifyAppActiveChange(g_application.GetRenderGUI());

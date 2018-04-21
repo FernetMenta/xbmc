@@ -19,8 +19,9 @@
  */
 
 #include "RemoteControlXbox.h"
-#include "Application.h"
+#include "AppInboundProtocol.h"
 #include "input/remote/IRRemote.h"
+#include "ServiceBroker.h"
 #include "threads/SystemClock.h"
 #include "utils/log.h"
 

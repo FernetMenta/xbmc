@@ -84,7 +84,7 @@ void CWinEventsWin10::MessagePush(XBMC_Event *newEvent)
   {
     std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
     if (appPort)
-      appPort->OnEvent(newEvent);
+      appPort->OnEvent(*newEvent);
   }
 }
 
@@ -100,7 +100,7 @@ bool CWinEventsWin10::MessagePump()
   while (m_events.try_pop(pumpEvent))
   {
     if (appPort)
-      ret |= appPort->OnEvent(newEvent);
+      ret |= appPort->OnEvent(pumpEvent);
 
     if (pumpEvent.type == XBMC_MOUSEBUTTONUP)
       CServiceBroker::GetGUI()->GetWindowManager().SendMessage(GUI_MSG_UNFOCUS_ALL, 0, 0, 0, 0);

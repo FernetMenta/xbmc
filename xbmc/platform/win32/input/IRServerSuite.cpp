@@ -19,7 +19,7 @@
  */
 
 #include "IRServerSuite.h"
-#include "Application.h"
+#include "AppInboundProtocol.h"
 #include "IrssMessage.h"
 #include "platform/win32/CharsetConverter.h"
 #include "profiles/ProfilesManager.h"
