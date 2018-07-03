@@ -718,7 +718,7 @@ void CDisplaySettings::SettingOptionsRefreshRatesFiller(SettingConstPtr setting,
   }
 
   RESOLUTION_INFO resInfo = CDisplaySettings::GetInstance().GetResolutionInfo(res);
-  // The only meaningful parts of res here are iScreen, iScreenWidth, iScreenHeight
+  // The only meaningful parts of res here are iScreenWidth, iScreenHeight
   std::vector<REFRESHRATE> refreshrates = CServiceBroker::GetWinSystem()->RefreshRates(resInfo.iScreenWidth, resInfo.iScreenHeight, resInfo.dwFlags);
 
   bool match = false;
