@@ -68,7 +68,6 @@ CAddonCallbacksGUI::CAddonCallbacksGUI(CAddon* addon)
   m_callbacks->Window_DoModal                 = CAddonCallbacksGUI::Window_DoModal;
   m_callbacks->Window_SetFocusId              = CAddonCallbacksGUI::Window_SetFocusId;
   m_callbacks->Window_GetFocusId              = CAddonCallbacksGUI::Window_GetFocusId;
-  m_callbacks->Window_SetCoordinateResolution = CAddonCallbacksGUI::Window_SetCoordinateResolution;
   m_callbacks->Window_SetProperty             = CAddonCallbacksGUI::Window_SetProperty;
   m_callbacks->Window_SetPropertyInt          = CAddonCallbacksGUI::Window_SetPropertyInt;
   m_callbacks->Window_SetPropertyBool         = CAddonCallbacksGUI::Window_SetPropertyBool;
@@ -532,36 +531,6 @@ int CAddonCallbacksGUI::Window_GetFocusId(void *addonData, GUIHANDLE handle)
   }
 
   return iControlId;
-}
-
-bool CAddonCallbacksGUI::Window_SetCoordinateResolution(void *addonData, GUIHANDLE handle, int res)
-{
-  CAddonInterfaces* helper = (CAddonInterfaces*) addonData;
-  if (!helper)
-    return false;
-
-  CAddonCallbacksGUI* guiHelper = static_cast<CAddonCallbacksGUI*>(helper->GUILib_GetHelper());
-
-  if (!handle)
-  {
-    CLog::Log(LOGERROR, "SetCoordinateResolution: %s/%s - No Window", CAddonInfo::TranslateType(guiHelper->m_addon->Type()).c_str(), guiHelper->m_addon->Name().c_str());
-    return false;
-  }
-
-  if (res < RES_HDTV_1080i || res > RES_AUTORES)
-  {
-    CLog::Log(LOGERROR, "SetCoordinateResolution: %s/%s - Invalid resolution", CAddonInfo::TranslateType(guiHelper->m_addon->Type()).c_str(), guiHelper->m_addon->Name().c_str());
-    return false;
-  }
-
-  CGUIAddonWindow *pAddonWindow = static_cast<CGUIAddonWindow*>(handle);
-  CGUIWindow      *pWindow      = CServiceBroker::GetGUI()->GetWindowManager().GetWindow(pAddonWindow->m_iWindowId);
-  if (!pWindow)
-    return false;
-
-  pWindow->SetCoordsRes((RESOLUTION)res);
-
-  return true;
 }
 
 void CAddonCallbacksGUI::Window_SetProperty(void *addonData, GUIHANDLE handle, const char *key, const char *value)

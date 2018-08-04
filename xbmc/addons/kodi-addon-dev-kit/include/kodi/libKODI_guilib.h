@@ -37,7 +37,6 @@ typedef struct CB_GUILib
   bool (*Window_DoModal)(void *addonData, GUIHANDLE handle);
   bool (*Window_SetFocusId)(void *addonData, GUIHANDLE handle, int iControlId);
   int (*Window_GetFocusId)(void *addonData, GUIHANDLE handle);
-  bool (*Window_SetCoordinateResolution)(void *addonData, GUIHANDLE handle, int res);
   void (*Window_SetProperty)(void *addonData, GUIHANDLE handle, const char *key, const char *value);
   void (*Window_SetPropertyInt)(void *addonData, GUIHANDLE handle, const char *key, int value);
   void (*Window_SetPropertyBool)(void *addonData, GUIHANDLE handle, const char *key, bool value);
@@ -314,11 +313,6 @@ public:
   int GetFocusId()
   {
     return m_cb->Window_GetFocusId(m_Handle->addonData, m_controlHandle);
-  }
-
-  bool SetCoordinateResolution(int res)
-  {
-    return m_cb->Window_SetCoordinateResolution(m_Handle->addonData, m_controlHandle, res);
   }
 
   void SetProperty(const char *key, const char *value)

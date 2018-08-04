@@ -45,7 +45,6 @@ public:
   static bool         Window_DoModal(void *addonData, GUIHANDLE handle);
   static bool         Window_SetFocusId(void *addonData, GUIHANDLE handle, int iControlId);
   static int          Window_GetFocusId(void *addonData, GUIHANDLE handle);
-  static bool         Window_SetCoordinateResolution(void *addonData, GUIHANDLE handle, int res);
   static void         Window_SetProperty(void *addonData, GUIHANDLE handle, const char *key, const char *value);
   static void         Window_SetPropertyInt(void *addonData, GUIHANDLE handle, const char *key, int value);
   static void         Window_SetPropertyBool(void *addonData, GUIHANDLE handle, const char *key, bool value);

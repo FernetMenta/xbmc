@@ -602,16 +602,6 @@ namespace XBMCAddon
       return (long)CServiceBroker::GetWinSystem()->GetGfxContext().GetVideoResolution();
     }
 
-    void Window::setCoordinateResolution(long res)
-    {
-      XBMC_TRACE;
-      if (res < RES_HDTV_1080i || res > RES_AUTORES)
-        throw WindowException("Invalid resolution.");
-
-      SingleLockWithDelayGuard gslock(CServiceBroker::GetWinSystem()->GetGfxContext(),languageHook);
-      ref(window)->SetCoordsRes(CServiceBroker::GetWinSystem()->GetGfxContext().GetResInfo((RESOLUTION)res));
-    }
-
     void Window::setProperty(const char* key, const String& value)
     {
       XBMC_TRACE;
