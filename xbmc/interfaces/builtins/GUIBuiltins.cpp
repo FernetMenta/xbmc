@@ -497,18 +497,6 @@ static int ToggleDirty(const std::vector<std::string>&)
 ///     @param[in] params[1\,...]        Pair of (container ID\, focus item).
 ///   }
 ///   \table_row2_l{
-///     <b>`Resolution(resIdent)`</b>
-///     ,
-///     Change Kodi's Resolution (default is 4x3).
-///     param[in] resIdent               A resolution identifier.
-///     |          | Identifiers |          |
-///     |:--------:|:-----------:|:--------:|
-///     | pal      | pal16x9     | ntsc     |
-///     | ntsc16x9 | 720p        | 720psbs  |
-///     | 720ptb   | 1080psbs    | 1080ptb  |
-///     | 1080i    |             |          |
-///   }
-///   \table_row2_l{
 ///     <b>`SetGUILanguage(lang)`</b>
 ///     ,
 ///     Set GUI Language

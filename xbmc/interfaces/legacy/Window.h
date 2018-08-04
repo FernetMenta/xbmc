@@ -664,19 +664,6 @@ namespace XBMCAddon
       /// Returns The resolution of the screen
       ///
       /// @return                       Used Resolution
-      ///  The returned value is one of the following:
-      ///  | value | Resolution                |
-      ///  |:-----:|:--------------------------|
-      ///  |   0   | 1080i      (1920x1080)
-      ///  |   1   | 720p       (1280x720)
-      ///  |   2   | 480p 4:3   (720x480)
-      ///  |   3   | 480p 16:9  (720x480)
-      ///  |   4   | NTSC 4:3   (720x480)
-      ///  |   5   | NTSC 16:9  (720x480)
-      ///  |   6   | PAL 4:3    (720x576)
-      ///  |   7   | PAL 16:9   (720x576)
-      ///  |   8   | PAL60 4:3  (720x480)
-      ///  |   9   | PAL60 16:9 (720x480)
       ///
       ///-----------------------------------------------------------------------
       /// @python_v18 Deprecated.
