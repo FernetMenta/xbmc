@@ -15,7 +15,8 @@ DEPENDS = \
 	taglib libusb libnfs \
 	pythonmodule-pil pythonmodule-pycryptodome pythonmodule-setuptools \
 	libxslt ffmpeg crossguid \
-	libdvdread libdvdnav libdvdcss p8-platform flatbuffers
+	libdvdread libdvdnav libdvdcss p8-platform flatbuffers \
+	c-ares protobuf grpc
 
 
 FFMPEG_DEPENDS = gnutls
@@ -118,6 +119,7 @@ dbus: expat
 libinput: mtdev libevdev
 libevdev: libudev
 taglib: $(ZLIB)
+grpc: c-ares protobuf
 
 .installed-$(PLATFORM): $(DEPENDS)
 	touch $@

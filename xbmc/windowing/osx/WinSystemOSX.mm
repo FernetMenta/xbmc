@@ -16,6 +16,7 @@
 #include "WinEventsOSX.h"
 #include "cores/AudioEngine/AESinkFactory.h"
 #include "cores/AudioEngine/Sinks/AESinkDARWINOSX.h"
+#include "cores/AudioEngine/Sinks/AESinkgRPC.h"
 #include "cores/RetroPlayer/process/osx/RPProcessInfoOSX.h"
 #include "cores/RetroPlayer/rendering/VideoRenderers/RPRendererOpenGL.h"
 #include "cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.h"
@@ -669,6 +670,7 @@ CWinSystemOSX::CWinSystemOSX()
 
   AE::CAESinkFactory::ClearSinks();
   CAESinkDARWINOSX::Register();
+  CAESinkgRPC::Register();
   CCocoaPowerSyscall::Register();
   m_dpms = std::make_shared<CCocoaDPMSSupport>();
 }

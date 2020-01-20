@@ -8,6 +8,7 @@ set(SOURCES AEResampleFactory.cpp
             Engines/ActiveAE/ActiveAEStream.cpp
             Engines/ActiveAE/ActiveAESound.cpp
             Engines/ActiveAE/ActiveAESettings.cpp
+            Sinks/AESinkgRPC.cpp
             Utils/AEBitstreamPacker.cpp
             Utils/AEChannelInfo.cpp
             Utils/AEDeviceInfo.cpp
@@ -34,6 +35,7 @@ set(HEADERS AEResampleFactory.h
             Interfaces/AEStream.h
             Interfaces/IAudioCallback.h
             Interfaces/ThreadedAE.h
+            Sinks/AESinkgRPC.h
             Utils/AEAudioFormat.h
             Utils/AEBitstreamPacker.h
             Utils/AEChannelData.h
@@ -51,7 +53,7 @@ if(ALSA_FOUND)
                       Utils/AEELDParser.cpp)
   list(APPEND HEADERS Sinks/AESinkALSA.h
                       Utils/AEELDParser.h)
-                      
+
   if(NOT CORE_PLATFORM_NAME_LC STREQUAL x11)
     list(APPEND SOURCES Sinks/alsa/ALSAHControlMonitor.cpp)
     list(APPEND HEADERS Sinks/alsa/ALSAHControlMonitor.h)
@@ -150,3 +152,5 @@ if(NOT CORE_SYSTEM_NAME STREQUAL windows AND NOT CORE_SYSTEM_NAME STREQUAL windo
     target_compile_options(${CORE_LIBRARY} PRIVATE -msse2)
   endif()
 endif()
+
+add_subdirectory(Sinks/rpc)
