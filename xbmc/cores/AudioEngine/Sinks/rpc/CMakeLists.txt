@@ -18,14 +18,14 @@ set(_GRPC_GRPCPP_UNSECURE gRPC::grpc++_unsecure)
 find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
 
 # Proto file
-get_filename_component(isound_proto "isound.proto" ABSOLUTE)
+get_filename_component(isound_proto "source.proto" ABSOLUTE)
 get_filename_component(isound_proto_path "${isound_proto}" PATH)
 
 # Generated sources
-set(isound_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/isound.pb.cc")
-set(isound_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/isound.pb.h")
-set(isound_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/isound.grpc.pb.cc")
-set(isound_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/isound.grpc.pb.h")
+set(isound_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/source.pb.cc")
+set(isound_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/source.pb.h")
+set(isound_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/source.grpc.pb.cc")
+set(isound_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/source.grpc.pb.h")
 add_custom_command(
       OUTPUT "${isound_proto_srcs}" "${isound_proto_hdrs}" "${isound_grpc_srcs}" "${isound_grpc_hdrs}"
       COMMAND ${_PROTOBUF_PROTOC}

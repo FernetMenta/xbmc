@@ -13,6 +13,8 @@
 
 #include "rpc/gRPCConnector.h"
 
+std::unique_ptr<CRPCConnector> CAESinkgRPC::m_pConnector;
+
 CAESinkgRPC::CAESinkgRPC()
 {
 }
@@ -24,11 +26,20 @@ CAESinkgRPC::~CAESinkgRPC()
 
 void CAESinkgRPC::Register()
 {
+  m_pConnector.reset(new CRPCConnector());
+  m_pConnector->Start();
+
   AE::AESinkRegEntry reg;
   reg.sinkName = "gRPC";
   reg.createFunc = CAESinkgRPC::Create;
   reg.enumerateFunc = CAESinkgRPC::EnumerateDevicesEx;
+  reg.cleanupFunc = CAESinkgRPC::Cleanup;
   AE::CAESinkFactory::RegisterSink(reg);
+}
+
+void CAESinkgRPC::Cleanup()
+{
+  m_pConnector.reset();
 }
 
 void CAESinkgRPC::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
@@ -36,9 +47,16 @@ void CAESinkgRPC::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
   list.clear();
 
   CAEDeviceInfo info;
-  info.m_deviceName = "RPC Sound Server";
-  info.m_displayName = "RPC Sound Server";
-  list.push_back(info);
+  if (m_pConnector->GetDeviceInfo(info))
+  {
+    list.push_back(info);
+  }
+  else
+  {
+    info.m_deviceName = "no Soundserver connected";
+    info.m_displayName = "no Soundserver connected";
+    list.push_back(info);
+  }
 }
 
 IAESink* CAESinkgRPC::Create(std::string &device, AEAudioFormat &desiredFormat)
@@ -53,9 +71,7 @@ IAESink* CAESinkgRPC::Create(std::string &device, AEAudioFormat &desiredFormat)
 
 bool CAESinkgRPC::Initialize(AEAudioFormat& format, std::string& device)
 {
-  m_pConnector.reset(new CRPCConnector());
-  std::string reply = m_pConnector->SayHello("huhu");
-  return true;
+  return false;
 }
 
 void CAESinkgRPC::Deinitialize()
@@ -83,3 +99,4 @@ void CAESinkgRPC::Drain()
 {
 
 }
+

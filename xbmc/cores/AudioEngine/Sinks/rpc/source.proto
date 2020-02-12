@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package audiosource;
+
+// audiosource service definition.
+service Audiosource {
+  // streaming service
+  rpc MsgStream (stream ClientToServer) returns (stream ServerToClient) {}
+}
+
+message ClientToServer {
+  oneof client_oneof {
+    ClockRequest clockrequest = 1;
+    ConfigRequest configrequest = 2;
+  }
+}
+
+message ServerToClient {
+  oneof server_oneof {
+    ClockReply clockreply = 1;
+    ConfigReply configreply = 2;
+    ConfigChange configchange = 3;
+    Error error = 4;
+  }
+}
+
+// clock in microseconds
+message ClockRequest {
+  uint64 client_clock = 1;
+}
+
+message ClockReply {
+  uint64 client_clock = 1;
+  uint64 master_clock = 2;
+}
+
+// audio configs
+message ConfigRequest {
+  string client_name = 1;
+}
+
+// audio configurations
+message ConfigReply {
+  message Config {
+    string name = 1;
+    string channels = 2;
+    string samplerates = 3;
+    string datatypes = 4;
+    bool interleaved = 5;
+    uint32 latency = 6;
+  }
+  repeated Config config = 1;
+}
+
+// error messages
+message Error {
+	string reason = 1;
+}
+
+// events
+message ConfigChange {
+  string reason = 1;
+}

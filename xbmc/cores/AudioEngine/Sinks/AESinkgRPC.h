@@ -10,11 +10,12 @@
 
 #include "cores/AudioEngine/Interfaces/AESink.h"
 #include "cores/AudioEngine/Utils/AEDeviceInfo.h"
+#include "cores/AudioEngine/Sinks/rpc/gRPCConnector.h"
 #include <memory>
 
 class CRPCConnector;
 
-class CAESinkgRPC : public IAESink
+class CAESinkgRPC : public IAESink, ISinkgRPC
 {
 public:
   const char* GetName() override { return "gRPC"; }
@@ -23,6 +24,7 @@ public:
   ~CAESinkgRPC() override;
 
   static void Register();
+  static void Cleanup();
   static void EnumerateDevicesEx(AEDeviceInfoList &list, bool force);
   static IAESink* Create(std::string &device, AEAudioFormat &desiredFormat);
 
@@ -35,7 +37,5 @@ public:
   void Drain() override;
 
 protected:
-
-  std::unique_ptr<CRPCConnector> m_pConnector;
-
+  static std::unique_ptr<CRPCConnector> m_pConnector;
 };
